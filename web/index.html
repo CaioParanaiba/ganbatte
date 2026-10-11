@@ -1285,6 +1285,7 @@ const {MEDIA, COFRE_MES, NEN, GUARDA, SPELLS, TK, PALS, palStyle, REAIS, ALLFX, 
 let CTX = null, D, HOJE, TEMP, BOSSES, AVAL, NOTAS, PARC, INBOX, EST, COS = [];
 const SIM = new Set(), NOTAS_TXT = [];
 let OWN = new Set(), SPENT = 0, BOUGHT = {}, RESG = [], COFRE_USADO = 0;
+let TESTE = null;   // modo teste da Masadora (só no canal beta): {own, eq} só na memória desta página; ver entraTeste()
 const R = {dif:'normal'};
 const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
   avatar:'logo', lic:'l2', hud:'logo', anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
@@ -1295,7 +1296,7 @@ const avSrc = f => (window.HJ_AV && window.HJ_AV[f]) || 'a/' + f + '.png';   // 
 const LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231D2027' stroke='%23CDB384' stroke-width='3'/%3E%3Cpath d='M32 9l6 15 16 1-12 10 4 16-14-9-14 9 4-16-12-10 16-1z' fill='none' stroke='%23CDB384' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial Black,Arial' font-weight='900' font-size='15' fill='%23E2E5EB'%3EH%3C/text%3E%3C/svg%3E";   // emblema do template (as fotos de perfil ficam em a/, servidas pelo servidor)
 const discOf = t => HJx.discOf(t, CTX);
 const andar = xp => HJx.andar(xp, R.dif), custo = n => HJx.custo(n, R.dif), xpAte = n => HJx.xpAte(n, R.dif);
-const estado = () => HJx.estado(CTX);
+const estado = () => { const S = HJx.estado(CTX); if(TESTE) S.jenny = Infinity; return S; };   // modo teste: Jenny infinita
 const somOff = () => !!(window.HJ_FX && HJ_FX.somOff());   // sons da loja desligados neste computador (efeitos.js)
 const cartas = S => HJx.cartas(CTX, S);
 const cofreTotal = () => HJx.cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1);
@@ -1306,7 +1307,29 @@ function sync(api){
   const e = EST.equip; Object.assign(UI, {theme:e.theme, fx:e.fx||[], bg:e.bg||'', frame:e.frame||'', title:e.title||'', font:e.font||'', som:e.som||'', avatar:e.avatar||'logo', lic:e.lic||'l2', hud:e.hud||'logo'}); Object.assign(UI.skin, e.skin||{});
   if(!BOSSES.some(b => b.d === UI.bsel)) UI.bsel = BOSSES[0] ? BOSSES[0].d : '';
   if(!BOSSES.some(b => b.d === UI.mapsel)) UI.mapsel = UI.bsel;
+  if(TESTE){ if(!podeTeste()) TESTE = null; else { OWN = TESTE.own; Object.assign(UI, structuredClone(TESTE.eq)); } }   // recarregou no meio do teste: continua nele
   avisoVersao(); guardaRecibos();
+}
+/* modo teste da Masadora, só para quem está no canal beta: Jenny infinita para experimentar qualquer item. É temporário de
+   propósito: as compras e o que for equipado ficam só na memória desta página. Sair, recarregar a página ou voltar para
+   a versão normal devolve a loja e a carteira de verdade, sem nada a mais. Feitiços e prêmios reais ficam fora (mexem no jogo). */
+const podeTeste = () => !!(CTX && CTX.SRV && CTX.SRV.canal === 'beta');
+const equipAgora = () => structuredClone({theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, title:UI.title, font:UI.font, som:UI.som, avatar:UI.avatar, lic:UI.lic, hud:UI.hud, skin:UI.skin});
+function entraTeste(){
+  if(!podeTeste()) return;
+  TESTE = {own:new Set(OWN), eq:equipAgora()}; render();
+  toast('Modo teste ligado <small>compre e equipe à vontade: nada fica guardado</small>');
+}
+async function saiTeste(){
+  TESTE = null;
+  try { await recarrega(); } catch(e){ toast('Recarregue a página para voltar à sua loja de verdade'); }
+  render(); toast('Modo teste desligado <small>a sua loja e a sua carteira voltaram como estavam</small>');
+}
+function faixaTeste(){
+  let el = document.getElementById('faixa-teste');
+  if(!TESTE){ if(el) el.remove(); return; }
+  if(el) return;
+  document.body.insertAdjacentHTML('afterbegin', `<div id="faixa-teste" role="status" style="position:sticky;top:0;z-index:69;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:8px 16px;background:var(--volt);color:#0b0d12;font:600 13.5px var(--f-ui)">Modo teste da beta: Jenny infinita, e nada do que você comprar ou equipar fica guardado. Recarregar a página também sai.<button type="button" class="btn" data-teste="0" style="background:#0b0d12;color:#fff;border-color:#0b0d12">sair do modo teste</button></div>`);
 }
 /* bônus de nota, períodos de fúria e o acerto da 0.5.2 ficam gravados no estado.json (recibos() no motor.js) */
 function guardaRecibos(){
@@ -1315,7 +1338,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.5.6';
+const VERSAO_PAGINA = '0.5.7';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1334,9 +1357,12 @@ async function post(url, body){
 async function recarrega(){ const r = await fetch('/api/jogo', {cache:'no-store'}); const j = await r.json(); if(!j.ok) throw new Error(j.error || 'sem dados'); sync(j); }
 /* grava a loja e o que está equipado em jogo/estado.json */
 function salvaUI(){
-  EST.own = [...OWN]; EST.spent = SPENT; EST.cofreUsado = COFRE_USADO; EST.resg = RESG;
-  EST.bought[HJx.semanaISO(HOJE)] = Object.keys(BOUGHT);
-  EST.equip = {theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, title:UI.title, font:UI.font, som:UI.som, avatar:UI.avatar, lic:UI.lic, hud:UI.hud, skin:UI.skin};
+  if(TESTE) Object.assign(TESTE, {own:OWN, eq:equipAgora()});   // modo teste: a loja fica só na memória; o resto (tour, visto) grava
+  else {
+    EST.own = [...OWN]; EST.spent = SPENT; EST.cofreUsado = COFRE_USADO; EST.resg = RESG;
+    EST.bought[HJx.semanaISO(HOJE)] = Object.keys(BOUGHT);
+    EST.equip = {theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, title:UI.title, font:UI.font, som:UI.som, avatar:UI.avatar, lic:UI.lic, hud:UI.hud, skin:UI.skin};
+  }
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a loja: ' + esc(e.message)));
 }
 function aplicaTema(){
@@ -1416,7 +1442,7 @@ function rPX(S){
   ({map:rMAP, p1:rP1, p3:rP3, p3b:rP3b})[k](S);
 }
 function buyable(S, kind, k){
-  if(kind === 's'){ const s = spell(k); if(BOUGHT[k]) return [false,'já comprado esta semana']; if(S.jenny < s.p) return [false,`faltam ${fmt(s.p - S.jenny)} J`]; return [true,'']; }
+  if(kind === 's'){ const s = spell(k); if(TESTE) return [false,'fora do modo teste']; if(BOUGHT[k]) return [false,'já comprado esta semana']; if(S.jenny < s.p) return [false,`faltam ${fmt(s.p - S.jenny)} J`]; return [true,'']; }
   return [false,'use a prateleira de prêmios'];
 }
 
@@ -1582,7 +1608,7 @@ function rMS(S){
     <div class="cats">${cats.map(([k,n]) => `<button data-cat="${k}" aria-pressed="${UI.cat===k}">${n}</button>`).join('')}</div>
     <div class="lay7"><div>${main}</div>
       <div class="side7">
-        <div class="card"><h2><span class="c">~/</span>carteira</h2><div class="wal7">${fmt(S.jenny)} J<small>disponível</small></div>
+        <div class="card"><h2><span class="c">~/</span>carteira</h2><div class="wal7">${fmt(S.jenny)} J<small>${TESTE ? 'modo teste: nada fica guardado' : 'disponível'}</small></div>${podeTeste() ? `<button type="button" class="btn${TESTE ? '' : ' v'}" data-teste="${TESTE ? 0 : 1}" style="margin:8px 0 2px">${TESTE ? 'sair do modo teste' : 'modo teste: Jenny infinita'}</button><p class="sub" style="margin:4px 0 0">${TESTE ? 'Feitiços e prêmios reais ficam fora do teste.' : 'Só na versão de teste (beta). Experimente os itens sem gastar; ao sair, tudo volta como estava.'}</p>` : ''}
           <div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></div>
         <div class="card"><h2><span class="c">~/</span>cofre do mês</h2><div class="wal7" style="font-size:22px">R$ ${fmt(cofreTotal() - COFRE_USADO)}<small>R$ ${fmt(HJx.cofreMes(EST))} por mês, acumula · usado R$ ${fmt(COFRE_USADO)}</small></div><div class="cofre"><b style="width:${pct(cofreTotal()-COFRE_USADO, cofreTotal())}%"></b></div></div>
         <div class="card"><h2><span class="c">~/</span>usando agora</h2><div class="eqlist">${eqs.map(([a,b]) => `<div><span>${a}</span><span>${esc(b)}</span></div>`).join('')}</div></div>
@@ -1592,7 +1618,7 @@ function rMS(S){
 
 /* ---------- prêmios reais (a lista é do jogador: estado.json → premios; sem lista, os padrão do motor) ---------- */
 const meusPremios = () => HJx.premios(EST);
-const podeResgatar = (S, x) => S.jenny >= x.p && (x.rs||0) <= cofreTotal() - COFRE_USADO;
+const podeResgatar = (S, x) => !TESTE && S.jenny >= x.p && (x.rs||0) <= cofreTotal() - COFRE_USADO;
 function reguaHTML(E){
   return `<div class="sec7"><h3>Quanto vale cada preço</h3><p>${E.est ? 'Estimativa: depois de 5 dias jogados, a régua passa a usar o seu próprio ritmo.' : 'Pelo seu ritmo nas últimas 4 semanas.'}
     Um dia produtivo ≈ <b>${fmt(E.dia)} J</b> · uma semana boa ≈ <b>${fmt(E.semana)} J</b> · um mês ≈ <b>${fmt(E.mes)} J</b>.
@@ -2019,7 +2045,7 @@ const RENDER = {l:rL, b:rB, b2:rB2, d2:rD2, bk:rBK, ms:rMS, px:rPX, sys:rSys, cf
 let cur = 'l';
 function render(){
   if(!CTX) return;
-  const S = estado(); aplicaTema(); RENDER[cur](S);
+  const S = estado(); aplicaTema(); RENDER[cur](S); faixaTeste();
   const gn = document.getElementById('gnav-'+cur); if(gn) gn.innerHTML = gnav(cur);
   document.getElementById('facts').innerHTML = `<span class="fact">Andar <b>${S.a.n}</b></span><span class="fact">hoje <b>+${S.hojeXP}</b></span><span class="fact"><b>${fmt(S.jenny)}</b> J</span><span class="fact">${esc(TEMP.nome)} · semana <b>${S.sem.n}/${S.sem.tot}</b></span>`;
 }
@@ -2055,6 +2081,7 @@ document.addEventListener('click', async e => {
     UI.skin[w] = k; salvaUI(); render(); return; }
   const ap = q('[data-aplic]'); if(ap){ const m = INBOX[+ap.dataset.aplic]; if(!m) return;
     try { await post('/api/jogo/ajuste', {quando:m.d, texto:m.t, aplicado: m.st !== 'ok'}); await recarrega(); toast(m.st === 'ok' ? 'Lembrete pendente de novo' : 'Lembrete aplicado'); render(); } catch(err){ toast('Não marcou: ' + esc(err.message)); } return; }
+  const te = q('[data-teste]'); if(te){ te.dataset.teste === '1' ? entraTeste() : saiTeste(); return; }
   const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(); if(!it || S.jenny < it.p) return;
     SPENT += it.p; OWN.add(it.id); HJx.expandeOwn(OWN); equipa(it); salvaUI(); toast(`${esc(it.n)} é seu <small>−${fmt(it.p)} J · já equipado${it.parts ? ' · as peças ficam separadas também' : ''}</small>`); render(); return; }
