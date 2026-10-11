@@ -6,7 +6,7 @@ Um jogo (tema Hunter x Hunter) em cima do [todo.txt](https://github.com/todotxt/
 conferência de versão nova (uma leitura do GitHub a cada 6 horas) saem do computador.
 Precisa apenas do Python 3.8 ou mais novo, no Linux, Windows ou Mac.
 
-> **Versão 0.5.4.** A 0.3 foi testada no Linux por amigos, com foco em usabilidade. No Windows e no Mac ainda não foi testada
+> **Versão 0.5.5.** A 0.3 foi testada no Linux por amigos, com foco em usabilidade. No Windows e no Mac ainda não foi testada
 > (inclusive o instalador e o início automático): se algo der errado, avise. O que está planejado fica em [`docs/PENDENCIAS.md`](docs/PENDENCIAS.md).
 > O desenho do modo em grupo (placar **Torre Trick**) está em [`docs/COLETIVO.md`](docs/COLETIVO.md) e ainda não existe.
 
@@ -149,6 +149,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.5.5 | atualização das conquistas | Botão de atualizar funciona numa cópia clonada por SSH: se o `git pull` falhar sem o agente SSH, puxa a mesma branch pelo HTTPS público |
 | 0.5.4 | atualização das conquistas | Masadora com 40 itens novos: efeitos ao concluir tarefa, sons sintetizados, fontes, paletas, texturas, molduras e quatro temas completos (`web/efeitos.js`) |
 | 0.5.3 | atualização das conquistas | XP dos dias passados guardado (linha concluída que some não tira mais XP); nota corrigida para menos não deixa a carteira negativa |
 | 0.5.2 | atualização das conquistas | bônus de nota e fúria guardados: mudar o plano não tira mais Jenny nem XP; carteira negativa zerada uma vez |

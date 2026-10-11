@@ -63,7 +63,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.5.4"
+VERSAO = "0.5.5"
 VERSAO_NOME = "atualização das conquistas"   # nome da série 0.5 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -934,8 +934,13 @@ def api_atualizar(_):
     if ia_lock.locked():
         raise Erro("a IA está trabalhando num pedido: espere terminar e tente de novo")
     if metodo_atualizar() == "git":
+        # sem terminal: o git não pode parar pedindo senha; e o servidor sobe sem o agente SSH,
+        # então se o remoto for SSH e falhar, puxa a mesma branch pelo HTTPS público
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": "ssh -o BatchMode=yes"}
         try:
-            r = subprocess.run(["git", "-C", str(REPO), "pull", "--ff-only"], capture_output=True, text=True, timeout=120)
+            r = subprocess.run(["git", "-C", str(REPO), "pull", "--ff-only"], capture_output=True, text=True, timeout=120, env=env)
+            if r.returncode != 0:
+                r = subprocess.run(["git", "-C", str(REPO), "pull", "--ff-only", GITHUB + ".git", canal()], capture_output=True, text=True, timeout=120, env=env)
         except (OSError, subprocess.SubprocessError) as e:
             raise Erro(f"o git não rodou ({e})")
         if r.returncode != 0:

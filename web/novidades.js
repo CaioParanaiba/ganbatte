@@ -5,6 +5,11 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.5.5", "nome": "atualização das conquistas", "data": "2026-10-11",
+   "resumo": "O botão de atualizar não falha mais quando o jogo foi baixado por SSH.",
+   "itens": [
+     {"ic": "antenna", "t": "Atualizar", "d": "Se o git não consegue usar a sua chave SSH (o jogo liga antes dela), a atualização baixa a versão nova pelo endereço público do GitHub."}
+   ]},
   {"versao": "0.5.4", "nome": "atualização das conquistas", "data": "2026-10-11",
    "resumo": "A Masadora ganhou 40 itens novos: animações ao concluir tarefas, sons, fontes e quatro temas completos.",
    "itens": [
