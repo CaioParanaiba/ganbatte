@@ -20,6 +20,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .wz-body p b{color:var(--ink)}
 .wz-f{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .wz label{display:flex;flex-direction:column;gap:4px;font:600 11px var(--f-mono);color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
+.wz label.srv-op{flex-direction:row;gap:8px;align-items:center;font:14px var(--f-ui);color:var(--ink);letter-spacing:0;text-transform:none}
 .wz input,.wz select{background:var(--panel2);border:1px solid var(--hair);border-radius:9px;padding:8px 10px;font:14px var(--f-ui);color:var(--ink);text-transform:none;letter-spacing:0;min-width:0}
 .wz input.bad{border-color:var(--red)}
 .wz small.h{font:12px var(--f-ui);color:var(--soft);text-transform:none;letter-spacing:0}
@@ -446,11 +447,45 @@ function srvHTML(){
   const onde = {linux:'um serviço do usuário (systemd)', windows:'um atalho na pasta Inicializar do Windows', mac:'um LaunchAgent do macOS'}[s.sistema] || '';
   return `<div class="card wz" id="cfg-srv" style="box-shadow:none;border-radius:14px"><h2><span class="c">~/</span>servidor · versão ${esc(s.versao)}${s.nome ? ` · ${esc(s.nome)}` : ''}</h2>
     <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-      <label style="display:flex;gap:8px;align-items:center;font:14px var(--f-ui);color:var(--ink)"><input type="checkbox" data-srvauto${s.auto ? ' checked' : ''}> Iniciar com o computador</label>
+      <label class="srv-op"><input type="checkbox" data-srvauto${s.auto ? ' checked' : ''}> Iniciar com o computador</label>
       <span class="sub" style="flex:1;min-width:240px;margin:0">${s.auto
         ? `Ligado: o servidor roda em segundo plano e você só abre <b>${esc(location.origin)}</b> (vale salvar nos favoritos). Desligue quando quiser.`
-        : `Desligado: é preciso rodar <code>servidor.py</code> toda vez. Ligado, ele inicia sozinho com o computador (${onde}) e gasta quase nada parado.`}</span></div></div>`;
+        : `Desligado: é preciso rodar <code>servidor.py</code> toda vez. Ligado, ele inicia sozinho com o computador (${onde}) e gasta quase nada parado.`}</span></div>${betaHTML(s)}</div>`;
 }
+/* versões de teste: troca a cópia git entre a main e a beta (POST /api/canal); instalado pelo ZIP, só a main */
+let BETA = null;   // null | 'pergunta' | 'trocando'
+function betaHTML(s){
+  if(s.metodo !== 'git') return '';
+  const beta = s.canal === 'beta', alvo = beta ? 'main' : 'beta';
+  const linha = `<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:12px">
+      <label class="srv-op"><input type="checkbox" data-srvbeta${beta ? ' checked' : ''}${BETA ? ' disabled' : ''}> Receber versões de teste (beta)</label>
+      <span class="sub" style="flex:1;min-width:240px;margin:0">${beta
+        ? 'Ligado: você recebe as versões novas antes dos outros, para testar. Podem ter erros; o balão de feedback no canto avisa o autor.'
+        : 'As novidades chegam aqui antes da versão normal, mas ainda em teste: às vezes vêm com erros que só são corrigidos depois.'}</span></div>`;
+  if(BETA === 'trocando') return linha + `<p class="sub" style="margin:10px 0 0">${ic('antenna')} Trocando para a versão ${alvo === 'beta' ? 'de teste' : 'normal'} e reiniciando o jogo...</p>`;
+  if(BETA !== 'pergunta') return linha;
+  return linha + `<div style="margin-top:10px;padding:12px 14px;border:1px solid var(--hair);border-radius:12px">
+      <p style="margin:0 0 8px;font-size:14px">${beta
+        ? 'Voltar para a versão normal. Ela pode ser mais antiga que a de teste que você usa agora e não conhecer algo que a beta já gravou nos seus dados. Baixe os seus dados antes, para poder restaurar se algo sair errado.'
+        : 'Entrar nas versões de teste. Os seus dados não mudam de pasta, mas uma versão de teste pode gravar coisas novas neles, e voltar depois para a normal nem sempre fica perfeito. Baixe os seus dados antes, para poder restaurar.'}</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="/api/backup" download>baixar meus dados</a><button type="button" class="btn v" data-srvbetaok>${beta ? 'voltar para a normal' : 'entrar na beta'}</button><button type="button" class="btn" data-srvbetanao>cancelar</button></div></div>`;
+}
+async function trocaCanal(){
+  const alvo = CTX.SRV.canal === 'beta' ? 'main' : 'beta';
+  BETA = 'trocando'; render();
+  try { await post('/api/canal', {canal: alvo}); }
+  catch(err){ BETA = null; render(); toast('Não trocou: ' + esc(err.message)); return; }
+  for(let i = 0; i < 60; i++){
+    await new Promise(r => setTimeout(r, 1500));
+    try { const p = await (await fetch('/api/ping', {cache:'no-store'})).json(); if(p.canal === alvo){ location.reload(); return; } } catch(e){}
+  }
+  toast('O jogo está demorando para voltar. Recarregue a página em alguns segundos.');
+}
+document.addEventListener('change', e => { if(e.target.matches('[data-srvbeta]')){ BETA = 'pergunta'; render(); } });
+document.addEventListener('click', e => {
+  if(e.target.closest('[data-srvbetaok]')) trocaCanal();
+  else if(e.target.closest('[data-srvbetanao]')){ BETA = null; render(); }
+});
 RENDER.cfg = S => { rSys0(S); document.getElementById('cfg-root').insertAdjacentHTML('afterbegin', cfgHTML() + srvHTML()); };
 document.addEventListener('change', async e => {
   if(!e.target.matches('[data-srvauto]')) return;

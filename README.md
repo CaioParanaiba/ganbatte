@@ -104,6 +104,19 @@ explica o que mudou em cada versão.
 
 Atualizar nunca mexe nos seus dados, porque eles ficam fora da pasta do código.
 
+### Versões de teste (beta)
+
+As novidades saem primeiro na branch `beta` e passam para a `main` (a versão normal) depois de testadas. Quem quiser
+experimentar antes marca **Receber versões de teste (beta)** em **Configurações → servidor**. Daí em diante, o aviso de
+versão nova e o **atualizar agora** seguem a beta. Desmarcar volta para a versão normal.
+
+Pelo terminal é o mesmo: `git -C ~/todo-engine switch beta` (e `switch main` para voltar). Só funciona no jogo instalado
+com git; o instalado pelo ZIP fica sempre na versão normal.
+
+A beta pode ter erros que ainda não foram corrigidos. Os dados continuam na mesma pasta, mas uma versão de teste pode
+gravar coisas novas neles que a versão normal ainda não conhece. Baixe os seus dados (Configurações → backup) antes de
+trocar. Achou um problema? O balão de feedback no canto da tela abre uma issue já preenchida.
+
 ## Sem instalar: modo demonstração
 
 **Online:** https://caioparanaiba.github.io/todo-engine/ (atualiza sozinho a cada mudança na página).
@@ -149,6 +162,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.5.6 | atualização das conquistas | Versões de teste: Configurações → servidor troca o jogo entre a versão normal (`main`) e a beta (`POST /api/canal`, só em cópia git) |
 | 0.5.5 | atualização das conquistas | Botão de atualizar funciona numa cópia clonada por SSH: se o `git pull` falhar sem o agente SSH, puxa a mesma branch pelo HTTPS público |
 | 0.5.4 | atualização das conquistas | Masadora com 40 itens novos: efeitos ao concluir tarefa, sons sintetizados, fontes, paletas, texturas, molduras e quatro temas completos (`web/efeitos.js`) |
 | 0.5.3 | atualização das conquistas | XP dos dias passados guardado (linha concluída que some não tira mais XP); nota corrigida para menos não deixa a carteira negativa |

@@ -5,6 +5,11 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.5.6", "nome": "atualização das conquistas", "data": "2026-10-11",
+   "resumo": "Dá para receber as versões novas antes, ainda em teste.",
+   "itens": [
+     {"ic": "antenna", "t": "Versões de teste", "d": "Em Configurações → servidor, marque Receber versões de teste (beta) para ganhar as novidades antes da versão normal. Podem vir com erros; desmarcar volta para a normal. Só no jogo instalado com git."}
+   ]},
   {"versao": "0.5.5", "nome": "atualização das conquistas", "data": "2026-10-11",
    "resumo": "O botão de atualizar não falha mais quando o jogo foi baixado por SSH.",
    "itens": [

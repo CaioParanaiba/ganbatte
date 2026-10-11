@@ -37,6 +37,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/conquistas {acao, ...}        conquistas da IA: criar {itens} | resgatar {no, como, j|k} | descartar {no}
   GET  /api/atualizacao[?agora]           versão instalada e as mais novas publicadas no GitHub (confere a cada 6 h; ?agora = na hora)
   POST /api/atualizar {}                  baixa a versão nova (git pull ou ZIP do GitHub) e reinicia o servidor
+  POST /api/canal {canal}                 troca entre a versão normal (main) e as de teste (beta), só em cópia git, e reinicia
 
 Todo dia o servidor cria as recorrentes de hoje (um hábito por linha, rec:ID:DATA, e a do Codeforces se houver handle),
 tira as que ficaram abertas de dias anteriores e conclui sozinho a do Codeforces quando a meta do dia é batida. Se a meta foi
@@ -63,7 +64,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.5.5"
+VERSAO = "0.5.6"
 VERSAO_NOME = "atualização das conquistas"   # nome da série 0.5 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -656,7 +657,8 @@ def api_jogo_get():
             "notas": ler_txt("notas.txt"), "ajustes": ler_txt("ajustes.txt"), "estado": estado if isinstance(estado, dict) else {},
             "cf": cf, "avatares": avatares(), "narradas": narradas if isinstance(narradas, list) else [], "jogador": j,
             "conquistas": conquistas if isinstance(conquistas, list) else [],
-            "servidor": {"versao": VERSAO, "nome": VERSAO_NOME, "sistema": sistema(), "auto": auto_ligado(), "fundo": EXEC["fundo"], "dados": str(DADOS)}}
+            "servidor": {"versao": VERSAO, "nome": VERSAO_NOME, "sistema": sistema(), "auto": auto_ligado(), "fundo": EXEC["fundo"], "dados": str(DADOS),
+                         "canal": canal(), "metodo": metodo_atualizar()}}
 
 
 def acrescenta(nome, linha):
@@ -952,6 +954,50 @@ def api_atualizar(_):
         except (OSError, zipfile.BadZipFile) as e:
             raise Erro(f"não consegui baixar a versão nova ({e})")
     log("jogo atualizado pela página: reiniciando")
+    def reinicia():
+        EXEC["recarregar"] = True
+        EXEC["srv"].shutdown()
+    threading.Timer(1.0, reinicia).start()
+    return {"ok": True}
+
+
+def api_canal(d):
+    """Versões de teste: troca a cópia git para a branch beta (ou de volta para a main) e reinicia com o código dela."""
+    alvo = d.get("canal")
+    if alvo not in ("main", "beta"):
+        raise Erro("canal deve ser main ou beta")
+    if metodo_atualizar() != "git":
+        raise Erro("só dá para trocar de canal num jogo instalado com git; o instalado pelo ZIP fica na versão normal")
+    if ia_lock.locked():
+        raise Erro("a IA está trabalhando num pedido: espere terminar e tente de novo")
+    if canal() == alvo:
+        return {"ok": True, "igual": True}
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": "ssh -o BatchMode=yes"}
+    def git(*args, tempo=30):
+        try:
+            return subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, text=True, timeout=tempo, env=env)
+        except (OSError, subprocess.SubprocessError) as e:
+            raise Erro(f"o git não rodou ({e})")
+    if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
+        raise Erro("há arquivos do jogo mudados à mão nesta pasta; o git não troca de canal por cima deles")
+    # mesma ideia do atualizar: se o remoto for SSH e falhar sem o agente, busca pelo HTTPS público
+    r = git("fetch", "origin", f"+refs/heads/{alvo}:refs/remotes/origin/{alvo}", tempo=120)
+    if r.returncode != 0:
+        r = git("fetch", GITHUB + ".git", f"+refs/heads/{alvo}:refs/remotes/origin/{alvo}", tempo=120)
+    if r.returncode == 0:
+        tem = git("rev-parse", "--verify", "--quiet", f"refs/heads/{alvo}").returncode == 0
+        # a branch local precisa só andar para a frente; confere antes de trocar, para não parar no meio
+        if tem and git("merge-base", "--is-ancestor", alvo, f"origin/{alvo}").returncode != 0:
+            raise Erro(f"a cópia local da {alvo} tem mudanças que o GitHub não tem; troque pelo terminal (git switch {alvo})")
+        r = git("switch", alvo) if tem else git("switch", "-c", alvo, "--track", f"origin/{alvo}")
+        if r.returncode == 0 and tem:
+            r = git("merge", "--ff-only", f"origin/{alvo}")
+    if r.returncode != 0:
+        ult = (r.stderr or r.stdout).strip().splitlines()
+        raise Erro("o git não conseguiu trocar de canal" + (f" ({ult[-1]})" if ult else ""))
+    with atual_lock:
+        ATUAL.update(quando=0.0, remota=None, erro="")   # o próximo aviso de versão nova confere o canal novo
+    log(f"canal trocado para {alvo} pela página: reiniciando")
     def reinicia():
         EXEC["recarregar"] = True
         EXEC["srv"].shutdown()
@@ -1292,7 +1338,7 @@ def api_autostart(d):
 ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
          "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
-         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar}
+         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal}
 LIMITE = {"/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 65536, "/api/jogo/planos": 130000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
@@ -1347,7 +1393,7 @@ class H(BaseHTTPRequestHandler):
                     return self._arquivo(p / caminho[3:], "image/png", "max-age=3600")
             return self._json(404, {"ok": False, "error": "foto não encontrada"})
         if caminho == "/api/ping":
-            return self._json(200, {"ok": True, "app": "hunter-todo", "versao": VERSAO, "pid": os.getpid()})
+            return self._json(200, {"ok": True, "app": "hunter-todo", "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
         if caminho == "/api/backup":
             try:
                 corpo = backup()
