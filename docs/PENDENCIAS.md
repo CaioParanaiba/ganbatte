@@ -206,11 +206,11 @@ O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
   (`+exp.NOME`). Fechar um marco: `MARCO_ETAPA` × etapas (até 12) + `MARCO_DIA` × dias diferentes com etapa feita (até 10);
   concluir: `EXP_SEMANA` × semanas ativas (até 20). Os bônus ficam gravados (`bonus` e `fim`) e entram no XP do dia em
   que fecharam (`somaG` em `estado()`). Números **a calibrar**.
-- **Aba Expedições** em `web/expedicoes.js`, com cinco visões para testar (cards, trilha, quadro, foco, cronograma;
-  `localStorage` `hj-expv`). **Decidir qual fica** antes de ir para a `main`, e tirar as outras.
+- **Aba Expedições** em `web/expedicoes.js`, com cinco formas de ver (cards, trilha, quadro, foco, cronograma;
+  `localStorage` `hj-expv`). Decidido na 0.5.9-beta2 (#25): **ficam as cinco**, como formas de visualização.
 - **Registrar:** campo limpo (o resto em "detalhes"), tecla N (o mesmo `#l-add` numa janela), tecla C (caçada com uma
   etapa por linha). Topo da Lista num bloco só, com a missão da semana no canto.
-- Falta: tutorial da aba Expedições; editar o ícone de uma caçada não existe (é sempre o alvo, de propósito).
+- Tutorial da aba Expedições na 0.5.9-beta2 (#26, `TOURS.x` em `web/guia.js`). Editar o ícone de uma caçada não existe (é sempre o alvo, de propósito).
 
 ## Ideias para depois (sem versão definida)
 

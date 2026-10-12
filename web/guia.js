@@ -263,7 +263,7 @@ async function salvaW(tour){
     disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n, n1:d.n1, n2:d.n2})), habitos:habsJSON(W.habs, W.hf), cf: W.cfOn ? {handle:W.cfH, meta:W.cfM} : null};
   try { await post('/api/config', {jogador, avaliacoes: avaliacoesTxt()}); await recarrega(); }
   catch(e){ W.err = 'Não salvou: ' + e.message; desenhaW(); return; }
-  UI.avatar = W.av; EST.tour = tour ? {} : Object.fromEntries(['l','b','b2','d2','bk','ms','sys','cfg','nv'].map(k => [k,1])); salvaUI();
+  UI.avatar = W.av; EST.tour = tour ? {} : Object.fromEntries(['l','b','b2','d2','bk','ms','sys','cfg','nv','x'].map(k => [k,1])); salvaUI();
   document.getElementById('wz').remove();
   abaReal('l');
   if(tour) setTimeout(() => tutorial('l'), 250);
@@ -310,7 +310,7 @@ const TOURS = {
      ['#l-hab','Hábitos de hoje','Os hábitos aparecem sozinhos todo dia. Marque à mão quando fizer. O hábito semanal some quando a meta da semana é cumprida; se fizer mais, <b>fiz de novo</b> marca hoje e cada vez acima da meta vale <b>XP em dobro</b>. Para mudar a lista, use a aba <b>Configurações</b>.', 1],
      ['#l-hab .l-hb','Codeforces','Quem liga o Codeforces (Configurações, com o seu handle) não marca nada: o jogo conta sozinho os problemas aceitos no dia, e bater a meta conclui o hábito. O <b>✋</b> é para o que o site não mostra (<b>ITMO Academy</b>, contest de <b>grupo privado</b>): cada clique pede confirmação e soma 1 problema hoje, valendo igual para a meta e o XP. Também fica ao lado do Codeforces no heatmap.', 0],
      ['#l-heat','Constância','Três heatmaps, um quadrado por dia: o <b>Ten</b> (dia ativo ou salvo pelo Zetsu), os <b>hábitos</b> (quanto mais cheio, mais hábitos feitos) e o <b>Codeforces</b> (problemas no dia; a cor forte é a meta batida).', 1],
-     ['#l-vale','Quanto vale','O XP de cada tipo e as tags que marcam cada um. Os bônus de ×1,5 se multiplicam.', 1]],
+     ['#l-valec','Quanto vale','Clique para abrir: o XP de cada tipo e as tags que marcam cada um. Os bônus de ×1,5 se multiplicam.']],
   b:[['#b-tower','A torre','Seu andar na Arena Celestial e a <b>projeção</b> de onde você chega no fim do semestre, no ritmo atual. No topo (251) abre o Torneio contra a Guarda Real.'],
      ['#b-sheet','Ficha e hexágono de Nen','Quanto você treinou cada tipo de Nen. O hexágono mostra o equilíbrio: o lado mais curto vira a missão da semana.'],
      ['#b-bosses','Chefões','Resumo das disciplinas: vida restante, fúria e quanto falta de média.'],
@@ -348,6 +348,14 @@ const TOURS = {
        ['#cfg-root > .card:last-child','Backup','Um ZIP com todos os seus dados, para guardar ou levar para outro computador.']],
   nv:[['#nv-hero','Sua versão','O número da versão instalada e, ao lado, se saiu uma mais nova. O jogo confere no GitHub sozinho, no máximo a cada 6 horas. Quando sai versão nova, o botão <b>atualizar agora</b> baixa e reinicia o jogo, sem mexer nos seus dados.'],
        ['#nv-lista','O que mudou','Cada versão explicada em poucas linhas, da mais nova para a mais antiga. Depois de atualizar, o jogo avisa uma vez e o ponto amarelo na aba Novidades some quando você passa por aqui.']],
+  /* Expedições: cada visão mostra blocos diferentes; o passo sem bloco na visão escolhida é pulado */
+  x:[['#x-root .x-head','Expedições','Projetos que duram semanas ou meses e não são de uma disciplina: o TCC, um app seu, a iniciação científica, o estágio. As tarefas deles também aparecem na <b>Lista</b>, com a etiqueta da expedição.'],
+     ['#x-root .x-vis','Formas de ver','A mesma expedição desenhada de cinco jeitos; troque quando quiser, nada muda nos dados. <b>Cards</b>: todas lado a lado. <b>Trilha</b>: os marcos como paradas de um caminho. <b>Quadro</b>: uma coluna por marco, com as etapas em cartões. <b>Foco</b>: só o próximo passo de cada uma. <b>Cronograma</b>: os marcos no calendário. A escolha fica guardada neste navegador.'],
+     ['#x-root [data-xnova]','Nova expedição','Dê um nome, um ícone e, se quiser, uma frase do que é. Depois acrescente os marcos.'],
+     ['#x-root [data-xmarconovo]','Marcos','Cada marco é uma <b>caçada</b>: uma parte do projeto com as suas etapas ("Versão 1.0", "Capítulo 2"). Cada etapa vale o XP normal, e fechar o marco dá mais ' + HJ.MARCO_ETAPA + ' XP por etapa (até 12) e ' + HJ.MARCO_DIA + ' XP por dia diferente em que você fez etapa dele (até 10). A tecla <b>C</b> cria um marco inteiro, uma etapa por linha.'],
+     ['#x-root [data-xadd^="exp:"]','Tarefas soltas','O que é da expedição mas não cabe num marco. Vale o XP normal e conta como semana ativa.', 1],
+     ['#x-root .x-sem','Semanas ativas','Cada quadrado é uma semana: aceso quando você fez pelo menos uma tarefa da expedição. É isso que paga o fim, então trabalhar um pouco toda semana rende mais que tudo de uma vez.'],
+     ['#x-root [data-xfim]','Concluir','Projeto entregue? Concluir dá <b>+' + HJ.EXP_SEMANA + ' XP por semana ativa</b> (até 20) e pede pelo menos um marco fechado. A expedição vai para as concluídas, de onde dá para reabrir.', 1]],
   sys:[['#sys-root > .card:first-child','Regras','Tudo o que o jogo considera: XP, Ten, torre, chefões, Jenny. A fonte de verdade é o motor.js. Nome, hábitos, IA e backup ficam em <b>Configurações</b>.']],
   /* tutorial da IA: aparece ao ligar uma IA (ou pelo botão "tutorial da IA" em Configurações); troca de aba a cada passo */
   ia:[['#cfg-ia','IA ligada','A partir de agora o jogo chama a IA sozinho. Ela <b>só devolve texto</b>: quem confere e grava é o jogo, e planos e lembretes você revisa antes de salvar.', 0, () => tab('cfg')],

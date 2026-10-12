@@ -3,7 +3,7 @@
  * As regras (o que é etapa, marco, bônus) ficam em motor.js, grupos(); aqui só o desenho e as gravações.
  * Lista: o bloco de cada caçada, as etiquetas de caçada e de expedição nas tarefas, o campo "caçada" do formulário e as teclas
  * N (o formulário numa janela, de qualquer aba) e C (uma caçada inteira, uma etapa por linha).
- * Aba Expedições: cinco visões para testar na beta (cards, trilha, quadro, foco, cronograma); a escolhida fica neste navegador.
+ * Aba Expedições: cinco formas de ver a mesma expedição (cards, trilha, quadro, foco, cronograma); a escolhida fica neste navegador.
  * Grava em estado.json: cacadas {nome: {n, exp, criada, fim, bonus}} e expedicoes {nome: {n, ic, sub, ini, fim, bonus}}.
  * As etapas são linhas normais do todo.txt com +cac.nome; as tarefas soltas de uma expedição levam +exp.nome.
  */
@@ -141,7 +141,7 @@ document.body.insertAdjacentHTML('afterbegin', `<svg width="0" height="0" style=
 
 /* ---------- utilidades ---------- */
 const ICS = ['island','tower','int','tra','con','esp','emi','man','scroll','card','crown','flame','moon','spider','coin','antenna','thread','bullet','bag','copy'];
-const VIS = [['cards','Cards'],['trilha','Trilha'],['quadro','Quadro'],['foco','Foco'],['crono','Cronograma']];
+const VIS = [['cards','Cards','todas lado a lado'],['trilha','Trilha','os marcos como paradas de um caminho'],['quadro','Quadro','uma coluna por marco, etapas em cartões'],['foco','Foco','só o próximo passo de cada uma'],['crono','Cronograma','os marcos no calendário']];
 const X = {vis:'cards', sel:'', marco:undefined, verFeitas:{}, fold:{}, conf:'', foco:'', velhas:false};
 try { const v = localStorage.getItem('hj-expv'); if(VIS.some(x => x[0] === v)) X.vis = v; } catch(e){}
 const g = S => S.grupos || {cac:{}, exp:{}};
@@ -440,7 +440,7 @@ function aba(S){
   if(!L.some(e => e.slug === X.sel)) X.sel = L[0] ? L[0].slug : '';
   const e = L.find(x => x.slug === X.sel);
   const head = `<div class="x-head"><h2 class="h">Expedições</h2><p>Projetos longos, fora das disciplinas. Cada marco é uma caçada: feche as etapas dela para ganhar o bônus do marco. As tarefas também aparecem na Lista.</p>
-    <div class="x-vis" role="group" aria-label="Visão"><span>visão (beta)</span>${VIS.map(([k, n]) => `<button type="button" class="l-chip" data-xvis="${k}" aria-pressed="${X.vis === k}">${n}</button>`).join('')}</div>
+    <div class="x-vis" role="group" aria-label="Visão"><span>ver como</span>${VIS.map(([k, n, d]) => `<button type="button" class="l-chip" data-xvis="${k}" aria-pressed="${X.vis === k}" title="${d}">${n}</button>`).join('')}</div>
     <button type="button" class="btn v" data-xnova>+ nova expedição</button></div>`;
   const corpo = !e ? `<div class="card" style="max-width:720px"><h2><span class="c">~/</span>nenhuma expedição ainda</h2><p style="margin:0 0 8px">Uma expedição é um projeto que dura semanas ou meses e não é de uma disciplina: o TCC, um app seu, a iniciação científica, o estágio.</p>
       <p class="x-note" style="margin:0">Ela é feita de <b>marcos</b>: cada marco é uma caçada, com as suas etapas. Fechar um marco dá ${HJ.MARCO_ETAPA} XP por etapa e ${HJ.MARCO_DIA} por dia diferente em que você trabalhou nele; concluir a expedição dá +${HJ.EXP_SEMANA} XP por semana ativa.</p>
