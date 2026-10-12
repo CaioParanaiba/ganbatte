@@ -1141,6 +1141,8 @@ a.btn{display:inline-block;text-decoration:none}
 .l-ib{border:0;background:none;border-radius:7px;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;color:var(--soft)}
 .l-ib:hover{background:var(--track);color:var(--ink)} .l-ib.del:hover{color:var(--red)}
 .l-edit{display:flex;gap:6px}
+.l-edfull{flex-direction:column;gap:10px;padding:10px 0 4px} .l-edfull .l-edl{display:flex;gap:6px} .l-edfull .l-opts,.l-edfull .l-prev{margin-top:0}
+.l-edfull .dt{border:1px solid var(--hair);background:none;border-radius:99px;padding:3px 10px;width:112px;font:500 12.5px var(--f-mono);color:var(--ink)}
 .l-edit input{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--volt);border-radius:8px;padding:5px 9px;font:13px var(--f-mono);color:var(--ink)}
 .l-empty{padding:16px;color:var(--soft);font-size:13.5px}
 details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-webkit-details-marker{display:none}
@@ -1847,6 +1849,49 @@ function priL(linha, S){
   const s = HJx.sugerePri(HJx.parseLinha(HOJE + ' ' + linha, 0), S.bs, HOJE, CTX);
   return {pri: s.pri, sug: s};
 }
+/* editor completo da tarefa (✎, issue #20): texto, tipo, disciplina, prazo e prioridade. O texto guarda tudo o que o editor
+   não mostra (av:, prova:, +cac., rec:...), então nada da linha se perde; as datas dele ficam como no todo.txt */
+const LE = {txt:'', tipo:'vid', disc:'', due:'', pri:'', tipo0:'', tags0:[]};   // tipo0/tags0: como a linha veio, para voltar igual se o tipo não mudar
+function abreEd(t){
+  const tags = ['ent','est','tre','hab'].flatMap(k => [...HJx.TAGS[k].ctx.map(v => '@' + v), ...HJx.TAGS[k].proj.map(v => '+' + v)]);
+  const ws = t.raw.replace(/^\([A-Z]\) /, '').replace(/^\d{4}-\d\d-\d\d /, '').split(/\s+/).filter(Boolean), tipo = (LTIPOS.find(x => x.c === nenDe(t)) || LTIPOS[5]).k;
+  Object.assign(LE, {txt: ws.filter(w => !tags.includes(w.toLowerCase()) && !/^\+fac\./i.test(w) && !/^due:/i.test(w)).join(' '),
+    tipo, tipo0: tipo, tags0: ws.filter(w => tags.includes(w.toLowerCase())), disc: discOf(t) || '', due: t.due || '', pri: t.pri || ''});
+}
+/* a linha que vai para o servidor: a tag do tipo só entra se o texto, a disciplina e o rec: ainda não dão esse tipo */
+function linhaEd(){
+  const base = [LE.txt.trim(), LE.disc ? '+fac.' + LE.disc : '', LE.due ? 'due:' + LE.due : ''].filter(Boolean).join(' ');
+  if(LE.tipo === LE.tipo0 && LE.tags0.length) return base + ' ' + LE.tags0.join(' ');
+  const T = LTIPOS.find(x => x.k === LE.tipo), tag = tagDe(LE.tipo);
+  return tag && nenDe(HJx.parseLinha(HOJE + ' ' + base, 0)) !== T.c ? base + ' ' + tag : base;
+}
+function edHTML(S){
+  const v = valeL(HJx.parseLinha(HOJE + ' ' + linhaEd(), 0), S), am = addD(HOJE, 1);
+  const chip = (k, on, txt, x = '') => `<button type="button" class="l-chip${x}" data-le="${k}" aria-pressed="${on}">${txt}</button>`;
+  const ds = BOSSES.map(b => b.d).concat(LE.disc && !BOSSES.some(b => b.d === LE.disc) ? [LE.disc] : []);
+  return `<div class="l-edit l-edfull" id="l-edbox">
+    <div class="l-edl"><input id="l-ed" value="${esc(LE.txt)}" aria-label="Texto da tarefa"><button class="btn v" data-l="save" type="button">salvar</button><button class="btn" data-l="cancel" type="button">cancelar</button></div>
+    <div class="l-seg" role="group" aria-label="Tipo"><span>tipo</span>${LTIPOS.map(x => chip('tipo:' + x.k, x.k === LE.tipo, `<span class="d" style="--c:${NC(x.c)}"></span>${x.n}`)).join('')}</div>
+    <div class="l-opts">
+      <div class="l-seg"><span>disciplina</span><select id="l-eddisc" aria-label="Disciplina"><option value="">nenhuma</option>${ds.map(d => `<option value="${esc(d)}"${d === LE.disc ? ' selected' : ''}>${esc(d)}</option>`).join('')}</select></div>
+      <div class="l-seg" role="group" aria-label="Prazo"><span>prazo</span>${[['sem',''],['hoje',HOJE],['amanhã',am]].map(([n,d]) => chip('due:' + d, d === LE.due, n)).join('')}<input class="dt" inputmode="numeric" maxlength="10" id="l-eddate" placeholder="${HJx.fmtTxt()}" value="${LE.due && LE.due !== HOJE && LE.due !== am ? HJx.brData(LE.due) : ''}" aria-label="Outra data (${HJx.fmtTxt()})"></div>
+      <div class="l-seg" role="group" aria-label="Prioridade"><span>prioridade</span>${['A','B','C',''].map(k => chip('pri:' + k, k === LE.pri, k || 'sem', k ? ' l-pc' : '')).join('')}</div>
+    </div>
+    <div class="l-prev"><span>vale <span class="l-xp">+${v.x} XP</span></span><span class="l-mult">${v.base} XP${v.ms.map(m => ' · ' + m + ' ×1,5').join('')}</span><span style="color:${NC(LTIPOS.find(x => x.k === LE.tipo).c)}">${esc(NEN[LTIPOS.find(x => x.k === LE.tipo).c].n)}</span></div>
+  </div>`;
+}
+/* chips e campos do editor: redesenha só a caixa, sem perder o que foi digitado no texto */
+function redesenhaEd(){
+  const box = document.getElementById('l-edbox'); if(!box) return;
+  LE.txt = document.getElementById('l-ed').value; box.outerHTML = edHTML(estado());
+}
+/* a data digitada só marca os botões e a prévia: redesenhar a caixa aqui comeria o clique no salvar que tirou o foco do campo */
+function dataEd(){
+  document.querySelectorAll('[data-le^="due:"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.le === 'due:' + LE.due));
+  const box = document.getElementById('l-edbox'); if(!box) return;
+  LE.txt = document.getElementById('l-ed').value;
+  box.querySelector('.l-prev').outerHTML = new DOMParser().parseFromString(edHTML(estado()), 'text/html').querySelector('.l-prev').outerHTML;
+}
 function ajudaL(){
   return `<table><tbody>${LTIPOS.map(t => `<tr><td style="color:${NC(t.c)}">${t.n}</td><td>${esc(t.d)}.<br><i>${esc(t.ex)}</i></td></tr>`).join('')}</tbody></table>
     <p style="margin:8px 0 0">Na dúvida, pense em quem cobra: alguém espera a entrega → <b>entrega</b>; é para a prova → <b>estudo</b>; programação ou projeto seu → <b>treino/projeto</b>. O jogo sugere o tipo pelas palavras do texto${window.HJ_IA && window.HJ_IA.ligada() ? ', e o botão <b>IA?</b> pergunta à IA' : ''}; clicar num tipo troca a sugestão.</p>`;
@@ -1885,10 +1930,9 @@ function formL(){
 function rowL(t, S, x){
   const v = x != null ? {x, ms:[]} : valeL(t, S), nen = nenDe(t), d = discOf(t), feita = !!t.done;
   const dc = t.due && !feita ? (t.due < HOJE ? ' l-late' : t.due === HOJE ? ' l-hoje' : '') : '';
-  const corpo = t.raw.replace(/^x \d{4}-\d\d-\d\d (\d{4}-\d\d-\d\d )?/, '').replace(/^\([A-Z]\) /, '').replace(/^\d{4}-\d\d-\d\d /, '');
   return `<li class="l-task${feita ? ' done' : ''}" style="--c:${NC(nen)}" data-ln="${t.n}">
     <button class="l-ck" data-l="${feita ? 'reopen' : 'done'}" aria-label="${feita ? 'reabrir' : 'concluir'}: ${esc(t.txt)}">${feita ? '✓' : ''}</button>
-    <div class="l-body">${UI.ledit === edKey(t) ? `<div class="l-edit"><input id="l-ed" value="${esc(HJx.brDatas(corpo))}" aria-label="Editar tarefa"><button class="btn" data-l="save" type="button">salvar</button><button class="btn" data-l="cancel" type="button">cancelar</button></div>`
+    <div class="l-body">${UI.ledit === edKey(t) ? edHTML(S)
       : `<span class="l-txt">${t.pri && !feita ? `<span class="l-pri ${t.pri}">${t.pri}</span>` : ''}${esc(t.txt)}</span>`}
       <span class="l-tags"><span class="l-tag nen">${esc(NEN[nen].n)}</span>${d ? `<span class="l-tag">${esc(d)}</span>` : ''}${t.due ? `<span class="l-tag${dc}">${dueTxt(t.due)}</span>` : ''}${isRec(t) ? '<span class="l-tag">rotina</span>' : ''}${window.HJ_EXP ? HJ_EXP.etiquetas(t, S) : ''}</span></div>
     <div class="l-right">${v.ms.length ? `<span class="l-mult" title="${v.base} XP · ${v.ms.map(m => m + ' ×1,5').join(' · ')}">${v.ms.join(' + ')}</span>` : ''}<span class="l-xp" title="${v.base != null ? v.base + ' XP de base' : 'XP ganho'}">+${v.x}</span>
@@ -2031,13 +2075,19 @@ document.addEventListener('click', async e => {
   if(q('[data-cfmmenos]')){ q('[data-cfmmenos]').closest('.toast').remove(); cfMao(true); return; }
   if(q('[data-lundo]')){ q('[data-lundo]').closest('.toast').remove(); acaoL(() => post('/api/undo', {}), ''); return; }
   if(q('#l-feitas summary')){ UI.ldone = !document.getElementById('l-feitas').open; return; }
+  const le = q('[data-le]'); if(le){ const [k, v] = le.dataset.le.split(/:(.*)/);
+    if(k === 'tipo'){ LE.tipo = v; if(v === 'fac' && !LE.disc && BOSSES[0]) LE.disc = BOSSES[0].d; if(v === 'vid') LE.disc = ''; }
+    else LE[k] = v;
+    redesenhaEd(); return; }
   const b = q('[data-l]'); if(!b) return;
   const n = +b.closest('[data-ln]').dataset.ln, t = D.abertas.concat(D.feitas).find(x => x.n === n); if(!t) return;
   const act = b.dataset.l;
-  if(act === 'edit'){ UI.ledit = edKey(t); render(); return; }
+  if(act === 'edit'){ abreEd(t); UI.ledit = edKey(t); render(); const ed = document.getElementById('l-ed'); if(ed){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); } return; }
   if(act === 'cancel'){ UI.ledit = null; render(); return; }
   if(act !== 'save') UI.ledit = null;
-  if(act === 'save'){ const v = document.getElementById('l-ed').value.trim(); UI.ledit = null; if(!v){ render(); return; } acaoL(() => post('/api/act', {raw:t.raw, action:'edit', value:v}), 'Tarefa editada'); return; }
+  if(act === 'save'){ LE.txt = document.getElementById('l-ed').value;
+    const dd = document.getElementById('l-eddate').value.trim(); if(dd){ const iso = HJx.isoData(dd, HOJE); if(!iso){ toast(HJx.dataRuim('')); return; } LE.due = iso; }
+    UI.ledit = null; if(!LE.txt.trim()){ render(); return; } const v = linhaEd(); acaoL(() => post('/api/act', {raw:t.raw, action:'edit', value:v, pri:LE.pri}), 'Tarefa editada'); return; }
   if(act === 'done'){ const antes = estado(), rr = b.getBoundingClientRect();
     try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
     const depois = estado(), dx = depois.total - antes.total; render();
@@ -2062,6 +2112,9 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   if(e.target.id === 'l-disc') prevL();
+  if(e.target.id === 'l-eddisc'){ LE.disc = e.target.value; if(!LE.disc && LE.tipo === 'fac') LE.tipo = 'vid'; redesenhaEd(); }
+  if(e.target.id === 'l-eddate'){ const iso = HJx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(HJx.dataRuim('')); return; }
+    LE.due = iso || ''; dataEd(); }
   if(e.target.id === 'l-date'){ const iso = HJx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(HJx.dataRuim('')); return; }
     LA.due = iso; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', false)); prevL(); }
 });

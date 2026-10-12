@@ -19,7 +19,7 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
 Rotas (as mesmas que web/demo.js simula no modo demonstração):
   GET  /api/jogo                          tudo o que a página precisa
   GET  /api/backup                        ZIP da pasta de dados (botão "baixar meus dados" na aba Configurações)
-  POST /api/act   {raw, action, value?}   done | reopen | delete | up | down | d1 | d7 | a1 | hoje | amanha | rmdue | setdate | edit
+  POST /api/act   {raw, action, value?, pri?}   done | reopen | delete | up | down | d1 | d7 | a1 | hoje | amanha | rmdue | setdate | edit
   POST /api/add   {text}                  linha no formato todo.txt; due:hoje|amanha|+N|DD/MM|AAAA-MM-DD
   POST /api/undo  {}                      desfaz a última operação deste servidor
   POST /api/config {jogador, avaliacoes?} grava jogador.json (e avaliacoes.txt) e refaz os hábitos de hoje
@@ -290,6 +290,11 @@ def api_act(d):
         if d.get("action") == "delete":
             return linhas.pop(i), None
         nova = transformar(linhas[i], str(d.get("action")), d.get("value"))
+        if d.get("action") == "edit" and "pri" in d:   # o editor completo da Lista troca a prioridade junto ("" = sem)
+            letra = str(d.get("pri") or "").upper()
+            if letra and not re.fullmatch(r"[A-Z]", letra):
+                raise Erro("prioridade inválida")
+            nova = set_pri(nova, letra or None)
         antes, linhas[i] = linhas[i], nova
         return antes, nova
     return operar(fn)

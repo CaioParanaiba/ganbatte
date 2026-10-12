@@ -127,7 +127,7 @@ No Windows, use `curl.exe` (no PowerShell, `curl` sozinho é outro comando) e as
 |---|---|---|
 | `GET /api/jogo` | — | tudo de uma vez: `todo`, `done` (listas de linhas), `avaliacoes`, `notas`, `ajustes` (texto), `narradas`, `jogador`, `hoje` |
 | `POST /api/add` | `{"text": "linha"}` | nova tarefa (o jogo põe a data de criação) |
-| `POST /api/act` | `{"raw": "linha exata", "action": "...", "value": "..."}` | mexe numa tarefa: `edit` (value = novo texto, sem prioridade nem data de criação), `up`, `down`, `d1` (adia 1 dia), `setdate` (value = data), `rmdue`, `delete`, `done` (só se o jogador pediu) |
+| `POST /api/act` | `{"raw": "linha exata", "action": "...", "value": "..."}` | mexe numa tarefa: `edit` (value = novo texto, sem prioridade nem data de criação; `"pri": "A"` ou `""` troca a prioridade junto), `up`, `down`, `d1` (adia 1 dia), `setdate` (value = data), `rmdue`, `delete`, `done` (só se o jogador pediu) |
 | `POST /api/jogo/planos` | `{"avaliacoes": "arquivo inteiro"}` | grava o `avaliacoes.txt` (o anterior vai para `.bak`). Pode mandar `"notas"` junto |
 | `POST /api/jogo/nota` | `{"disc": "CALC2", "aval": "P1", "nota": 7.5, "parcial": false}` | lança uma nota (0 a 10). `parcial: true` = uma das entregas de uma avaliação contínua |
 | `POST /api/jogo/ajuste` | `{"quando": "...", "texto": "...", "aplicado": true}` | marca um lembrete da caixa de entrada como aplicado (`quando` e `texto` exatamente como no arquivo) |
