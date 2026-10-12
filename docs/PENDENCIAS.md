@@ -193,6 +193,11 @@ O que entrou:
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
+**0.6.2-beta4** (12/10/2026, issue #14): `resumo(v, cab)` à direita de cada grade (`.l-hrow` = grade + `.l-hres` de
+290px): média de `v(d)` por dia da semana nos dias já vividos do semestre (`VIVIDOS`; hoje só se já tem algo) e o número
+da temporada; some com `@container (max-width:860px)`. A grade vai até a véspera de `TEMP.volta` (`FIMG`); os dias de
+`fer()` ficam com `.fer` (verde tracejado) quando vazios e não entram nas médias nem nas semanas na meta.
+
 **0.6.2-beta3** (12/10/2026, issue #14): heatmaps da Lista de `TEMP.ini` a `TEMP.fim` (da segunda da semana do início
 ao domingo da do fim, `NS` colunas); dias fora da temporada com `.fora` (ocultos), o `hd` ignora o feito antes do `ini`.
 `.l-hg` com `grid-template-columns:repeat(var(--n),minmax(12px,26px))` e `aspect-ratio:1`. Título com `TEMP.nome`.

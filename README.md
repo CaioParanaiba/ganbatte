@@ -162,6 +162,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.2-beta4 | atualização das expedições | Resumo ao lado dos heatmaps da Lista (barra por dia da semana e número da temporada) e as férias no fim da grade |
 | 0.6.2-beta3 | atualização das expedições | Heatmaps da Lista do início ao fim da temporada, com quadradinhos que ocupam a largura (#14) |
 | 0.6.2-beta2 | atualização das expedições | Provar temas, fundos, efeitos, molduras e fontes, com o jogo travado durante a prova; Semestre com os meses da temporada (#2); Codeforces não perde dias além de 10 mil envios (#1) |
 | 0.6.2-beta1 | atualização das expedições | Provar paleta na Masadora antes de comprar (#29); Codeforces lido só desde o início da temporada, com paginação da API |

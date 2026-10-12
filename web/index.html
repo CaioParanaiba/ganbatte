@@ -1048,6 +1048,18 @@ a.btn{display:inline-block;text-decoration:none}
 .l-hg i.h3{background:color-mix(in srgb,var(--c) 80%,var(--track))} .l-hg i.h4{background:var(--c)}
 .l-hg i.z{background:color-mix(in srgb,var(--aura) 45%,var(--track))} .l-hg i.fut{background:none;outline:1px dashed var(--hair);outline-offset:-1px}
 .l-hg i.hj{outline:2px solid var(--ink);outline-offset:0} .l-hg i.fora{visibility:hidden}
+.l-hg i.fer,.l-hl i.fer{background:color-mix(in srgb,var(--grn) 14%,transparent);outline:1px dashed color-mix(in srgb,var(--grn) 60%,transparent);outline-offset:-1px}
+/* à direita de cada heatmap: uma barra por dia da semana, na altura da linha dele, e o número da temporada; some em bloco estreito */
+.l-const{container-type:inline-size}
+.l-hrow{display:flex;gap:20px;align-items:stretch;min-width:0} .l-hrow .l-hg{flex:0 1 auto;min-width:0}
+.l-hres{flex:0 0 290px;display:flex;gap:16px;padding:2px 0}   /* mesma largura em todas as linhas: as grades ficam do mesmo tamanho */
+.l-hds{display:grid;grid-template-rows:repeat(7,1fr);gap:3px;width:150px}
+.l-hds span{display:grid;grid-template-columns:28px 1fr 32px;align-items:center;gap:6px;min-height:0;font:10.5px var(--f-mono);color:var(--faint)}
+.l-hds em{font-style:normal} .l-hds small{text-align:right;font-size:10.5px}
+.l-hds b{display:block;height:6px;border-radius:3px;background:var(--track);overflow:hidden} .l-hds b i{display:block;height:100%;background:var(--c)}
+.l-hds .fr{color:var(--ink)} .l-hds .fr em{font-weight:700}
+.l-hcab strong{display:block;font:600 20px var(--f-mono);color:var(--ink);line-height:1.1} .l-hcab small{display:block;max-width:120px;margin-top:3px;font:11px var(--f-mono);color:var(--soft)}
+@container (max-width:860px){.l-hres{display:none}}
 .l-hl{grid-column:2;display:flex;gap:4px;align-items:center;font:10.5px var(--f-mono);color:var(--faint);margin-top:-8px}
 .l-hl i{width:10px;height:10px;border-radius:2px;display:inline-block}
 .l-hb{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--hair)}
@@ -1373,7 +1385,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.2-beta3';
+const VERSAO_PAGINA = '0.6.2-beta4';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -2039,26 +2051,47 @@ function habitosL(S){
     : `<button class="go l-ontb" data-ontemabre="1">esqueci de marcar ontem</button>`;
   document.getElementById('l-hab').innerHTML = h || `<p class="sub" style="margin:0">Nenhum hábito. Adicione na aba Configurações (digitação, leitura, exercício…) ou ligue o Codeforces.</p>`;
   /* heatmaps: a temporada inteira, uma coluna por semana (seg → dom); os dias fora dela na 1ª e na última semana ficam ocultos (#14) */
-  const ini = addD(TEMP.ini, -dow(TEMP.ini)), NS = Math.max(1, Math.ceil((dias(ini, TEMP.fim) + 1) / 7));
-  const DIAS = Array.from({length:NS*7}, (_,i) => addD(ini, i)), fora = d => d < TEMP.ini || d > TEMP.fim;
-  const grade = (cor, nivel, tt) => `<div class="l-hg" style="--c:${cor};--n:${NS}">${DIAS.map(d => fora(d) ? '<i class="fora"></i>' : d > HOJE ? '<i class="fut"></i>' : `<i class="${nivel(d)}${d === HOJE ? ' hj' : ''}" title="${ddmm(d)} · ${tt(d)}"></i>`).join('')}</div>`;
+  /* as férias (do fim do semestre à véspera da volta às aulas) vêm no fim da grade, em verde tracejado como no Semestre:
+     dia de férias sem nada não é falha */
+  const FIMG = TEMP.volta && TEMP.volta > TEMP.fim ? addD(TEMP.volta, -1) : TEMP.fim, fer = d => d > TEMP.fim && d <= FIMG;
+  const ini = addD(TEMP.ini, -dow(TEMP.ini)), NS = Math.max(1, Math.ceil((dias(ini, FIMG) + 1) / 7));
+  const DIAS = Array.from({length:NS*7}, (_,i) => addD(ini, i)), fora = d => d < TEMP.ini || d > FIMG;
+  const grade = (cor, nivel, tt, res) => `<div class="l-hrow" style="--c:${cor}"><div class="l-hg" style="--n:${NS}">${DIAS.map(d => fora(d) ? '<i class="fora"></i>'
+    : d > HOJE ? `<i class="${fer(d) ? 'fer' : 'fut'}"${fer(d) ? ` title="${ddmm(d)} · férias"` : ''}></i>`
+    : `<i class="${nivel(d) || (fer(d) ? 'fer' : '')}${d === HOJE ? ' hj' : ''}" title="${ddmm(d)} · ${tt(d)}${fer(d) ? ' · férias' : ''}"></i>`).join('')}</div>${res || ''}</div>`;
+  /* resumo à direita: v(d) de 0 a 1 por dia já vivido da temporada (hoje só conta se já tem algo), média por dia da semana
+     (o mais fraco em destaque, se for um só) e cab(média, dias) = [número, legenda] */
+  const DSEM = ['seg','ter','qua','qui','sex','sáb','dom'], VIVIDOS = DIAS.filter(d => !fora(d) && !fer(d) && d <= HOJE);   // as médias são do semestre; férias não cobram
+  const cabRes = (a, b) => `<div class="l-hcab"><strong>${a}</strong><small>${b}</small></div>`;
+  const resumo = (v, cab) => {
+    const sm = [0,0,0,0,0,0,0], n = [0,0,0,0,0,0,0], ds = VIVIDOS.filter(d => d < HOJE || v(d) > 0);
+    for(const d of ds){ sm[dow(d)] += v(d); n[dow(d)]++; }
+    const r = sm.map((x,i) => n[i] ? x / n[i] : null), ok = r.filter(x => x !== null), min = Math.min(...ok), pc = x => Math.round(x * 100);
+    const barras = DSEM.map((nm,i) => r[i] === null ? '<span></span>'
+      : `<span class="${ok.filter(x => x === min).length === 1 && r[i] === min && min < Math.max(...ok) ? 'fr' : ''}" title="${nm}: ${pc(r[i])}% em ${n[i]} dia(s)"><em>${nm}</em><b><i style="width:${pc(r[i])}%"></i></b><small>${pc(r[i])}%</small></span>`).join('');
+    const [a, b] = cab(ds.length ? sm.reduce((x,y) => x + y, 0) / ds.length : 0, ds);
+    return `<div class="l-hres"><div class="l-hds">${barras}</div>${cabRes(a, b)}</div>`;
+  };
   /* "Hábitos" = só os diários (um quadradinho por dia); cada semanal ganha a sua linha, um quadradinho por semana */
   const semanais = (J.habitos || []).filter(x => x.semana), ehSem = new Set(semanais.map(x => x.id));
   const diarios = (J.habitos || []).filter(x => !x.semana);
   const nh = Math.max(1, diarios.length || ((J.habitos || []).length ? 0 : new Set(D.feitas.filter(t => isRec(t) && !isCF(t)).map(recId)).size));
   const hd = {}; for(const t of D.feitas) if(isRec(t) && !isCF(t) && t.done >= TEMP.ini && !ehSem.has(recId(t))) hd[t.done] = (hd[t.done]||0) + 1;
   const SEMS = Array.from({length:NS}, (_,i) => addD(ini, 7*i));
-  const gradeSem = (x, cor) => `<div class="l-hg sem" style="--c:${cor};--n:${NS}">${SEMS.map(s => { const n = naSemana(x.id, s), fut = s > HOJE;
-    return fut ? '<i class="fut"></i>' : `<i class="${lv(n / x.semana)}${s === SEG ? ' hj' : ''}" title="semana de ${ddmm(s)} · ${n} de ${x.semana}"></i>`; }).join('')}</div>`;
+  const gradeSem = (x, cor) => { const conta = SEMS.filter(s => s <= TEMP.fim && (s < SEG || (s === SEG && naSemana(x.id, s) >= x.semana))), na = conta.filter(s => naSemana(x.id, s) >= x.semana).length;
+    return `<div class="l-hrow" style="--c:${cor}"><div class="l-hg sem" style="--n:${NS}">${SEMS.map(s => { const n = naSemana(x.id, s), fut = s > HOJE;
+    return fut ? `<i class="${s > TEMP.fim ? 'fer' : 'fut'}"></i>` : `<i class="${lv(n / x.semana) || (s > TEMP.fim ? 'fer' : '')}${s === SEG ? ' hj' : ''}" title="semana de ${ddmm(s)} · ${n} de ${x.semana}${s > TEMP.fim ? ' · férias' : ''}"></i>`; }).join('')}</div>${conta.length ? `<div class="l-hres">${cabRes(`${na} de ${conta.length}`, 'semanas na meta')}</div>` : ''}</div>`; };
   const cfd = (D.cf && D.cf.por_dia) || {};
   const lv = r => r <= 0 ? '' : r < .34 ? 'h1' : r < .67 ? 'h2' : r < 1 ? 'h3' : 'h4';
-  const leg = cor => `<div class="l-hl">menos ${['','h1','h2','h3','h4'].map(c => `<i style="background:${c ? `color-mix(in srgb,${cor} ${({h1:30,h2:55,h3:80,h4:100})[c]}%,var(--track))` : 'var(--track)'}"></i>`).join('')} mais</div>`;
+  const leg = cor => `<div class="l-hl">menos ${['','h1','h2','h3','h4'].map(c => `<i style="background:${c ? `color-mix(in srgb,${cor} ${({h1:30,h2:55,h3:80,h4:100})[c]}%,var(--track))` : 'var(--track)'}"></i>`).join('')} mais${FIMG > TEMP.fim ? ' <i class="fer" style="margin-left:10px"></i> férias' : ''}</div>`;
   let H = `<div class="l-hm">
-    <span class="nm">Ten<small>${S.ten.cur} dias · recorde ${S.ten.max}</small></span>${grade('var(--grn)', d => S.ten.st[d] === 'on' ? 'h4' : S.ten.st[d] === 'z' ? 'z' : '', d => S.ten.st[d] === 'on' ? 'ativo' : S.ten.st[d] === 'z' ? 'Zetsu' : 'vazio')}
-    ${diarios.length || !(J.habitos || []).length ? `<span class="nm">Hábitos<small>${nh} por dia</small></span>${grade(NC(4), d => lv((hd[d]||0)/nh), d => `${hd[d]||0} de ${nh}`)}` : ''}
+    <span class="nm">Ten<small>${S.ten.cur} dias · recorde ${S.ten.max}</small></span>${grade('var(--grn)', d => S.ten.st[d] === 'on' ? 'h4' : S.ten.st[d] === 'z' ? 'z' : '', d => S.ten.st[d] === 'on' ? 'ativo' : S.ten.st[d] === 'z' ? 'Zetsu' : 'vazio',
+      resumo(d => S.ten.st[d] === 'on' || S.ten.st[d] === 'z' ? 1 : 0, m => [`${Math.round(m*100)}%`, 'dos dias com o Ten aceso']))}
+    ${diarios.length || !(J.habitos || []).length ? `<span class="nm">Hábitos<small>${nh} por dia</small></span>${grade(NC(4), d => lv((hd[d]||0)/nh), d => `${hd[d]||0} de ${nh}`, resumo(d => Math.min(1, (hd[d]||0)/nh), m => [`${Math.round(m*100)}%`, 'dos hábitos diários feitos']))}` : ''}
     ${semanais.map(x => `<span class="nm">${esc(x.n)}<small>${x.semana}× por semana</small></span>${gradeSem(x, NC(4))}`).join('')}`;
   const cfm = (D.cf && D.cf.manual) || {};
-  if(J.cf && J.cf.handle) H += `<span class="nm">Codeforces<small>${esc(J.cf.handle)} · meta ${meta}${cfMaoBtn()}</small></span>${grade(NC(1), d => { const n = cfd[d]||0; return !n ? '' : n < meta ? (n < meta/2 ? 'h1' : 'h2') : n === meta ? 'h3' : 'h4'; }, d => `${cfd[d]||0} problema(s)${cfm[d] ? ` (${cfm[d]} à mão)` : ''}`)}`;
+  if(J.cf && J.cf.handle) H += `<span class="nm">Codeforces<small>${esc(J.cf.handle)} · meta ${meta}${cfMaoBtn()}</small></span>${grade(NC(1), d => { const n = cfd[d]||0; return !n ? '' : n < meta ? (n < meta/2 ? 'h1' : 'h2') : n === meta ? 'h3' : 'h4'; }, d => `${cfd[d]||0} problema(s)${cfm[d] ? ` (${cfm[d]} à mão)` : ''}`,
+    resumo(d => Math.min(1, (cfd[d]||0)/meta), (m, ds) => [ds.reduce((x,d) => x + (cfd[d]||0), 0), `problemas · ${ds.filter(d => (cfd[d]||0) >= meta).length} dias na meta`]))}`;
   H += `</div>${leg('var(--soft)')}`;
   if(!(J.cf && J.cf.handle)) H += `<p class="sub" style="margin:10px 0 0">Faz Codeforces? Ligue em <button class="go" data-go="cfg">Configurações →</button> com o seu handle e ganhe o heatmap e o XP automáticos.</p>`;
   document.getElementById('l-heat').innerHTML = H;

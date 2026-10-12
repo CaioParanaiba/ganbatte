@@ -10,6 +10,12 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.2-beta4", "nome": "atualização das expedições", "data": "2026-10-12",
+   "resumo": "Ao lado de cada heatmap, como você vai em cada dia da semana; e as férias aparecem no fim da grade.",
+   "itens": [
+     {"ic": "flame", "t": "Resumo da constância", "d": "À direita de cada heatmap da Lista, uma barra por dia da semana mostra quanto você cumpre em cada um (o mais fraco em destaque), com o número da temporada: % de dias com o Ten, % dos hábitos, semanas na meta, problemas do Codeforces. Em tela estreita, só o heatmap."},
+     {"ic": "scroll", "t": "Férias no heatmap", "d": "A grade vai até a volta às aulas, com as férias em verde tracejado, como no Semestre. Dia de férias sem nada não é falha, e as médias contam só o semestre."}
+   ]},
   {"versao": "0.6.2-beta3", "nome": "atualização das expedições", "data": "2026-10-12",
    "resumo": "Os heatmaps da Lista mostram a sua temporada inteira.",
    "itens": [
