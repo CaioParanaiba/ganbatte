@@ -64,8 +64,8 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.5.9-beta2"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
-VERSAO_NOME = "atualização das conquistas"   # nome da série 0.5 (aparece em Configurações → servidor)
+VERSAO = "0.6"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
+VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
 DADOS = Path()   # definido em main()

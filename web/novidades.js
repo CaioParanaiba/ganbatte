@@ -1,77 +1,76 @@
 /* Hunter.todo · aba Novidades: o que mudou em cada versão e o aviso de versão nova.
  * A lista entre os marcadores abaixo é JSON puro: o servidor lê a do GitHub (GET /api/atualizacao, no máximo a cada 6 h)
  * para saber se saiu versão nova. Ao lançar uma versão, ponha a nova no topo (a mesma do VERSAO do servidor.py).
+ * Versão grande (X.Y, com nome novo): uma entrada só, com os destaques em "itens" e as versões que levaram até ela em
+ * "versoes" (mesmo formato, recolhidas na aba). As X.Y.Z seguintes ficam soltas no topo até a próxima versão grande.
+ * O servidor e as páginas antigas só leem as entradas de fora, então "versoes" não atrapalha quem ainda vai atualizar.
+ * Quem atualiza para uma versão grande vê os destaques numa janela grande, uma vez (boasNovas).
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
-  {"versao": "0.5.9-beta2", "nome": "atualização das conquistas", "data": "2026-10-12",
-   "resumo": "A aba Expedições ganha tutorial e as cinco formas de ver ficam de vez; o quanto vale da Lista abre só quando você quer.",
+  {"versao": "0.6", "nome": "atualização das expedições", "data": "2026-10-12",
+   "resumo": "Tarefas simples na Lista, projetos grandes nas Expedições. A maior atualização desde a 0.5: caçadas, uma aba nova para projetos longos, editar tarefa por completo e 40 itens novos na Masadora.",
    "itens": [
-     {"ic": "island", "t": "Expedições: formas de ver", "d": "Cards, trilha, quadro, foco e cronograma deixam de ser teste e ficam todas: é a mesma expedição desenhada de cinco jeitos, escolha em \"ver como\". A aba ganhou o seu ? tutorial, que explica marcos, tarefas soltas, semanas ativas e o bônus de concluir."},
-     {"ic": "scroll", "t": "Quanto vale recolhido", "d": "Na lateral da Lista, o quanto vale fica fechado, só com o título. Um clique abre a tabela de sempre."}
-   ]},
-  {"versao": "0.5.9-beta1", "nome": "atualização das conquistas", "data": "2026-10-12",
-   "resumo": "Editar uma tarefa agora muda o tipo, a disciplina, o prazo e a prioridade, não só o texto.",
-   "itens": [
-     {"ic": "scroll", "t": "Editar tarefa por completo", "d": "O ✎ abre os detalhes da tarefa já preenchidos: texto, tipo (entrega, estudo, treino...), disciplina, prazo e prioridade, com quanto ela passa a valer. Enter salva, Esc cancela. O que fica escondido na linha (avaliação, caçada, rotina) não se perde."}
-   ]},
-  {"versao": "0.5.8-beta2", "nome": "atualização das conquistas", "data": "2026-10-12",
-   "resumo": "Correções: o mundo pixel mostra o seu nome, a fúria do chefão aparece inteira e a edição de tarefa não abre sozinha.",
-   "itens": [
-     {"ic": "tower", "t": "Mundo pixel com o seu nome", "d": "O mapa, a ficha e a licença do Book mostravam o nome de quem fez o jogo. Agora mostram o seu nome, o seu tipo de Nen mais forte e a sua foto de perfil."},
-     {"ic": "spider", "t": "Fúria visível", "d": "No cartão do chefão, o selo de fúria não fica mais embaixo da marca de aprovação da barra de vida."},
-     {"ic": "scroll", "t": "Editar tarefa", "d": "Apagar ou adicionar uma tarefa com a edição aberta fazia outra tarefa abrir sozinha para editar. Corrigido, e a edição ganhou um botão cancelar."}
-   ]},
-  {"versao": "0.5.8-beta1", "nome": "atualização das conquistas", "data": "2026-10-12",
-   "resumo": "Caçadas para dividir uma tarefa grande em etapas, a aba Expedições para projetos longos e a Lista mais limpa.",
-   "itens": [
-     {"ic": "card", "t": "Caçadas", "d": "Uma tarefa grande vira uma caçada: as etapas ficam juntas na Lista, com uma barra de quantas faltam, e cada uma vale o XP normal. Para criar, escolha \"+ nova caçada\" em detalhes, ou aperte C e escreva uma etapa por linha (\"amanhã\" ou uma data no fim da linha vira o prazo)."},
-     {"ic": "island", "t": "Expedições", "d": "Uma aba nova para projetos que duram semanas, fora das disciplinas (TCC, app, iniciação científica). Cada marco é uma caçada: fechar um marco dá 5 XP por etapa e 6 por dia diferente em que você trabalhou nele; concluir a expedição dá +10 XP por semana ativa. Na beta dá para trocar entre cinco visões (cards, trilha, quadro, foco e cronograma) e escolher a melhor."},
-     {"ic": "scroll", "t": "Lista mais limpa", "d": "O campo de tarefa nova mostra só o texto e quanto ela vale; tipo, disciplina, prazo, prioridade e caçada ficam em detalhes. A tecla N abre o formulário completo de qualquer aba. O topo virou um bloco só, com a missão da semana no canto."},
-     {"ic": "antenna", "t": "Versões de teste com nome de teste", "d": "As versões da beta passam a se chamar 0.5.8-beta1, 0.5.8-beta2 e assim por diante. A versão normal recebe tudo de uma vez, como 0.5.8."}
-   ]},
-  {"versao": "0.5.7", "nome": "atualização das conquistas", "data": "2026-10-11",
-   "resumo": "Na versão de teste, a Masadora ganhou um modo teste com Jenny infinita.",
-   "itens": [
-     {"ic": "coin", "t": "Modo teste (só na beta)", "d": "Na carteira da Masadora, o botão modo teste dá Jenny infinita para experimentar qualquer item. É temporário: nada do que você comprar ou equipar fica guardado, e sair, recarregar a página ou voltar para a versão normal devolve a sua loja como estava. Feitiços e prêmios reais ficam fora."}
-   ]},
-  {"versao": "0.5.6", "nome": "atualização das conquistas", "data": "2026-10-11",
-   "resumo": "Dá para receber as versões novas antes, ainda em teste.",
-   "itens": [
-     {"ic": "antenna", "t": "Versões de teste", "d": "Em Configurações → servidor, marque Receber versões de teste (beta) para ganhar as novidades antes da versão normal. Podem vir com erros; desmarcar volta para a normal. Só no jogo instalado com git."}
-   ]},
-  {"versao": "0.5.5", "nome": "atualização das conquistas", "data": "2026-10-11",
-   "resumo": "O botão de atualizar não falha mais quando o jogo foi baixado por SSH.",
-   "itens": [
-     {"ic": "antenna", "t": "Atualizar", "d": "Se o git não consegue usar a sua chave SSH (o jogo liga antes dela), a atualização baixa a versão nova pelo endereço público do GitHub."}
-   ]},
-  {"versao": "0.5.4", "nome": "atualização das conquistas", "data": "2026-10-11",
-   "resumo": "A Masadora ganhou 40 itens novos: animações ao concluir tarefas, sons, fontes e quatro temas completos.",
-   "itens": [
-     {"ic": "spider", "t": "Na hora da conquista", "d": "Efeitos que disparam ao concluir uma tarefa: Godspeed (um raio que corta a tela), Cartas do Hisoka, Jajanken (PEDRA!) e fogos de artifício no andar novo. O botão ▶ mostra cada um antes de comprar."},
-     {"ic": "antenna", "t": "Sons", "d": "Moeda, Golpe, Sino do templo e Fanfarra 8-bit tocam ao concluir uma tarefa e no andar novo. Dá para deixar mudo em Configurações."},
-     {"ic": "scroll", "t": "Fontes", "d": "Máquina de escrever, Mangá, Pixel e Arcade japonês mudam a letra dos títulos e dos números."},
-     {"ic": "coin", "t": "Mais aparência", "d": "Seis paletas (Pergaminho, Zoldyck, Genei Ryodan, Greed Island, Continente Negro e a Aurora), quatro texturas (teia, colmeia, fliperama, papel), Gyo, Poeira de Nen, Rastro de aura, Terminal vivo, Corrente de Kurapika, três molduras e títulos que só abrem com conquistas."},
-     {"ic": "tower", "t": "Temas completos", "d": "Genei Ryodan, Greed Island e Zoldyck, mais baratos que as peças separadas, e Ascensão, o tema lendário de 25.000 J, com uma aurora girando atrás da página inteira."}
-   ]},
-  {"versao": "0.5.3", "nome": "atualização das conquistas", "data": "2026-10-10",
-   "resumo": "O XP dos dias passados fica guardado, e corrigir uma nota não deixa mais a carteira negativa.",
-   "itens": [
-     {"ic": "tower", "t": "Dias passados guardados", "d": "O XP de cada dia que já acabou fica guardado. Se uma tarefa concluída sumir do todo.txt ou do done.txt (uma IA reescrevendo os arquivos, um archive, uma linha apagada), o XP e a Jenny daquele dia continuam. Marcar algo que você esqueceu ontem ainda soma, e desmarcar uma tarefa de hoje ainda tira."},
-     {"ic": "coin", "t": "Nota corrigida sem dívida", "d": "Corrigir uma nota para menos tira o bônus de diferença só até zerar a carteira. O que passar disso é perdoado e aparece em acertos, na carteira da Masadora."}
-   ]},
-  {"versao": "0.5.2", "nome": "atualização das conquistas", "data": "2026-10-10",
-   "resumo": "A Jenny e o XP que você ganhou não somem mais quando o plano de avaliações muda.",
-   "itens": [
-     {"ic": "coin", "t": "Bônus de nota guardado", "d": "O bônus de cada nota agora fica com o peso do dia em que a nota entrou. Antes ele era refeito com o peso atual: se você ou a IA corrigiam um peso para menos depois de você gastar, a carteira ficava negativa. Mudar o plano não tira mais Jenny; corrigir a própria nota ajusta só a diferença."},
-     {"ic": "spider", "t": "Fúria guardada", "d": "As tarefas feitas com o chefão em fúria ficam com o ×1,5 para sempre. Antes, quando o chefão saía da fúria ou entrava outra nota, o bônus sumia das tarefas antigas, e com ele XP e Jenny."},
-     {"ic": "scroll", "t": "Carteira negativa zerada", "d": "Se a sua carteira tinha ficado negativa por esse problema, o jogo devolveu uma vez o que faltava para zerar. Aparece como acerto da 0.5.2 na carteira da Masadora."}
-   ]},
-  {"versao": "0.5.1", "nome": "atualização das conquistas", "data": "2026-10-10",
-   "resumo": "Achou um bug ou teve uma ideia? Agora dá para mandar direto do jogo.",
-   "itens": [
-     {"ic": "fb", "t": "Feedback pelo jogo", "d": "O balão no canto direito da tela, em qualquer aba, manda um bug, uma ideia ou uma dúvida. O jogo abre a página do GitHub já preenchida com a sua versão, o sistema e a aba; é só conferir e clicar em Create. Sem conta no GitHub, copie o texto e mande por mensagem."}
+     {"ic": "island", "t": "Expedições", "d": "Uma aba nova para projetos que duram semanas ou meses, fora das disciplinas: TCC, um app seu, iniciação científica. Cada marco é uma caçada; fechar um marco dá bônus por etapa e por dia trabalhado, e concluir a expedição paga cada semana ativa. Dá para ver de cinco jeitos (cards, trilha, quadro, foco e cronograma), e a aba tem tutorial."},
+     {"ic": "card", "t": "Caçadas", "d": "Uma tarefa grande vira uma caçada: as etapas ficam juntas na Lista, com uma barra de quantas faltam, e cada uma vale o XP normal. Crie em detalhes → caçada, ou aperte C e escreva uma etapa por linha."},
+     {"ic": "coin", "t": "40 itens novos na Masadora", "d": "Efeitos na hora da conquista (Godspeed, Cartas do Hisoka, Jajanken, fogos no andar novo), sons, fontes, seis paletas, texturas, molduras, títulos e quatro temas completos, entre eles a Ascensão, o lendário de 25.000 J."},
+     {"ic": "scroll", "t": "Editar tarefa por completo", "d": "O ✎ abre os detalhes da tarefa já preenchidos: texto, tipo, disciplina, prazo e prioridade, mostrando quanto ela passa a valer. O que fica escondido na linha (avaliação, caçada, rotina) não se perde."},
+     {"ic": "tower", "t": "Lista mais limpa", "d": "O campo de tarefa nova mostra só o texto e quanto vale; o resto fica em detalhes. A tecla N abre o formulário de qualquer aba, o topo virou um bloco só e o quanto vale fica recolhido na lateral."},
+     {"ic": "antenna", "t": "Versões de teste", "d": "Em Configurações → servidor, receba as novidades antes, ainda em teste (beta). E o botão de atualizar não falha mais quando o jogo foi baixado por SSH."},
+     {"ic": "spider", "t": "Correções", "d": "O mundo pixel mostra o seu nome, o seu Nen e a sua foto (não mais os de quem fez o jogo); o selo de fúria do chefão não fica escondido; editar uma tarefa não abre outra sozinha."}
+   ],
+   "versoes": [
+     {"versao": "0.5.9-beta2", "nome": "atualização das conquistas", "data": "2026-10-12",
+      "resumo": "A aba Expedições ganha tutorial e as cinco formas de ver ficam de vez; o quanto vale da Lista abre só quando você quer.",
+      "itens": [
+        {"ic": "island", "t": "Expedições: formas de ver", "d": "Cards, trilha, quadro, foco e cronograma deixam de ser teste e ficam todas: é a mesma expedição desenhada de cinco jeitos, escolha em \"ver como\". A aba ganhou o seu ? tutorial, que explica marcos, tarefas soltas, semanas ativas e o bônus de concluir."},
+        {"ic": "scroll", "t": "Quanto vale recolhido", "d": "Na lateral da Lista, o quanto vale fica fechado, só com o título. Um clique abre a tabela de sempre."}
+      ]},
+     {"versao": "0.5.9-beta1", "nome": "atualização das conquistas", "data": "2026-10-12",
+      "resumo": "Editar uma tarefa agora muda o tipo, a disciplina, o prazo e a prioridade, não só o texto.",
+      "itens": [
+        {"ic": "scroll", "t": "Editar tarefa por completo", "d": "O ✎ abre os detalhes da tarefa já preenchidos: texto, tipo (entrega, estudo, treino...), disciplina, prazo e prioridade, com quanto ela passa a valer. Enter salva, Esc cancela. O que fica escondido na linha (avaliação, caçada, rotina) não se perde."}
+      ]},
+     {"versao": "0.5.8-beta2", "nome": "atualização das conquistas", "data": "2026-10-12",
+      "resumo": "Correções: o mundo pixel mostra o seu nome, a fúria do chefão aparece inteira e a edição de tarefa não abre sozinha.",
+      "itens": [
+        {"ic": "tower", "t": "Mundo pixel com o seu nome", "d": "O mapa, a ficha e a licença do Book mostravam o nome de quem fez o jogo. Agora mostram o seu nome, o seu tipo de Nen mais forte e a sua foto de perfil."},
+        {"ic": "spider", "t": "Fúria visível", "d": "No cartão do chefão, o selo de fúria não fica mais embaixo da marca de aprovação da barra de vida."},
+        {"ic": "scroll", "t": "Editar tarefa", "d": "Apagar ou adicionar uma tarefa com a edição aberta fazia outra tarefa abrir sozinha para editar. Corrigido, e a edição ganhou um botão cancelar."}
+      ]},
+     {"versao": "0.5.8-beta1", "nome": "atualização das conquistas", "data": "2026-10-12",
+      "resumo": "Caçadas para dividir uma tarefa grande em etapas, a aba Expedições para projetos longos e a Lista mais limpa.",
+      "itens": [
+        {"ic": "card", "t": "Caçadas", "d": "Uma tarefa grande vira uma caçada: as etapas ficam juntas na Lista, com uma barra de quantas faltam, e cada uma vale o XP normal. Para criar, escolha \"+ nova caçada\" em detalhes, ou aperte C e escreva uma etapa por linha (\"amanhã\" ou uma data no fim da linha vira o prazo)."},
+        {"ic": "island", "t": "Expedições", "d": "Uma aba nova para projetos que duram semanas, fora das disciplinas (TCC, app, iniciação científica). Cada marco é uma caçada: fechar um marco dá 5 XP por etapa e 6 por dia diferente em que você trabalhou nele; concluir a expedição dá +10 XP por semana ativa. Na beta dá para trocar entre cinco visões (cards, trilha, quadro, foco e cronograma) e escolher a melhor."},
+        {"ic": "scroll", "t": "Lista mais limpa", "d": "O campo de tarefa nova mostra só o texto e quanto ela vale; tipo, disciplina, prazo, prioridade e caçada ficam em detalhes. A tecla N abre o formulário completo de qualquer aba. O topo virou um bloco só, com a missão da semana no canto."},
+        {"ic": "antenna", "t": "Versões de teste com nome de teste", "d": "As versões da beta passam a se chamar 0.5.8-beta1, 0.5.8-beta2 e assim por diante. A versão normal recebe tudo de uma vez, como 0.5.8."}
+      ]},
+     {"versao": "0.5.7", "nome": "atualização das conquistas", "data": "2026-10-11",
+      "resumo": "Na versão de teste, a Masadora ganhou um modo teste com Jenny infinita.",
+      "itens": [
+        {"ic": "coin", "t": "Modo teste (só na beta)", "d": "Na carteira da Masadora, o botão modo teste dá Jenny infinita para experimentar qualquer item. É temporário: nada do que você comprar ou equipar fica guardado, e sair, recarregar a página ou voltar para a versão normal devolve a sua loja como estava. Feitiços e prêmios reais ficam fora."}
+      ]},
+     {"versao": "0.5.6", "nome": "atualização das conquistas", "data": "2026-10-11",
+      "resumo": "Dá para receber as versões novas antes, ainda em teste.",
+      "itens": [
+        {"ic": "antenna", "t": "Versões de teste", "d": "Em Configurações → servidor, marque Receber versões de teste (beta) para ganhar as novidades antes da versão normal. Podem vir com erros; desmarcar volta para a normal. Só no jogo instalado com git."}
+      ]},
+     {"versao": "0.5.5", "nome": "atualização das conquistas", "data": "2026-10-11",
+      "resumo": "O botão de atualizar não falha mais quando o jogo foi baixado por SSH.",
+      "itens": [
+        {"ic": "antenna", "t": "Atualizar", "d": "Se o git não consegue usar a sua chave SSH (o jogo liga antes dela), a atualização baixa a versão nova pelo endereço público do GitHub."}
+      ]},
+     {"versao": "0.5.4", "nome": "atualização das conquistas", "data": "2026-10-11",
+      "resumo": "A Masadora ganhou 40 itens novos: animações ao concluir tarefas, sons, fontes e quatro temas completos.",
+      "itens": [
+        {"ic": "spider", "t": "Na hora da conquista", "d": "Efeitos que disparam ao concluir uma tarefa: Godspeed (um raio que corta a tela), Cartas do Hisoka, Jajanken (PEDRA!) e fogos de artifício no andar novo. O botão ▶ mostra cada um antes de comprar."},
+        {"ic": "antenna", "t": "Sons", "d": "Moeda, Golpe, Sino do templo e Fanfarra 8-bit tocam ao concluir uma tarefa e no andar novo. Dá para deixar mudo em Configurações."},
+        {"ic": "scroll", "t": "Fontes", "d": "Máquina de escrever, Mangá, Pixel e Arcade japonês mudam a letra dos títulos e dos números."},
+        {"ic": "coin", "t": "Mais aparência", "d": "Seis paletas (Pergaminho, Zoldyck, Genei Ryodan, Greed Island, Continente Negro e a Aurora), quatro texturas (teia, colmeia, fliperama, papel), Gyo, Poeira de Nen, Rastro de aura, Terminal vivo, Corrente de Kurapika, três molduras e títulos que só abrem com conquistas."},
+        {"ic": "tower", "t": "Temas completos", "d": "Genei Ryodan, Greed Island e Zoldyck, mais baratos que as peças separadas, e Ascensão, o tema lendário de 25.000 J, com uma aurora girando atrás da página inteira."}
+      ]}
    ]},
   {"versao": "0.5", "nome": "atualização das conquistas", "data": "2026-10-09",
    "resumo": "A IA passa a criar desafios feitos para você, e o jogo agora avisa quando sai versão nova.",
@@ -81,21 +80,26 @@ window.HJ_NOVIDADES = /*NOVIDADES*/[
      {"ic": "scroll", "t": "Esta aba de novidades", "d": "Cada versão daqui para frente vem explicada aqui, em poucas linhas, com o que muda para você."},
      {"ic": "tower", "t": "Instalador sem git atualiza", "d": "Quem instalou sem git e rodava o comando de instalação de novo recebia \"a pasta já existe\". Agora o mesmo comando atualiza o jogo por cima."},
      {"ic": "man", "t": "Tutoriais conferidos", "d": "Todos os tutoriais foram conferidos passo a passo. O do Book explica as conquistas da IA, e esta aba tem o seu."}
-   ]},
-  {"versao": "0.4.2", "nome": "atualização da IA", "data": "2026-10-09",
-   "resumo": "Ajustes pedidos depois do primeiro teste com a IA.",
-   "itens": [
-     {"ic": "spider", "t": "Pontos extras", "d": "No editor do chefão, uma disciplina pode passar de 100% quando o professor dá ponto extra."},
-     {"ic": "scroll", "t": "Vários planos de uma vez", "d": "Em ler todos os planos, marque os resultados e salve todos de uma vez."},
-     {"ic": "tra", "t": "Codeforces à mão na Arena", "d": "O ✋ também aparece na meta do dia da Arena."},
-     {"ic": "man", "t": "Fiz de novo", "d": "Hábito semanal com a meta cumprida pode ser feito de novo, e cada vez acima da meta vale XP em dobro."}
-   ]},
-  {"versao": "0.4.1", "nome": "atualização da IA", "data": "2026-10-09",
-   "resumo": "A IA não aparecia para quem atualizava com o jogo ligado. Corrigido.",
-   "itens": [
-     {"ic": "tower", "t": "Servidor trocado na atualização", "d": "O servidor antigo, rodando em segundo plano, é reiniciado sozinho quando o jogo atualiza. Um aviso amarelo aparece se página e servidor ficarem em versões diferentes."},
-     {"ic": "esp", "t": "Aba Configurações", "d": "Nome, hábitos, IA, servidor e backup saíram de Regras e ganharam uma aba própria."},
-     {"ic": "int", "t": "Tutorial da IA", "d": "Ao ligar uma IA, o tutorial mostra tudo o que ela faz no jogo."}
+   ],
+   "versoes": [
+     {"versao": "0.5.3", "nome": "atualização das conquistas", "data": "2026-10-10",
+      "resumo": "O XP dos dias passados fica guardado, e corrigir uma nota não deixa mais a carteira negativa.",
+      "itens": [
+        {"ic": "tower", "t": "Dias passados guardados", "d": "O XP de cada dia que já acabou fica guardado. Se uma tarefa concluída sumir do todo.txt ou do done.txt (uma IA reescrevendo os arquivos, um archive, uma linha apagada), o XP e a Jenny daquele dia continuam. Marcar algo que você esqueceu ontem ainda soma, e desmarcar uma tarefa de hoje ainda tira."},
+        {"ic": "coin", "t": "Nota corrigida sem dívida", "d": "Corrigir uma nota para menos tira o bônus de diferença só até zerar a carteira. O que passar disso é perdoado e aparece em acertos, na carteira da Masadora."}
+      ]},
+     {"versao": "0.5.2", "nome": "atualização das conquistas", "data": "2026-10-10",
+      "resumo": "A Jenny e o XP que você ganhou não somem mais quando o plano de avaliações muda.",
+      "itens": [
+        {"ic": "coin", "t": "Bônus de nota guardado", "d": "O bônus de cada nota agora fica com o peso do dia em que a nota entrou. Antes ele era refeito com o peso atual: se você ou a IA corrigiam um peso para menos depois de você gastar, a carteira ficava negativa. Mudar o plano não tira mais Jenny; corrigir a própria nota ajusta só a diferença."},
+        {"ic": "spider", "t": "Fúria guardada", "d": "As tarefas feitas com o chefão em fúria ficam com o ×1,5 para sempre. Antes, quando o chefão saía da fúria ou entrava outra nota, o bônus sumia das tarefas antigas, e com ele XP e Jenny."},
+        {"ic": "scroll", "t": "Carteira negativa zerada", "d": "Se a sua carteira tinha ficado negativa por esse problema, o jogo devolveu uma vez o que faltava para zerar. Aparece como acerto da 0.5.2 na carteira da Masadora."}
+      ]},
+     {"versao": "0.5.1", "nome": "atualização das conquistas", "data": "2026-10-10",
+      "resumo": "Achou um bug ou teve uma ideia? Agora dá para mandar direto do jogo.",
+      "itens": [
+        {"ic": "fb", "t": "Feedback pelo jogo", "d": "O balão no canto direito da tela, em qualquer aba, manda um bug, uma ideia ou uma dúvida. O jogo abre a página do GitHub já preenchida com a sua versão, o sistema e a aba; é só conferir e clicar em Create. Sem conta no GitHub, copie o texto e mande por mensagem."}
+      ]}
    ]},
   {"versao": "0.4", "nome": "atualização da IA", "data": "2026-10-09",
    "resumo": "A IA de terminal do seu computador passa a trabalhar dentro do jogo.",
@@ -104,6 +108,23 @@ window.HJ_NOVIDADES = /*NOVIDADES*/[
      {"ic": "crown", "t": "O jogo decide a prioridade", "d": "Ao adicionar uma tarefa, a prioridade pode sair da prova chegando, do prazo e da fúria do chefão."},
      {"ic": "card", "t": "Tipo da tarefa sugerido", "d": "O tipo segue as palavras do texto; o ? explica cada um, e o IA? pergunta à IA."},
      {"ic": "tra", "t": "Codeforces à mão", "d": "O ✋ soma um problema feito onde o site não mostra (ITMO Academy, grupo privado)."}
+   ],
+   "versoes": [
+     {"versao": "0.4.2", "nome": "atualização da IA", "data": "2026-10-09",
+      "resumo": "Ajustes pedidos depois do primeiro teste com a IA.",
+      "itens": [
+        {"ic": "spider", "t": "Pontos extras", "d": "No editor do chefão, uma disciplina pode passar de 100% quando o professor dá ponto extra."},
+        {"ic": "scroll", "t": "Vários planos de uma vez", "d": "Em ler todos os planos, marque os resultados e salve todos de uma vez."},
+        {"ic": "tra", "t": "Codeforces à mão na Arena", "d": "O ✋ também aparece na meta do dia da Arena."},
+        {"ic": "man", "t": "Fiz de novo", "d": "Hábito semanal com a meta cumprida pode ser feito de novo, e cada vez acima da meta vale XP em dobro."}
+      ]},
+     {"versao": "0.4.1", "nome": "atualização da IA", "data": "2026-10-09",
+      "resumo": "A IA não aparecia para quem atualizava com o jogo ligado. Corrigido.",
+      "itens": [
+        {"ic": "tower", "t": "Servidor trocado na atualização", "d": "O servidor antigo, rodando em segundo plano, é reiniciado sozinho quando o jogo atualiza. Um aviso amarelo aparece se página e servidor ficarem em versões diferentes."},
+        {"ic": "esp", "t": "Aba Configurações", "d": "Nome, hábitos, IA, servidor e backup saíram de Regras e ganharam uma aba própria."},
+        {"ic": "int", "t": "Tutorial da IA", "d": "Ao ligar uma IA, o tutorial mostra tudo o que ela faz no jogo."}
+      ]}
    ]},
   {"versao": "0.3", "nome": "", "data": "2026-10-09",
    "resumo": "A primeira versão testada pelos amigos.",
@@ -154,8 +175,25 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .nv-pon > div{background:var(--panel);border:1px solid var(--volt);border-radius:16px;padding:24px 28px;max-width:420px;text-align:center;box-shadow:0 30px 80px -30px rgba(0,0,0,.6)}
 .nv-pon .ic{font-size:36px;color:var(--volt)}
 .nv-pon h3{margin:10px 0 6px;font:700 20px var(--f-hud)} .nv-pon p{margin:0;color:var(--soft);font-size:14px}
+.nv-sub{margin-top:12px;border-top:1px dashed var(--hair);padding-top:10px}
+.nv-sub summary{cursor:pointer;list-style:none;font:600 12.5px var(--f-mono);color:var(--soft)} .nv-sub summary::-webkit-details-marker{display:none}
+.nv-sub summary::before{content:"▸ ";color:var(--faint)} .nv-sub[open] summary::before{content:"▾ "}
+.nv-sub .nv-mi{padding:10px 0 4px;border-top:1px solid var(--hair);margin-top:10px} .nv-sub .nv-mi:first-of-type{border-top:0;margin-top:4px}
+.nv-sub .nv-mi .topo b{font:700 15px var(--f-hud)} .nv-sub .nv-mi > p{margin:0 0 4px;font-size:13.5px}
+.nv-sub .nv-mi ul{margin:0;padding-left:18px;font-size:13px;color:var(--soft)} .nv-sub .nv-mi li{margin:2px 0} .nv-sub .nv-mi li b{color:var(--ink);font-weight:600}
+.nv-big{position:fixed;inset:0;z-index:85;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(6px)}
+.nv-big > div{width:min(920px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);border:1px solid var(--volt);border-radius:18px;box-shadow:0 40px 120px -40px rgba(0,0,0,.7)}
+.nv-big .cab{padding:26px 30px 18px;background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--volt) 22%,transparent),transparent 60%)}
+.nv-big .cap{margin:0;font:600 12px var(--f-mono);color:var(--soft);text-transform:uppercase;letter-spacing:.12em}
+.nv-big h2{margin:6px 0 2px;font:800 clamp(30px,5vw,46px)/1.05 var(--f-hud);letter-spacing:-.01em} .nv-big h2 span{color:var(--volt)}
+.nv-big .nome{font:600 16px var(--f-hud);color:var(--soft);text-transform:lowercase}
+.nv-big .cab p{margin:12px 0 0;font-size:15px;max-width:62ch}
+.nv-big .nv-itens{padding:4px 30px 8px}
+.nv-big .nv-it:first-child{grid-column:1/-1;border-color:color-mix(in srgb,var(--volt) 55%,var(--hair));background:color-mix(in srgb,var(--volt) 8%,var(--panel2))}
+.nv-big .pe{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 30px 24px} .nv-big .pe .sp{flex:1}
+.nv-big .grande{padding:10px 18px;font:700 14px var(--f-hud);border-radius:10px}
 .gnav .nv-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amb);margin-left:4px;vertical-align:top}
-@media (max-width:820px){ .nv-hero{grid-template-columns:minmax(0,1fr)} .nv-st{border-left:0;border-top:1px solid var(--hair)} .nv-ver .num{font-size:52px} }
+@media (max-width:820px){ .nv-big .cab,.nv-big .nv-itens,.nv-big .pe{padding-left:18px;padding-right:18px} .nv-hero{grid-template-columns:minmax(0,1fr)} .nv-st{border-left:0;border-top:1px solid var(--hair)} .nv-ver .num{font-size:52px} }
 </style>`);
 
 let AT = null;   // GET /api/atualizacao: {versao, novas:[...], erro, metodo, conferido}; null = conferindo
@@ -163,6 +201,8 @@ let ATUALIZANDO = false;
 const curta = d => d ? HJ.brData(d) : '';
 const temNova = () => !!(AT && AT.ok && AT.novas && AT.novas.length);
 const naoVista = () => CTX && EST && EST.visto !== VERSAO_PAGINA;
+const grande = v => /^\d+\.\d+$/.test(String(v.versao));   // 0.6, 0.7: versão grande, com nome novo e as menores dentro
+const nIt = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 
 async function confere(agora){
   if(!CTX || !CTX.SRV) return;
@@ -189,21 +229,31 @@ function statusHTML(){
   return `<span class="pill">✓ em dia</span><h3>Você está na versão mais nova</h3><p>${AT.erro ? esc(AT.erro) + '. ' : ''}O jogo confere sozinho a cada 6 horas e avisa aqui quando sair outra.</p>
     <div class="acao"><button type="button" class="btn" data-nvconfere>conferir agora</button><span class="sub">${quando}</span></div>`;
 }
-function versaoHTML(v, i){
-  const tua = v.versao === VERSAO_PAGINA, velha = i > 1;
+const itensHTML = v => (v.itens || []).map(x => `<div class="nv-it">${ic(x.ic || 'scroll')}<b>${esc(x.t)}</b><span>${esc(x.d)}</span></div>`).join('');
+/* as versões que levaram até uma versão grande: recolhidas, uma linha por item */
+function subHTML(v){
+  const L = v.versoes || []; if(!L.length) return '';
+  const depois = String(L[0].versao).startsWith(v.versao + '.');   // 0.5.1 a 0.5.3 vieram depois da 0.5; 0.5.4 a 0.5.9 levaram à 0.6
+  return `<details class="nv-sub"><summary>${nIt(L.length, 'versão', 'versões')} ${depois ? 'depois da' : 'até a'} ${esc(v.versao)} (da ${esc(L[L.length - 1].versao)} à ${esc(L[0].versao)})</summary>
+    ${L.map(x => `<div class="nv-mi"><div class="topo"><b>${esc(x.versao)}</b><span>${esc(curta(x.data))}</span>${x.versao === VERSAO_PAGINA ? '<em class="tua">a sua</em>' : ''}</div>
+      ${x.resumo ? `<p>${esc(x.resumo)}</p>` : ''}${(x.itens || []).length ? `<ul>${x.itens.map(t => `<li><b>${esc(t.t)}</b>: ${esc(t.d)}</li>`).join('')}</ul>` : ''}</div>`).join('')}</details>`;
+}
+function versaoHTML(v, i, velha){
+  const tua = v.versao === VERSAO_PAGINA;
   return `<article class="card nv-v${i === 0 ? ' ultima' : ''}${velha ? ' velha' : ''}">
     <div class="topo"><b>${esc(v.versao)}</b>${v.nome ? `<span>${esc(v.nome)}</span>` : ''}<span>${esc(curta(v.data))}</span>${tua ? `<em class="tua">a sua</em>` : ''}${tua && naoVista() ? '<em>nova</em>' : ''}</div>
     ${v.resumo ? `<p>${esc(v.resumo)}</p>` : ''}
-    <div class="nv-itens">${(v.itens || []).map(x => `<div class="nv-it">${ic(x.ic || 'scroll')}<b>${esc(x.t)}</b><span>${esc(x.d)}</span></div>`).join('')}</div></article>`;
+    <div class="nv-itens">${itensHTML(v)}</div>${subHTML(v)}</article>`;
 }
 function rNV(){
   const v = NOV.find(x => x.versao === VERSAO_PAGINA) || NOV[0], [a, b] = String(v.versao).split(/\.(.*)/s);
   const novas = temNova() ? AT.novas.map(x => ({...x, futura:true})) : [];
+  const ultG = Math.max(0, NOV.findIndex(grande));   // até ela, aberto; depois, compacto
   document.getElementById('nv-root').innerHTML = `<div class="nv">
     <div class="card nv-hero" id="nv-hero"><div class="nv-ver"><p class="cap">sua versão</p><div class="num">${esc(a)}<span>.${esc(b || '0')}</span></div><div class="nome">${esc(v.nome || '')}${AT && AT.canal === 'beta' ? ' · canal beta' : ''}</div><p>${esc(v.resumo || '')}</p></div>
       <div class="nv-st" id="nv-st">${statusHTML()}</div></div>
     <h2 class="h" style="font:700 20px var(--f-hud);margin:8px 0 0">O que mudou em cada versão</h2>
-    <div class="nv-tl" id="nv-lista">${novas.map((x, i) => versaoHTML(x, i).replace('<div class="topo">', '<div class="topo"><em>ainda não instalada</em>')).join('')}${NOV.map((x, i) => versaoHTML(x, i + (novas.length ? 1 : 0))).join('')}</div></div>`;
+    <div class="nv-tl" id="nv-lista">${novas.map((x, i) => versaoHTML(x, i, false).replace('<div class="topo">', '<div class="topo"><em>ainda não instalada</em>')).join('')}${NOV.map((x, i) => versaoHTML(x, i + (novas.length ? 1 : 0), i > ultG)).join('')}</div></div>`;
   if(naoVista()){ EST.visto = VERSAO_PAGINA; salvaUI(); }
 }
 
@@ -235,10 +285,31 @@ function boasNovas(){
   if(!CTX || !(CTX.JOG && CTX.JOG.configurado) || !naoVista()) return;
   if(!EST.visto && !D.feitas.length){ EST.visto = VERSAO_PAGINA; salvaUI(); return; }
   const v = NOV.find(x => x.versao === VERSAO_PAGINA); if(!v) return;
+  if(grande(v) && !document.getElementById('nv-big')){ janelaGrande(v); return; }
   const to = document.createElement('div'); to.className = 'toast';
   to.innerHTML = `${ic('antenna')} Jogo atualizado para a ${esc(v.versao)} <small>${esc(v.resumo || '')}</small><button class="l-undo" data-go="nv">ver o que mudou</button>`;
   document.body.appendChild(to); setTimeout(() => to.remove(), 12000);
 }
+/* versão grande: os destaques numa janela que cobre a tela, uma vez (fechar marca como vista) */
+function janelaGrande(v){
+  const [a, b] = String(v.versao).split('.'), exp = (v.itens || []).some(x => x.ic === 'island') && RENDER.x;
+  document.body.insertAdjacentHTML('beforeend', `<div class="nv-big" id="nv-big" role="dialog" aria-modal="true" aria-labelledby="nv-big-t"><div>
+    <div class="cab"><p class="cap">o jogo foi atualizado</p><h2 id="nv-big-t">${esc(a)}<span>.${esc(b)}</span></h2><div class="nome">${esc(v.nome || '')}</div>${v.resumo ? `<p>${esc(v.resumo)}</p>` : ''}</div>
+    <div class="nv-itens">${itensHTML(v)}</div>
+    <div class="pe">${exp ? '<button type="button" class="btn v grande" data-nvbig="x">conhecer as Expedições</button>' : ''}<button type="button" class="btn grande" data-nvbig="nv">ver tudo o que mudou</button><span class="sp"></span><button type="button" class="btn" data-nvbig="">fechar</button></div>
+  </div></div>`);
+  document.querySelector('#nv-big [data-nvbig]').focus();
+}
+function fechaGrande(ir){
+  const el = document.getElementById('nv-big'); if(!el) return;
+  el.remove(); EST.visto = VERSAO_PAGINA; salvaUI();
+  if(ir) tab(ir); else render();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-nvbig]'); if(b){ fechaGrande(b.dataset.nvbig); return; }
+  if(e.target.id === 'nv-big') fechaGrande('');
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.getElementById('nv-big')) fechaGrande(''); });
 window.HJ_NOV = {confere, canal: () => AT && AT.canal};
 (function tenta(){ if(!CTX){ setTimeout(tenta, 500); return; } if(cur === 'nv') render(); setTimeout(boasNovas, 1500); setTimeout(() => confere(false), 1800); })();
 })();

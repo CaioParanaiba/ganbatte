@@ -162,6 +162,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| **0.6** | **atualização das expedições** | **Junta tudo desde a 0.5.3** (as linhas abaixo, até a 0.5.4): caçadas, aba Expedições com cinco formas de ver e tutorial, editor completo da tarefa, 40 itens na Masadora, versões de teste e correções. Novidades agrupadas por versão grande, com janela de destaques ao atualizar |
 | 0.5.9-beta2 | atualização das conquistas | Expedições: as cinco visões ficam como formas de ver (#25) e a aba ganha tutorial (#26); "quanto vale" da Lista recolhível |
 | 0.5.9-beta1 | atualização das conquistas | Editor completo da tarefa no ✎: tipo, disciplina, prazo e prioridade (#20); `POST /api/act` edit aceita `pri` |
 | 0.5.8-beta2 | atualização das conquistas | Correções: mundo pixel com o nome, o Nen e a foto do jogador (#24); fúria visível no cartão do chefão (#22); edição de tarefa presa à linha e texto, com cancelar (#21) |

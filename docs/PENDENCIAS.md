@@ -26,6 +26,10 @@ merge da `beta` na `main` + tag `vX.Y`. Só o merge na `main` avisa os jogadores
 **Ao lançar:** `VERSAO` (servidor.py) + `VERSAO_PAGINA` (web/index.html) + topo do `web/novidades.js` + tabela de versões do README.
 **Nome das versões (desde a 0.5.8):** na `beta`, `X.Y.Z-betaN` (0.5.8-beta1, 0.5.8-beta2...); o merge na `main` sai como
 `X.Y.Z` (0.5.8), com uma entrada só no `novidades.js` que junta o que as betas trouxeram (tire as entradas `-betaN`).
+**Versão grande (desde a 0.6):** `X.Y` com nome de série novo (`VERSAO_NOME`). No `novidades.js` vira uma entrada só, com
+os destaques em `itens` e as versões que levaram até ela em `versoes` (a aba mostra recolhidas; a 0.5 e a 0.4 guardam as
+suas X.Y.Z do mesmo jeito). Quem atualiza para ela vê os destaques numa janela grande, uma vez. As `X.Y.Z` seguintes ficam
+soltas no topo até a próxima versão grande, quando entram no `versoes` dela.
 `vtupla()` no `servidor.py` põe toda `-betaN` antes da versão normal de mesmo número, e a beta2 depois da beta1.
 
 **v0.3.1** publicada em 09/10/2026: prioridade no formulário e seta de descer na Lista, e o `IA.md` com o modo agente.
@@ -188,6 +192,9 @@ O que entrou:
   cadastro de Regras já preenchido (`HJ_GUIA.abreDisciplinas({d, n})`).
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
+
+**0.6 · atualização das expedições** (12/10/2026): lançada na `main`, juntando 0.5.4 a 0.5.9-beta2 (issues #19 a #26).
+Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaques ao atualizar (`janelaGrande`).
 
 **0.5.9-beta2** (12/10/2026, issues #25, #26): as cinco visões das Expedições ficam (formas de ver), tutorial da aba
 (`TOURS.x`), "quanto vale" da Lista em `<details>` fechado (`#l-valec`). Próximo passo: a 0.5.9 na `main`.
