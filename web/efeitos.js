@@ -82,7 +82,7 @@ const CSS = `
 const st = document.createElement('style'); st.id = 'hj-efeitos'; st.textContent = CSS; document.head.appendChild(st);
 
 const calmo = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; } };
-const temFx = f => !UI.fxOff && UI.fx.includes(f);
+const temFx = f => fxVisiveis().includes(f);   // fxVisiveis (index.html): os equipados e o que está sendo provado na loja
 const cor = v => getComputedStyle(document.documentElement).getPropertyValue('--' + v).trim() || '#9FD3FF';
 const centro = r => r ? [r.left + r.width/2, r.top + r.height/2] : [innerWidth/2, innerHeight/2];
 const tira = (el, ms) => { document.body.appendChild(el); setTimeout(() => el.remove(), ms); return el; };

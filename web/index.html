@@ -1354,8 +1354,8 @@ async function saiTeste(){
 function faixaProva(){
   let el = document.getElementById('faixa-prova');
   if(!UI.prova){ if(el) el.remove(); return; }
-  const nome = (THEMES.find(t => t[0] === UI.prova) || [0, UI.prova])[1];
-  const html = `Provando a paleta <b>${esc(nome)}</b>: ande pelas abas para ver como fica. Nada foi comprado.<button type="button" class="btn" data-prova="" style="background:#0b0d12;color:#fff;border-color:#0b0d12">voltar à minha paleta</button>`;
+  const it = COS.find(i => i.id === UI.prova), nome = it ? it.n : UI.prova;
+  const html = `<span>Provando <b>${esc(nome)}</b>: ande pelas abas para ver como fica. Nada foi comprado, e o jogo fica travado (tarefas, caçadas, notas) até você voltar.</span><button type="button" class="btn" data-prova="" style="background:#0b0d12;color:#fff;border-color:#0b0d12">voltar ao que é meu</button>`;
   if(el){ el.innerHTML = html; return; }
   document.body.insertAdjacentHTML('afterbegin', `<div id="faixa-prova" role="status" style="position:sticky;top:0;z-index:68;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:8px 16px;background:var(--aura);color:#0b0d12;font:600 13.5px var(--f-ui)">${html}</div>`);
 }
@@ -1372,7 +1372,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.2-beta1';
+const VERSAO_PAGINA = '0.6.2-beta2';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1399,13 +1399,26 @@ function salvaUI(){
   }
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a loja: ' + esc(e.message)));
 }
+/* provar na loja (#29): paleta, tema, fundo, efeito contínuo, moldura ou fonte. UI.prova é o id do item; não grava
+   nada, some ao recarregar e, enquanto dura, o jogo fica travado (travaProva) para ninguém jogar com o item emprestado */
+const PROVAVEL = ['pal','full','tex','fx','frame','font'];
+const provavel = it => !OWN.has(it.id) && !it.lend && !it.ev && PROVAVEL.includes(it.cat);
+function vista(){
+  const it = UI.prova && COS.find(i => i.id === UI.prova);
+  if(!it) return UI;
+  const v = {theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, font:UI.font};
+  if(it.cat === 'fx') v.fx = UI.fx.concat(it.fx);
+  else { Object.assign(v, it.eq); if(it.fxs) v.fx = UI.fx.concat(it.fxs); }
+  return v;
+}
+const fxVisiveis = () => UI.fxOff && !UI.prova ? [] : vista().fx;   // provando um efeito, ele aparece mesmo com os efeitos desligados
 function aplicaTema(){
-  const r = document.documentElement, p = PALS[UI.prova || UI.theme] || PALS.simples;   // UI.prova: paleta só provada na loja (#29)
+  const r = document.documentElement, V = vista(), p = PALS[V.theme] || PALS.simples;
   TK.forEach((t,i) => r.style.setProperty('--'+t, p[i+1])); r.style.setProperty('color-scheme', p[0]);
-  r.setAttribute('data-fx', (UI.fxOff ? [] : UI.fx).join(' '));
-  if(UI.bg) r.setAttribute('data-bg', UI.bg); else r.removeAttribute('data-bg');
-  if(UI.frame) r.setAttribute('data-frame', UI.frame); else r.removeAttribute('data-frame');
-  if(UI.font) r.setAttribute('data-font', UI.font); else r.removeAttribute('data-font');
+  r.setAttribute('data-fx', fxVisiveis().join(' '));
+  if(V.bg) r.setAttribute('data-bg', V.bg); else r.removeAttribute('data-bg');
+  if(V.frame) r.setAttribute('data-frame', V.frame); else r.removeAttribute('data-frame');
+  if(V.font) r.setAttribute('data-font', V.font); else r.removeAttribute('data-font');
   if(window.HJ_FX) HJ_FX.aplica();
 }
 
@@ -1530,8 +1543,19 @@ function rB2(S){
   document.getElementById('b2-leg').innerHTML = `<h2><span class="c">~/</span>como ler</h2><p style="margin:0;font-size:13.5px">A barra é a <b>vida</b> do chefão e só cai com nota: cada avaliação tira peso × nota. Passou da linha verde (média 6), ele cai. As tarefas enchem a <b>preparação</b> e dão XP. Preparação completa antes da data vale um feitiço, seja qual for a nota.</p><p style="margin:8px 0 0;font-size:13.5px">O <span class="mono">→ P2</span> ao lado de cada tarefa é a avaliação que ela prepara (passe o mouse para ver por quê). Para trocar, edite a tarefa na Lista e escreva <span class="mono">av:P1</span>.</p>${SIM.size||Object.keys(NOTAS).length?'<button class="reset" data-reset style="margin-top:10px">desfazer simulação</button>':''}`;
 }
 /* ---------- D2 ---------- */
+/* do mês do início da temporada até o da volta às aulas (as férias aparecem no fim), no máximo 12 meses (#2) */
+const NOMES_MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function mesesTemporada(){
+  const ate = (TEMP.volta || TEMP.fim).slice(0,7), out = [];
+  for(let ym = TEMP.ini.slice(0,7); ym <= ate && out.length < 12; ){
+    const [a, m] = ym.split('-').map(Number);
+    out.push([ym, NOMES_MES[m-1]]);
+    ym = m === 12 ? `${a+1}-01` : `${a}-${String(m+1).padStart(2,'0')}`;
+  }
+  return out;
+}
 function rD2(S){
-  const meses = [['2026-08','Agosto'],['2026-09','Setembro'],['2026-10','Outubro'],['2026-11','Novembro'],['2026-12','Dezembro'],['2027-01','Janeiro'],['2027-02','Fevereiro']];
+  const meses = mesesTemporada();
   const avDia = {}; S.bs.forEach(b => b.avs.forEach(a => { if(!a.cont) (avDia[a.dt] = avDia[a.dt] || []).push({b,a}); }));
   document.getElementById('d2-months').innerHTML = meses.map(([ym,nm]) => {
     const first = ym+'-01', off = dow(first); let cells = '';
@@ -1629,8 +1653,8 @@ function itemHTML(S, it){
   else if(lk) btn = `<button class="btn" disabled>${it.why}</button>`;
   else if(need) btn = `<button class="btn" disabled>abra o mundo pixel</button>`;
   else btn = `<button class="btn" data-cos="${it.id}" ${S.jenny >= it.p ? '' : 'disabled'}>${S.jenny >= it.p ? 'comprar' : `faltam ${fmt(it.p - S.jenny)} J`}</button>`;
-  const pal = !own && (it.cat === 'pal' || (it.cat === 'full' && it.eq?.theme)) && it.eq.theme, prova = pal && UI.prova === pal;
-  const ver = pal ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : pal}" title="${prova ? 'voltar à minha paleta' : 'provar a paleta no jogo todo, sem comprar'}">${prova ? 'provando' : 'provar'}</button>`
+  const prova = UI.prova === it.id;
+  const ver = provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
     : it.ev || it.cat === 'som' ? `<button class="btn hj-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
   return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need?' lock':''}">${pvHTML(it)}<div class="info"><b>${esc(it.n)}</b><p>${esc(it.d)}</p><div class="buy7"><span class="pr${it.p?'':' free'}">${it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis'}${own?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
 }
@@ -2167,6 +2191,25 @@ function confete(forcado){
   for(let i=0;i<60;i++){ const c = document.createElement('i'); c.className = 'cf8'; c.style.left = Math.random()*100+'vw'; c.style.background = cores[i%5];
     c.style.animationDelay = (Math.random()*.6)+'s'; c.style.transform = `rotate(${Math.random()*360}deg)`; document.body.appendChild(c); setTimeout(() => c.remove(), 2600); }
 }
+/* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
+   lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-teste],summary';
+const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
+function avisoProva(){ toast(`Você está provando um item <small>o jogo fica travado até você clicar em "voltar ao que é meu"</small>`); }
+function travaProva(e){
+  if(!UI.prova || !e.target.closest) return;
+  if(e.type === 'submit' || (e.type === 'beforeinput' && e.target.closest('input,textarea,[contenteditable]'))){ e.preventDefault(); e.stopImmediatePropagation(); avisoProva(); return; }
+  if(e.type === 'keydown'){
+    const campo = e.target.closest('input,select,textarea,[contenteditable]');
+    if(['Tab','Shift','Escape'].includes(e.key) || (!campo && (e.ctrlKey || e.metaKey || e.altKey || e.key.length > 1))) return;   // atalhos do navegador e rolagem seguem
+    e.preventDefault(); e.stopImmediatePropagation(); if(campo || e.key.length === 1) avisoProva(); return;
+  }
+  const el = e.target.closest(MEXE);
+  if(!el || e.target.closest(LIVRE_NA_PROVA)) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if(e.type === 'click') avisoProva();
+}
+['click','pointerdown','mousedown','submit','keydown','beforeinput'].forEach(t => document.addEventListener(t, travaProva, true));
 const tarefa = n => D.abertas.find(t => t.n === n);
 document.addEventListener('click', async e => {
   const q = s => e.target.closest(s);

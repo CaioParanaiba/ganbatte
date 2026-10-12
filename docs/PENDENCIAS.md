@@ -193,6 +193,12 @@ O que entrou:
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
+**0.6.2-beta2** (12/10/2026, issues #1, #2): `UI.prova` vira o id do item (`provavel()`: `pal`, `full`, `tex`, `fx` sem
+`ev`, `frame`, `font`); `vista()` junta o equipado e o provado, e `aplicaTema()`/`temFx` (efeitos.js, via `fxVisiveis()`)
+leem dela. `travaProva()` em captura (click, pointerdown, mousedown, submit, keydown, beforeinput) barra tudo fora de
+`LIVRE_NA_PROVA` (navegar, loja, faixa). Semestre: `mesesTemporada()` do `ini` à `volta`, até 12 meses. Codeforces:
+`cf_envios()` diz se chegou ao início; se não, `cf_atualiza()` mantém os dias antigos do `por_dia` (o do corte pelo maior).
+
 **0.6.2-beta1** (12/10/2026, issue #29): provar paleta. `UI.prova` (não grava) troca a paleta em `aplicaTema()`;
 botão `data-prova` nos itens `pal` e `full` com `eq.theme` ainda não comprados, faixa `faixaProva()` para voltar; comprar
 limpa. Codeforces: `cf_envios()` pagina o `user.status` de 1000 em 1000 (até 10 páginas, 2 s entre elas) até passar de

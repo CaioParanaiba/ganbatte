@@ -10,6 +10,13 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.2-beta2", "nome": "atualização das expedições", "data": "2026-10-12",
+   "resumo": "Prove qualquer aparência antes de comprar (o jogo trava enquanto isso), e o Semestre segue a temporada.",
+   "itens": [
+     {"ic": "coin", "t": "Provar mais coisas", "d": "Além das paletas, dá para provar temas, fundos, efeitos, molduras e fontes. Enquanto prova, o jogo fica travado: dá para andar pelas abas e olhar, mas não concluir, criar nem editar nada. A faixa no topo volta ao que é seu."},
+     {"ic": "scroll", "t": "Calendário da temporada", "d": "A aba Semestre mostra os meses da sua temporada (do início até a volta às aulas), e não mais agosto a fevereiro fixos."},
+     {"ic": "tra", "t": "Codeforces sem perder dias", "d": "Para quem passa de 10 mil envios na temporada, os dias mais antigos ficam como estavam em vez de sumir."}
+   ]},
   {"versao": "0.6.2-beta1", "nome": "atualização das expedições", "data": "2026-10-12",
    "resumo": "Prove uma paleta antes de comprar, e o Codeforces conta só a temporada.",
    "itens": [

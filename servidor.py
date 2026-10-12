@@ -64,7 +64,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.2-beta1"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
+VERSAO = "0.6.2-beta2"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -528,7 +528,8 @@ def inicio_temporada():
 
 def cf_envios(handle, desde):
     """Envios do handle feitos desde o início da temporada. A API não filtra por data, mas devolve do mais novo para o
-    mais velho: lê de 1000 em 1000 até passar do início (no máximo 10 páginas, com a pausa de 2 s que a API pede)."""
+    mais velho: lê de 1000 em 1000 até passar do início (no máximo 10 páginas, com a pausa de 2 s que a API pede).
+    Devolve (envios, completo): completo = chegou ao início da temporada; senão, os dias mais velhos ficaram de fora."""
     lim = time.mktime(desde.timetuple())
     envios = []
     for pg in range(10):
@@ -542,16 +543,18 @@ def cf_envios(handle, desde):
             raise ValueError(j.get("comment") or "resposta inesperada")
         envios += [s for s in j["result"] if s.get("creationTimeSeconds", 0) >= lim]
         if len(j["result"]) < 1000 or j["result"][-1].get("creationTimeSeconds", 0) < lim:
-            break
-    return envios
+            return envios, True
+    return envios, False
 
 
 def cf_atualiza(cf):
     """Conta os problemas distintos aceitos por dia (pela data do 1º AC, no fuso desta máquina), só desde o início da
     temporada: o que veio antes não conta XP nem entra no heatmap. Roda numa thread."""
     try:
+        ini = inicio_temporada()
+        envios, completo = cf_envios(cf["handle"], ini)
         primeiro = {}
-        for sub in reversed(cf_envios(cf["handle"], inicio_temporada())):
+        for sub in reversed(envios):
             if sub.get("verdict") == "OK":
                 k = (sub["problem"].get("contestId"), sub["problem"].get("index"))
                 primeiro.setdefault(k, time.strftime("%Y-%m-%d", time.localtime(sub["creationTimeSeconds"])))
@@ -562,6 +565,11 @@ def cf_atualiza(cf):
             cache = ler_json("cf.json", {})
             if cache.get("handle") != cf["handle"] or not cache.get("desde"):   # handle novo: o bônus atrasado conta só daqui para a frente
                 cache = {"desde": hoje().isoformat(), "creditados": []}
+            if not completo and envios:   # mais de 10 mil envios: os dias antes da janela lida ficam como estavam (#1)
+                corte = time.strftime("%Y-%m-%d", time.localtime(envios[-1]["creationTimeSeconds"]))
+                for dia, n in (cache.get("por_dia") or {}).items():
+                    if ini.isoformat() <= dia <= corte:   # o dia do corte foi lido pela metade
+                        conta[dia] = max(conta.get(dia, 0), n)
             cache.update(handle=cf["handle"], por_dia=conta)
             gravar_json("cf.json", cache)
         conta = cf_soma(cache)
