@@ -24,6 +24,9 @@ aponta para ela (uma cópia git na branch beta confere as novidades da beta: `ca
 Fluxo de uma versão: desenvolver e testar na `beta` → push na `beta` → usar a versão de verdade por 1 ou 2 dias →
 merge da `beta` na `main` + tag `vX.Y`. Só o merge na `main` avisa os jogadores. Nunca dar push de trabalho novo direto na `main`.
 **Ao lançar:** `VERSAO` (servidor.py) + `VERSAO_PAGINA` (web/index.html) + topo do `web/novidades.js` + tabela de versões do README.
+**Nome das versões (desde a 0.5.8):** na `beta`, `X.Y.Z-betaN` (0.5.8-beta1, 0.5.8-beta2...); o merge na `main` sai como
+`X.Y.Z` (0.5.8), com uma entrada só no `novidades.js` que junta o que as betas trouxeram (tire as entradas `-betaN`).
+`vtupla()` no `servidor.py` põe toda `-betaN` antes da versão normal de mesmo número, e a beta2 depois da beta1.
 
 **v0.3.1** publicada em 09/10/2026: prioridade no formulário e seta de descer na Lista, e o `IA.md` com o modo agente.
 
@@ -185,6 +188,19 @@ O que entrou:
   cadastro de Regras já preenchido (`HJ_GUIA.abreDisciplinas({d, n})`).
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
+
+**0.5.8-beta1** (12/10/2026, issue #19): caçadas e expedições.
+- **Caçada** = as linhas com `+cac.NOME` (`grupos()` em `web/motor.js`). Só agrupa: cada etapa vale o XP normal e não há
+  bônus. Na Lista vira um bloco no grupo da etapa mais urgente, com a vida (etapas que faltam), "+ etapa" e ✎.
+- **Expedição** = projeto longo (`estado.json` → `expedicoes`), feito de marcos (caçadas com `exp`) e tarefas soltas
+  (`+exp.NOME`). Fechar um marco: `MARCO_ETAPA` × etapas (até 12) + `MARCO_DIA` × dias diferentes com etapa feita (até 10);
+  concluir: `EXP_SEMANA` × semanas ativas (até 20). Os bônus ficam gravados (`bonus` e `fim`) e entram no XP do dia em
+  que fecharam (`somaG` em `estado()`). Números **a calibrar**.
+- **Aba Expedições** em `web/expedicoes.js`, com cinco visões para testar (cards, trilha, quadro, foco, cronograma;
+  `localStorage` `hj-expv`). **Decidir qual fica** antes de ir para a `main`, e tirar as outras.
+- **Registrar:** campo limpo (o resto em "detalhes"), tecla N (o mesmo `#l-add` numa janela), tecla C (caçada com uma
+  etapa por linha). Topo da Lista num bloco só, com a missão da semana no canto.
+- Falta: tutorial da aba Expedições; editar o ícone de uma caçada não existe (é sempre o alvo, de propósito).
 
 ## Ideias para depois (sem versão definida)
 

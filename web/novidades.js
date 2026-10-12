@@ -5,6 +5,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.5.8-beta1", "nome": "atualização das conquistas", "data": "2026-10-12",
+   "resumo": "Caçadas para dividir uma tarefa grande em etapas, a aba Expedições para projetos longos e a Lista mais limpa.",
+   "itens": [
+     {"ic": "card", "t": "Caçadas", "d": "Uma tarefa grande vira uma caçada: as etapas ficam juntas na Lista, com uma barra de quantas faltam, e cada uma vale o XP normal. Para criar, escolha \"+ nova caçada\" em detalhes, ou aperte C e escreva uma etapa por linha (\"amanhã\" ou uma data no fim da linha vira o prazo)."},
+     {"ic": "island", "t": "Expedições", "d": "Uma aba nova para projetos que duram semanas, fora das disciplinas (TCC, app, iniciação científica). Cada marco é uma caçada: fechar um marco dá 5 XP por etapa e 6 por dia diferente em que você trabalhou nele; concluir a expedição dá +10 XP por semana ativa. Na beta dá para trocar entre cinco visões (cards, trilha, quadro, foco e cronograma) e escolher a melhor."},
+     {"ic": "scroll", "t": "Lista mais limpa", "d": "O campo de tarefa nova mostra só o texto e quanto ela vale; tipo, disciplina, prazo, prioridade e caçada ficam em detalhes. A tecla N abre o formulário completo de qualquer aba. O topo virou um bloco só, com a missão da semana no canto."},
+     {"ic": "antenna", "t": "Versões de teste com nome de teste", "d": "As versões da beta passam a se chamar 0.5.8-beta1, 0.5.8-beta2 e assim por diante. A versão normal recebe tudo de uma vez, como 0.5.8."}
+   ]},
   {"versao": "0.5.7", "nome": "atualização das conquistas", "data": "2026-10-11",
    "resumo": "Na versão de teste, a Masadora ganhou um modo teste com Jenny infinita.",
    "itens": [

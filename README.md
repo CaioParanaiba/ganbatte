@@ -162,6 +162,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.5.8-beta1 | atualização das conquistas | Caçadas (`+cac.NOME`: etapas agrupadas na Lista, sem bônus) e aba Expedições (`+exp.NOME`; marcos = caçadas, com bônus gravado no `estado.json`), com cinco visões para testar; campo limpo + tecla N; topo da Lista num bloco só; versões da beta como `X.Y.Z-betaN` |
 | 0.5.7 | atualização das conquistas | Modo teste da Masadora, só no canal beta: Jenny infinita para experimentar itens; nada é gravado e tudo volta ao sair ou recarregar |
 | 0.5.6 | atualização das conquistas | Versões de teste: Configurações → servidor troca o jogo entre a versão normal (`main`) e a beta (`POST /api/canal`, só em cópia git) |
 | 0.5.5 | atualização das conquistas | Botão de atualizar funciona numa cópia clonada por SSH: se o `git pull` falhar sem o agente SSH, puxa a mesma branch pelo HTTPS público |

@@ -164,6 +164,12 @@ aceita `hoje`, `amanha` e `+3`; já `15/10` é lido no formato do jogador e pode
 - `due:` prazo. Só ponha quando houver uma data de verdade.
 - `av:CHAVE` (opcional): liga a tarefa a uma avaliação específica (ex.: `av:P2`). Sem isso, o jogo liga pelas
   palavras-chave e pela data.
+- `+cac.NOME` (opcional): a tarefa é uma **etapa de uma caçada** (uma tarefa grande dividida em partes, ex.:
+  `+cac.trabalho-mae`). Na Lista as etapas aparecem juntas, com uma barra de quantas faltam; cada uma vale o XP normal.
+  NOME em minúsculas, sem acento nem espaço (use `-`). As caçadas que já existem estão em `estado` → `cacadas` (no
+  `GET /api/jogo`): use o NOME de lá. Uma caçada pode ser um **marco** de uma **expedição** (projeto longo, em
+  `estado` → `expedicoes`); fechar o marco dá bônus, mas quem fecha é o jogador, na página.
+- `+exp.NOME` (opcional): tarefa solta de uma expedição, que não é de nenhum marco.
 - **não crie nem edite** linhas com `rec:` (hábitos e Codeforces: o servidor cria todo dia).
 - texto curto, começando por verbo (Revisar, Fazer, Ler, Entregar).
 
@@ -230,6 +236,13 @@ aplicar, a mesma linha vira `aplicado`.
 2. Para cada uma, diga o que vai mudar (avaliação, tarefa ou as duas) e espere o ok. Se o lembrete for ambíguo,
    pergunte em vez de adivinhar.
 3. Grave (`/api/jogo/planos`, `/api/act` ou `/api/add`) e marque o lembrete com `/api/jogo/ajuste`.
+
+**Quebrar uma tarefa grande em etapas.** O jogador diz "tenho um trabalho para entregar em 2 semanas, divide para mim":
+1. Proponha de 3 a 8 etapas curtas (começando por verbo), com prazos espalhados até a entrega, e espere o ok.
+2. Grave cada uma pelo `/api/add` com o mesmo `+cac.NOME` (e a tag e o `due:` de cada uma). Caçada nova: invente um
+   NOME curto (`+cac.trabalho-mae`); a página mostra "Trabalho mae" até o jogador dar o nome certo (✎ no bloco da caçada).
+   Para pôr a caçada numa expedição, peça ao jogador para escolher em ✎ (a IA não grava o `estado.json`).
+3. Conte as etapas e os prazos, e diga que na Lista elas aparecem juntas.
 
 **Lançar nota.** O jogador diz "tirei 7,5 na P1 de CALC2": confira se a chave existe no plano e use
 `/api/jogo/nota`. Se não existir, pergunte qual é a avaliação.

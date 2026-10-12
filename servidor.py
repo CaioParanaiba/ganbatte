@@ -64,7 +64,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.5.7"
+VERSAO = "0.5.8-beta1"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
 VERSAO_NOME = "atualização das conquistas"   # nome da série 0.5 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -744,7 +744,7 @@ def api_jogo_narrada(d):
     return {"ok": True, "no": carta["no"]}
 
 
-RECIBOS = ("notasJ", "furias", "acertos", "xpDias")   # bônus de nota, fúria, acertos e XP dos dias fechados (web/motor.js)
+RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas e expedições (web/motor.js)
 
 
 def api_jogo_estado(d):
@@ -753,7 +753,7 @@ def api_jogo_estado(d):
         raise Erro("estado inválido")
     ok = {"spent": (int, float), "cofreUsado": (int, float), "own": list, "resg": list, "bought": dict, "usados": dict, "usos": list,
           "equip": dict, "tour": dict, "premios": list, "cofreMes": (int, float), "visto": str,
-          "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict}
+          "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict, "cacadas": dict, "expedicoes": dict}
     for k, v in e.items():
         if k not in ok or not isinstance(v, ok[k]):
             raise Erro(f"campo inválido no estado: {k}")
@@ -875,7 +875,11 @@ atual_lock = threading.Lock()
 
 
 def vtupla(v):
-    return tuple(int(x) for x in re.findall(r"\d+", str(v))[:3]) or (0,)
+    """"0.5.8-beta2" → (0, 5, 8, 0, 2): toda beta vem antes da versão normal de mesmo número, e a beta2 depois da beta1."""
+    m = re.match(r"\s*(\d+)\.(\d+)(?:\.(\d+))?(?:-beta(\d+))?", str(v))
+    if not m:
+        return (0,)
+    return (int(m[1]), int(m[2]), int(m[3] or 0)) + ((0, int(m[4])) if m[4] else (1, 0))
 
 
 def novidades_de(texto):
@@ -1344,7 +1348,7 @@ ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("i
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),
              "/ia.js": ("ia.js", "text/javascript; charset=utf-8"), "/conquistas.js": ("conquistas.js", "text/javascript; charset=utf-8"),
-             "/novidades.js": ("novidades.js", "text/javascript; charset=utf-8"),
+             "/novidades.js": ("novidades.js", "text/javascript; charset=utf-8"), "/expedicoes.js": ("expedicoes.js", "text/javascript; charset=utf-8"),
              "/feedback.js": ("feedback.js", "text/javascript; charset=utf-8"),
              "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8")}
 

@@ -75,10 +75,19 @@ let todo = [
   `${HOJE} Academia +rotina rec:h-c:${HOJE}`,
   `x ${HOJE} ${D(-2)} Leitura: arquivos e streams em Java +fac.POO @estudo`,
   `x ${HOJE} ${D(-1)} Exercícios de séries de Taylor +fac.CALC2 @estudo`,
+  // caçada avulsa e uma expedição (0.5.8): as etapas levam +cac.NOME; o nome de verdade fica no estado
+  `x ${D(-1)} ${D(-3)} Pesquisar o tema +cac.trabalho-mae`,
+  `${D(-3)} Montar os slides +cac.trabalho-mae due:${D(1)}`,
+  `${D(-3)} Revisar com ela +cac.trabalho-mae due:${D(4)}`,
+  `x ${D(-2)} ${D(-6)} Telas do protótipo +cac.app-v1 +treino`,
+  `x ${D(-1)} ${D(-6)} Login com e-mail +cac.app-v1 +treino`,
+  `${D(-6)} Publicar na loja +cac.app-v1 +treino due:${D(3)}`,
+  `${D(-2)} Ideias para a versão 2 +exp.app`,
   '',
 ];
 let jogador = {configurado:false, tags:{}, habitos:[{id:'h-a', n:'Treino de digitação'}, {id:'h-b', n:'Leitura (20 min)'}, {id:'h-c', n:'Academia', semana:2}], cf:{handle:'exemplo', meta:3}};   // começa sem configurar: a página abre o assistente da primeira entrada
-let notas = NOTAS, ajustes = '', estado = {spent:2500, own:['pal-simples','pal-gon'], equip:{theme:'simples'}, bought:{}, resg:[]};
+let notas = NOTAS, ajustes = '', estado = {spent:2500, own:['pal-simples','pal-gon'], equip:{theme:'simples'}, bought:{}, resg:[],
+  cacadas:{'trabalho-mae':{n:'Trabalho da mãe', criada:D(-3)}, 'app-v1':{n:'Versão 1', exp:'app', criada:D(-6)}}, expedicoes:{app:{n:'App da turma', ic:'tra', sub:'o app que faço com os amigos', ini:D(-20)}}};
 const narradas = [{no:'100', tipo:'semana', periodo:'semana passada', titulo:'O primeiro andar de verdade', texto:'Exemplo de carta narrada (com IA, opcional).', cronica:'Quem disse que a Arena se sobe de uma vez? Gon subiu de degrau em degrau, uma lista de cada vez.', escrita:D(-2), ic:'scroll'}];
 /* conquistas criadas pela IA (exemplo): uma cumprida esperando o resgate e uma em andamento */
 const conquistas = [

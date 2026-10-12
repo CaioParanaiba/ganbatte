@@ -391,6 +391,48 @@ function chefoes(C, feitas, abertas){
     return {...B, avs, pts, rest: Math.max(0, 1000 - pts*10), tot:1000, dead, fury, need, st: dead ? 'dead' : fury ? 'hurt' : '', open: avs.flatMap(a => a.abertas), lig};
   });
 }
+/* ---------- caçadas e expedições (0.5.8) ----------
+   Caçada: as tarefas com +cac.NOME. Só agrupa: cada etapa vale o XP normal dela.
+   Expedição: projeto longo, feito de caçadas (os marcos: estado.json → cacadas[NOME].exp) e de tarefas soltas (+exp.NOME).
+   Fechar um marco (todas as etapas feitas) dá o bônus dele; concluir a expedição dá +10 XP por semana ativa. Os dois ficam
+   gravados no estado.json como recibo, com o dia em que fecharam, e entram no XP daquele dia.
+   No todo.txt o nome vai em minúsculas e sem espaço (+cac.trabalho-mae); o nome de verdade e o ícone ficam no estado.json.
+   Sem nada no estado.json, a caçada aparece com o nome do arquivo e fica avulsa. */
+const MARCO_ETAPA = 5, MARCO_DIA = 6, EXP_SEMANA = 10;   // bônus por etapa (até 12), por dia diferente com etapa feita (até 10) e por semana ativa (até 20): a calibrar
+const slugDe = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+const nomeDeSlug = s => { const t = String(s).replace(/-/g, ' '); return t.charAt(0).toUpperCase() + t.slice(1); };
+const grupoDe = (t, p) => { const x = (t.proj || []).find(q => q.startsWith(p + '.')); return x ? x.slice(p.length + 1) : null; };
+const cacDe = t => grupoDe(t, 'cac'), expDe = t => grupoDe(t, 'exp');
+const bonusMarco = c => MARCO_ETAPA * Math.min(c.etapas.length, 12) + MARCO_DIA * Math.min(new Set(c.etapas.filter(t => t.done).map(t => t.done)).size, 10);
+const bonusExp = e => EXP_SEMANA * Math.min(e.semAtivas, 20);
+function grupos(C, feitas, abertas){
+  const MC = C.EST.cacadas || {}, ME = C.EST.expedicoes || {}, cac = {}, exp = {};
+  const nc = s => { if(cac[s]) return cac[s]; const m = MC[s] || {};
+    return cac[s] = {slug:s, n:m.n || nomeDeSlug(s), exp:m.exp || null, criada:m.criada || '', fim:m.fim || null, bonus:+m.bonus || 0, etapas:[]}; };
+  const ne = s => { if(exp[s]) return exp[s]; const m = ME[s] || {};
+    return exp[s] = {slug:s, n:m.n || nomeDeSlug(s), ic:m.ic || 'island', sub:m.sub || '', ini:m.ini || '', fim:m.fim || null, bonus:+m.bonus || 0, marcos:[], soltas:[]}; };
+  for(const s in MC) nc(s);
+  for(const s in ME) ne(s);
+  for(const t of feitas.concat(abertas)){ const c = cacDe(t), e = expDe(t); if(c) nc(c).etapas.push(t); else if(e) ne(e).soltas.push(t); }
+  for(const c of Object.values(cac)){
+    c.abertas = c.etapas.filter(t => !t.done); c.feitas = c.etapas.length - c.abertas.length;
+    if(!c.criada) c.criada = c.etapas.map(t => t.cri || t.done).filter(Boolean).sort()[0] || C.HOJE;
+    c.due = c.abertas.map(t => t.due).filter(Boolean).sort()[0] || null;
+    if(c.exp) ne(c.exp).marcos.push(c);
+  }
+  const seg = addD(C.HOJE, -dow(C.HOJE));
+  for(const e of Object.values(exp)){
+    e.marcos.sort((p, q) => p.criada.localeCompare(q.criada) || p.slug.localeCompare(q.slug));
+    const ts = e.marcos.flatMap(c => c.etapas).concat(e.soltas), ds = ts.filter(t => t.done).map(t => t.done);
+    if(!e.ini) e.ini = ts.map(t => t.cri || t.done).filter(Boolean).sort()[0] || C.HOJE;
+    e.semAtivas = new Set(ds.map(d => addD(d, -dow(d)))).size;   // semanas (seg a dom) com pelo menos uma tarefa feita
+    e.semanas = Array.from({length:12}, (_, i) => { const w = addD(seg, -7*(11 - i)); return ds.filter(d => d >= w && d <= addD(w, 6)).length; });
+    e.ok = e.marcos.filter(c => c.fim).length; e.atual = e.marcos.find(c => !c.fim) || null;
+    e.ganho = e.marcos.filter(c => c.fim).reduce((s, c) => s + c.bonus, 0);
+    e.tarefas = ts;
+  }
+  return {cac, exp};
+}
 /* recibos (0.5.2): o bônus de cada nota e os períodos de fúria ficam gravados no estado.json quando aparecem, para que mudar
    um peso, reescrever o plano ou sair da fúria nunca tire Jenny ou XP já dados. Antes tudo era recalculado a cada abertura
    e o gasto ficava gravado: um peso menor deixava a carteira negativa. A página grava o que mudou (S.rec.mudou).
@@ -475,6 +517,12 @@ function estado(C){
   // Codeforces: 5 XP por problema do dia, até 6 (dados.json/codeforces.por_dia), a partir do início da temporada; missão da semana ×1,5
   const cfDia = (D.cf && D.cf.por_dia) || {}; let cfXP = 0;
   for(const d in cfDia){ if(d < TEMP.ini || d > HOJE) continue; const e = Math.round(cfExtra(cfDia[d], d) * (d >= CF_DESDE && fracoSem(d) === 1 ? 1.5 : 1)); if(e){ cfXP += e; total += e; xpDia[d] = (xpDia[d]||0)+e; attr[1] += e; } }
+  // caçadas e expedições (0.5.8): marco fechado e expedição concluída somam o bônus gravado no dia em que fecharam
+  const G = grupos(C, D.feitas, abertas), xpDe2 = new Map(xs.map(o => [o.t, o.x]));
+  let gXP = 0;
+  const somaG = (d, x) => { if(!d || !(x > 0) || d > HOJE) return; gXP += x; total += x; xpDia[d] = (xpDia[d]||0) + x; };
+  for(const c of Object.values(G.cac)) if(c.fim && c.exp) somaG(c.fim, c.bonus);
+  for(const e of Object.values(G.exp)){ if(e.fim) somaG(e.fim, e.bonus); e.xp = e.tarefas.reduce((s, t) => s + (xpDe2.get(t) || 0), 0); }
   // dias fechados (0.5.3): o XP de cada dia anterior fica gravado no estado.json (xpDias) e só sobe. Linha concluída que some
   // do todo/done (IA reescrevendo, todo.sh archive) não tira mais XP do passado; "esqueci de marcar ontem" ainda soma.
   rec.xpDias = {...(EST.xpDias || {})};
@@ -527,7 +575,7 @@ function estado(C){
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
   return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:ten(set,first,HOJE,F.zetsu), hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
     proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + acerto)), rec, jenny: ganho - (EST.spent||0),
-    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
+    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, grupos: G, gXP, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
 }
 /* conquistas 000–099: regras fixas, conferidas pelo motor. Gerais (001–059, 090–099) e, para cada disciplina do plano
@@ -723,5 +771,6 @@ function conqIA(C, S){
 window.HJ = {TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
-  CONQ_MAX, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe};
+  CONQ_MAX, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
+  MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos};
 })();
