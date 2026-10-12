@@ -4,11 +4,17 @@
  * Versão grande (X.Y, com nome novo): uma entrada só, com os destaques em "itens" e as versões que levaram até ela em
  * "versoes" (mesmo formato, recolhidas na aba). As X.Y.Z seguintes ficam soltas no topo até a próxima versão grande.
  * O servidor e as páginas antigas só leem as entradas de fora, então "versoes" não atrapalha quem ainda vai atualizar.
- * Quem atualiza para uma versão grande vê os destaques numa janela grande, uma vez (boasNovas).
+ * Quem atualiza para uma versão grande vê os destaques numa janela grande, uma vez (boasNovas). A marca dela fica em
+ * estado.json → tour["nv:X.Y"], separada do visto: abrir a aba Novidades (onde fica o atualizar) não a gasta.
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.1", "nome": "atualização das expedições", "data": "2026-10-12",
+   "resumo": "A janela com as novidades da 0.6 agora aparece depois de atualizar.",
+   "itens": [
+     {"ic": "antenna", "t": "Janela da 0.6", "d": "Quem atualizava pela aba Novidades não via a janela com os destaques da 0.6: a página voltava nessa aba e ela já contava como vista. Agora a janela aparece uma vez, também para quem já estava na 0.6."}
+   ]},
   {"versao": "0.6", "nome": "atualização das expedições", "data": "2026-10-12",
    "resumo": "Tarefas simples na Lista, projetos grandes nas Expedições. A maior atualização desde a 0.5: caçadas, uma aba nova para projetos longos, editar tarefa por completo e 40 itens novos na Masadora.",
    "itens": [
@@ -280,12 +286,18 @@ document.addEventListener('click', e => {
   if(e.target.closest('[data-nvconfere]')){ confere(true); return; }
   if(e.target.closest('[data-nvatualiza]')){ atualiza(); return; }
 });
-/* quem acabou de atualizar vê o aviso uma vez; quem está começando agora (sem nada feito) não */
+/* quem acabou de atualizar vê o aviso uma vez; quem está começando agora (sem nada feito) não.
+   A janela da última versão grande tem marca própria: a página volta na aba Novidades depois de atualizar, e ela marca o visto */
+let VISTO0 = null;   // o visto de quando a página abriu (a aba Novidades o preenche antes de boasNovas rodar)
+const chaveG = g => 'nv:' + g.versao, viuG = g => !!(EST.tour || {})[chaveG(g)];
+function marcaG(g){ EST.tour = Object.assign({}, EST.tour, {[chaveG(g)]:1}); }
 function boasNovas(){
-  if(!CTX || !(CTX.JOG && CTX.JOG.configurado) || !naoVista()) return;
-  if(!EST.visto && !D.feitas.length){ EST.visto = VERSAO_PAGINA; salvaUI(); return; }
+  if(!CTX || !(CTX.JOG && CTX.JOG.configurado)) return;
+  const g = NOV.find(grande);
+  if(!VISTO0 && !D.feitas.length){ EST.visto = VERSAO_PAGINA; if(g) marcaG(g); salvaUI(); return; }
+  if(g && !viuG(g) && !document.getElementById('nv-big')){ janelaGrande(g); return; }
+  if(!naoVista()) return;
   const v = NOV.find(x => x.versao === VERSAO_PAGINA); if(!v) return;
-  if(grande(v) && !document.getElementById('nv-big')){ janelaGrande(v); return; }
   const to = document.createElement('div'); to.className = 'toast';
   to.innerHTML = `${ic('antenna')} Jogo atualizado para a ${esc(v.versao)} <small>${esc(v.resumo || '')}</small><button class="l-undo" data-go="nv">ver o que mudou</button>`;
   document.body.appendChild(to); setTimeout(() => to.remove(), 12000);
@@ -302,7 +314,7 @@ function janelaGrande(v){
 }
 function fechaGrande(ir){
   const el = document.getElementById('nv-big'); if(!el) return;
-  el.remove(); EST.visto = VERSAO_PAGINA; salvaUI();
+  el.remove(); EST.visto = VERSAO_PAGINA; marcaG(NOV.find(grande)); salvaUI();
   if(ir) tab(ir); else render();
 }
 document.addEventListener('click', e => {
@@ -311,5 +323,5 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.getElementById('nv-big')) fechaGrande(''); });
 window.HJ_NOV = {confere, canal: () => AT && AT.canal};
-(function tenta(){ if(!CTX){ setTimeout(tenta, 500); return; } if(cur === 'nv') render(); setTimeout(boasNovas, 1500); setTimeout(() => confere(false), 1800); })();
+(function tenta(){ if(!CTX){ setTimeout(tenta, 500); return; } VISTO0 = EST.visto || ''; if(cur === 'nv') render(); setTimeout(boasNovas, 1500); setTimeout(() => confere(false), 1800); })();
 })();
