@@ -5,6 +5,13 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.5.8-beta2", "nome": "atualização das conquistas", "data": "2026-10-12",
+   "resumo": "Correções: o mundo pixel mostra o seu nome, a fúria do chefão aparece inteira e a edição de tarefa não abre sozinha.",
+   "itens": [
+     {"ic": "tower", "t": "Mundo pixel com o seu nome", "d": "O mapa, a ficha e a licença do Book mostravam o nome de quem fez o jogo. Agora mostram o seu nome, o seu tipo de Nen mais forte e a sua foto de perfil."},
+     {"ic": "spider", "t": "Fúria visível", "d": "No cartão do chefão, o selo de fúria não fica mais embaixo da marca de aprovação da barra de vida."},
+     {"ic": "scroll", "t": "Editar tarefa", "d": "Apagar ou adicionar uma tarefa com a edição aberta fazia outra tarefa abrir sozinha para editar. Corrigido, e a edição ganhou um botão cancelar."}
+   ]},
   {"versao": "0.5.8-beta1", "nome": "atualização das conquistas", "data": "2026-10-12",
    "resumo": "Caçadas para dividir uma tarefa grande em etapas, a aba Expedições para projetos longos e a Lista mais limpa.",
    "itens": [

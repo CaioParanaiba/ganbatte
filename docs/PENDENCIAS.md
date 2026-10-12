@@ -189,6 +189,11 @@ O que entrou:
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
+**0.5.8-beta2** (12/10/2026, issues #24, #22, #21): correções.
+- Mundo pixel: `pxNome()`, `pxFoto()` e `NEN_QUEM` no lugar do CAIO/Transmutador/Killua escritos no código (o boneco do
+  mapa continua o sprite do Killua). Fúria: `.bcard .bars` com `padding-top` para o rótulo "aprovação". Lista:
+  `UI.ledit = edKey(t)` (linha + texto), qualquer outra ação fecha a edição, botão cancelar.
+
 **0.5.8-beta1** (12/10/2026, issue #19): caçadas e expedições.
 - **Caçada** = as linhas com `+cac.NOME` (`grupos()` em `web/motor.js`). Só agrupa: cada etapa vale o XP normal e não há
   bônus. Na Lista vira um bloco no grupo da etapa mais urgente, com a vida (etapas que faltam), "+ etapa" e ✎.
