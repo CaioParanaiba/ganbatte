@@ -5,6 +5,12 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.5.9-beta2", "nome": "atualização das conquistas", "data": "2026-10-12",
+   "resumo": "A aba Expedições ganha tutorial e as cinco formas de ver ficam de vez; o quanto vale da Lista abre só quando você quer.",
+   "itens": [
+     {"ic": "island", "t": "Expedições: formas de ver", "d": "Cards, trilha, quadro, foco e cronograma deixam de ser teste e ficam todas: é a mesma expedição desenhada de cinco jeitos, escolha em \"ver como\". A aba ganhou o seu ? tutorial, que explica marcos, tarefas soltas, semanas ativas e o bônus de concluir."},
+     {"ic": "scroll", "t": "Quanto vale recolhido", "d": "Na lateral da Lista, o quanto vale fica fechado, só com o título. Um clique abre a tabela de sempre."}
+   ]},
   {"versao": "0.5.9-beta1", "nome": "atualização das conquistas", "data": "2026-10-12",
    "resumo": "Editar uma tarefa agora muda o tipo, a disciplina, o prazo e a prioridade, não só o texto.",
    "itens": [

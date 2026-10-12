@@ -189,10 +189,13 @@ O que entrou:
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
+**0.5.9-beta2** (12/10/2026, issues #25, #26): as cinco visões das Expedições ficam (formas de ver), tutorial da aba
+(`TOURS.x`), "quanto vale" da Lista em `<details>` fechado (`#l-valec`). Próximo passo: a 0.5.9 na `main`.
+
 **0.5.9-beta1** (12/10/2026, issue #20): editor completo da tarefa.
 - `abreEd(t)` separa a linha em texto + tipo/disciplina/prazo/prioridade (`LE`); `linhaEd()` monta de volta e só põe a
   tag do tipo se ele mudou (senão devolve as tags originais, `LE.tags0`). `edHTML(S)` desenha a caixa; `dataEd()` não
-  redesenha (comeria o clique no salvar). `/api/act` edit com `pri`. Falta: as caçadas e expedições (#25-#28) para a beta2.
+  redesenha (comeria o clique no salvar). `/api/act` edit com `pri`.
 
 **0.5.8-beta2** (12/10/2026, issues #24, #22, #21): correções.
 - Mundo pixel: `pxNome()`, `pxFoto()` e `NEN_QUEM` no lugar do CAIO/Transmutador/Killua escritos no código (o boneco do
