@@ -10,6 +10,11 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.2-beta5", "nome": "atualização das expedições", "data": "2026-10-12",
+   "resumo": "As fotos de perfil agora vêm com o jogo.",
+   "itens": [
+     {"ic": "bag", "t": "Fotos de perfil para todos", "d": "Gon, Killua, Kurapika, Leorio e o logo do Hunter x Hunter estão na Masadora de todo mundo, sem precisar copiar arquivo nenhum. Fotos novas chegam com as atualizações; a pasta avatares/ dos seus dados não é mais usada."}
+   ]},
   {"versao": "0.6.2-beta4", "nome": "atualização das expedições", "data": "2026-10-12",
    "resumo": "Ao lado de cada heatmap, como você vai em cada dia da semana; e as férias aparecem no fim da grade.",
    "itens": [

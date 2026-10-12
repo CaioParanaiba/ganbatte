@@ -86,7 +86,6 @@ Tudo o que é seu fica numa pasta separada do código:
 | `narradas.json` | cartas narradas do Book |
 | `conquistas.json` | conquistas criadas pela IA (Book, 200 em diante) e o que você resgatou |
 | `estado.json` | loja, Jenny gasta e o que está equipado |
-| `avatares/` | coloque arquivos PNG aqui para ter mais fotos de perfil |
 | `servidor.log` | o que o servidor anotou quando roda em segundo plano |
 
 Para fazer backup, use o botão **baixar meus dados** na aba Configurações (um ZIP da pasta) ou copie a pasta. Para usar outra pasta: `python3 servidor.py --dados CAMINHO`. Se você já tem um todo.txt em outra pasta (com o todo.sh ou outro app), use `--todo PASTA`: o jogo lê e grava o `todo.txt` e o `done.txt` de lá, e o resto continua na pasta de dados.
@@ -152,7 +151,10 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   servidor lê do GitHub para avisar de versão nova (ao lançar uma, ponha-a no topo). `web/feedback.js`: bug, ideia ou
   dúvida vira uma issue preenchida pelos formulários de `.github/ISSUE_TEMPLATE/`. `web/efeitos.js`: o que os itens
   da Masadora fazem na tela (texturas, molduras, fontes, animações e sons; os itens e preços ficam no `COS` do motor). `web/demo.js`: o servidor de mentira do
-  modo demonstração (também usado no GitHub Pages).
+  modo demonstração (também usado no GitHub Pages). `web/a/`: o banco de fotos de perfil; cada PNG (256×256, nome com
+  letras, números, `-`, `_` ou `.`) vira um item da Masadora por 1.000 J (os grátis ficam no `AV_GRATIS` do motor). O
+  jogador não envia fotos: quem desenvolve põe aqui, e só imagens que podem ser distribuídas. Não renomeie uma foto que já
+  saiu: o nome é o id do item comprado e equipado.
 - **IA opcional.** O jogo funciona sem IA. Com uma IA de terminal instalada (Claude Code, Codex ou Gemini CLI), ligue-a
   em **Configurações → IA**: o jogo passa a ler os planos de ensino (pasta `~/.hunter-todo/planos/`), aplicar a caixa de entrada
   e escrever as cartas do Book sozinho, e propõe conquistas feitas para você (no Book); você confere antes de salvar. Sem ela, o jogo monta os pedidos e você cola
@@ -162,6 +164,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.2-beta5 | atualização das expedições | Fotos de perfil vêm do banco do repositório (`web/a/`), para todos os jogadores; o jogador não coloca mais fotos na pasta de dados (#13) |
 | 0.6.2-beta4 | atualização das expedições | Resumo ao lado dos heatmaps da Lista (barra por dia da semana e número da temporada) e as férias no fim da grade |
 | 0.6.2-beta3 | atualização das expedições | Heatmaps da Lista do início ao fim da temporada, com quadradinhos que ocupam a largura (#14) |
 | 0.6.2-beta2 | atualização das expedições | Provar temas, fundos, efeitos, molduras e fontes, com o jogo travado durante a prova; Semestre com os meses da temporada (#2); Codeforces não perde dias além de 10 mil envios (#1) |

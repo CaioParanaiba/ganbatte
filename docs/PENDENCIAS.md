@@ -193,6 +193,12 @@ O que entrou:
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
+**0.6.2-beta5** (12/10/2026, issue #13): as fotos de perfil são o banco de `web/a/`, versionado (o autor garante os
+direitos de cada imagem que entra). `avatares()` e a rota `/a/` leem só de lá; a pasta `avatares/` dos dados deixou de
+existir para o jogo (quem tinha fotos lá não as vê mais). As 12 primeiras vieram da pasta do autor, renomeadas para
+`personagem-N` (`hunter-x-hunter` é o logo); o `AV_ANTIGO` do motor passa o `own` e o `equip.avatar` dos nomes antigos
+para os novos ao carregar (grava na próxima vez que o estado for salvo).
+
 **0.6.2-beta4** (12/10/2026, issue #14): `resumo(v, cab)` à direita de cada grade (`.l-hrow` = grade + `.l-hres` de
 290px): média de `v(d)` por dia da semana nos dias já vividos do semestre (`VIVIDOS`; hoje só se já tem algo) e o número
 da temporada; some com `@container (max-width:860px)`. A grade vai até a véspera de `TEMP.volta` (`FIMG`); os dias de
@@ -270,8 +276,6 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
 - **Testar no Windows e no Mac:** `instalar.ps1`, início automático (`.vbs` na pasta Inicializar, LaunchAgent no Mac),
   `pythonw` sem janela, boas-vindas no terminal. Precisa de um amigo em cada sistema.
 - **GitHub Pages:** no ar em https://caioparanaiba.github.io/todo-engine/ (atualiza a cada push que mexe em `web/`).
-- **Fotos de perfil:** as imagens de personagens não vão para o repositório (direitos). Decidir de onde vêm (avatares
-  próprios ou livres, ou cada um coloca os seus em `~/.hunter-todo/avatares/`).
 - **Testes automáticos** do `servidor.py` (hoje os testes são scripts soltos e o Firefox controlado por script).
 - **Aba Lista, bloco "constância":** sobra muito espaço entre os heatmaps (20 semanas) e a borda direita. Avaliar: mais
   semanas conforme a largura, quadradinhos maiores, ou outra coisa ao lado (resumo dos números, por exemplo).

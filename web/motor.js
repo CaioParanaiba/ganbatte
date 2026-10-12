@@ -139,9 +139,13 @@ const COS = [
   {id:'px-ms-neon', cat:'px', n:'Masadora · Neon', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','neon'], sw:['#0E0B1F','#1D1840','#FF5FA2','#6FE3FF','#E9E6FF']},
   {id:'px-ms-papel', cat:'px', n:'Masadora · Papel', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','papel'], sw:['#EFE6D2','#D8C7A3','#FFFBF1','#B4521E','#2B1D14']},
 ];
-/* fotos de perfil: cada imagem de jogo/avatares/ vira um item da loja. Preço padrão 1.000 J; estas são grátis. */
-const AV_GRATIS = ['logo','hunter-x-hunter-logo-png-image','killua-png'];
-const avNome = f => f.replace(/-png(-d)?$/,'').replace(/^\d+-\d+_/,'').replace(/-png-image$/,'').replace(/[-_]+/g,' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
+/* fotos de perfil: cada PNG de web/a/ (o banco do repositório) vira um item da loja. Preço padrão 1.000 J; estas são grátis. */
+const AV_GRATIS = ['logo','hunter-x-hunter','killua-2'];
+const avNome = f => f.replace(/[-_]+/g,' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
+/* nomes das fotos antes do banco web/a/ (0.6.2-beta5): o que foi comprado ou equipado com o nome antigo passa para o novo */
+const AV_ANTIGO = {'gon':'gon-1', 'gon-olhaputo':'gon-2', 'killua':'killua-1', 'killua-png':'killua-2', 'kulluaface':'killua-3',
+  '702-7023783_transparent-killua-png-png-d':'killua-4', 'kurapika':'kurapika-1', 'leorio':'leorio-1', 'leorio2':'leorio-2',
+  'leorio-png':'leorio-3', 'leorio-png-leorio':'leorio-4', 'hunter-x-hunter-logo-png-image':'hunter-x-hunter'};
 /* tema completo = pacote: comprar o tema dá cada peça (paleta, textura, efeitos) para usar e misturar separado */
 function expandeOwn(own){ for(const it of COS) if(it.parts && own.has(it.id)) it.parts.forEach(p => own.add(p)); return own; }
 function catalogo(avatares){
@@ -284,6 +288,8 @@ function carregar(api){
   const abertas = todo.filter(o => !o.l.startsWith('x ')).map(o => parseLinha(o.l, o.n));
   const av = parseAvaliacoes(api.avaliacoes), nt = parseNotas(api.notas);
   const est = Object.assign({spent:0, cofreUsado:0, own:[], resg:[], bought:{}, equip:{}}, api.estado||{});
+  est.own = [...new Set((est.own||[]).map(k => k.startsWith('av-') && AV_ANTIGO[k.slice(3)] ? 'av-' + AV_ANTIGO[k.slice(3)] : k))];
+  if(est.equip && AV_ANTIGO[est.equip.avatar]) est.equip = Object.assign({}, est.equip, {avatar: AV_ANTIGO[est.equip.avatar]});
   est.equip = Object.assign({theme:'simples', fx:[], bg:'', frame:'', title:'', avatar:'logo', lic:'l2', hud:'logo', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}}, est.equip||{});
   const hoje = api.hoje || new Date().toISOString().slice(0,10);
   return {D:{feitas, abertas, cf:api.cf||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},

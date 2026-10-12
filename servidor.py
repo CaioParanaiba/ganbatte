@@ -13,7 +13,6 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   ajustes.txt, narradas.json caixa de entrada e cartas narradas (opcionais)
   conquistas.json           conquistas criadas pela IA (200 em diante) e o que foi resgatado
   planos/                   planos de ensino (PDF, HTML...) que a IA lê
-  avatares/*.png            fotos de perfil extras
   cf.json                   cache do Codeforces (problemas aceitos por dia e os marcados à mão)
 
 Rotas (as mesmas que web/demo.js simula no modo demonstração):
@@ -64,7 +63,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.2-beta4"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
+VERSAO = "0.6.2-beta5"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -673,16 +672,9 @@ SIGLA = re.compile(r"^[A-Z0-9]{1,12}$")
 CHAVE = re.compile(r"^[A-Za-z0-9]{1,8}$")
 
 
-def pastas_avatares():
-    return [DADOS / "avatares", WEB / "a"]
-
-
 def avatares():
-    nomes = set()
-    for p in pastas_avatares():
-        if p.is_dir():
-            nomes.update(f.stem for f in p.glob("*.png") if NOME_AV.match(f.stem) and not f.stem.startswith("."))
-    return sorted(nomes)
+    """Fotos de perfil: o banco de web/a/ (o jogador não envia fotos; quem desenvolve põe PNG lá)."""
+    return sorted(f.stem for f in (WEB / "a").glob("*.png") if NOME_AV.match(f.stem) and not f.stem.startswith("."))
 
 
 def api_jogo_get():
@@ -1433,9 +1425,8 @@ class H(BaseHTTPRequestHandler):
             nome, ctype = ESTATICOS[caminho]
             return self._arquivo(WEB / nome, ctype)
         if caminho.startswith("/a/") and caminho.endswith(".png") and NOME_AV.match(caminho[3:-4]) and not caminho[3:].startswith("."):
-            for p in pastas_avatares():
-                if (p / caminho[3:]).is_file():
-                    return self._arquivo(p / caminho[3:], "image/png", "max-age=3600")
+            if (WEB / "a" / caminho[3:]).is_file():
+                return self._arquivo(WEB / "a" / caminho[3:], "image/png", "max-age=3600")
             return self._json(404, {"ok": False, "error": "foto não encontrada"})
         if caminho == "/api/ping":
             return self._json(200, {"ok": True, "app": "hunter-todo", "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
@@ -1657,7 +1648,6 @@ def main():
         sys.exit("Precisa do Python 3.8 ou mais novo.")
     DADOS = Path(a.dados).expanduser().resolve()
     DADOS.mkdir(parents=True, exist_ok=True)
-    (DADOS / "avatares").mkdir(exist_ok=True)
     TODO_DIR = Path(a.todo).expanduser().resolve() if a.todo else DADOS
     if not TODO_DIR.is_dir():
         sys.exit(f"A pasta do --todo não existe: {TODO_DIR}")
