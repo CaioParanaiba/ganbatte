@@ -1408,6 +1408,8 @@ const avNen = (i,s) => `<span class="av" style="--c:${NC(i)}${s?';--s:'+s+'px':'
 const avTask = (t,s) => avNen(nenDe(t), s);
 /* a avaliação que a tarefa prepara, com o motivo no title (trocar: editar a tarefa e escrever av:CHAVE) */
 const ligTxt = (b,t) => { const l = b.lig && b.lig.get(t); return l ? `<small class="lg" title="ligada a ${esc(l.k)} por: ${esc(l.por)}. Para trocar, edite a tarefa na Lista e escreva av:CHAVE.">→ ${esc(l.k)}</small>` : ''; };
+/* a tarefa em edição: linha e texto, para que outra tarefa que caia na mesma linha (depois de apagar ou adicionar) não abra sozinha */
+const edKey = t => t.n + '\n' + t.raw;
 /* mundo pixel: o rosto e o nome do jogador (o boneco do mapa continua o Killua, que é sprite) */
 const NEN_QUEM = ['Intensificador','Transmutador','Conjurador','Especialista','Manipulador','Emissor'];
 const pxFoto = () => (UI.avatar === 'logo' || !CTX.AVATARES.includes(UI.avatar)) ? LOGO.replace(/'/g, '%27') : avSrc(UI.avatar);   // sem aspas: vai num url() sem aspas
@@ -1886,7 +1888,7 @@ function rowL(t, S, x){
   const corpo = t.raw.replace(/^x \d{4}-\d\d-\d\d (\d{4}-\d\d-\d\d )?/, '').replace(/^\([A-Z]\) /, '').replace(/^\d{4}-\d\d-\d\d /, '');
   return `<li class="l-task${feita ? ' done' : ''}" style="--c:${NC(nen)}" data-ln="${t.n}">
     <button class="l-ck" data-l="${feita ? 'reopen' : 'done'}" aria-label="${feita ? 'reabrir' : 'concluir'}: ${esc(t.txt)}">${feita ? '✓' : ''}</button>
-    <div class="l-body">${UI.ledit === t.n ? `<div class="l-edit"><input id="l-ed" value="${esc(HJx.brDatas(corpo))}" aria-label="Editar tarefa"><button class="btn" data-l="save" type="button">salvar</button></div>`
+    <div class="l-body">${UI.ledit === edKey(t) ? `<div class="l-edit"><input id="l-ed" value="${esc(HJx.brDatas(corpo))}" aria-label="Editar tarefa"><button class="btn" data-l="save" type="button">salvar</button><button class="btn" data-l="cancel" type="button">cancelar</button></div>`
       : `<span class="l-txt">${t.pri && !feita ? `<span class="l-pri ${t.pri}">${t.pri}</span>` : ''}${esc(t.txt)}</span>`}
       <span class="l-tags"><span class="l-tag nen">${esc(NEN[nen].n)}</span>${d ? `<span class="l-tag">${esc(d)}</span>` : ''}${t.due ? `<span class="l-tag${dc}">${dueTxt(t.due)}</span>` : ''}${isRec(t) ? '<span class="l-tag">rotina</span>' : ''}${window.HJ_EXP ? HJ_EXP.etiquetas(t, S) : ''}</span></div>
     <div class="l-right">${v.ms.length ? `<span class="l-mult" title="${v.base} XP · ${v.ms.map(m => m + ' ×1,5').join(' · ')}">${v.ms.join(' + ')}</span>` : ''}<span class="l-xp" title="${v.base != null ? v.base + ' XP de base' : 'XP ganho'}">+${v.x}</span>
@@ -2032,7 +2034,9 @@ document.addEventListener('click', async e => {
   const b = q('[data-l]'); if(!b) return;
   const n = +b.closest('[data-ln]').dataset.ln, t = D.abertas.concat(D.feitas).find(x => x.n === n); if(!t) return;
   const act = b.dataset.l;
-  if(act === 'edit'){ UI.ledit = n; render(); return; }
+  if(act === 'edit'){ UI.ledit = edKey(t); render(); return; }
+  if(act === 'cancel'){ UI.ledit = null; render(); return; }
+  if(act !== 'save') UI.ledit = null;
   if(act === 'save'){ const v = document.getElementById('l-ed').value.trim(); UI.ledit = null; if(!v){ render(); return; } acaoL(() => post('/api/act', {raw:t.raw, action:'edit', value:v}), 'Tarefa editada'); return; }
   if(act === 'done'){ const antes = estado(), rr = b.getBoundingClientRect();
     try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
