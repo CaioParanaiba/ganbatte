@@ -1146,6 +1146,9 @@ a.btn{display:inline-block;text-decoration:none}
 .l-edit input{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--volt);border-radius:8px;padding:5px 9px;font:13px var(--f-mono);color:var(--ink)}
 .l-empty{padding:16px;color:var(--soft);font-size:13.5px}
 details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-webkit-details-marker{display:none}
+/* quanto vale: fechado é só o título, para sobrar espaço na lateral */
+.l-valec{padding:10px 16px} .l-valec summary{cursor:pointer;list-style:none} .l-valec summary::-webkit-details-marker{display:none}
+.l-valec h2{margin:0} .l-valec[open] h2{margin-bottom:10px} .l-valec .tg{margin-left:auto;color:var(--faint);transition:transform .15s} .l-valec[open] .tg{transform:rotate(90deg)}
 .l-side{display:flex;flex-direction:column;gap:14px;position:sticky;top:12px}
 .l-g{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:7px 0;border-top:1px solid var(--hair)}
 .l-g:first-child{border-top:0;padding-top:0}
@@ -1238,7 +1241,7 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
         <div class="card l-const" id="l-heatc"><h2><span class="c">~/</span>constância · últimas 20 semanas</h2><div id="l-heat"></div></div>
       </div>
       <aside class="l-side">
-        <div class="card"><h2><span class="c">~/</span>quanto vale</h2><table class="l-vale"><tbody id="l-vale"></tbody></table></div>
+        <details class="card l-valec" id="l-valec"><summary><h2><span class="c">~/</span>quanto vale<span class="tg" aria-hidden="true">▸</span></h2></summary><table class="l-vale"><tbody id="l-vale"></tbody></table></details>
         <div class="card"><h2><span class="c">~/</span>rende mais agora</h2><div id="l-golpes"></div></div>
         <div class="card"><h2><span class="c">~/</span>chefões · vida = nota que falta<button class="go" data-go="b2" style="margin-left:auto">quadro →</button></h2><div id="l-bosses"></div></div>
         <div class="card" id="l-expc"><h2><span class="c">~/</span>expedições · projetos longos<button class="go" data-go="x" style="margin-left:auto">ver →</button></h2><div id="l-exps"></div></div>
