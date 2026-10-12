@@ -64,7 +64,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.1"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
+VERSAO = "0.6.2-beta1"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -513,17 +513,45 @@ def api_config(d):
 cf_vivo = {"t": 0.0, "rodando": False}
 
 
-def cf_atualiza(cf):
-    """Conta os problemas distintos aceitos por dia (pela data do 1º AC, no fuso desta máquina). Roda numa thread."""
-    try:
-        url = "https://codeforces.com/api/user.status?" + urllib.parse.urlencode({"handle": cf["handle"], "from": 1, "count": 2000})
+def inicio_temporada():
+    """Início da temporada (linha "temporada | 2026-2 | INÍCIO | fim | volta" do avaliacoes.txt; "?" = estimado).
+    Sem a linha, os últimos seis meses."""
+    for l in ler_txt("avaliacoes.txt").splitlines():
+        p = [x.strip().replace("?", "") for x in l.split("|")]
+        if len(p) > 2 and p[0].lower() == "temporada":
+            try:
+                return date.fromisoformat(p[2])
+            except ValueError:
+                break
+    return hoje() - timedelta(days=183)
+
+
+def cf_envios(handle, desde):
+    """Envios do handle feitos desde o início da temporada. A API não filtra por data, mas devolve do mais novo para o
+    mais velho: lê de 1000 em 1000 até passar do início (no máximo 10 páginas, com a pausa de 2 s que a API pede)."""
+    lim = time.mktime(desde.timetuple())
+    envios = []
+    for pg in range(10):
+        if pg:
+            time.sleep(2)
+        url = "https://codeforces.com/api/user.status?" + urllib.parse.urlencode({"handle": handle, "from": 1 + pg * 1000, "count": 1000})
         req = urllib.request.Request(url, headers={"User-Agent": f"hunter-todo/{VERSAO}"})
         with urllib.request.urlopen(req, timeout=10) as r:
             j = json.load(r)
         if j.get("status") != "OK":
             raise ValueError(j.get("comment") or "resposta inesperada")
+        envios += [s for s in j["result"] if s.get("creationTimeSeconds", 0) >= lim]
+        if len(j["result"]) < 1000 or j["result"][-1].get("creationTimeSeconds", 0) < lim:
+            break
+    return envios
+
+
+def cf_atualiza(cf):
+    """Conta os problemas distintos aceitos por dia (pela data do 1º AC, no fuso desta máquina), só desde o início da
+    temporada: o que veio antes não conta XP nem entra no heatmap. Roda numa thread."""
+    try:
         primeiro = {}
-        for sub in reversed(j["result"]):
+        for sub in reversed(cf_envios(cf["handle"], inicio_temporada())):
             if sub.get("verdict") == "OK":
                 k = (sub["problem"].get("contestId"), sub["problem"].get("index"))
                 primeiro.setdefault(k, time.strftime("%Y-%m-%d", time.localtime(sub["creationTimeSeconds"])))

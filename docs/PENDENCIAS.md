@@ -193,6 +193,12 @@ O que entrou:
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
+**0.6.2-beta1** (12/10/2026, issue #29): provar paleta. `UI.prova` (não grava) troca a paleta em `aplicaTema()`;
+botão `data-prova` nos itens `pal` e `full` com `eq.theme` ainda não comprados, faixa `faixaProva()` para voltar; comprar
+limpa. Codeforces: `cf_envios()` pagina o `user.status` de 1000 em 1000 (até 10 páginas, 2 s entre elas) até passar de
+`inicio_temporada()` (linha `temporada` do `avaliacoes.txt`; sem ela, 183 dias), no lugar do `count=2000` fixo.
+Limite conhecido: problema resolvido antes da temporada e reenviado nela conta como novo.
+
 **0.6.1** (12/10/2026): a janela de destaques não aparecia para quem atualizava pela aba Novidades (a página volta
 em `#nv`, e `rNV` gastava o `visto` antes de `boasNovas`). Agora a janela tem marca própria, `tour["nv:X.Y"]`, e o
 "jogador novo" olha o `visto` de quando a página abriu (`VISTO0`).

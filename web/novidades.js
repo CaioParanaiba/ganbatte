@@ -10,6 +10,12 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.2-beta1", "nome": "atualização das expedições", "data": "2026-10-12",
+   "resumo": "Prove uma paleta antes de comprar, e o Codeforces conta só a temporada.",
+   "itens": [
+     {"ic": "coin", "t": "Provar paleta", "d": "Na Masadora, o botão provar pinta o jogo todo com a paleta (ou a do tema completo) sem comprar nada. Ande pelas abas para ver como fica; a faixa no topo volta para a sua."},
+     {"ic": "tra", "t": "Codeforces da temporada", "d": "O jogo lê os seus envios só desde o início da temporada, todos eles, e não mais os 2000 últimos. O que você fez antes não entra no heatmap (e já não dava XP)."}
+   ]},
   {"versao": "0.6.1", "nome": "atualização das expedições", "data": "2026-10-12",
    "resumo": "A janela com as novidades da 0.6 agora aparece depois de atualizar.",
    "itens": [

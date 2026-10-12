@@ -1350,6 +1350,15 @@ async function saiTeste(){
   try { await recarrega(); } catch(e){ toast('Recarregue a página para voltar à sua loja de verdade'); }
   render(); toast('Modo teste desligado <small>a sua loja e a sua carteira voltaram como estavam</small>');
 }
+/* provar uma paleta antes de comprar (#29): pinta o jogo todo até sair, sem gravar nada */
+function faixaProva(){
+  let el = document.getElementById('faixa-prova');
+  if(!UI.prova){ if(el) el.remove(); return; }
+  const nome = (THEMES.find(t => t[0] === UI.prova) || [0, UI.prova])[1];
+  const html = `Provando a paleta <b>${esc(nome)}</b>: ande pelas abas para ver como fica. Nada foi comprado.<button type="button" class="btn" data-prova="" style="background:#0b0d12;color:#fff;border-color:#0b0d12">voltar à minha paleta</button>`;
+  if(el){ el.innerHTML = html; return; }
+  document.body.insertAdjacentHTML('afterbegin', `<div id="faixa-prova" role="status" style="position:sticky;top:0;z-index:68;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:8px 16px;background:var(--aura);color:#0b0d12;font:600 13.5px var(--f-ui)">${html}</div>`);
+}
 function faixaTeste(){
   let el = document.getElementById('faixa-teste');
   if(!TESTE){ if(el) el.remove(); return; }
@@ -1363,7 +1372,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.1';
+const VERSAO_PAGINA = '0.6.2-beta1';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1391,7 +1400,7 @@ function salvaUI(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a loja: ' + esc(e.message)));
 }
 function aplicaTema(){
-  const r = document.documentElement, p = PALS[UI.theme] || PALS.simples;
+  const r = document.documentElement, p = PALS[UI.prova || UI.theme] || PALS.simples;   // UI.prova: paleta só provada na loja (#29)
   TK.forEach((t,i) => r.style.setProperty('--'+t, p[i+1])); r.style.setProperty('color-scheme', p[0]);
   r.setAttribute('data-fx', (UI.fxOff ? [] : UI.fx).join(' '));
   if(UI.bg) r.setAttribute('data-bg', UI.bg); else r.removeAttribute('data-bg');
@@ -1620,7 +1629,9 @@ function itemHTML(S, it){
   else if(lk) btn = `<button class="btn" disabled>${it.why}</button>`;
   else if(need) btn = `<button class="btn" disabled>abra o mundo pixel</button>`;
   else btn = `<button class="btn" data-cos="${it.id}" ${S.jenny >= it.p ? '' : 'disabled'}>${S.jenny >= it.p ? 'comprar' : `faltam ${fmt(it.p - S.jenny)} J`}</button>`;
-  const ver = it.ev || it.cat === 'som' ? `<button class="btn hj-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
+  const pal = !own && (it.cat === 'pal' || (it.cat === 'full' && it.eq?.theme)) && it.eq.theme, prova = pal && UI.prova === pal;
+  const ver = pal ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : pal}" title="${prova ? 'voltar à minha paleta' : 'provar a paleta no jogo todo, sem comprar'}">${prova ? 'provando' : 'provar'}</button>`
+    : it.ev || it.cat === 'som' ? `<button class="btn hj-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
   return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need?' lock':''}">${pvHTML(it)}<div class="info"><b>${esc(it.n)}</b><p>${esc(it.d)}</p><div class="buy7"><span class="pr${it.p?'':' free'}">${it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis'}${own?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
 }
 const SECS = {
@@ -2136,7 +2147,7 @@ const RENDER = {l:rL, b:rB, b2:rB2, x:S => window.HJ_EXP && HJ_EXP.aba(S), d2:rD
 let cur = 'l';
 function render(){
   if(!CTX) return;
-  const S = estado(); aplicaTema(); RENDER[cur](S); faixaTeste();
+  const S = estado(); aplicaTema(); RENDER[cur](S); faixaTeste(); faixaProva();
   const gn = document.getElementById('gnav-'+cur); if(gn) gn.innerHTML = gnav(cur);
   document.getElementById('facts').innerHTML = `<span class="fact">Andar <b>${S.a.n}</b></span><span class="fact">hoje <b>+${S.hojeXP}</b></span><span class="fact"><b>${fmt(S.jenny)}</b> J</span><span class="fact">${esc(TEMP.nome)} · semana <b>${S.sem.n}/${S.sem.tot}</b></span>`;
 }
@@ -2173,9 +2184,10 @@ document.addEventListener('click', async e => {
   const ap = q('[data-aplic]'); if(ap){ const m = INBOX[+ap.dataset.aplic]; if(!m) return;
     try { await post('/api/jogo/ajuste', {quando:m.d, texto:m.t, aplicado: m.st !== 'ok'}); await recarrega(); toast(m.st === 'ok' ? 'Lembrete pendente de novo' : 'Lembrete aplicado'); render(); } catch(err){ toast('Não marcou: ' + esc(err.message)); } return; }
   const te = q('[data-teste]'); if(te){ te.dataset.teste === '1' ? entraTeste() : saiTeste(); return; }
+  const pr = q('[data-prova]'); if(pr){ UI.prova = pr.dataset.prova; render(); return; }
   const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(); if(!it || S.jenny < it.p) return;
-    SPENT += it.p; OWN.add(it.id); HJx.expandeOwn(OWN); equipa(it); salvaUI(); toast(`${esc(it.n)} é seu <small>−${fmt(it.p)} J · já equipado${it.parts ? ' · as peças ficam separadas também' : ''}</small>`); render(); return; }
+    SPENT += it.p; OWN.add(it.id); HJx.expandeOwn(OWN); UI.prova = ''; equipa(it); salvaUI(); toast(`${esc(it.n)} é seu <small>−${fmt(it.p)} J · já equipado${it.parts ? ' · as peças ficam separadas também' : ''}</small>`); render(); return; }
   const eq = q('[data-equip]'); if(eq){ const it = COS.find(i => i.id === eq.dataset.equip); if(it){ equipa(it); salvaUI(); render(); } return; }
   const rl = q('[data-real]'); if(rl){ const x = meusPremios()[+rl.dataset.real], S = estado(); if(!x || !podeResgatar(S, x)) return;
     SPENT += x.p; COFRE_USADO += x.rs||0; RESG.push(`${x.n} · ${ddmm(HOJE)}`); salvaUI(); toast(`Resgatado: ${esc(x.n)} <small>aproveite</small>`); render(); return; }

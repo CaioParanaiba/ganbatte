@@ -162,6 +162,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.2-beta1 | atualização das expedições | Provar paleta na Masadora antes de comprar (#29); Codeforces lido só desde o início da temporada, com paginação da API |
 | 0.6.1 | atualização das expedições | A janela de destaques da 0.6 aparece mesmo para quem atualizou pela aba Novidades (marca própria em `tour["nv:0.6"]`) |
 | **0.6** | **atualização das expedições** | **Junta tudo desde a 0.5.3** (as linhas abaixo, até a 0.5.4): caçadas, aba Expedições com cinco formas de ver e tutorial, editor completo da tarefa, 40 itens na Masadora, versões de teste e correções. Novidades agrupadas por versão grande, com janela de destaques ao atualizar |
 | 0.5.9-beta2 | atualização das conquistas | Expedições: as cinco visões ficam como formas de ver (#25) e a aba ganha tutorial (#26); "quanto vale" da Lista recolhível |
