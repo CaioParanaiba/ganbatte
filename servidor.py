@@ -14,6 +14,7 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   conquistas.json           conquistas criadas pela IA (200 em diante) e o que foi resgatado
   planos/                   planos de ensino (PDF, HTML...) que a IA lê
   cf.json                   cache do Codeforces (problemas aceitos por dia e os marcados à mão)
+  duo.json                  cache do Duolingo (a última ofensiva lida e os dias já creditados)
 
 Rotas (as mesmas que web/demo.js simula no modo demonstração):
   GET  /api/jogo                          tudo o que a página precisa
@@ -38,9 +39,11 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/atualizar {}                  baixa a versão nova (git pull ou ZIP do GitHub) e reinicia o servidor
   POST /api/canal {canal}                 troca entre a versão normal (main) e as de teste (beta), só em cópia git, e reinicia
 
-Todo dia o servidor cria as recorrentes de hoje (um hábito por linha, rec:ID:DATA, e a do Codeforces se houver handle),
+Todo dia o servidor cria as recorrentes de hoje (um hábito por linha, rec:ID:DATA, e as do Codeforces e do Duolingo se ligados),
 tira as que ficaram abertas de dias anteriores e conclui sozinho a do Codeforces quando a meta do dia é batida. Se a meta foi
 batida num dia em que o jogo ficou fechado, o bônus é creditado depois, no done.txt (só a partir do dia em que o handle foi ligado).
+O Duolingo (só o nome de usuário, perfil público, sem senha) conclui sozinho a rec:duo de cada dia com lição feita; os dias da
+ofensiva desde o início da temporada entram no done.txt, e o dia salvo pelo bloqueio de ofensiva do Duolingo não conta.
 
 Iniciar com o computador (opcional): serviço do usuário no systemd (Linux; sem systemd, ~/.config/autostart), atalho .vbs na
 pasta Inicializar (Windows) ou LaunchAgent (Mac). O servidor de segundo plano roda com --fundo e grava o log em servidor.log.
@@ -63,7 +66,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.2-beta5"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
+VERSAO = "0.6.2"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -332,7 +335,7 @@ def api_undo(_):
 
 
 # ---------- jogador e recorrentes do dia ----------
-JOGADOR_PADRAO = {"configurado": False, "tags": {}, "habitos": [], "cf": None}
+JOGADOR_PADRAO = {"configurado": False, "tags": {}, "habitos": [], "cf": None, "duo": None}
 ID_HAB = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}$")
 HANDLE = re.compile(r"^[A-Za-z0-9_.-]{1,40}$")
 
@@ -371,12 +374,23 @@ def cf_conf(j):
     return {"handle": cf["handle"], "meta": meta}
 
 
+def duo_conf(j):
+    duo = j.get("duo")
+    if not isinstance(duo, dict) or not HANDLE.match(str(duo.get("usuario", ""))):
+        return None
+    return {"usuario": duo["usuario"]}
+
+
 def linha_habito(h, tag, d):
     return f"{d} {limpa(h['n'])} {tag} rec:{h['id']}:{d}"
 
 
 def linha_cf(cf, tag, d):
     return f"(A) {d} Codeforces {cf['meta']} questões {tag} rec:cf:{d}"
+
+
+def linha_duo(tag, d):
+    return f"{d} Duolingo {tag} rec:duo:{d}"
 
 
 def recorrentes_do_dia(linhas, j, refazer=False, done=()):
@@ -395,7 +409,7 @@ def recorrentes_do_dia(linhas, j, refazer=False, done=()):
             continue
         else:
             manter.append(l)
-    tag, cf = tag_habito(j), cf_conf(j)
+    tag, cf, duo = tag_habito(j), cf_conf(j), duo_conf(j)
     habs = habitos(j)
     ids = {h["id"] for h in habs}
     feitos = set()
@@ -403,10 +417,10 @@ def recorrentes_do_dia(linhas, j, refazer=False, done=()):
         resto = []
         for l in manter:
             r = REC.search(l)
-            if r and r.group(2) == d and (r.group(1) != "cf" or not DONE_RE.match(l)):
+            if r and r.group(2) == d and (r.group(1) not in ("cf", "duo") or not DONE_RE.match(l)):
                 if DONE_RE.match(l):
                     feitos.add(r.group(1))
-                continue   # refeita abaixo; a do Codeforces aberta também (handle desligado ou meta nova)
+                continue   # refeita abaixo; a do Codeforces e a do Duolingo abertas também (desligados ou meta nova)
             resto.append(l)
         manter = resto
     existentes = {(r.group(1)) for r in (REC.search(l) for l in manter) if r and r.group(2) == d}
@@ -424,6 +438,8 @@ def recorrentes_do_dia(linhas, j, refazer=False, done=()):
             inserir(manter, f"x {d} {nova}" if h["id"] in feitos else nova)
     if cf and "cf" not in existentes:
         inserir(manter, linha_cf(cf, tag, d))
+    if duo and "duo" not in existentes:
+        inserir(manter, linha_duo(tag, d))
     if not manter or manter[-1] != "":
         manter.append("")
     linhas[:] = manter
@@ -504,7 +520,7 @@ def api_config(d):
         if av is not None:
             gravar_txt("avaliacoes.txt", av if av.endswith("\n") else av + "\n")
         arruma_dia(refazer=True)
-    cf_vivo["t"] = 0.0   # handle pode ter mudado: consulta de novo na próxima leitura
+    cf_vivo["t"] = duo_vivo["t"] = 0.0   # handle ou usuário podem ter mudado: consulta de novo na próxima leitura
     return {"ok": True}
 
 
@@ -666,6 +682,100 @@ def cf_leitura(j):
     return {"handle": cf["handle"], "por_dia": cf_soma(cache), "manual": cache.get("manual") or {}}
 
 
+# ---------- Duolingo ----------
+# Sem API oficial e sem senha: o perfil público (GET /2017-06-30/users?username=) dá a ofensiva atual (streakData:
+# início, fim e tamanho). O tamanho só cresce em dia com lição feita; o dia salvo pelo bloqueio de ofensiva estica o fim
+# sem aumentar o tamanho. Entre duas leituras, então, sobem exatamente tantos dias feitos quanto o tamanho cresceu.
+# Com o jogo aberto todo dia isso é exato; se ficou fechado e houve bloqueio no meio, sabe-se quantos dias foram
+# feitos, não quais: o jogo credita os mais recentes da janela.
+duo_vivo = {"t": 0.0, "rodando": False}
+
+
+def duo_perfil(usuario):
+    url = "https://www.duolingo.com/2017-06-30/users?" + urllib.parse.urlencode({"username": usuario, "fields": "users{id,username,streak,streakData}"})
+    req = urllib.request.Request(url, headers={"User-Agent": f"Mozilla/5.0 (hunter-todo/{VERSAO})"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        us = json.load(r).get("users") or []
+    u = next((u for u in us if str(u.get("username", "")).lower() == usuario.lower()), None)
+    if not u:
+        raise ValueError(f"usuário {usuario} não encontrado no Duolingo")
+    s = ((u.get("streakData") or {}).get("currentStreak")) or {}
+    try:
+        ini, fim, n = date.fromisoformat(s["startDate"]), date.fromisoformat(s["endDate"]), int(s["length"])
+    except (KeyError, TypeError, ValueError):
+        return None   # sem ofensiva agora
+    return {"ini": ini.isoformat(), "fim": fim.isoformat(), "n": n} if n > 0 and ini <= fim else None
+
+
+def duo_dias_novos(ult, of):
+    """Dias com lição feita desde a leitura anterior. Mesma ofensiva: os dias depois do fim antigo, tantos quanto o tamanho
+    cresceu. Ofensiva nova (ou a primeira leitura): a ofensiva inteira, tantos dias quanto o tamanho. Sempre os mais recentes."""
+    if not of:
+        return []
+    fim = date.fromisoformat(of["fim"])
+    if ult and ult.get("ini") == of["ini"] and ult.get("fim", "") <= of["fim"]:
+        de, n = date.fromisoformat(ult["fim"]) + timedelta(days=1), of["n"] - int(ult.get("n") or 0)
+    else:
+        de, n = date.fromisoformat(of["ini"]), of["n"]
+    janela = (fim - de).days + 1
+    n = max(0, min(n, janela))
+    return [(fim - timedelta(days=i)).isoformat() for i in range(n)]
+
+
+def duo_atualiza(duo):
+    """Lê a ofensiva e credita os dias feitos desde a leitura anterior, só desde o início da temporada: o dia de hoje conclui a
+    rec:duo de hoje (uma vez por dia; reaberta à mão, não conclui de novo) e os anteriores vão concluídos para o done.txt.
+    Roda numa thread."""
+    try:
+        of = duo_perfil(duo["usuario"])
+        ini, d = inicio_temporada().isoformat(), hoje().isoformat()
+        with lock:
+            cache = ler_json("duo.json", {})
+            if cache.get("usuario") != duo["usuario"]:   # usuário novo: a ofensiva inteira dele entra (na temporada)
+                cache = {"usuario": duo["usuario"], "creditados": []}
+            feitos = set(cache.get("creditados") or [])
+            novos = sorted(x for x in duo_dias_novos(cache.get("ult"), of) if ini <= x <= d and x not in feitos)
+            if novos:
+                linhas, done = ler(), ler("done.txt")
+                ja = {r.group(2) for r in (REC.search(l) for l in done + linhas if DONE_RE.match(l)) if r and r.group(1) == "duo"}
+                tag = tag_habito(jogador())
+                passados = [x for x in novos if x < d and x not in ja]
+                for x in passados:
+                    inserir(done, f"x {x} {linha_duo(tag, x)}")
+                if passados:
+                    gravar(done, "done.txt")
+                    log(f"duolingo: {len(passados)} dia(s) da ofensiva creditados ({passados[0]} a {passados[-1]})")
+                if d in novos and d not in ja:
+                    i = next((i for i, l in enumerate(linhas) if f"rec:duo:{d}" in l.split()), None)
+                    if i is None:
+                        inserir(linhas, f"x {d} {linha_duo(tag, d)}")
+                    else:
+                        linhas[i] = transformar(linhas[i], "done")
+                    gravar(linhas)
+                    log("duolingo: lição de hoje feita, recorrente concluída")
+                feitos |= set(novos)
+            cache.update(ult=of, ofensiva=of["n"] if of else 0, creditados=sorted(feitos)[-400:])
+            gravar_json("duo.json", cache)
+    except Exception as e:   # sem internet, usuário errado ou o Duolingo mudou a resposta: fica o que estava no duo.json
+        log("duolingo:", e)
+    finally:
+        duo_vivo["t"] = time.time()
+        duo_vivo["rodando"] = False
+
+
+def duo_leitura(j):
+    duo = duo_conf(j)
+    if not duo:
+        return None
+    if time.time() - duo_vivo["t"] > 600 and not duo_vivo["rodando"]:
+        duo_vivo["rodando"] = True
+        threading.Thread(target=duo_atualiza, args=(duo,), daemon=True).start()
+    cache = ler_json("duo.json", {})
+    if cache.get("usuario") != duo["usuario"]:
+        return {"usuario": duo["usuario"], "ofensiva": None}
+    return {"usuario": duo["usuario"], "ofensiva": cache.get("ofensiva")}
+
+
 # ---------- jogo: leitura e as três gravações ----------
 NOME_AV = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
 SIGLA = re.compile(r"^[A-Z0-9]{1,12}$")
@@ -680,7 +790,7 @@ def avatares():
 def api_jogo_get():
     arruma_dia()
     j = jogador()
-    cf = cf_leitura(j)
+    cf, duo = cf_leitura(j), duo_leitura(j)
     narradas = ler_json("narradas.json", [])
     conquistas = ler_json("conquistas.json", [])
     estado = ler_json("estado.json", {})
@@ -688,7 +798,7 @@ def api_jogo_get():
         todo, done = ler(), ler_txt("done.txt").split("\n")
     return {"ok": True, "hoje": hoje().isoformat(), "todo": todo, "done": done, "avaliacoes": ler_txt("avaliacoes.txt"),
             "notas": ler_txt("notas.txt"), "ajustes": ler_txt("ajustes.txt"), "estado": estado if isinstance(estado, dict) else {},
-            "cf": cf, "avatares": avatares(), "narradas": narradas if isinstance(narradas, list) else [], "jogador": j,
+            "cf": cf, "duo": duo, "avatares": avatares(), "narradas": narradas if isinstance(narradas, list) else [], "jogador": j,
             "conquistas": conquistas if isinstance(conquistas, list) else [],
             "servidor": {"versao": VERSAO, "nome": VERSAO_NOME, "sistema": sistema(), "auto": auto_ligado(), "fundo": EXEC["fundo"], "dados": str(DADOS),
                          "canal": canal(), "metodo": metodo_atualizar()}}

@@ -10,34 +10,45 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
-  {"versao": "0.6.2-beta5", "nome": "atualização das expedições", "data": "2026-10-12",
-   "resumo": "As fotos de perfil agora vêm com o jogo.",
+  {"versao": "0.6.2", "nome": "atualização das expedições", "data": "2026-10-12",
+   "resumo": "O Duolingo conta sozinho, como o Codeforces, e os heatmaps mostram a temporada inteira.",
    "itens": [
-     {"ic": "bag", "t": "Fotos de perfil para todos", "d": "Gon, Killua, Kurapika, Leorio e o logo do Hunter x Hunter estão na Masadora de todo mundo, sem precisar copiar arquivo nenhum. Fotos novas chegam com as atualizações; a pasta avatares/ dos seus dados não é mais usada."}
-   ]},
-  {"versao": "0.6.2-beta4", "nome": "atualização das expedições", "data": "2026-10-12",
-   "resumo": "Ao lado de cada heatmap, como você vai em cada dia da semana; e as férias aparecem no fim da grade.",
-   "itens": [
-     {"ic": "flame", "t": "Resumo da constância", "d": "À direita de cada heatmap da Lista, uma barra por dia da semana mostra quanto você cumpre em cada um (o mais fraco em destaque), com o número da temporada: % de dias com o Ten, % dos hábitos, semanas na meta, problemas do Codeforces. Em tela estreita, só o heatmap."},
-     {"ic": "scroll", "t": "Férias no heatmap", "d": "A grade vai até a volta às aulas, com as férias em verde tracejado, como no Semestre. Dia de férias sem nada não é falha, e as médias contam só o semestre."}
-   ]},
-  {"versao": "0.6.2-beta3", "nome": "atualização das expedições", "data": "2026-10-12",
-   "resumo": "Os heatmaps da Lista mostram a sua temporada inteira.",
-   "itens": [
-     {"ic": "flame", "t": "Constância da temporada", "d": "Os heatmaps da Lista vão do primeiro ao último dia da temporada, e não mais as últimas 20 semanas: nada de antes dela aparece, e os dias que ainda vêm ficam tracejados. Os quadradinhos crescem para ocupar a largura do bloco."}
-   ]},
-  {"versao": "0.6.2-beta2", "nome": "atualização das expedições", "data": "2026-10-12",
-   "resumo": "Prove qualquer aparência antes de comprar (o jogo trava enquanto isso), e o Semestre segue a temporada.",
-   "itens": [
-     {"ic": "coin", "t": "Provar mais coisas", "d": "Além das paletas, dá para provar temas, fundos, efeitos, molduras e fontes. Enquanto prova, o jogo fica travado: dá para andar pelas abas e olhar, mas não concluir, criar nem editar nada. A faixa no topo volta ao que é seu."},
-     {"ic": "scroll", "t": "Calendário da temporada", "d": "A aba Semestre mostra os meses da sua temporada (do início até a volta às aulas), e não mais agosto a fevereiro fixos."},
-     {"ic": "tra", "t": "Codeforces sem perder dias", "d": "Para quem passa de 10 mil envios na temporada, os dias mais antigos ficam como estavam em vez de sumir."}
-   ]},
-  {"versao": "0.6.2-beta1", "nome": "atualização das expedições", "data": "2026-10-12",
-   "resumo": "Prove uma paleta antes de comprar, e o Codeforces conta só a temporada.",
-   "itens": [
-     {"ic": "coin", "t": "Provar paleta", "d": "Na Masadora, o botão provar pinta o jogo todo com a paleta (ou a do tema completo) sem comprar nada. Ande pelas abas para ver como fica; a faixa no topo volta para a sua."},
-     {"ic": "tra", "t": "Codeforces da temporada", "d": "O jogo lê os seus envios só desde o início da temporada, todos eles, e não mais os 2000 últimos. O que você fez antes não entra no heatmap (e já não dava XP)."}
+     {"ic": "scroll", "t": "Duolingo automático", "d": "Em Configurações, ligue o Duolingo só com o seu usuário, sem senha. O jogo lê a ofensiva do seu perfil e marca sozinho o hábito no dia em que você faz a lição (+5 XP, conta para o Ten), com heatmap e duas conquistas. Ao ligar, os dias da ofensiva atual desde o início da temporada já entram. O dia salvo pelo bloqueio de ofensiva não conta: aqui, a folga é o Zetsu."},
+     {"ic": "flame", "t": "Constância da temporada", "d": "Os heatmaps da Lista vão do primeiro ao último dia da temporada, com as férias no fim, e ao lado mostram quanto você cumpre em cada dia da semana."},
+     {"ic": "coin", "t": "Provar antes de comprar", "d": "Na Masadora, prove paletas, temas, fundos, efeitos, molduras e fontes no jogo todo. Enquanto prova, o jogo fica travado; a faixa no topo volta ao que é seu."},
+     {"ic": "bag", "t": "Fotos de perfil para todos", "d": "As fotos da Masadora vêm com o jogo, e as novas chegam com as atualizações."},
+     {"ic": "tra", "t": "Semestre e Codeforces pela temporada", "d": "A aba Semestre mostra os meses da sua temporada, e o Codeforces lê todos os seus envios desde o início dela."}
+   ],
+   "versoes": [
+     {"versao": "0.6.2-beta5", "nome": "atualização das expedições", "data": "2026-10-12",
+      "resumo": "As fotos de perfil agora vêm com o jogo.",
+      "itens": [
+        {"ic": "bag", "t": "Fotos de perfil para todos", "d": "Gon, Killua, Kurapika, Leorio e o logo do Hunter x Hunter estão na Masadora de todo mundo, sem precisar copiar arquivo nenhum. Fotos novas chegam com as atualizações; a pasta avatares/ dos seus dados não é mais usada."}
+      ]},
+     {"versao": "0.6.2-beta4", "nome": "atualização das expedições", "data": "2026-10-12",
+      "resumo": "Ao lado de cada heatmap, como você vai em cada dia da semana; e as férias aparecem no fim da grade.",
+      "itens": [
+        {"ic": "flame", "t": "Resumo da constância", "d": "À direita de cada heatmap da Lista, uma barra por dia da semana mostra quanto você cumpre em cada um (o mais fraco em destaque), com o número da temporada: % de dias com o Ten, % dos hábitos, semanas na meta, problemas do Codeforces. Em tela estreita, só o heatmap."},
+        {"ic": "scroll", "t": "Férias no heatmap", "d": "A grade vai até a volta às aulas, com as férias em verde tracejado, como no Semestre. Dia de férias sem nada não é falha, e as médias contam só o semestre."}
+      ]},
+     {"versao": "0.6.2-beta3", "nome": "atualização das expedições", "data": "2026-10-12",
+      "resumo": "Os heatmaps da Lista mostram a sua temporada inteira.",
+      "itens": [
+        {"ic": "flame", "t": "Constância da temporada", "d": "Os heatmaps da Lista vão do primeiro ao último dia da temporada, e não mais as últimas 20 semanas: nada de antes dela aparece, e os dias que ainda vêm ficam tracejados. Os quadradinhos crescem para ocupar a largura do bloco."}
+      ]},
+     {"versao": "0.6.2-beta2", "nome": "atualização das expedições", "data": "2026-10-12",
+      "resumo": "Prove qualquer aparência antes de comprar (o jogo trava enquanto isso), e o Semestre segue a temporada.",
+      "itens": [
+        {"ic": "coin", "t": "Provar mais coisas", "d": "Além das paletas, dá para provar temas, fundos, efeitos, molduras e fontes. Enquanto prova, o jogo fica travado: dá para andar pelas abas e olhar, mas não concluir, criar nem editar nada. A faixa no topo volta ao que é seu."},
+        {"ic": "scroll", "t": "Calendário da temporada", "d": "A aba Semestre mostra os meses da sua temporada (do início até a volta às aulas), e não mais agosto a fevereiro fixos."},
+        {"ic": "tra", "t": "Codeforces sem perder dias", "d": "Para quem passa de 10 mil envios na temporada, os dias mais antigos ficam como estavam em vez de sumir."}
+      ]},
+     {"versao": "0.6.2-beta1", "nome": "atualização das expedições", "data": "2026-10-12",
+      "resumo": "Prove uma paleta antes de comprar, e o Codeforces conta só a temporada.",
+      "itens": [
+        {"ic": "coin", "t": "Provar paleta", "d": "Na Masadora, o botão provar pinta o jogo todo com a paleta (ou a do tema completo) sem comprar nada. Ande pelas abas para ver como fica; a faixa no topo volta para a sua."},
+        {"ic": "tra", "t": "Codeforces da temporada", "d": "O jogo lê os seus envios só desde o início da temporada, todos eles, e não mais os 2000 últimos. O que você fez antes não entra no heatmap (e já não dava XP)."}
+      ]}
    ]},
   {"versao": "0.6.1", "nome": "atualização das expedições", "data": "2026-10-12",
    "resumo": "A janela com as novidades da 0.6 agora aparece depois de atualizar.",

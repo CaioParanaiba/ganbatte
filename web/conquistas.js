@@ -121,7 +121,9 @@ function pedido(cia){
     L.push(`- ${h.id}: ${h.n} · ${h.semana ? h.semana + '× por semana' : 'todo dia'} · ${k} · ${r.at} ${h.semana ? 'semanas' : 'dias'}`); }
   if(J.cf && J.cf.handle){ const cf = (D.cf && D.cf.por_dia) || {}, r = HJ.progConq({regra:'sequencia', hab:'cf', n:9999}, CTX, S, desde());
     L.push(`- cf: Codeforces (problema aceito no dia) · meta ${J.cf.meta || 3} por dia · ${Object.keys(cf).filter(d => d >= de && cf[d] > 0).length} · ${r.at} dias`); }
-  if(!(J.habitos || []).length && !(J.cf && J.cf.handle)) L.push('- (nenhum)');
+  if(J.duo && J.duo.usuario){ const r = HJ.progConq({regra:'sequencia', hab:'duo', n:9999}, CTX, S, desde());
+    L.push(`- duo: Duolingo (lição feita no dia, conferida sozinha) · todo dia · ${D.feitas.filter(t => String(t.rec || '').startsWith('duo:') && String(t.rec).split(':')[1] >= de).length} · ${r.at} dias`); }
+  if(!(J.habitos || []).length && !(J.cf && J.cf.handle) && !(J.duo && J.duo.usuario)) L.push('- (nenhum)');
   const PARA = new Set('para com sem uma umas uns dos das nos nas pelo pela pelos pelas que como mais menos sobre entre todo toda todos todas este esta esse essa isso aqui fazer feito feita depois antes ainda'.split(' '));
   const cont = {}; for(const t of D.feitas.filter(t => t.done && t.done >= HJ.addD(HOJE, -59) && !HJ.isRec(t)))
     for(const w of new Set(HJ.norm(t.txt).split(/[^a-z0-9]+/).filter(w => w.length >= 3 && !PARA.has(w) && !/^\d+$/.test(w)))) cont[w] = (cont[w] || 0) + 1;
@@ -134,7 +136,7 @@ function pedido(cia){
     '[{"regra": "...", ...campos da regra..., "nome": "...", "texto": "...", "ic": "..."}]', '',
     'Regras que o jogo sabe conferir (use só estas, com estes campos):',
     '- contagem: {"regra": "contagem", "n": 10, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, fac faculdade, tre treino e projetos, vid vida), prazo (true = feitas até o prazo).',
-    '- sequencia: {"regra": "sequencia", "hab": "ID", "n": 14} = o hábito em n dias seguidos (hábito semanal: n semanas seguidas com a meta da semana). hab é o id da lista de hábitos (cf = Codeforces).',
+    '- sequencia: {"regra": "sequencia", "hab": "ID", "n": 14} = o hábito em n dias seguidos (hábito semanal: n semanas seguidas com a meta da semana). hab é o id da lista de hábitos (cf = Codeforces, duo = Duolingo).',
     '- nota: {"regra": "nota", "disc": "BD", "media": 8} = garantir media×10 pontos na disciplina; ou {"regra": "nota", "disc": "BD", "aval": "P2", "nota": 8} = tirar 8 ou mais numa avaliação que ainda não tem nota.',
     '- constancia: {"regra": "constancia", "n": 21} = Ten de n dias seguidos.',
     '- semana: {"regra": "semana", "xp": 400} = uma semana (seg a dom) com xp ou mais, até o dobro da melhor semana.',

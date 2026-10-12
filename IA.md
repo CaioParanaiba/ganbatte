@@ -101,8 +101,8 @@ O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer
 | `narradas.json` | cartas do Book | acrescentar, **pela API** |
 | `conquistas.json` | conquistas criadas pela IA e o que foi resgatado | só ler: quem cria é o jogador, pelo Book |
 | `planos/` | planos de ensino (PDF, HTML...) | ler |
-| `jogador.json` | nome, tags, hábitos, disciplinas, Codeforces, formato de data, IA ligada (`ia`) | só ler |
-| `estado.json`, `cf.json` | loja, carteira; cache do Codeforces | não mexer |
+| `jogador.json` | nome, tags, hábitos, disciplinas, Codeforces, Duolingo, formato de data, IA ligada (`ia`) | só ler |
+| `estado.json`, `cf.json`, `duo.json` | loja, carteira; cache do Codeforces e do Duolingo | não mexer |
 
 ### 2. Como ler e gravar
 
@@ -170,7 +170,7 @@ aceita `hoje`, `amanha` e `+3`; já `15/10` é lido no formato do jogador e pode
   `GET /api/jogo`): use o NOME de lá. Uma caçada pode ser um **marco** de uma **expedição** (projeto longo, em
   `estado` → `expedicoes`); fechar o marco dá bônus, mas quem fecha é o jogador, na página.
 - `+exp.NOME` (opcional): tarefa solta de uma expedição, que não é de nenhum marco.
-- **não crie nem edite** linhas com `rec:` (hábitos e Codeforces: o servidor cria todo dia).
+- **não crie nem edite** linhas com `rec:` (hábitos, Codeforces e Duolingo: o servidor cria todo dia).
 - texto curto, começando por verbo (Revisar, Fazer, Ler, Entregar).
 
 **Plano de avaliação (`avaliacoes.txt`):**
@@ -248,7 +248,7 @@ aplicar, a mesma linha vira `aplicado`.
 `/api/jogo/nota`. Se não existir, pergunte qual é a avaliação.
 
 **Carta narrada.** Os fatos vêm do `done` (linhas `x DATA ...` dentro do período) e do `notas`. Hábitos são as
-linhas com `rec:`; o Codeforces está em `cf.json` → `por_dia` (mais `manual`, os marcados à mão). **Não calcule XP, Ten nem andar**: se quiser esses
+linhas com `rec:`; o Codeforces está em `cf.json` → `por_dia` (mais `manual`, os marcados à mão); o Duolingo são as linhas `rec:duo:DATA` concluídas (dia com lição feita). **Não calcule XP, Ten nem andar**: se quiser esses
 números, peça ao jogador para copiar o pedido em **Book → Narradas** (ele já traz tudo) ou escreva sem eles. Não
 precisa pedir ok antes de gravar uma carta: ela não muda pontuação, e o jogador pode pedir outra.
 
@@ -387,7 +387,7 @@ Responda SÓ com uma lista JSON, sem texto antes ou depois e sem markdown:
 
 Regras que o jogo sabe conferir (use só estas, com estes campos):
 - contagem: {"regra": "contagem", "n": 10, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, fac faculdade, tre treino e projetos, vid vida), prazo (true = feitas até o prazo).
-- sequencia: {"regra": "sequencia", "hab": "ID", "n": 14} = o hábito em n dias seguidos (hábito semanal: n semanas seguidas com a meta da semana). hab é o id da lista de hábitos (cf = Codeforces).
+- sequencia: {"regra": "sequencia", "hab": "ID", "n": 14} = o hábito em n dias seguidos (hábito semanal: n semanas seguidas com a meta da semana). hab é o id da lista de hábitos (cf = Codeforces, duo = Duolingo).
 - nota: {"regra": "nota", "disc": "BD", "media": 8} = garantir media×10 pontos na disciplina; ou {"regra": "nota", "disc": "BD", "aval": "P2", "nota": 8} = tirar 8 ou mais numa avaliação que ainda não tem nota.
 - constancia: {"regra": "constancia", "n": 21} = Ten de n dias seguidos.
 - semana: {"regra": "semana", "xp": 400} = uma semana (seg a dom) com xp ou mais, até o dobro da melhor semana.

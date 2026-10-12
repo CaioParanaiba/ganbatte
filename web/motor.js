@@ -292,7 +292,7 @@ function carregar(api){
   if(est.equip && AV_ANTIGO[est.equip.avatar]) est.equip = Object.assign({}, est.equip, {avatar: AV_ANTIGO[est.equip.avatar]});
   est.equip = Object.assign({theme:'simples', fx:[], bg:'', frame:'', title:'', avatar:'logo', lic:'l2', hud:'logo', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}}, est.equip||{});
   const hoje = api.hoje || new Date().toISOString().slice(0,10);
-  return {D:{feitas, abertas, cf:api.cf||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
+  return {D:{feitas, abertas, cf:api.cf||null, duo:api.duo||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
     BOSSES: av.bosses, AVAL: av.aval, NOTAS: nt.NOTAS, PARC: nt.PARC, NDATA: nt.NDATA, INBOX: parseAjustes(api.ajustes), EST: est, AVATARES: api.avatares||[],
     NARRADAS: Array.isArray(api.narradas) ? api.narradas : [], CONQ: Array.isArray(api.conquistas) ? api.conquistas : [], JOG: Object.assign({nome:'Hunter'}, api.jogador||{}), SRV: api.servidor||null, AV_TXT: String(api.avaliacoes||''), NT_TXT: String(api.notas||''), dif:'normal'};
 }
@@ -607,6 +607,9 @@ function cartas(C, S){
   const cfDia = (D.cf && D.cf.por_dia) || {}, cfOn = !!(C.JOG && C.JOG.cf && C.JOG.cf.handle);
   let cfSeq = 0; { let cur = 0, ant = ''; for(const d of Object.keys(cfDia).filter(d => cfDia[d] > 0).sort()){ cur = ant && addD(ant, 1) === d ? cur + 1 : 1; ant = d; cfSeq = Math.max(cfSeq, cur); } }
   const cfTot = Object.values(cfDia).reduce((a,b) => a + (b||0), 0);
+  // Duolingo (só com o usuário ligado): maior sequência de dias com lição feita (rec:duo, que o servidor conclui sozinho)
+  const duoOn = !!(C.JOG && C.JOG.duo && C.JOG.duo.usuario), duoDias = [...diasHab(C, 'duo')].sort();
+  let duoSeq = 0; { let cur = 0, ant = ''; for(const d of duoDias){ cur = ant && addD(ant, 1) === d ? cur + 1 : 1; ant = d; duoSeq = Math.max(duoSeq, cur); } }
   const todos = S.bs.length > 0 && S.bs.every(b => b.dead);
   const h = S.hab, hn = h.nome ? ` Seu melhor: ${h.nome}, ${h.max}.` : '';
   const c = (no, rk, n, d, on, ic) => ({no, rk, o:'slot', n, d, on:!!on, ic});
@@ -627,6 +630,9 @@ function cartas(C, S){
     c('027','E','Codeforces: 10 dias seguidos',`10 dias seguidos com problema aceito. Recorde: ${cfSeq}.`, cfSeq >= 10, 'tra'),
     c('028','C','Codeforces: 30 dias seguidos',`30 dias seguidos com problema aceito. Recorde: ${cfSeq}.`, cfSeq >= 30, 'tra'),
     c('029','C','Codeforces: 100 problemas',`100 problemas aceitos na temporada. Você tem ${cfTot}.`, cfTot >= 100, 'tra'),
+  ] : []).concat(duoOn ? [
+    c('030','E','Duolingo: 14 dias seguidos',`14 dias seguidos com lição feita. Recorde: ${duoSeq}.`, duoSeq >= 14, 'scroll'),
+    c('031','C','Duolingo: 60 dias seguidos',`60 dias seguidos com lição feita. Recorde: ${duoSeq}.`, duoSeq >= 60, 'scroll'),
   ] : []).concat([
     c('034','D','Pontual',`10 tarefas feitas até o prazo. Você tem ${noPrazo}.`, noPrazo >= 10, 'scroll'),
     c('035','B','Relógio suíço',`50 tarefas feitas até o prazo. Você tem ${noPrazo}.`, noPrazo >= 50, 'scroll'),
@@ -665,7 +671,7 @@ function cartas(C, S){
    A IA só preenche um molde da lista fechada abaixo (o desafio, o número, o nome e o texto); quem confere é o motor, sempre
    a partir do dia em que a conquista foi criada. A dificuldade (rank) e a recompensa saem do jogo, nunca da IA:
      contagem   {n, palavra?, disc?, tipo?, prazo?}  n tarefas concluídas que batem com todos os filtros dados
-     sequencia  {hab, n}                             o hábito em n dias seguidos (semanal: n semanas seguidas com a meta; 'cf' = Codeforces)
+     sequencia  {hab, n}                             o hábito em n dias seguidos (semanal: n semanas seguidas com a meta; 'cf' = Codeforces, 'duo' = Duolingo)
      nota       {disc, media} ou {disc, aval, nota}  pontos garantidos na disciplina ≥ media×10, ou a nota de uma avaliação
      constancia {n}                                  Ten de n dias seguidos
      semana     {xp}                                 uma semana (seg a dom) com xp ou mais */
@@ -707,7 +713,7 @@ function progConq(r, C, S, de){
 }
 /* a regra em palavras, escrita pelo jogo (o texto da IA é só o tema) */
 function descConq(r, C){
-  const nomeHab = id => id === 'cf' ? 'Codeforces (um problema aceito por dia)' : (((C.JOG && C.JOG.habitos) || []).find(h => h.id === id) || {n:id}).n;
+  const nomeHab = id => id === 'cf' ? 'Codeforces (um problema aceito por dia)' : id === 'duo' ? 'Duolingo (lição feita no dia)' : (((C.JOG && C.JOG.habitos) || []).find(h => h.id === id) || {n:id}).n;
   if(r.regra === 'contagem') return `${r.n} tarefa${r.n > 1 ? 's' : ''}` + (r.tipo ? ` de ${CONQ_TIPOS[r.tipo]}` : '') + (r.disc ? ` de ${r.disc}` : '')
     + (r.palavra ? ` com a palavra "${r.palavra}"` : '') + (r.prazo ? ', feitas até o prazo' : '') + '.';
   if(r.regra === 'sequencia') return semanalDe(C.JOG, r.hab) ? `${nomeHab(r.hab)}: ${r.n} semanas seguidas com a meta da semana cumprida.` : `${nomeHab(r.hab)} em ${r.n} dias seguidos.`;
@@ -720,7 +726,7 @@ const numTxt = x => String(Math.round(x*10)/10).replace('.', ',');
 /* confere a proposta da IA e estima a dificuldade pelo histórico das últimas 4 semanas: {r, rk, dias} ou {erro} */
 function avaliaConq(p, C, S){
   const {HOJE} = C, int = (v, a, b) => Number.isInteger(+v) && +v >= a && +v <= b, r = {regra:p.regra};
-  const habs = ((C.JOG && C.JOG.habitos) || []).map(h => h.id).concat(C.JOG && C.JOG.cf && C.JOG.cf.handle ? ['cf'] : []);
+  const habs = ((C.JOG && C.JOG.habitos) || []).map(h => h.id).concat(C.JOG && C.JOG.cf && C.JOG.cf.handle ? ['cf'] : []).concat(C.JOG && C.JOG.duo && C.JOG.duo.usuario ? ['duo'] : []);
   if(p.regra === 'contagem'){
     if(!int(p.n, 2, 300)) return {erro:'número de tarefas fora de 2 a 300'};
     r.n = +p.n;

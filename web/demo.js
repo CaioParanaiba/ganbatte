@@ -56,6 +56,7 @@ for(let k = -45; k <= -1; k++){
   if(rnd() < .5 && k !== -1) done.push(`x ${D(k)} ${D(k)} Leitura (20 min) +rotina rec:h-b:${D(k)}`);   // ontem sem leitura: mostra o "esqueci de marcar ontem"
   if(rnd() < .6) done.push(`x ${D(k)} ${D(k)} Codeforces 3 questões +rotina rec:cf:${D(k)}`);
   if(rnd() < .3) done.push(`x ${D(k)} ${D(k)} Academia +rotina rec:h-c:${D(k)}`);   // semanal: 2× por semana
+  if(k >= -12 || k % 6) done.push(`x ${D(k)} ${D(k)} Duolingo +rotina rec:duo:${D(k)}`);   // Duolingo: ofensiva dos últimos 12 dias (e hoje)
 }
 const cfDia = {}; for(let k = -40; k <= 0; k++) if(rnd() < .6) cfDia[D(k)] = 1 + Math.floor(rnd() * 5);
 
@@ -70,6 +71,7 @@ let todo = [
   `${D(-1)} Ler 20 páginas do livro de algoritmos @estudo`,
   `${D(-3)} Renovar a carteirinha do RU due:${D(9)}`,
   `(A) ${HOJE} Codeforces 3 questões +rotina rec:cf:${HOJE}`,
+  `x ${HOJE} ${HOJE} Duolingo +rotina rec:duo:${HOJE}`,
   `(B) ${HOJE} Treino de digitação +rotina rec:h-a:${HOJE}`,
   `${HOJE} Leitura (20 min) +rotina rec:h-b:${HOJE}`,
   `${HOJE} Academia +rotina rec:h-c:${HOJE}`,
@@ -85,7 +87,7 @@ let todo = [
   `${D(-2)} Ideias para a versão 2 +exp.app`,
   '',
 ];
-let jogador = {configurado:false, tags:{}, habitos:[{id:'h-a', n:'Treino de digitação'}, {id:'h-b', n:'Leitura (20 min)'}, {id:'h-c', n:'Academia', semana:2}], cf:{handle:'exemplo', meta:3}};   // começa sem configurar: a página abre o assistente da primeira entrada
+let jogador = {configurado:false, tags:{}, habitos:[{id:'h-a', n:'Treino de digitação'}, {id:'h-b', n:'Leitura (20 min)'}, {id:'h-c', n:'Academia', semana:2}], cf:{handle:'exemplo', meta:3}, duo:{usuario:'exemplo'}};   // começa sem configurar: a página abre o assistente da primeira entrada
 let notas = NOTAS, ajustes = '', estado = {spent:2500, own:['pal-simples','pal-gon'], equip:{theme:'simples'}, bought:{}, resg:[],
   cacadas:{'trabalho-mae':{n:'Trabalho da mãe', criada:D(-3)}, 'app-v1':{n:'Versão 1', exp:'app', criada:D(-6)}}, expedicoes:{app:{n:'App da turma', ic:'tra', sub:'o app que faço com os amigos', ini:D(-20)}}};
 const narradas = [{no:'100', tipo:'semana', periodo:'semana passada', titulo:'O primeiro andar de verdade', texto:'Exemplo de carta narrada (com IA, opcional).', cronica:'Quem disse que a Arena se sobe de uma vez? Gon subiu de degrau em degrau, uma lista de cada vez.', escrita:D(-2), ic:'scroll'}];
@@ -110,12 +112,14 @@ function transformar(l, a, v){
   if(a === 'edit'){ const m = l.match(/^(\([A-Z]\) )?(\d{4}-\d\d-\d\d )?/); return (m[1]||'') + (m[2]||'') + String(v).trim(); }
   throw new Error('ação desconhecida');
 }
+/* ofensiva do Duolingo de mentira: dias seguidos com rec:duo feita, até hoje */
+function duoOfensiva(){ const ds = new Set(done.concat(todo).filter(l => DONE_RE.test(l)).map(l => (l.match(/rec:duo:(\S+)/) || [])[1]).filter(Boolean)); let n = 0; while(ds.has(D(-n))) n++; return n; }
 function rota(url, body){
   if(url === '/api/jogo'){
     const meta = jogador.cf && jogador.cf.meta || 3, i = todo.findIndex(l => !DONE_RE.test(l) && l.includes(`rec:cf:${HOJE}`));
     if(i >= 0 && (cfDia[HOJE] || 0) >= meta) todo[i] = `x ${HOJE} ` + todo[i].replace(PRI, '');
   }
-  if(url === '/api/jogo') return {ok:true, hoje:HOJE, todo, done, avaliacoes:AVALIACOES, notas, ajustes, estado, cf:{por_dia:cfDia}, avatares:Object.keys(window.HJ_AV || {}), narradas, conquistas, jogador};
+  if(url === '/api/jogo') return {ok:true, hoje:HOJE, todo, done, avaliacoes:AVALIACOES, notas, ajustes, estado, cf:{por_dia:cfDia}, duo: jogador.duo && jogador.duo.usuario ? {usuario:jogador.duo.usuario, ofensiva:duoOfensiva()} : null, avatares:Object.keys(window.HJ_AV || {}), narradas, conquistas, jogador};
   if(url === '/api/act'){
     const i = todo.indexOf(body.raw); if(i < 0) throw new Error('a linha mudou no todo.txt; recarregue');
     if(body.action === 'delete'){ const antes = todo.splice(i, 1)[0]; undo.push({from:antes, to:null}); return {ok:true}; }
@@ -134,7 +138,7 @@ function rota(url, body){
       .replace(/(^|\s)(@entrega|@estudo|\+treino|\+rotina)(?=\s|$)/g, (m, sp, tg) => sp + (troca[tg] || tg));
     /* hábitos: o histórico de exemplo segue a ordem (o 1º antigo vira o 1º novo); os de hoje são recriados */
     const habs = j.habitos || [], hab = (j.tags && j.tags.hab) || '+rotina';
-    const trocaH = l => l.replace(/^(x \S+ \S+ )(.*?) \S+ rec:([\w-]+):(\S+)$/, (m, pre, txt, id, d) => { if(id.startsWith('cf')) return m; const k = antigos.indexOf(id); const h = habs[k]; return h ? `${pre}${h.n} ${hab} rec:${h.id}:${d}` : ''; });
+    const trocaH = l => l.replace(/^(x \S+ \S+ )(.*?) \S+ rec:([\w-]+):(\S+)$/, (m, pre, txt, id, d) => { if(id.startsWith('cf') || id === 'duo') return m; const k = antigos.indexOf(id); const h = habs[k]; return h ? `${pre}${h.n} ${hab} rec:${h.id}:${d}` : ''; });
     const primeira = !jogador.configurado;   // só na primeira configuração as tarefas de exemplo trocam de disciplina
     todo = todo.map(l => primeira ? ajusta(l) : l); done.splice(0, done.length, ...done.map(l => primeira ? ajusta(l) : l).map(trocaH).filter(Boolean));
     const feitosHoje = new Set(todo.filter(l => DONE_RE.test(l)).map(l => (l.match(/rec:([\w-]+):/) || [])[1]).filter(Boolean));
@@ -143,6 +147,8 @@ function rota(url, body){
     for(const h of habs) if(!(h.semana && naSem(h.id) >= h.semana && !feitosHoje.has(h.id))) todo.splice(todo.length - 1, 0, (feitosHoje.has(h.id) ? `x ${HOJE} ` : '') + `${HOJE} ${h.n} ${hab} rec:${h.id}:${HOJE}`);
     if(!(j.cf && j.cf.handle)) todo = todo.filter(l => DONE_RE.test(l) || !l.includes(`rec:cf:${HOJE}`));
     else if(!todo.some(l => l.includes(`rec:cf:${HOJE}`))) todo.splice(todo.length - 1, 0, `(A) ${HOJE} Codeforces ${j.cf.meta} questões ${hab} rec:cf:${HOJE}`);
+    if(!(j.duo && j.duo.usuario)) todo = todo.filter(l => DONE_RE.test(l) || !l.includes(`rec:duo:${HOJE}`));
+    else if(!todo.some(l => l.includes(`rec:duo:${HOJE}`))) todo.splice(todo.length - 1, 0, `${HOJE} Duolingo ${hab} rec:duo:${HOJE}`);
     if(body.avaliacoes != null){ AVALIACOES = String(body.avaliacoes); if(primeira) notas = ''; }
     jogador = JSON.parse(JSON.stringify(j));
     return {ok:true};

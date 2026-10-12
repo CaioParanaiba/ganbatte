@@ -1385,7 +1385,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.2-beta5';
+const VERSAO_PAGINA = '0.6.2';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1488,7 +1488,7 @@ function metaDia(S){
   const cf = S.rot.find(t => /codeforces/i.test(t.txt));
   return `<div class="meta"><div class="m"><span class="av" style="--c:var(--n2)">${ic('tra')}</span><span><b>Codeforces</b>${CTX.JOG.cf && CTX.JOG.cf.handle ? cfMaoBtn() : ''} <span class="sub">+5 por questão (até 6) · 3 = meta, +10</span></span>
     <span class="slots" title="${S.cfHoje} hoje no Codeforces">${[0,1,2].map(i=>`<i class="${S.cfHoje>i||(cf&&cf.ok)?'on':''}"></i>`).join('')}<span class="sep"></span>${[3,4,5].map(i=>`<i class="bn${S.cfHoje>i?' on':''}"></i>`).join('')}</span></div>
-    ${S.rot.filter(t => t !== cf).map(t => `<button class="tk" data-hit="${t.n}" style="padding:4px 0">${avTask(t)}<span class="t">${esc(t.txt)}</span><span class="v" style="color:var(--soft)">${t.ok?'✓':'+'+xpDe({...t,done:HOJE})}</span></button>`).join('')}</div>`;
+    ${duoMeta(S)}${S.rot.filter(t => t !== cf && !isDuo(t)).map(t => `<button class="tk" data-hit="${t.n}" style="padding:4px 0">${avTask(t)}<span class="t">${esc(t.txt)}</span><span class="v" style="color:var(--soft)">${t.ok?'✓':'+'+xpDe({...t,done:HOJE})}</span></button>`).join('')}</div>`;
 }
 const mission = S => { const l = NEN[S.fraco]; return `<div class="mission" style="--c:${NC(S.fraco)}">${avNen(S.fraco)}<span><b>Missão da semana: ${l.n} (${l.c})</b><span class="sub">Seu atributo mais fraco rende ×1,5 até domingo. ${S.missDias}/3 dias feitos → 1 feitiço.</span></span></div>`; };
 function avList(b, where, withField){
@@ -2023,11 +2023,18 @@ function rL(S){
     + '<tr class="x"><td>no prazo · missão · fúria</td><td>×1,5 cada</td></tr>';
 }
 
-/* ---------- hábitos: marcados à mão (recorrentes rec:h-…); o Codeforces só pela API, nunca à mão ---------- */
+/* ---------- hábitos: marcados à mão (recorrentes rec:h-…); o Codeforces e o Duolingo só pela internet, nunca à mão ---------- */
 const isCF = t => (t.rec || '').startsWith('cf');
+function isDuo(t){ return (t.rec || '').startsWith('duo:'); }
+/* Duolingo: o servidor lê a ofensiva do perfil público e conclui a rec:duo do dia com lição feita (o bloqueio de ofensiva não conta) */
+const duoTxt = () => { const o = D.duo && D.duo.ofensiva; return `${esc(CTX.JOG.duo.usuario)}${o != null ? ` · ofensiva de ${o} dia${o === 1 ? '' : 's'}` : ''}`; };
+function duoMeta(S){
+  const t = S.rot.find(isDuo); if(!t) return '';
+  return `<div class="tk" style="padding:4px 0">${avTask(t)}<span class="t">Duolingo <span class="sub">automático</span></span><span class="v" style="color:var(--soft)">${t.ok ? '✓' : '+' + xpDe({...t, done:HOJE})}</span></div>`;
+}
 function habitosL(S){
   const J = CTX.JOG, cf = J.cf && J.cf.handle ? J.cf : null, meta = (cf && cf.meta) || 3;
-  const habs = S.rot.filter(t => !isCF(t)), cfT = S.rot.find(isCF);
+  const habs = S.rot.filter(t => !isCF(t) && !isDuo(t)), cfT = S.rot.find(isCF), duoT = S.rot.find(isDuo);
   /* hábitos semanais: quantas vezes cada um foi feito na semana (seg a dom) que começa em seg, pelo dia do hábito */
   const recDia = t => (t.rec || '').split(':')[1] || t.done, recId = t => (t.rec || '').split(':')[0];
   const naSemana = (id, seg) => D.feitas.filter(t => recId(t) === id && recDia(t) >= seg && recDia(t) <= addD(seg, 6)).length;
@@ -2038,6 +2045,9 @@ function habitosL(S){
       <span class="t">Codeforces${cf ? ` <small>${esc(cf.handle)} · ${n} hoje · meta ${meta}${cfMaoBtn()}</small>` : ''}</span>
       <span class="l-slots" title="${n} problema(s) hoje">${Array.from({length:meta}, (_,i) => `<i class="${n > i ? 'on' : ''}"></i>`).join('')}<span class="sep"></span>${[0,1,2].map(i => `<i class="bn${n > meta + i ? ' on' : ''}"></i>`).join('')}</span>
       <span class="l-auto">automático: conta os problemas aceitos no dia (+5 cada, até 6) · bater a meta dá +10${CTX.SRV ? ' · ✋ marca à mão o que o site não mostra (ITMO, grupo privado)' : ''}</span></div>`; }
+  if(J.duo && J.duo.usuario && duoT) h += `<div class="l-hb${duoT.ok ? ' ok' : ''}" style="--c:${NC(4)}"><span class="l-ck" style="--c:${NC(4)}" aria-hidden="true">${duoT.ok ? '✓' : ''}</span>
+      <span class="t">Duolingo <small>${duoTxt()}</small></span><span class="l-xp">+${xpDe({...duoT, done:HOJE})}</span>
+      <span class="l-auto">automático: o jogo confere a sua ofensiva e marca sozinho quando você faz a lição do dia (o bloqueio de ofensiva não conta)</span></div>`;
   h += habs.map(t => `<div class="l-hb${t.ok ? ' ok' : ''}" style="--c:${NC(4)}" data-ln="${t.n}"><button class="l-ck" style="--c:${NC(4)}" data-l="${t.ok ? 'reopen' : 'done'}" aria-label="${t.ok ? 'desmarcar' : 'marcar'}: ${esc(t.txt)}">${t.ok ? '✓' : ''}</button>
       <span class="t">${esc(t.txt)}${sem(recId(t)) ? `<small>${sem(recId(t))}× por semana · ${naSemana(recId(t), SEG)}/${sem(recId(t))} nesta semana${naSemana(recId(t), SEG) > sem(recId(t)) ? ` · acima da meta, XP ×${HJx.HAB_EXTRA}` : ''}</small>` : ''}</span><span class="l-xp">+${xpDe({...t, done:HOJE}) * (sem(recId(t)) && naSemana(recId(t), SEG) > sem(recId(t)) ? HJx.HAB_EXTRA : 1)}</span></div>`).join('');
   /* semanal com a meta da semana cumprida: o servidor não cria a linha de hoje; mostra como completo */
@@ -2049,7 +2059,7 @@ function habitosL(S){
   if(faltam.length && D.feitas.some(t => t.done && t.done < HOJE)) h += UI.ontem   // quem começou hoje não tem ontem
     ? `<div class="l-ont"><span class="sub">Marcar como feito <b>ontem</b>:</span>${faltam.map(x => `<button class="btn" data-ontem="${esc(x.id)}">${esc(x.n)}</button>`).join('')}<button class="go" data-ontemabre="0">fechar</button></div>`
     : `<button class="go l-ontb" data-ontemabre="1">esqueci de marcar ontem</button>`;
-  document.getElementById('l-hab').innerHTML = h || `<p class="sub" style="margin:0">Nenhum hábito. Adicione na aba Configurações (digitação, leitura, exercício…) ou ligue o Codeforces.</p>`;
+  document.getElementById('l-hab').innerHTML = h || `<p class="sub" style="margin:0">Nenhum hábito. Adicione na aba Configurações (digitação, leitura, exercício…) ou ligue o Codeforces e o Duolingo.</p>`;
   /* heatmaps: a temporada inteira, uma coluna por semana (seg → dom); os dias fora dela na 1ª e na última semana ficam ocultos (#14) */
   /* as férias (do fim do semestre à véspera da volta às aulas) vêm no fim da grade, em verde tracejado como no Semestre:
      dia de férias sem nada não é falha */
@@ -2075,8 +2085,8 @@ function habitosL(S){
   /* "Hábitos" = só os diários (um quadradinho por dia); cada semanal ganha a sua linha, um quadradinho por semana */
   const semanais = (J.habitos || []).filter(x => x.semana), ehSem = new Set(semanais.map(x => x.id));
   const diarios = (J.habitos || []).filter(x => !x.semana);
-  const nh = Math.max(1, diarios.length || ((J.habitos || []).length ? 0 : new Set(D.feitas.filter(t => isRec(t) && !isCF(t)).map(recId)).size));
-  const hd = {}; for(const t of D.feitas) if(isRec(t) && !isCF(t) && t.done >= TEMP.ini && !ehSem.has(recId(t))) hd[t.done] = (hd[t.done]||0) + 1;
+  const nh = Math.max(1, diarios.length || ((J.habitos || []).length ? 0 : new Set(D.feitas.filter(t => isRec(t) && !isCF(t) && !isDuo(t)).map(recId)).size));
+  const hd = {}; for(const t of D.feitas) if(isRec(t) && !isCF(t) && !isDuo(t) && t.done >= TEMP.ini && !ehSem.has(recId(t))) hd[t.done] = (hd[t.done]||0) + 1;
   const SEMS = Array.from({length:NS}, (_,i) => addD(ini, 7*i));
   const gradeSem = (x, cor) => { const conta = SEMS.filter(s => s <= TEMP.fim && (s < SEG || (s === SEG && naSemana(x.id, s) >= x.semana))), na = conta.filter(s => naSemana(x.id, s) >= x.semana).length;
     return `<div class="l-hrow" style="--c:${cor}"><div class="l-hg sem" style="--n:${NS}">${SEMS.map(s => { const n = naSemana(x.id, s), fut = s > HOJE;
@@ -2092,8 +2102,12 @@ function habitosL(S){
   const cfm = (D.cf && D.cf.manual) || {};
   if(J.cf && J.cf.handle) H += `<span class="nm">Codeforces<small>${esc(J.cf.handle)} · meta ${meta}${cfMaoBtn()}</small></span>${grade(NC(1), d => { const n = cfd[d]||0; return !n ? '' : n < meta ? (n < meta/2 ? 'h1' : 'h2') : n === meta ? 'h3' : 'h4'; }, d => `${cfd[d]||0} problema(s)${cfm[d] ? ` (${cfm[d]} à mão)` : ''}`,
     resumo(d => Math.min(1, (cfd[d]||0)/meta), (m, ds) => [ds.reduce((x,d) => x + (cfd[d]||0), 0), `problemas · ${ds.filter(d => (cfd[d]||0) >= meta).length} dias na meta`]))}`;
+  if(J.duo && J.duo.usuario){ const dd = new Set(D.feitas.filter(isDuo).map(recDia));
+    H += `<span class="nm">Duolingo<small>${duoTxt()}</small></span>${grade(NC(4), d => dd.has(d) ? 'h4' : '', d => dd.has(d) ? 'lição feita' : 'sem lição',
+      resumo(d => dd.has(d) ? 1 : 0, m => [`${Math.round(m*100)}%`, 'dos dias com lição']))}`; }
   H += `</div>${leg('var(--soft)')}`;
-  if(!(J.cf && J.cf.handle)) H += `<p class="sub" style="margin:10px 0 0">Faz Codeforces? Ligue em <button class="go" data-go="cfg">Configurações →</button> com o seu handle e ganhe o heatmap e o XP automáticos.</p>`;
+  const falta = [!(J.cf && J.cf.handle) && 'Codeforces (com o seu handle)', !(J.duo && J.duo.usuario) && 'Duolingo (com o seu usuário)'].filter(Boolean);
+  if(falta.length) H += `<p class="sub" style="margin:10px 0 0">Faz ${falta.map(x => x.split(' ')[0]).join(' ou ')}? Ligue em <button class="go" data-go="cfg">Configurações →</button> ${falta.length > 1 ? 'com o seu handle ou usuário' : falta[0].replace(/^\S+ /, '').replace(/[()]/g, '')} e ganhe o heatmap e o XP automáticos.</p>`;
   document.getElementById('l-heat').innerHTML = H;
   document.getElementById('l-heatt').textContent = ' · ' + TEMP.nome;
 }

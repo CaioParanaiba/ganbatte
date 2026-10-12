@@ -264,9 +264,10 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
    entra pela rota da seção "IA integrada ao jogo".
 3. **Tradução para mais de um idioma.** Textos da página, do assistente, do servidor e dos pedidos para a IA. A opção de
    formato de data (dd/mm ou mm/dd) já existe e serviria de base.
-4. **Duolingo, como o Codeforces (ideia de um amigo).** Para quem usa: ligar a conta e o jogo conta os dias de
+4. ~~**Duolingo, como o Codeforces (ideia de um amigo).** Para quem usa: ligar a conta e o jogo conta os dias de
    Duolingo sozinho (hábito automático, heatmap e conquistas), opcional como o handle do Codeforces. As dificuldades
-   (o Duolingo não tem API pública oficial; ver o que dá para ler e se é estável) ficam para avaliar depois.
+   (o Duolingo não tem API pública oficial; ver o que dá para ler e se é estável) ficam para avaliar depois.~~ Feito na 0.6.2
+   (#11): só o usuário, pelo perfil público (`streakData`); o XP por dia precisaria de login e ficou de fora.
 5. **Ideias guardadas, fora do template para não complicar** (avaliar se interessam aos amigos):
    - gravar o áudio da aula e transcrever no computador, gerando resumo e tarefas (o jogo do autor faz);
    - conferir datas de prova na agenda do Google.

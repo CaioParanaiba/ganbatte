@@ -122,7 +122,7 @@ function dadosPeriodo(P){
   L.push('', `Tarefas concluídas (${tarefas.length}):`, ...tarefas.slice(0, 160).map(t => `- ${br(t.done)} · ${t.txt}${HJ.discOf(t, CTX) ? ` (${HJ.discOf(t, CTX)})` : ''}`));
   if(tarefas.length > 160) L.push(`- e mais ${tarefas.length - 160}`);
   const habs = {}; for(const t of rec){ const id = (t.rec || '').split(':')[0]; if(!id.startsWith('cf')) habs[id] = (habs[id] || 0) + 1; }
-  if(Object.keys(habs).length) L.push('', 'Hábitos (vezes feitos):', ...Object.entries(habs).map(([id, n]) => `- ${((J.habitos || []).find(h => h.id === id) || {n:id}).n}: ${n}`));
+  if(Object.keys(habs).length) L.push('', 'Hábitos (vezes feitos):', ...Object.entries(habs).map(([id, n]) => `- ${id === 'duo' ? 'Duolingo (conferido sozinho)' : ((J.habitos || []).find(h => h.id === id) || {n:id}).n}: ${n}`));
   const cf = (D.cf && D.cf.por_dia) || {}, cfd = Object.keys(cf).filter(dentro);
   if(cfd.length) L.push('', `Codeforces: ${cfd.reduce((s, d) => s + cf[d], 0)} problemas aceitos em ${cfd.length} dias (meta de ${(J.cf && J.cf.meta) || 3} por dia batida em ${cfd.filter(d => cf[d] >= ((J.cf && J.cf.meta) || 3)).length}).`);
   const notas = String(CTX.NT_TXT || '').split('\n').map(l => l.split('|').map(x => x.trim())).filter(p => p.length >= 4 && dentro(p[0]));

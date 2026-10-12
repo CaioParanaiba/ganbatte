@@ -74,7 +74,7 @@ const W = {editar:false, passo:0, nome:'', nick:'', av:'logo', tags:{}, habs:[],
 const freqSel = (attr, v) => `<select ${attr} aria-label="Frequência">${[0,1,2,3,4,5,6].map(n => `<option value="${n}"${+v === n ? ' selected' : ''}>${n ? n + '× por semana' : 'todo dia'}</option>`).join('')}</select>`;
 const habsJSON = (nomes, freq) => nomes.map((n,i) => [String(n).trim(), +freq[i] || 0]).filter(([n]) => n).map(([n,f]) => f ? {id:slug(n), n, semana:f} : {id:slug(n), n});
 const slug = n => 'h-' + (norm(n).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 20) || 'habito');
-const HANDLE = /^[A-Za-z0-9_.-]{3,24}$/;
+const HANDLE = /^[A-Za-z0-9_.-]{3,24}$/, DUO_US = /^[A-Za-z0-9_.-]{1,40}$/;
 function chefaoDe(d, i){
   const b = (BOSSES || []).find(b => b.d === d.d);
   if(b && W.editar) return [b.n, b.ic, b.why];
@@ -109,6 +109,7 @@ function iniciaW(){
   W.habs = (j.habitos && j.habitos.length ? j.habitos.map(h => h.n) : ['Treino de digitação', 'Leitura (20 min)', 'Academia']);
   W.hf = (j.habitos && j.habitos.length ? j.habitos.map(h => h.semana || 0) : [0, 0, 2]);
   W.cfOn = !!(j.cf && j.cf.handle); W.cfH = (j.cf && j.cf.handle) || ''; W.cfM = (j.cf && j.cf.meta) || 3;
+  W.duoOn = !!(j.duo && j.duo.usuario); W.duoU = (j.duo && j.duo.usuario) || '';
   W.disc = (j.disciplinas && j.disciplinas.length ? j.disciplinas : [{d:'', n:''}, {d:'', n:''}]).map(d => ({...d, n1: d.n1 || meio(ini, fim, .45), n2: d.n2 || meio(ini, fim, .95)}));
 }
 const PASSOS_1 = ['Quem é você', 'Como o jogo funciona', 'Tipos de tarefa', 'Hábitos', 'Disciplinas', 'Pronto'];
@@ -152,6 +153,12 @@ function passoHTML(){
       <div class="wz-f"><label>Handle do Codeforces<input id="wz-cfh" value="${esc(W.cfH)}" placeholder="ex.: tourist" maxlength="24"${W.cfOn ? '' : ' disabled'}></label>
         <label>Meta por dia<input id="wz-cfm" inputmode="numeric" value="${W.cfM}"${W.cfOn ? '' : ' disabled'}></label></div>
       <span>Ele não se marca à mão: o jogo consulta o Codeforces e conta os problemas <b>aceitos</b> no dia (+5 XP cada, até 6). Bater a meta dá +10 e um heatmap só dele.</span>
+    </div>
+    <div class="wz-card" style="gap:10px">
+      <b>${ic('scroll')} Duolingo</b>
+      <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink)"><input type="checkbox" id="wz-duo"${W.duoOn ? ' checked' : ''}> Quero contar os dias de Duolingo</label>
+      <div class="wz-f"><label>Usuário do Duolingo<input id="wz-duou" value="${esc(W.duoU)}" placeholder="o nome do seu perfil" maxlength="40"${W.duoOn ? '' : ' disabled'}></label></div>
+      <span>Só o usuário, <b>sem senha</b>: o jogo lê a ofensiva do seu perfil e marca sozinho o hábito no dia em que você faz a lição (+5 XP, conta para o Ten). O dia salvo pelo bloqueio de ofensiva não conta. Ao ligar, os dias da ofensiva atual desde o início da temporada já entram.</span>
     </div>`;
   if(p === 4) return `<h3>Disciplinas do semestre</h3>
     <p>Cada disciplina vira um chefão do Genei Ryodan. Por enquanto, toda matéria tem duas avaliações: <b>N1</b> e <b>N2</b>. Depois você pode detalhar (provas, listas, trabalhos) no arquivo <span class="mono">avaliacoes.txt</span>.</p>
@@ -183,6 +190,7 @@ function coleta(){
   if(!W.editar && W.passo === 3){
     W.habs = W.habs.map((h,i) => (v('wz-h-' + i) || '').trim()); W.hf = W.habs.map((h,i) => +(v('wz-hf-' + i) || 0));
     const cf = document.getElementById('wz-cf'); W.cfOn = !!(cf && cf.checked); W.cfH = (v('wz-cfh') || '').trim(); W.cfM = parseInt(v('wz-cfm')) || 0;
+    const duo = document.getElementById('wz-duo'); W.duoOn = !!(duo && duo.checked); W.duoU = (v('wz-duou') || '').trim().replace(/^@/, '');
   }
   if(W.passo === 4 || W.editar){
     const dt = (id, antes) => { const x = v(id); if(x == null) return antes; const r = HJ.isoData(x, HOJE); if(!r) W.dtRuim = x; return r || antes; };
@@ -207,6 +215,7 @@ function valida(){
     if(new Set(hs.map(slug)).size !== hs.length) return 'Há dois hábitos com o mesmo nome.';
     if(W.cfOn && !HANDLE.test(W.cfH)) return 'Escreva o seu handle do Codeforces (3 a 24 letras, números, _ . -).';
     if(W.cfOn && !(W.cfM >= 1 && W.cfM <= 6)) return 'A meta do Codeforces vai de 1 a 6 problemas por dia.';
+    if(W.duoOn && !DUO_US.test(W.duoU)) return 'Escreva o seu usuário do Duolingo (letras, números, _ . -).';
   }
   if(W.passo === 4 || W.editar){
     const ds = W.disc.filter(d => d.d);
@@ -260,7 +269,7 @@ function abreDisciplinas(nova){   // nova = {d, n}: disciplina sugerida (ex.: um
 }
 async function salvaW(tour){
   const jogador = {configurado:true, nome:W.nome, nick:W.nick, tags:W.tags, semestre:{ini:W.ini, fim:W.fim},
-    disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n, n1:d.n1, n2:d.n2})), habitos:habsJSON(W.habs, W.hf), cf: W.cfOn ? {handle:W.cfH, meta:W.cfM} : null};
+    disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n, n1:d.n1, n2:d.n2})), habitos:habsJSON(W.habs, W.hf), cf: W.cfOn ? {handle:W.cfH, meta:W.cfM} : null, duo: W.duoOn ? {usuario:W.duoU} : null};
   try { await post('/api/config', {jogador, avaliacoes: avaliacoesTxt()}); await recarrega(); }
   catch(e){ W.err = 'Não salvou: ' + e.message; desenhaW(); return; }
   UI.avatar = W.av; EST.tour = tour ? {} : Object.fromEntries(['l','b','b2','d2','bk','ms','sys','cfg','nv','x'].map(k => [k,1])); salvaUI();
@@ -277,6 +286,7 @@ document.addEventListener('click', e => {
   const dl = q('[data-wzdel]'); if(dl){ coleta(); W.disc.splice(+dl.dataset.wzdel, 1); if(!W.disc.length) W.disc.push({d:'', n:'', n1:meio(W.ini, W.fim, .45), n2:meio(W.ini, W.fim, .95)}); desenhaW(); return; }
   if(q('[data-wzhadd]')){ coleta(); W.habs.push(''); W.hf.push(0); desenhaW(); const i = document.getElementById('wz-h-' + (W.habs.length - 1)); if(i) i.focus(); return; }
   const hd = q('[data-wzhdel]'); if(hd){ coleta(); W.habs.splice(+hd.dataset.wzhdel, 1); W.hf.splice(+hd.dataset.wzhdel, 1); desenhaW(); return; }
+  if(e.target.id === 'wz-duo'){ document.getElementById('wz-duou').disabled = !e.target.checked; if(e.target.checked) document.getElementById('wz-duou').focus(); return; }
   if(e.target.id === 'wz-cf'){ ['wz-cfh','wz-cfm'].forEach(id => document.getElementById(id).disabled = !e.target.checked); if(e.target.checked) document.getElementById('wz-cfh').focus(); return; }
   if(q('[data-wzsair]')){ document.getElementById('wz').remove(); W.editar = false; return; }
   if(q('[data-wzdisc]')){ coleta(); W.err = valida(); if(W.err){ desenhaW(); return; }
@@ -308,8 +318,8 @@ const TOURS = {
      ['#l-golpes','Rende mais agora','As 3 tarefas que mais valem neste momento: prazo perto, missão, fúria, prioridade.', 1],
      ['#l-bosses','Chefões','A barra vermelha é a <b>vida</b> do chefão, e ela só cai com nota. Clique para abrir o quadro e registrar notas.', 1],
      ['#l-hab','Hábitos de hoje','Os hábitos aparecem sozinhos todo dia. Marque à mão quando fizer. O hábito semanal some quando a meta da semana é cumprida; se fizer mais, <b>fiz de novo</b> marca hoje e cada vez acima da meta vale <b>XP em dobro</b>. Para mudar a lista, use a aba <b>Configurações</b>.', 1],
-     ['#l-hab .l-hb','Codeforces','Quem liga o Codeforces (Configurações, com o seu handle) não marca nada: o jogo conta sozinho os problemas aceitos no dia, e bater a meta conclui o hábito. O <b>✋</b> é para o que o site não mostra (<b>ITMO Academy</b>, contest de <b>grupo privado</b>): cada clique pede confirmação e soma 1 problema hoje, valendo igual para a meta e o XP. Também fica ao lado do Codeforces no heatmap.', 0],
-     ['#l-heat','Constância','Três heatmaps da temporada inteira (tracejados: os dias que ainda vêm; em verde, as férias), um quadrado por dia, e ao lado quanto você cumpre em cada dia da semana: o <b>Ten</b> (dia ativo ou salvo pelo Zetsu), os <b>hábitos</b> (quanto mais cheio, mais hábitos feitos) e o <b>Codeforces</b> (problemas no dia; a cor forte é a meta batida).', 1],
+     ['#l-hab .l-hb','Codeforces','Quem liga o Codeforces (Configurações, com o seu handle) não marca nada: o jogo conta sozinho os problemas aceitos no dia, e bater a meta conclui o hábito. O <b>✋</b> é para o que o site não mostra (<b>ITMO Academy</b>, contest de <b>grupo privado</b>): cada clique pede confirmação e soma 1 problema hoje, valendo igual para a meta e o XP. Também fica ao lado do Codeforces no heatmap. O <b>Duolingo</b> é igual: com o seu usuário, ele se marca sozinho no dia em que você faz a lição.', 0],
+     ['#l-heat','Constância','Heatmaps da temporada inteira (tracejados: os dias que ainda vêm; em verde, as férias), um quadrado por dia, e ao lado quanto você cumpre em cada dia da semana: o <b>Ten</b> (dia ativo ou salvo pelo Zetsu), os <b>hábitos</b> (quanto mais cheio, mais hábitos feitos) e o <b>Codeforces</b> (problemas no dia; a cor forte é a meta batida) e o <b>Duolingo</b> (dias com lição), se estiverem ligados.', 1],
      ['#l-valec','Quanto vale','Clique para abrir: o XP de cada tipo e as tags que marcam cada um. Os bônus de ×1,5 se multiplicam.']],
   b:[['#b-tower','A torre','Seu andar na Arena Celestial e a <b>projeção</b> de onde você chega no fim do semestre, no ritmo atual. No topo (251) abre o Torneio contra a Guarda Real.'],
      ['#b-sheet','Ficha e hexágono de Nen','Quanto você treinou cada tipo de Nen. O hexágono mostra o equilíbrio: o lado mais curto vira a missão da semana.'],
@@ -342,7 +352,7 @@ const TOURS = {
       ['#ms-root .lay7 > div:first-child > .sec7:last-child','Quanto vale cada preço','A régua usa o seu ritmo: quanto rende um dia produtivo, uma semana boa e um mês. Cada prêmio mostra o esforço que custa, para o preço não ficar fácil ou difícil demais.'],
       ['#ms-root .lay7 > div:first-child','Feitiços','Cartas de efeito (cada uma explicada no Book). Na loja dá para comprar 1 de cada por semana; o comprado vai para a bolsa e se usa pelo <b>Book → Feitiços</b>.', 0, vai({cat:'feiticos'})],
       ['#ms-root .side7','Carteira','Quanto você tem e de onde veio, o cofre do mês, o que está usando agora e os prêmios já resgatados.']],
-  cfg:[['#cfg','Seu jogo','Mude o básico sem refazer nada: nome, nickname, <b>hábitos</b> (adicionar ou remover), o <b>Codeforces</b> e o nome das tags. Clique em salvar.'],
+  cfg:[['#cfg','Seu jogo','Mude o básico sem refazer nada: nome, nickname, <b>hábitos</b> (adicionar ou remover), o <b>Codeforces</b>, o <b>Duolingo</b> e o nome das tags. Clique em salvar.'],
        ['#cfg-ia','IA (opcional)','Se você tem uma IA de terminal (Claude Code, Codex, Gemini CLI), ligue aqui: o jogo passa a usá-la sozinho. Depois de ligar, o botão <b>tutorial da IA</b> mostra tudo o que ela faz.'],
        ['#cfg-srv','Servidor','O programa que guarda as suas tarefas. Ligado com o computador, você só abre o endereço do jogo.'],
        ['#cfg-root > .card:last-child','Backup','Um ZIP com todos os seus dados, para guardar ou levar para outro computador.']],
@@ -422,11 +432,11 @@ tab = t => {
   abaReal(t);
   if(CTX && !(EST.tour || {})[cur] && TOURS[cur]) setTimeout(() => { if(!TR) tutorial(cur); }, 300);
 };
-/* ---------- aba Configurações: "Seu jogo" (nome, nickname, hábitos, Codeforces, tags) ---------- */
+/* ---------- aba Configurações: "Seu jogo" (nome, nickname, hábitos, Codeforces, Duolingo, tags) ---------- */
 let CF2 = null;   // rascunho; null = sem edição em andamento
 function rascunhoCfg(){
   const j = CTX.JOG;
-  return CF2 || (CF2 = {nome:j.nome || '', nick:j.nick || '', habs:(j.habitos || []).map(h => h.n), hf:(j.habitos || []).map(h => h.semana || 0), datas:j.datas === 'mdy' ? 'mdy' : 'dmy', cfOn:!!(j.cf && j.cf.handle), cfH:(j.cf && j.cf.handle) || '', cfM:(j.cf && j.cf.meta) || 3,
+  return CF2 || (CF2 = {nome:j.nome || '', nick:j.nick || '', habs:(j.habitos || []).map(h => h.n), hf:(j.habitos || []).map(h => h.semana || 0), datas:j.datas === 'mdy' ? 'mdy' : 'dmy', cfOn:!!(j.cf && j.cf.handle), cfH:(j.cf && j.cf.handle) || '', cfM:(j.cf && j.cf.meta) || 3, duoOn:!!(j.duo && j.duo.usuario), duoU:(j.duo && j.duo.usuario) || '',
     tags:Object.fromEntries(TIPOS.filter(t => !t.fixo).map(t => [t.k, (j.tags && j.tags[t.k]) || tagPadrao(t.k)])), err:'', novo:''});
 }
 function cfgHTML(){
@@ -442,6 +452,9 @@ function cfgHTML(){
         <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink);padding-bottom:9px"><input type="checkbox" data-cfg="cfOn"${c.cfOn ? ' checked' : ''}> Codeforces</label>
         <label>Handle<input data-cfg="cfH" value="${esc(c.cfH)}" maxlength="24"${c.cfOn ? '' : ' disabled'}></label>
         <label>Meta/dia<input data-cfg="cfM" inputmode="numeric" value="${c.cfM}"${c.cfOn ? '' : ' disabled'}></label></div>
+      <div class="wz-f" style="grid-template-columns:auto minmax(0,1fr);align-items:end">
+        <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink);padding-bottom:9px"><input type="checkbox" data-cfg="duoOn"${c.duoOn ? ' checked' : ''}> Duolingo</label>
+        <label>Usuário (sem senha: o jogo lê a ofensiva do perfil e marca sozinho o dia com lição)<input data-cfg="duoU" value="${esc(c.duoU)}" maxlength="40"${c.duoOn ? '' : ' disabled'}></label></div>
       <label>Tags (o nome muda; o significado de cada tipo continua o mesmo)</label>
       <div class="wz-f" style="grid-template-columns:repeat(4,minmax(0,1fr))">${TIPOS.filter(t => !t.fixo).map(t => `<label style="color:${NC(t.c)}">${t.n}<input data-cfgt="${t.k}" value="${esc(c.tags[t.k])}" maxlength="24"></label>`).join('')}</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button type="button" class="btn v" data-cfgsave>salvar</button><button type="button" class="btn" data-cfgreset>descartar</button>
@@ -513,7 +526,7 @@ document.addEventListener('input', e => {
   if(d.cfghf !== undefined) CF2.hf[+d.cfghf] = +t.value;
   if(d.cfgt) CF2.tags[d.cfgt] = t.value;
   if(t.id === 'cfg-novo') CF2.novo = t.value;
-  if(d.cfg === 'cfOn') render();
+  if(d.cfg === 'cfOn' || d.cfg === 'duoOn') render();
 });
 document.addEventListener('click', async e => {
   const q = s => e.target.closest(s);
@@ -528,9 +541,10 @@ document.addEventListener('click', async e => {
   c.err = !c.nome.trim() ? 'Escreva o seu nome.' : !/^[a-z0-9_]{2,20}$/.test(nick) ? 'O nickname precisa de 2 a 20 letras, números ou _.'
     : new Set(habs.map(slug)).size !== habs.length ? 'Há dois hábitos com o mesmo nome.'
     : c.cfOn && !HANDLE.test(c.cfH.trim()) ? 'Handle do Codeforces inválido.' : c.cfOn && !(meta >= 1 && meta <= 6) ? 'A meta do Codeforces vai de 1 a 6.'
+    : c.duoOn && !DUO_US.test(c.duoU.trim().replace(/^@/, '')) ? 'Usuário do Duolingo inválido.'
     : vs.some(x => !x) || new Set(vs).size !== vs.length ? 'Cada tag precisa de um nome diferente.' : '';
   if(c.err){ render(); return; }
-  const jogador = {...CTX.JOG, nome:c.nome.trim(), nick, datas:c.datas, tags, habitos:habsJSON(c.habs, c.hf), cf: c.cfOn ? {handle:c.cfH.trim(), meta} : null};
+  const jogador = {...CTX.JOG, nome:c.nome.trim(), nick, datas:c.datas, tags, habitos:habsJSON(c.habs, c.hf), cf: c.cfOn ? {handle:c.cfH.trim(), meta} : null, duo: c.duoOn ? {usuario:c.duoU.trim().replace(/^@/, '')} : null};
   try { await post('/api/config', {jogador}); await recarrega(); } catch(err){ c.err = 'Não salvou: ' + err.message; render(); return; }
   CF2 = null; render(); toast('Salvo <small>os hábitos novos aparecem na Lista</small>');
 });

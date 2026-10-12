@@ -2,7 +2,7 @@
 
 Um jogo (tema Hunter x Hunter) em cima do [todo.txt](https://github.com/todotxt/todo.txt): você conclui tarefas e sobe a
 **Arena Celestial**, enfrenta as disciplinas como **chefões** (vida = nota), mantém o **Ten** (dias seguidos) e gasta
-**Jenny** na loja. Roda no seu computador, sem conta e quase sem internet: só o Codeforces (se você ligar) e a
+**Jenny** na loja. Roda no seu computador, sem conta e quase sem internet: só o Codeforces e o Duolingo (se você ligar) e a
 conferência de versão nova (uma leitura do GitHub a cada 6 horas) saem do computador.
 Precisa apenas do Python 3.8 ou mais novo, no Linux, Windows ou Mac.
 
@@ -81,7 +81,7 @@ Tudo o que é seu fica numa pasta separada do código:
 | Arquivo | O que tem |
 |---|---|
 | `todo.txt`, `done.txt` | suas tarefas, no formato todo.txt (as concluídas vão para o `done.txt` no dia seguinte) |
-| `jogador.json` | nome, tags, hábitos, disciplinas e Codeforces |
+| `jogador.json` | nome, tags, hábitos, disciplinas, Codeforces e Duolingo |
 | `avaliacoes.txt`, `notas.txt` | plano de avaliação das disciplinas e notas lançadas (o editor do chefão guarda a versão anterior em `.bak`) |
 | `narradas.json` | cartas narradas do Book |
 | `conquistas.json` | conquistas criadas pela IA (Book, 200 em diante) e o que você resgatou |
@@ -138,13 +138,17 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 - **Codeforces não conta:** confira o handle na aba Configurações. A contagem atualiza a cada 10 minutos e precisa de internet.
   Problema feito onde a API não enxerga (ITMO Academy, contest de grupo privado): clique no ✋ ao lado de "Codeforces" no
   heatmap da Lista e confirme; cada confirmação soma 1 problema hoje.
+- **Duolingo não conta:** confira o usuário na aba Configurações (o nome do perfil, sem senha). O jogo lê a ofensiva do
+  perfil a cada 10 minutos e precisa de internet. O dia salvo pelo bloqueio de ofensiva não conta, de propósito: no jogo,
+  quem guarda folga é o Zetsu. Com o jogo fechado vários dias e um bloqueio no meio, o Duolingo diz quantos dias você fez,
+  não quais: o jogo marca os mais recentes.
 - **Não sei qual tipo escolher para a tarefa:** o jogo sugere pelas palavras do texto; o **?** ao lado dos tipos mostra o
   que encaixa em quê, e com a IA ligada o **IA?** pergunta a ela.
 
 ## Como funciona por dentro
 
 - `servidor.py`: servidor local (só a biblioteca padrão do Python). Lê e grava os seus arquivos, cria os hábitos de cada dia
-  e consulta o Codeforces. Só aceita conexões do próprio computador.
+  e consulta o Codeforces e o Duolingo. Só aceita conexões do próprio computador.
 - `web/index.html`: a página do jogo. `web/motor.js`: todas as regras e contas. `web/guia.js`: assistente e tutorial.
   `web/chefes.js`: editor de avaliações e notas. `web/ia.js`: pedidos para a IA e a IA ligada. `web/conquistas.js`:
   conquistas criadas pela IA (as regras ficam no motor). `web/novidades.js`: aba Novidades, com a lista de versões que o
@@ -164,6 +168,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.2 | atualização das expedições | **Junta as betas 0.6.2** (as cinco linhas abaixo) e traz o **Duolingo automático** (#11): só o usuário, sem senha; o servidor lê a ofensiva do perfil público, conclui a `rec:duo` do dia com lição e credita os dias da ofensiva desde o início da temporada (`duo.json`); o dia do bloqueio de ofensiva não conta |
 | 0.6.2-beta5 | atualização das expedições | Fotos de perfil vêm do banco do repositório (`web/a/`), para todos os jogadores; o jogador não coloca mais fotos na pasta de dados (#13) |
 | 0.6.2-beta4 | atualização das expedições | Resumo ao lado dos heatmaps da Lista (barra por dia da semana e número da temporada) e as férias no fim da grade |
 | 0.6.2-beta3 | atualização das expedições | Heatmaps da Lista do início ao fim da temporada, com quadradinhos que ocupam a largura (#14) |
