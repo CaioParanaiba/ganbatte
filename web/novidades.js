@@ -10,6 +10,11 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.2-beta3", "nome": "atualização das expedições", "data": "2026-10-12",
+   "resumo": "Os heatmaps da Lista mostram a sua temporada inteira.",
+   "itens": [
+     {"ic": "flame", "t": "Constância da temporada", "d": "Os heatmaps da Lista vão do primeiro ao último dia da temporada, e não mais as últimas 20 semanas: nada de antes dela aparece, e os dias que ainda vêm ficam tracejados. Os quadradinhos crescem para ocupar a largura do bloco."}
+   ]},
   {"versao": "0.6.2-beta2", "nome": "atualização das expedições", "data": "2026-10-12",
    "resumo": "Prove qualquer aparência antes de comprar (o jogo trava enquanto isso), e o Semestre segue a temporada.",
    "itens": [

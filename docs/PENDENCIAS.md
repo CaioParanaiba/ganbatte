@@ -193,6 +193,10 @@ O que entrou:
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
+**0.6.2-beta3** (12/10/2026, issue #14): heatmaps da Lista de `TEMP.ini` a `TEMP.fim` (da segunda da semana do início
+ao domingo da do fim, `NS` colunas); dias fora da temporada com `.fora` (ocultos), o `hd` ignora o feito antes do `ini`.
+`.l-hg` com `grid-template-columns:repeat(var(--n),minmax(12px,26px))` e `aspect-ratio:1`. Título com `TEMP.nome`.
+
 **0.6.2-beta2** (12/10/2026, issues #1, #2): `UI.prova` vira o id do item (`provavel()`: `pal`, `full`, `tex`, `fx` sem
 `ev`, `frame`, `font`); `vista()` junta o equipado e o provado, e `aplicaTema()`/`temFx` (efeitos.js, via `fxVisiveis()`)
 leem dela. `travaProva()` em captura (click, pointerdown, mousedown, submit, keydown, beforeinput) barra tudo fora de

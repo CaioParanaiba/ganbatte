@@ -1040,13 +1040,14 @@ a.btn{display:inline-block;text-decoration:none}
 .l-const{margin-top:16px}
 .l-hm{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px 14px;align-items:start}
 .l-hm .nm{font:600 12px var(--f-mono);color:var(--ink);padding-top:2px} .l-hm .nm small{display:block;font:11px var(--f-mono);color:var(--soft);margin-top:2px}
-.l-hg.sem{grid-template-rows:12px;min-height:30px;align-content:start}
-.l-hg{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,12px);grid-auto-columns:12px;gap:3px;overflow-x:auto;padding:2px}
-.l-hg i{border-radius:3px;background:var(--track)}
+.l-hg.sem{grid-template-rows:auto;min-height:30px;align-content:start}
+/* uma coluna por semana da temporada; os quadradinhos crescem de 12 até 26px para ocupar a largura (#14) */
+.l-hg{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,auto);grid-template-columns:repeat(var(--n),minmax(12px,26px));gap:3px;overflow-x:auto;padding:2px}
+.l-hg i{border-radius:3px;background:var(--track);aspect-ratio:1}
 .l-hg i.h1{background:color-mix(in srgb,var(--c) 30%,var(--track))} .l-hg i.h2{background:color-mix(in srgb,var(--c) 55%,var(--track))}
 .l-hg i.h3{background:color-mix(in srgb,var(--c) 80%,var(--track))} .l-hg i.h4{background:var(--c)}
 .l-hg i.z{background:color-mix(in srgb,var(--aura) 45%,var(--track))} .l-hg i.fut{background:none;outline:1px dashed var(--hair);outline-offset:-1px}
-.l-hg i.hj{outline:2px solid var(--ink);outline-offset:0}
+.l-hg i.hj{outline:2px solid var(--ink);outline-offset:0} .l-hg i.fora{visibility:hidden}
 .l-hl{grid-column:2;display:flex;gap:4px;align-items:center;font:10.5px var(--f-mono);color:var(--faint);margin-top:-8px}
 .l-hl i{width:10px;height:10px;border-radius:2px;display:inline-block}
 .l-hb{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--hair)}
@@ -1238,7 +1239,7 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
           </div>
         </form>
         <div class="l-groups" id="l-groups"></div>
-        <div class="card l-const" id="l-heatc"><h2><span class="c">~/</span>constância · últimas 20 semanas</h2><div id="l-heat"></div></div>
+        <div class="card l-const" id="l-heatc"><h2><span class="c">~/</span>constância<span id="l-heatt"></span></h2><div id="l-heat"></div></div>
       </div>
       <aside class="l-side">
         <details class="card l-valec" id="l-valec"><summary><h2><span class="c">~/</span>quanto vale<span class="tg" aria-hidden="true">▸</span></h2></summary><table class="l-vale"><tbody id="l-vale"></tbody></table></details>
@@ -1372,7 +1373,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.2-beta2';
+const VERSAO_PAGINA = '0.6.2-beta3';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -2037,16 +2038,17 @@ function habitosL(S){
     ? `<div class="l-ont"><span class="sub">Marcar como feito <b>ontem</b>:</span>${faltam.map(x => `<button class="btn" data-ontem="${esc(x.id)}">${esc(x.n)}</button>`).join('')}<button class="go" data-ontemabre="0">fechar</button></div>`
     : `<button class="go l-ontb" data-ontemabre="1">esqueci de marcar ontem</button>`;
   document.getElementById('l-hab').innerHTML = h || `<p class="sub" style="margin:0">Nenhum hábito. Adicione na aba Configurações (digitação, leitura, exercício…) ou ligue o Codeforces.</p>`;
-  /* heatmaps: 20 semanas, uma coluna por semana (seg → dom) */
-  const ini = addD(HOJE, -dow(HOJE) - 7*19), DIAS = Array.from({length:140}, (_,i) => addD(ini, i));
-  const grade = (cor, nivel, tt) => `<div class="l-hg" style="--c:${cor}">${DIAS.map(d => d > HOJE ? '<i class="fut"></i>' : `<i class="${nivel(d)}${d === HOJE ? ' hj' : ''}" title="${ddmm(d)} · ${tt(d)}"></i>`).join('')}</div>`;
+  /* heatmaps: a temporada inteira, uma coluna por semana (seg → dom); os dias fora dela na 1ª e na última semana ficam ocultos (#14) */
+  const ini = addD(TEMP.ini, -dow(TEMP.ini)), NS = Math.max(1, Math.ceil((dias(ini, TEMP.fim) + 1) / 7));
+  const DIAS = Array.from({length:NS*7}, (_,i) => addD(ini, i)), fora = d => d < TEMP.ini || d > TEMP.fim;
+  const grade = (cor, nivel, tt) => `<div class="l-hg" style="--c:${cor};--n:${NS}">${DIAS.map(d => fora(d) ? '<i class="fora"></i>' : d > HOJE ? '<i class="fut"></i>' : `<i class="${nivel(d)}${d === HOJE ? ' hj' : ''}" title="${ddmm(d)} · ${tt(d)}"></i>`).join('')}</div>`;
   /* "Hábitos" = só os diários (um quadradinho por dia); cada semanal ganha a sua linha, um quadradinho por semana */
   const semanais = (J.habitos || []).filter(x => x.semana), ehSem = new Set(semanais.map(x => x.id));
   const diarios = (J.habitos || []).filter(x => !x.semana);
   const nh = Math.max(1, diarios.length || ((J.habitos || []).length ? 0 : new Set(D.feitas.filter(t => isRec(t) && !isCF(t)).map(recId)).size));
-  const hd = {}; for(const t of D.feitas) if(isRec(t) && !isCF(t) && t.done && !ehSem.has(recId(t))) hd[t.done] = (hd[t.done]||0) + 1;
-  const SEMS = Array.from({length:20}, (_,i) => addD(ini, 7*i));
-  const gradeSem = (x, cor) => `<div class="l-hg sem" style="--c:${cor}">${SEMS.map(s => { const n = naSemana(x.id, s), fut = s > HOJE;
+  const hd = {}; for(const t of D.feitas) if(isRec(t) && !isCF(t) && t.done >= TEMP.ini && !ehSem.has(recId(t))) hd[t.done] = (hd[t.done]||0) + 1;
+  const SEMS = Array.from({length:NS}, (_,i) => addD(ini, 7*i));
+  const gradeSem = (x, cor) => `<div class="l-hg sem" style="--c:${cor};--n:${NS}">${SEMS.map(s => { const n = naSemana(x.id, s), fut = s > HOJE;
     return fut ? '<i class="fut"></i>' : `<i class="${lv(n / x.semana)}${s === SEG ? ' hj' : ''}" title="semana de ${ddmm(s)} · ${n} de ${x.semana}"></i>`; }).join('')}</div>`;
   const cfd = (D.cf && D.cf.por_dia) || {};
   const lv = r => r <= 0 ? '' : r < .34 ? 'h1' : r < .67 ? 'h2' : r < 1 ? 'h3' : 'h4';
@@ -2060,6 +2062,7 @@ function habitosL(S){
   H += `</div>${leg('var(--soft)')}`;
   if(!(J.cf && J.cf.handle)) H += `<p class="sub" style="margin:10px 0 0">Faz Codeforces? Ligue em <button class="go" data-go="cfg">Configurações →</button> com o seu handle e ganhe o heatmap e o XP automáticos.</p>`;
   document.getElementById('l-heat').innerHTML = H;
+  document.getElementById('l-heatt').textContent = ' · ' + TEMP.nome;
 }
 /* "IA?" no formulário: a IA ligada sugere o tipo (pedido curto, modelo leve); a resposta vem como "tipo | motivo" */
 async function tipoIA(btn){
