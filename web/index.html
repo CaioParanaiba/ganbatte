@@ -1408,6 +1408,10 @@ const avNen = (i,s) => `<span class="av" style="--c:${NC(i)}${s?';--s:'+s+'px':'
 const avTask = (t,s) => avNen(nenDe(t), s);
 /* a avaliação que a tarefa prepara, com o motivo no title (trocar: editar a tarefa e escrever av:CHAVE) */
 const ligTxt = (b,t) => { const l = b.lig && b.lig.get(t); return l ? `<small class="lg" title="ligada a ${esc(l.k)} por: ${esc(l.por)}. Para trocar, edite a tarefa na Lista e escreva av:CHAVE.">→ ${esc(l.k)}</small>` : ''; };
+/* mundo pixel: o rosto e o nome do jogador (o boneco do mapa continua o Killua, que é sprite) */
+const NEN_QUEM = ['Intensificador','Transmutador','Conjurador','Especialista','Manipulador','Emissor'];
+const pxFoto = () => (UI.avatar === 'logo' || !CTX.AVATARES.includes(UI.avatar)) ? LOGO.replace(/'/g, '%27') : avSrc(UI.avatar);   // sem aspas: vai num url() sem aspas
+const pxNome = up => { const n = (CTX.JOG && CTX.JOG.nome) || 'Hunter'; return esc(up ? n.toUpperCase() : n); };
 const avMe = s => (UI.avatar === 'logo' || !CTX.AVATARES.includes(UI.avatar)) ? `<span class="av me logo"${s?` style="--s:${s}px"`:''}><img src="${LOGO}" alt=""></span>` : `<span class="av me pic" style="background-image:url(${avSrc(UI.avatar)})${s?';--s:'+s+'px':''}"></span>`;
 const plate = () => `<span class="plate"><img src="${LOGO}" alt="Associação Hunter"></span>`;
 const avB = (b,s) => `<span class="av bs${b.st==='dead'?' dead':b.st==='hurt'?' hurt':''}"${s?` style="--s:${s}px"`:''} title="${b.n} · ${b.d}">${ic(b.ic)}</span>`;
@@ -1688,7 +1692,7 @@ function rMAP(S){
       <span class="node lock" style="left:88%;top:12%"><span class="ico">${ic('crown')}</span><span>TORNEIO · 251</span></span>
     </div>
     <div class="side">
-      <div class="win"><h4>CAIO</h4><dl><dt>Andar</dt><dd>${S.a.n}</dd><dt>XP</dt><dd>${S.a.into}/${S.a.need}</dd><dt>Ten</dt><dd>${tenTxt(S.ten)}</dd><dt>Jenny</dt><dd>${fmt(S.jenny)}</dd><dt>Feitiços</dt><dd>${invN(S)}</dd></dl></div>
+      <div class="win"><h4>${pxNome(1)}</h4><dl><dt>Andar</dt><dd>${S.a.n}</dd><dt>XP</dt><dd>${S.a.into}/${S.a.need}</dd><dt>Ten</dt><dd>${tenTxt(S.ten)}</dd><dt>Jenny</dt><dd>${fmt(S.jenny)}</dd><dt>Feitiços</dt><dd>${invN(S)}</dd></dl></div>
       ${sel ? `<div class="win"><h4>MASMORRA · ${sel.d}</h4><div style="display:flex;gap:10px;align-items:center"><span style="font-size:34px;color:var(--r)">${ic(sel.ic)}</span><b style="font:700 16px var(--f-px)">${sel.n}</b></div>
         <div class="leg">${sel.avs.map(a => `<div>${a.k} · ${a.w}% · ${stTxt(a)}</div>`).join('')}</div><div style="font-size:13px;color:#AFC3FF">${needTxt(sel).replace(/<\/?b>/g,'')}</div></div>` : ''}
       <div class="win"><h4>LUGARES</h4><div class="leg"><div>${ic('tower')} Arena → ficha</div><div>${ic('coin')} Masadora → loja</div><div>${ic('island')} Greed Island → Book</div><div>${ic('crown')} Torneio: trancado até o 251</div></div></div>
@@ -1704,7 +1708,7 @@ function rP1(S){
   document.getElementById('p1-root').innerHTML = `
     <div class="ttl"><h2>HUNTER <em>.TODO</em></h2><p>TAREFA PREPARA. NOTA DERRUBA. DESCANSO NÃO TIRA NADA.</p></div>
     <div class="g">
-      <div class="px" style="--h:var(--lil)"><h3><i>1</i>SEU HUNTER</h3><div class="bd"><div class="who8"><div class="fr" style="background-image:url(/jogo/k/killua.png)"></div><div>Caio, Transmutador.<br><span style="color:var(--ps)">Andar ${a.n} · ${TEMP.nome}</span></div></div>
+      <div class="px" style="--h:var(--lil)"><h3><i>1</i>SEU HUNTER</h3><div class="bd"><div class="who8"><div class="fr" style="background-image:url(${pxFoto()})"></div><div>${pxNome()}, ${NEN_QUEM[S.attr.indexOf(Math.max(...S.attr))]}.<br><span style="color:var(--ps)">Andar ${a.n} · ${TEMP.nome}</span></div></div>
         <div class="xpb"><b style="width:${pct(a.into,a.need)}%"></b></div><div style="text-align:right;font:700 11px var(--f-pxl)">${a.into}/${a.need} XP</div></div></div>
       <div class="px w2" style="--h:var(--mint)"><h3><i>2</i>SEU NEN</h3><div class="bd" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px">
         ${NEN.map((l,i) => `<div class="st"><span style="color:${COL[i]}">${ic(l.k)}</span><span>${esc(l.n)}${i===S.fraco?' ★':''}</span><span>${lvA(S.attr[i])}</span><em>${esc(l.s)}</em><span style="grid-column:2/4">${seg(S.attr[i],mx)}</span></div>`).join('')}</div></div>
@@ -1735,7 +1739,7 @@ function rP3(S){
   el.innerHTML = `
     <div class="top"><h2>${ic('island')} GREED ISLAND · BOOK</h2><span>CONQUISTAS ${C.filter(c=>c.o==='slot'&&c.on).length}/${C.filter(c=>c.o==='slot').length} · FEITIÇOS ${invN(S)}</span></div>
     <div class="lay">
-      <div class="bx lic8"><h3>LICENÇA</h3><div class="fr" style="background-image:url(/jogo/k/killua.png)"></div><b>CAIO</b><dl class="kv"><dt>Andar</dt><dd>${S.a.n}</dd><dt>Jenny</dt><dd>${fmt(S.jenny)}</dd><dt>Ten</dt><dd>${tenTxt(S.ten)}</dd><dt>Modo</dt><dd>Arena</dd></dl></div>
+      <div class="bx lic8"><h3>LICENÇA</h3><div class="fr" style="background-image:url(${pxFoto()})"></div><b>${pxNome(1)}</b><dl class="kv"><dt>Andar</dt><dd>${S.a.n}</dd><dt>Jenny</dt><dd>${fmt(S.jenny)}</dd><dt>Ten</dt><dd>${tenTxt(S.ten)}</dd><dt>Modo</dt><dd>Arena</dd></dl></div>
       <div class="bx"><div class="pages">${pages.map((p,i) => `<button data-page="${i}" aria-pressed="${i===UI.page}">${p[0]==='narr'?'NARRADAS':p[0]==='feit'?'FEITIÇOS':String(p[0]).padStart(3,'0')+'-'+String(p[1]).padStart(3,'0')}</button>`).join('')}</div><div class="slots8">${slots}</div></div>
       <div class="bx det"><h3>CARTA</h3>${det}</div></div>
     <div class="how"><div class="bx"><b style="color:var(--gold)">000–099 · CONQUISTAS</b><p>Regras fixas, conferidas pelo jogo: gerais e quatro por disciplina.</p></div><div class="bx"><b style="color:var(--v)">100+ · NARRADAS</b><p>Com IA (opcional): o jogo monta o pedido com os seus fatos reais e você cola a carta de volta.</p></div><div class="bx"><b style="color:var(--a)">FEITIÇOS</b><p>Loja, preparação completa e missão. Expiram na volta às aulas.</p></div></div>`;
