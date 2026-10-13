@@ -322,7 +322,7 @@ const TOURS = {
      ['#l-hab','Hábitos de hoje','Os hábitos aparecem sozinhos todo dia. Marque à mão quando fizer. O hábito semanal some quando a meta da semana é cumprida; se fizer mais, <b>fiz de novo</b> marca hoje e cada vez acima da meta vale <b>XP em dobro</b>. Para mudar a lista, use a aba <b>Configurações</b>.', 1],
      ['#l-hab .l-hb','Codeforces','Quem liga o Codeforces (Configurações, com o seu handle) não marca nada: o jogo conta sozinho os problemas aceitos no dia, e bater a meta conclui o hábito. O <b>✋</b> é para o que o site não mostra (<b>ITMO Academy</b>, contest de <b>grupo privado</b>): cada clique pede confirmação e soma 1 problema hoje, valendo igual para a meta e o XP. Também fica ao lado do Codeforces no heatmap. O <b>Duolingo</b> é igual: com o seu usuário, ele se marca sozinho no dia em que você faz a lição.', 0],
      ['#l-heat','Constância','Heatmaps da temporada inteira (tracejados: os dias que ainda vêm; em verde, as férias), um quadrado por dia, e ao lado quanto você cumpre em cada dia da semana: o <b>Ten</b> (dia ativo ou salvo pelo Zetsu), os <b>hábitos</b> (quanto mais cheio, mais hábitos feitos) e o <b>Codeforces</b> (problemas no dia; a cor forte é a meta batida) e o <b>Duolingo</b> (dias com lição), se estiverem ligados.', 1],
-     ['#l-valec','Quanto vale','Clique para abrir: o XP de cada tipo e as tags que marcam cada um. Os bônus de ×1,5 se multiplicam.']],
+     ['#l-valec','Quanto vale','Clique no título para abrir: o XP de cada tipo e as tags que marcam cada um. Os bônus de ×1,5 se multiplicam. Todo card desta coluna abre e fecha pelo título, e o jogo lembra o que você deixou aberto. As contas completas ficam na aba <b>Regras</b>.']],
   b:[['#b-tower','A torre','Seu andar na Arena Celestial e a <b>projeção</b> de onde você chega no fim do semestre, no ritmo atual. No topo (251) abre o Torneio contra a Guarda Real.'],
      ['#b-sheet','Ficha e hexágono de Nen','Quanto você treinou cada tipo de Nen. O hexágono mostra o equilíbrio: o lado mais curto vira a missão da semana.'],
      ['#b-bosses','Chefões','Resumo das disciplinas: vida restante, fúria e quanto falta de média.'],
@@ -386,7 +386,9 @@ function tutorial(aba){
   document.body.insertAdjacentHTML('beforeend', '<div class="tr-hole" id="tr-hole"></div><div class="tr-pop" id="tr-pop" role="dialog" aria-live="polite"></div>');
   passo();
 }
-function alvo(){ const p = TR.passos[TR.i], el = document.querySelector(p[0]); return el && p[3] ? (el.closest('.card') || el) : el; }
+function alvo(){ const p = TR.passos[TR.i], el = document.querySelector(p[0]);
+  const d = el && el.closest('details'); if(d && !d.open && !el.closest('summary')) d.open = true;   // card fechado da lateral: abre para mostrar
+  return el && p[3] ? (el.closest('.card') || el) : el; }
 function posiciona(){
   if(!TR) return;
   const el = alvo(), h = document.getElementById('tr-hole'), pop = document.getElementById('tr-pop'); if(!el) return;

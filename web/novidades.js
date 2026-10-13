@@ -13,6 +13,12 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.4-beta4", "nome": "atualização das expedições", "data": "2026-10-13",
+   "resumo": "Regras reescritas, com o XP de cada coisa e as contas, e a lateral da Lista que abre e fecha.",
+   "itens": [
+     {"ic": "crown", "t": "Regras novas", "d": "A aba Regras explica, com tabelas e contas de exemplo, quanto vale cada tarefa, os multiplicadores, o nível dos hábitos, o Ten, a torre, a Jenny, os chefões e os feitiços. Os números vêm do próprio jogo, e o topo mostra os seus. A aba agora fica no fim do menu, depois de Novidades."},
+     {"ic": "scroll", "t": "Lateral da Lista", "d": "Cada card ao lado da Lista (quanto vale, rende mais agora, chefões, expedições e hábitos de hoje) abre e fecha pelo título, e o jogo lembra o que você deixou aberto."}
+   ]},
   {"versao": "0.6.4-beta3", "nome": "atualização das expedições", "data": "2026-10-13",
    "resumo": "O Book reorganizado: a coleção sem casas vazias, três cartas para cada hábito e 10 vagas para os desafios da IA.",
    "itens": [
@@ -374,7 +380,7 @@ async function atualiza(){
 
 /* aba no menu, com um ponto quando há versão nova ou novidade que você ainda não viu */
 const gnav1 = gnav;
-gnav = c => gnav1(c).replace('<button data-go="tt"', `<button data-go="nv"${c === 'nv' ? ' aria-current="page"' : ''}>${ic('antenna')}Novidades${temNova() || naoVista() ? '<i class="nv-dot" aria-label="novidade"></i>' : ''}</button><button data-go="tt"`);
+gnav = c => gnav1(c).replace('<button data-go="sys"', `<button data-go="nv"${c === 'nv' ? ' aria-current="page"' : ''}>${ic('antenna')}Novidades${temNova() || naoVista() ? '<i class="nv-dot" aria-label="novidade"></i>' : ''}</button><button data-go="sys"`);   // Novidades logo antes das Regras (no fim)
 RENDER.nv = rNV;
 document.addEventListener('click', e => {
   if(e.target.closest('[data-nvconfere]')){ confere(true); return; }
