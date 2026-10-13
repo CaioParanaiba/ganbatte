@@ -463,6 +463,8 @@ ul{list-style:none;margin:0;padding:0}
 .bossrow{display:flex;gap:10px;flex-wrap:wrap}
 .bossrow .b1{display:flex;flex-direction:column;align-items:center;gap:3px;font:600 10.5px var(--f-mono);color:var(--soft);min-width:44px}
 .chiprow{display:flex;gap:6px;flex-wrap:wrap}
+.zt-ops{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px} .zt-ops .btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
+.zt-ops .btn small{font:500 11px var(--f-ui);color:var(--soft)}
 .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--hair);border-radius:99px;padding:2px 9px;font:600 11.5px var(--f-mono);color:var(--soft);background:var(--panel2);white-space:nowrap}
 .pill .ic{color:var(--c,var(--soft))}
 .pill.dmg{color:var(--red);border-color:color-mix(in srgb,var(--red) 35%,var(--hair))}
@@ -1059,6 +1061,12 @@ a.btn{display:inline-block;text-decoration:none}
 .l-hds b{display:block;height:6px;border-radius:3px;background:var(--track);overflow:hidden} .l-hds b i{display:block;height:100%;background:var(--c)}
 .l-hds .fr{color:var(--ink)} .l-hds .fr em{font-weight:700}
 .l-hcab strong{display:block;font:600 20px var(--f-mono);color:var(--ink);line-height:1.1} .l-hcab small{display:block;max-width:120px;margin-top:3px;font:11px var(--f-mono);color:var(--soft)}
+.l-hnv{display:flex;flex-direction:column;gap:6px;width:100%;min-width:0}
+.l-hnv span{display:grid;grid-template-columns:minmax(0,1fr) auto 52px;gap:2px 8px;align-items:baseline;font:11px var(--f-mono);color:var(--soft)}
+.l-hnv em{font-style:normal;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .l-hnv b{color:var(--c);font-weight:700} .l-hnv small{text-align:right;color:var(--grn);font-weight:700}
+.l-hnv p{margin:2px 0 0;font:10.5px var(--f-mono);color:var(--faint)}
+.l-hnvb{grid-column:1/-1;display:block;height:4px;border-radius:2px;background:var(--track);overflow:hidden} .l-hnvb i{display:block;height:100%;background:var(--c)}
+.l-hcab .l-hnvb{margin-top:6px;max-width:120px}
 @container (max-width:860px){.l-hres{display:none}}
 .l-hl{grid-column:2;display:flex;gap:4px;align-items:center;font:10.5px var(--f-mono);color:var(--faint);margin-top:-8px}
 .l-hl i{width:10px;height:10px;border-radius:2px;display:inline-block}
@@ -1381,11 +1389,11 @@ function faixaTeste(){
 /* bônus de nota, períodos de fúria e o acerto da 0.5.2 ficam gravados no estado.json (recibos() no motor.js) */
 function guardaRecibos(){
   const r = estado().rec; if(!r.mudou) return;
-  Object.assign(EST, {notasJ:r.notasJ, furias:r.furias, acertos:r.acertos, xpDias:r.xpDias});
+  Object.assign(EST, {notasJ:r.notasJ, furias:r.furias, acertos:r.acertos, xpDias:r.xpDias, migra:r.migra, tenRec:r.tenRec});
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.4-beta1';
+const VERSAO_PAGINA = '0.6.4-beta2';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1491,7 +1499,7 @@ function metaDia(S){
   const cf = S.rot.find(t => /codeforces/i.test(t.txt));
   return `<div class="meta"><div class="m"><span class="av" style="--c:var(--n2)">${ic('tra')}</span><span><b>Codeforces</b>${CTX.JOG.cf && CTX.JOG.cf.handle ? cfMaoBtn() : ''} <span class="sub">+5 por questão (até 6) · 3 = meta, +10</span></span>
     <span class="slots" title="${S.cfHoje} hoje no Codeforces">${[0,1,2].map(i=>`<i class="${S.cfHoje>i||(cf&&cf.ok)?'on':''}"></i>`).join('')}<span class="sep"></span>${[3,4,5].map(i=>`<i class="bn${S.cfHoje>i?' on':''}"></i>`).join('')}</span></div>
-    ${duoMeta(S)}${S.rot.filter(t => t !== cf && !isDuo(t)).map(t => `<button class="tk" data-hit="${t.n}" style="padding:4px 0">${avTask(t)}<span class="t">${esc(t.txt)}</span><span class="v" style="color:var(--soft)">${t.ok?'✓':'+'+xpDe({...t,done:HOJE})}</span></button>`).join('')}</div>`;
+    ${duoMeta(S)}${S.rot.filter(t => t !== cf && !isDuo(t)).map(t => `<button class="tk" data-hit="${t.n}" style="padding:4px 0">${avTask(t)}<span class="t">${esc(t.txt)}</span><span class="v" style="color:var(--soft)">${t.ok?'✓':'+'+habXPHoje(S, t)}</span></button>`).join('')}</div>`;
 }
 const mission = S => { const l = NEN[S.fraco]; return S.pausa ? `<div class="mission" style="--c:var(--grn)">${avNen(S.fraco)}<span><b>Férias: missão da semana pausada</b><span class="sub">Até a volta às aulas (${ddmm(TEMP.volta)}) não há missão nem fúria dos chefões, e dia vazio não derruba o Ten. O XP continua subindo a torre.</span></span></div>`
   : `<div class="mission" style="--c:${NC(S.fraco)}">${avNen(S.fraco)}<span><b>Missão da semana: ${l.n} (${l.c})</b><span class="sub">Seu atributo mais fraco rende ×1,5 até domingo. ${S.missDias}/3 dias feitos → 1 feitiço.</span></span></div>`; };
@@ -1601,7 +1609,29 @@ function usoHTML(S, s){
   const vira = k === 'escolha' ? `<p class="sub" style="margin:10px 0 4px">Vai virar <b>${spell(como).n}</b>. <button class="go" data-como="">trocar</button></p>` : '';
   if(como === 'gyo') return vira + `<p class="cap" style="margin-top:12px">missão desta semana passa a ser</p><div class="chiprow">${NEN.map((l,i) => `<button class="btn" data-usar="${base}:${i}">${l.n}</button>`).join('')}</div>`;
   if(como === 'ken'){ const ts = D.abertas.filter(t => t.due && !t.done); return vira + `<p class="cap" style="margin-top:12px">adiar o prazo de</p>` + (ts.length ? ts.map((t,i) => `<button class="tk" data-usar="${base}:${i}" data-ken="${esc(t.txt)}">${avTask(t)}<span class="t">${esc(t.txt)}</span><span class="v" style="color:var(--amb)">${ddmm(t.due)}</span></button>`).join('') : '<p class="sub">Nenhuma tarefa com due: agora.</p>'); }
+  if(como === 'zetsu'){ const ops = zetsuOps(S), livres = ops.filter(o => !o[3]).length;
+    return vira + `<p class="cap" style="margin-top:12px">salvar o quê</p><div class="zt-ops">${ops.map(([a, d, t, nao]) => `<button class="btn" data-usar="${base}:${esc(a)}:${d}"${nao ? ` disabled title="${esc(nao)}"` : ''}>${esc(t)}<small>${esc(nao || 'pode salvar')}</small></button>`).join('')}</div>`
+      + (livres ? '' : '<p class="sub">Nada para salvar agora: o Ten e os hábitos de hoje e de ontem estão em dia. Guarde a carta para quando quebrar.</p>'); }
   return vira + `<button class="btn v" style="margin-top:12px" data-usar="${base}">usar agora</button>`;
+}
+/* carta Zetsu (0.6.4): salva hoje ou ontem, o Ten ou um hábito. Mostra todas as opções; as que não precisam ficam apagadas com
+   o motivo ([alvo, dia, texto, motivo de não dar]). Ontem só vale quando de fato quebrou o Ten ou derrubou o nível do hábito
+   (semanal: ontem foi domingo e a semana ficou sem a meta); hoje, quando ainda não está feito */
+function zetsuOps(S){
+  const J = CTX.JOG, ONT = addD(HOJE, -1), ops = [], st = S.ten.st;
+  ops.push(['ten', HOJE, 'Ten · hoje', st[HOJE] === 'on' ? 'já aceso hoje' : st[HOJE] === 'z' ? 'já salvo hoje' : '']);
+  ops.push(['ten', ONT, 'Ten · ontem', st[ONT] === 'x' ? '' : st[ONT] === 'z' ? 'ontem já foi salvo' : st[ONT] === 'on' ? 'ontem estava aceso' : 'não havia Ten para salvar']);
+  const recDia = t => (t.rec || '').split(':')[1], recId = t => (t.rec || '').split(':')[0];
+  const vezes = (id, de, ate) => D.feitas.filter(t => recId(t) === id && recDia(t) >= de && recDia(t) <= ate).length;
+  const habs = (J.habitos || []).map(h => [h.id, h.n, +h.semana || 0]).concat(J.duo && J.duo.usuario ? [['duo', 'Duolingo', 0]] : []);
+  for(const [id, n, meta] of habs){
+    if(meta){ const seg = addD(HOJE, -dow(HOJE)), segO = addD(ONT, -dow(ONT));
+      ops.push([id, HOJE, `${n} · esta semana`, vezes(id, seg, HOJE) >= meta ? 'meta da semana já feita' : '']);
+      if(dow(ONT) === 6) ops.push([id, ONT, `${n} · semana passada`, !S.nv[id] ? 'ainda sem nível' : vezes(id, segO, ONT) >= meta ? 'a semana bateu a meta' : '']); }
+    else { ops.push([id, HOJE, `${n} · hoje`, vezes(id, HOJE, HOJE) ? 'já feito hoje' : '']);
+      ops.push([id, ONT, `${n} · ontem`, !S.nv[id] ? 'ainda sem nível' : vezes(id, ONT, ONT) ? 'feito ontem' : '']); }
+  }
+  return ops;
 }
 function rBK(S){
   const C = cartas(S), narr = C.filter(c => c.o === 'claude'), cia = C.filter(c => c.o === 'ia');
@@ -1619,7 +1649,7 @@ function rBK(S){
   let det;
   if(UI.bksel.startsWith('F:')){ const s = spell(UI.bksel.slice(2)), q = S.inv[s.k]||0;
     det = `<div class="face" style="color:var(--aura);border-color:var(--aura)">${ic(s.ic)}</div><p class="cap">feitiço · na bolsa: ${q}</p><h3>${s.n}</h3><p>${s.e}</p><p class="sub">${s.noshop ? 'Vem da preparação completa antes de uma avaliação e de cada missão da semana cumprida.' : `Loja: ${fmt(s.p)} J (1 por semana). Também vem da preparação completa ou da missão da semana, como "à escolha".`} Expira em ${ddmm(TEMP.volta)}.</p>${q ? usoHTML(S, s) : ''}
-      ${S.usos.length ? `<p class="cap" style="margin-top:14px">usados</p>${S.usos.slice(-5).reverse().map(u => `<div class="sub">${ddmm(u.d)} · ${spell(u.ef||u.k).n}${u.k==='escolha'?' (à escolha)':''}${u.ef==='gyo'?' → '+NEN[+u.alvo].n:''}${u.ef==='ken'?' → '+esc(String(u.alvo).slice(0,40)):''}</div>`).join('')}` : ''}`; }
+      ${S.usos.length ? `<p class="cap" style="margin-top:14px">usados</p>${S.usos.slice(-5).reverse().map(u => `<div class="sub">${ddmm(u.d)} · ${spell(u.ef||u.k).n}${u.k==='escolha'?' (à escolha)':''}${u.ef==='gyo'?' → '+NEN[+u.alvo].n:''}${u.ef==='ken'?' → '+esc(String(u.alvo).slice(0,40)):''}${u.ef==='zetsu'&&u.zalvo?' → '+(u.zalvo==='ten'?'Ten':esc(((CTX.JOG.habitos||[]).find(h => h.id===u.zalvo)||{n:u.zalvo==='duo'?'Duolingo':u.zalvo}).n))+' de '+ddmm(u.zdia):''}</div>`).join('')}` : ''}`; }
   else { const c = C.find(c => c.no === UI.bksel) || (UI.bk === 'claude' ? narr[0] : C[0]);
     det = !c ? `<p class="sub">Nenhuma carta narrada ainda. ${espera('semana')}.</p>` : `<div class="face"${c.o==='claude'?' style="color:var(--volt);border-color:var(--volt)"':''}>${ic(c.ic)}</div><p class="cap">${c.o==='claude' ? `${({semana:'semanal · comum',mes:'mensal',semestre:'semestral · rara',ano:'anual · lendária'})[c.tipo]||'narrada'} · ${esc(c.periodo||'')}` : `Nº ${c.no} · rank ${c.rk} · ${OG[c.o]}`}</p><h3>${esc(c.n)}</h3>${c.cron ? `<p class="cron" style="white-space:pre-line">${esc(c.cron)}</p><p class="cap" style="margin:14px 0 4px">o que aconteceu</p>` : ''}<p style="white-space:pre-line">${esc(c.d)}</p><p class="sub">${c.o==='slot' ? (c.on ? 'No livro.' : 'Ainda não.') : 'Narrada com IA a partir do que aconteceu de verdade' + (c.escrita ? ` · ${ddmm(c.escrita)}` : '') + '.'}</p>`; }
   document.getElementById('bk-det').innerHTML = det + `<p style="margin-top:14px"><button class="go" data-go="ms">ir para a Masadora →</button></p>`;
@@ -1897,7 +1927,7 @@ const LTIPOS = [
   {k:'est', n:'estudo', c:0, d:'tempo de aprender para a matéria: ninguém cobra, mas prepara a prova', ex:'Revisar integrais · Ler o capítulo 4 · Refazer a P1'},
   {k:'fac', n:'faculdade', c:2, d:'outras coisas da faculdade, ligadas a uma disciplina, que não são entrega nem estudo', ex:'Montar o grupo do projeto · Falar com o professor'},
   {k:'tre', n:'treino/projeto', c:1, d:'treino e projetos: programação e projetos pessoais fora da matéria', ex:'Contest no Codeforces · Ajudar no desenvolvimento do Hunter.todo · Meu site'},
-  {k:'hab', n:'hábito', c:4, d:'o que se repete: vale metade, mas mantém o Ten (os fixos ficam em Configurações)', ex:'Treino de digitação · 30 min de leitura'},
+  {k:'hab', n:'hábito', c:4, d:'o que se repete: vale pelo nível do hábito (3 a 12 XP), mas sozinho não acende o Ten (os fixos ficam em Configurações)', ex:'Treino de digitação · 30 min de leitura'},
   {k:'vid', n:'vida', c:3, d:'todo o resto: casa, saúde, família, documentos, trabalho ou estágio (por enquanto)', ex:'Renovar a carteirinha · Consulta no dentista · Pagar o boleto'}];
 const LA = {tipo:'est', due:'', pri:'jogo', auto:true, por:''};   // auto: o tipo segue a sugestão do texto até o jogador escolher um   // rascunho do formulário (pri: 'jogo' = o jogo decide, '' = sem, ou a letra)
 const LPRI = [['jogo','o jogo decide'], ['A','A'], ['B','B'], ['C','C'], ['','sem']], PRI_COR = {A:'var(--red)', B:'var(--amb)', C:'var(--soft)'};
@@ -2052,11 +2082,15 @@ function rL(S){
 /* ---------- hábitos: marcados à mão (recorrentes rec:h-…); o Codeforces e o Duolingo só pela internet, nunca à mão ---------- */
 const isCF = t => (t.rec || '').startsWith('cf');
 function isDuo(t){ return (t.rec || '').startsWith('duo:'); }
+/* nível de cada hábito (0.6.4, nv no estado do motor): o que o hábito pagou hoje, se já feito, ou o que a próxima vez vale */
+function habNv(S, id){ const sem = HJx.semanalDe(CTX.JOG, id); return S.nv[id] || {nv:1, xp:HJx.habXP(1), s:0, pede:HJx.habPede(1, sem), max:false, nvHoje:1, sem:!!sem}; }
+function habXPHoje(S, t){ const n = habNv(S, String(t.rec || '').split(':')[0]); return t.ok ? HJx.habXP(n.nvHoje) : n.xp; }
+function habNvTxt(n){ return n.max ? 'nível máximo' : `${n.s}/${n.pede} ${n.sem ? (n.pede === 1 ? 'semana' : 'semanas') : 'dias'} para o nv ${n.nv + 1}`; }
 /* Duolingo: o servidor lê a ofensiva do perfil público e conclui a rec:duo do dia com lição feita (o bloqueio de ofensiva não conta) */
 const duoTxt = () => { const o = D.duo && D.duo.ofensiva; return `${esc(CTX.JOG.duo.usuario)}${o != null ? ` · ofensiva de ${o} dia${o === 1 ? '' : 's'}` : ''}`; };
 function duoMeta(S){
   const t = S.rot.find(isDuo); if(!t) return '';
-  return `<div class="tk" style="padding:4px 0">${avTask(t)}<span class="t">Duolingo <span class="sub">automático</span></span><span class="v" style="color:var(--soft)">${t.ok ? '✓' : '+' + xpDe({...t, done:HOJE})}</span></div>`;
+  return `<div class="tk" style="padding:4px 0">${avTask(t)}<span class="t">Duolingo <span class="sub">automático</span></span><span class="v" style="color:var(--soft)">${t.ok ? '✓' : '+' + habXPHoje(S, t)}</span></div>`;
 }
 function habitosL(S){
   const J = CTX.JOG, cf = J.cf && J.cf.handle ? J.cf : null, meta = (cf && cf.meta) || 3;
@@ -2072,13 +2106,13 @@ function habitosL(S){
       <span class="l-slots" title="${n} problema(s) hoje">${Array.from({length:meta}, (_,i) => `<i class="${n > i ? 'on' : ''}"></i>`).join('')}<span class="sep"></span>${[0,1,2].map(i => `<i class="bn${n > meta + i ? ' on' : ''}"></i>`).join('')}</span>
       <span class="l-auto">automático: conta os problemas aceitos no dia (+5 cada, até 6) · bater a meta dá +10${CTX.SRV ? ' · ✋ marca à mão o que o site não mostra (ITMO, grupo privado)' : ''}</span></div>`; }
   if(J.duo && J.duo.usuario && duoT) h += `<div class="l-hb${duoT.ok ? ' ok' : ''}" style="--c:${NC(4)}"><span class="l-ck" style="--c:${NC(4)}" aria-hidden="true">${duoT.ok ? '✓' : ''}</span>
-      <span class="t">Duolingo <small>${duoTxt()}</small></span><span class="l-xp">+${xpDe({...duoT, done:HOJE})}</span>
+      <span class="t">Duolingo <small>${duoTxt()} · nv ${habNv(S, 'duo').nv}</small></span><span class="l-xp">+${habXPHoje(S, duoT)}</span>
       <span class="l-auto">automático: o jogo confere a sua ofensiva e marca sozinho quando você faz a lição do dia (o bloqueio de ofensiva não conta)</span></div>`;
   h += habs.map(t => `<div class="l-hb${t.ok ? ' ok' : ''}" style="--c:${NC(4)}" data-ln="${t.n}"><button class="l-ck" style="--c:${NC(4)}" data-l="${t.ok ? 'reopen' : 'done'}" aria-label="${t.ok ? 'desmarcar' : 'marcar'}: ${esc(t.txt)}">${t.ok ? '✓' : ''}</button>
-      <span class="t">${esc(t.txt)}${sem(recId(t)) ? `<small>${sem(recId(t))}× por semana · ${naSemana(recId(t), SEG)}/${sem(recId(t))} nesta semana${naSemana(recId(t), SEG) > sem(recId(t)) ? ` · acima da meta, XP ×${HJx.HAB_EXTRA}` : ''}</small>` : ''}</span><span class="l-xp">+${xpDe({...t, done:HOJE}) * (sem(recId(t)) && naSemana(recId(t), SEG) > sem(recId(t)) ? HJx.HAB_EXTRA : 1)}</span></div>`).join('');
+      <span class="t">${esc(t.txt)}<small>nv ${habNv(S, recId(t)).nv}${sem(recId(t)) ? ` · ${sem(recId(t))}× por semana · ${naSemana(recId(t), SEG)}/${sem(recId(t))} nesta semana${naSemana(recId(t), SEG) > sem(recId(t)) ? ` · acima da meta, XP ×${HJx.HAB_EXTRA}` : ''}` : ''}</small></span><span class="l-xp">+${habXPHoje(S, t) * (sem(recId(t)) && naSemana(recId(t), SEG) > sem(recId(t)) ? HJx.HAB_EXTRA : 1)}</span></div>`).join('');
   /* semanal com a meta da semana cumprida: o servidor não cria a linha de hoje; mostra como completo */
   h += (J.habitos || []).filter(x => x.semana && !habs.some(t => recId(t) === x.id) && naSemana(x.id, SEG) >= x.semana).map(x => `<div class="l-hb ok" style="--c:${NC(4)}"><span class="l-ck" style="--c:${NC(4)}" aria-hidden="true">✓</span>
-      <span class="t">${esc(x.n)}<small>${x.semana}× por semana · semana completa${naSemana(x.id, SEG) > x.semana ? ` (+${naSemana(x.id, SEG) - x.semana} acima da meta)` : ''}</small></span>${CTX.SRV ? `<button type="button" class="btn l-denovo" data-denovo="${esc(x.id)}" title="fez mais uma vez hoje? acima da meta vale XP ×${HJx.HAB_EXTRA}">fiz de novo +${xpDe({txt:x.n, rec:x.id + ':' + HOJE, proj:[], ctx:[], done:HOJE}) * HJx.HAB_EXTRA}</button>` : '<span></span>'}</div>`).join('');
+      <span class="t">${esc(x.n)}<small>${x.semana}× por semana · semana completa${naSemana(x.id, SEG) > x.semana ? ` (+${naSemana(x.id, SEG) - x.semana} acima da meta)` : ''}</small></span>${CTX.SRV ? `<button type="button" class="btn l-denovo" data-denovo="${esc(x.id)}" title="fez mais uma vez hoje? acima da meta vale XP ×${HJx.HAB_EXTRA}">fiz de novo +${habNv(S, x.id).xp * HJx.HAB_EXTRA}</button>` : '<span></span>'}</div>`).join('');
   /* esqueci de marcar ontem: hábitos de hoje que não aparecem como feitos ontem; marcar conta para ontem (XP, Ten e heatmap) */
   const ONT = addD(HOJE, -1), feitosOnt = new Set(D.feitas.filter(t => t.done === ONT && (t.rec||'').endsWith(':' + ONT)).map(t => t.rec.split(':')[0]));
   const faltam = (J.habitos || []).filter(x => !feitosOnt.has(x.id) && !(x.semana && naSemana(x.id, addD(ONT, -dow(ONT))) >= x.semana));
@@ -2099,6 +2133,12 @@ function habitosL(S){
      (o mais fraco em destaque, se for um só) e cab(média, dias) = [número, legenda] */
   const DSEM = ['seg','ter','qua','qui','sex','sáb','dom'], VIVIDOS = DIAS.filter(d => !fora(d) && !fer(d) && d <= HOJE);   // as médias são do semestre; férias não cobram
   const cabRes = (a, b) => `<div class="l-hcab"><strong>${a}</strong><small>${b}</small></div>`;
+  /* nível e XP de cada hábito (0.6.4): ao lado da grade dos diários, um por linha, com a barra até o próximo nível */
+  const nvBarra = n => `<i class="l-hnvb"><i style="width:${n.max ? 100 : Math.round(n.s / n.pede * 100)}%"></i></i>`;
+  const nvLista = (hs, pc) => `<div class="l-hres"><div class="l-hnv">${hs.map(x => { const n = habNv(S, x.id);
+    return `<span title="${esc(x.n)} · nível ${n.nv} de ${HJx.HAB_NV_MAX} · ${habNvTxt(n)}"><em>${esc(x.n)}</em><b>nv ${n.nv}</b><small>+${n.xp} XP</small>${nvBarra(n)}</span>`; }).join('')}
+    <p>${pc} dos hábitos diários feitos · falhar um dia cai um nível</p></div></div>`;
+  const nvCab = id => { const n = habNv(S, id); return `<div class="l-hcab"><strong>nv ${n.nv} · +${n.xp}</strong><small>XP · ${habNvTxt(n)}</small>${nvBarra(n)}</div>`; };
   const resumo = (v, cab) => {
     const sm = [0,0,0,0,0,0,0], n = [0,0,0,0,0,0,0], ds = VIVIDOS.filter(d => d < HOJE || v(d) > 0);
     for(const d of ds){ sm[dow(d)] += v(d); n[dow(d)]++; }
@@ -2113,24 +2153,25 @@ function habitosL(S){
   const diarios = (J.habitos || []).filter(x => !x.semana);
   const nh = Math.max(1, diarios.length || ((J.habitos || []).length ? 0 : new Set(D.feitas.filter(t => isRec(t) && !isCF(t) && !isDuo(t)).map(recId)).size));
   const hd = {}; for(const t of D.feitas) if(isRec(t) && !isCF(t) && !isDuo(t) && t.done >= TEMP.ini && !ehSem.has(recId(t))) hd[t.done] = (hd[t.done]||0) + 1;
+  const pcHab = () => { const ds = VIVIDOS.filter(d => d < HOJE || (hd[d]||0) > 0); return Math.round(ds.reduce((x, d) => x + Math.min(1, (hd[d]||0)/nh), 0) / Math.max(1, ds.length) * 100) + '%'; };
   const SEMS = Array.from({length:NS}, (_,i) => addD(ini, 7*i));
-  const gradeSem = (x, cor) => { const conta = SEMS.filter(s => s <= TEMP.fim && (s < SEG || (s === SEG && naSemana(x.id, s) >= x.semana))), na = conta.filter(s => naSemana(x.id, s) >= x.semana).length;
+  const gradeSem = (x, cor) => { const conta = SEMS.filter(s => s <= TEMP.fim && (s < SEG || (s === SEG && naSemana(x.id, s) >= x.semana))), na = conta.filter(s => naSemana(x.id, s) >= x.semana).length;   // ao lado: semanas na meta e o nível
     return `<div class="l-hrow" style="--c:${cor}"><div class="l-hg sem" style="--n:${NS}">${SEMS.map(s => { const n = naSemana(x.id, s), fut = s > HOJE;
-    return fut ? `<i class="${s > TEMP.fim ? 'fer' : 'fut'}"></i>` : `<i class="${lv(n / x.semana) || (s > TEMP.fim ? 'fer' : '')}${s === SEG ? ' hj' : ''}" title="semana de ${ddmm(s)} · ${n} de ${x.semana}${s > TEMP.fim ? ' · férias' : ''}"></i>`; }).join('')}</div>${conta.length ? `<div class="l-hres">${cabRes(`${na} de ${conta.length}`, 'semanas na meta')}</div>` : ''}</div>`; };
+    return fut ? `<i class="${s > TEMP.fim ? 'fer' : 'fut'}"></i>` : `<i class="${lv(n / x.semana) || (s > TEMP.fim ? 'fer' : '')}${s === SEG ? ' hj' : ''}" title="semana de ${ddmm(s)} · ${n} de ${x.semana}${s > TEMP.fim ? ' · férias' : ''}"></i>`; }).join('')}</div><div class="l-hres">${conta.length ? cabRes(`${na} de ${conta.length}`, 'semanas na meta') : ''}${nvCab(x.id)}</div></div>`; };
   const cfd = (D.cf && D.cf.por_dia) || {};
   const lv = r => r <= 0 ? '' : r < .34 ? 'h1' : r < .67 ? 'h2' : r < 1 ? 'h3' : 'h4';
   const leg = cor => `<div class="l-hl">menos ${['','h1','h2','h3','h4'].map(c => `<i style="background:${c ? `color-mix(in srgb,${cor} ${({h1:30,h2:55,h3:80,h4:100})[c]}%,var(--track))` : 'var(--track)'}"></i>`).join('')} mais${FIMG > TEMP.fim ? ' <i class="fer" style="margin-left:10px"></i> férias' : ''}</div>`;
   let H = `<div class="l-hm">
     <span class="nm">Ten<small>${S.ten.cur} dias · recorde ${S.ten.max}</small></span>${grade('var(--grn)', d => S.ten.st[d] === 'on' ? 'h4' : S.ten.st[d] === 'z' ? 'z' : '', d => S.ten.st[d] === 'on' ? 'ativo' : S.ten.st[d] === 'z' ? 'Zetsu' : S.ten.st[d] === 'f' ? 'vazio, sem cair' : 'vazio',
       resumo(d => S.ten.st[d] === 'on' || S.ten.st[d] === 'z' ? 1 : 0, m => [`${Math.round(m*100)}%`, 'dos dias com o Ten aceso']))}
-    ${diarios.length || !(J.habitos || []).length ? `<span class="nm">Hábitos<small>${nh} por dia</small></span>${grade(NC(4), d => lv((hd[d]||0)/nh), d => `${hd[d]||0} de ${nh}`, resumo(d => Math.min(1, (hd[d]||0)/nh), m => [`${Math.round(m*100)}%`, 'dos hábitos diários feitos']))}` : ''}
+    ${diarios.length || !(J.habitos || []).length ? `<span class="nm">Hábitos<small>${nh} por dia</small></span>${grade(NC(4), d => lv((hd[d]||0)/nh), d => `${hd[d]||0} de ${nh}`, diarios.length ? nvLista(diarios, pcHab()) : resumo(d => Math.min(1, (hd[d]||0)/nh), m => [`${Math.round(m*100)}%`, 'dos hábitos diários feitos']))}` : ''}
     ${semanais.map(x => `<span class="nm">${esc(x.n)}<small>${x.semana}× por semana</small></span>${gradeSem(x, NC(4))}`).join('')}`;
   const cfm = (D.cf && D.cf.manual) || {};
   if(J.cf && J.cf.handle) H += `<span class="nm">Codeforces<small>${esc(J.cf.handle)} · meta ${meta}${cfMaoBtn()}</small></span>${grade(NC(1), d => { const n = cfd[d]||0; return !n ? '' : n < meta ? (n < meta/2 ? 'h1' : 'h2') : n === meta ? 'h3' : 'h4'; }, d => `${cfd[d]||0} problema(s)${cfm[d] ? ` (${cfm[d]} à mão)` : ''}`,
     resumo(d => Math.min(1, (cfd[d]||0)/meta), (m, ds) => [ds.reduce((x,d) => x + (cfd[d]||0), 0), `problemas · ${ds.filter(d => (cfd[d]||0) >= meta).length} dias na meta`]))}`;
   if(J.duo && J.duo.usuario){ const dd = new Set(D.feitas.filter(isDuo).map(recDia));
     H += `<span class="nm">Duolingo<small>${duoTxt()}</small></span>${grade(NC(4), d => dd.has(d) ? 'h4' : '', d => dd.has(d) ? 'lição feita' : 'sem lição',
-      resumo(d => dd.has(d) ? 1 : 0, m => [`${Math.round(m*100)}%`, 'dos dias com lição']))}`; }
+      resumo(d => dd.has(d) ? 1 : 0, m => { const n = habNv(S, 'duo'); return [`nv ${n.nv} · +${n.xp}`, `XP · ${Math.round(m*100)}% dos dias com lição · ${habNvTxt(n)}`]; }))}`; }
   H += `</div>${leg('var(--soft)')}`;
   const falta = [!(J.cf && J.cf.handle) && 'Codeforces (com o seu handle)', !(J.duo && J.duo.usuario) && 'Duolingo (com o seu usuário)'].filter(Boolean);
   if(falta.length) H += `<p class="sub" style="margin:10px 0 0">Faz ${falta.map(x => x.split(' ')[0]).join(' ou ')}? Ligue em <button class="go" data-go="cfg">Configurações →</button> ${falta.length > 1 ? 'com o seu handle ou usuário' : falta[0].replace(/^\S+ /, '').replace(/[()]/g, '')} e ganhe o heatmap e o XP automáticos.</p>`;
@@ -2325,13 +2366,14 @@ document.addEventListener('click', async e => {
     if(!ok){ toast(`Não dá: ${esc(why)}`); return; }
     const s = spell(k); SPENT += s.p; compra('feitico', k, s.p); BOUGHT[k] = 1; salvaUI(); toast(`${s.n} na bolsa <small>−${fmt(s.p)} J</small>`); render(); return; }
   const cm = q('[data-como]'); if(cm){ UI.como = cm.dataset.como; render(); return; }
-  const uz = q('[data-usar]'); if(uz){ const [k, como, alvo] = uz.dataset.usar.split(':'), ef = k === 'escolha' ? como : k;
+  const uz = q('[data-usar]'); if(uz){ const p = uz.dataset.usar.split(':'), k = p[0], como = k === 'escolha' ? p[1] : '', ef = k === 'escolha' ? como : k, [alvo, dia] = p.slice(k === 'escolha' ? 2 : 1);
     const u = {k, d:HOJE, ja: D.feitas.filter(t => t.done === HOJE && t.raw).map(t => HJx.marca(t.raw)).join(',').slice(0,190)};
     if(k === 'escolha') u.como = como;
     if(ef === 'gyo') u.alvo = +alvo;
     if(ef === 'ken') u.alvo = (uz.dataset.ken || '').slice(0,190);
+    if(ef === 'zetsu'){ u.zalvo = alvo; u.zdia = dia; }
     EST.usos = (EST.usos || []).concat(u); UI.como = ''; salvaUI();
-    const msg = {ko:'a próxima tarefa vale XP ×2', acomp:'a próxima entrega vale XP ×2', zetsu:'+1 folga guardada no Ten', retorno:'ontem conta como meta do Codeforces', gyo:'missão da semana trocada', ken:'o prazo dessa tarefa ganhou 1 dia'}[ef];
+    const msg = {ko:'a próxima tarefa vale XP ×2', acomp:'a próxima entrega vale XP ×2', zetsu:`${alvo === 'ten' ? 'o Ten' : 'o hábito'} ${dia === HOJE ? 'está salvo hoje' : 'foi salvo ontem'}`, retorno:'ontem conta como meta do Codeforces', gyo:'missão da semana trocada', ken:'o prazo dessa tarefa ganhou 1 dia'}[ef];
     toast(`${spell(ef).n} usado <small>${msg}</small>`); render(); return; }
   const rl2 = q('[data-relat]'); if(rl2){ baixaRelatorio(rl2.dataset.relat); return; }
   const so = q('[data-somoff]'); if(so){ try { localStorage.setItem('hj-somoff', so.dataset.somoff); } catch(err){} render(); return; }

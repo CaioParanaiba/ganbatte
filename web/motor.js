@@ -23,7 +23,7 @@ const NEN = [
 ];
 const GUARDA = [{ic:'cat',n:'Neferpitou',r:'Ten de 14 dias'},{ic:'wing',n:'Shaiapouf',r:'2 semanas sem atraso'},{ic:'horn',n:'Menthuthuyoupi',r:'uma semana acima de 300 XP'},{ic:'crown',n:'Meruem',r:'todos os chefões derrotados'}];
 const SPELLS = [
-  {k:'zetsu',   n:'Zetsu extra', e:'+1 folga guardada no Ten (máx. 2).',            p:1200, ic:'moon'},
+  {k:'zetsu',   n:'Zetsu',       e:'Salva hoje ou ontem: o Ten ou um hábito (que não cai de nível).', p:1200, ic:'moon'},
   {k:'ko',      n:'Ko',          e:'A próxima tarefa vale XP ×2.',                   p:2000, ic:'int'},
   {k:'gyo',     n:'Gyo',         e:'Você escolhe o atributo da missão da semana.',   p:1500, ic:'esp'},
   {k:'acomp',   n:'Acompanhar',  e:'A próxima entrega vale XP ×2.',                  p:1800, ic:'emi'},
@@ -300,7 +300,21 @@ function carregar(api){
 /* ---------- regras ---------- */
 /* recompensa por contribuição (#23): só quando a issue do jogador é fechada como resolvida (bug corrigido, ideia feita);
    repetida, recusada ou dúvida não conta. Além da Jenny do próprio XP (×10) */
-const CONTRIB = {bug:{xp:50, j:1000}, ideia:{xp:30, j:600}};
+const CONTRIB = {bug:{xp:15, j:150}, ideia:{xp:10, j:50}};
+const CONTRIB_ANTES = {bug:{xp:50, j:1000}, ideia:{xp:30, j:600}};   // até a 0.6.4-beta1: o acerto da 0.6.4 tira a diferença dos dias fechados
+/* Duolingo (0.6.4): os dias da ofensiva de antes de ligar entram no heatmap e nas conquistas do Duolingo, mas sem XP, sem Jenny,
+   sem nível e sem Ten. duo.json → desde é o dia em que o usuário foi ligado; quem ligou antes da 0.6.4 não tem: vale o dia em
+   que o Duolingo automático saiu */
+const DUO_LEGADO = '2026-10-12';
+const duoDesde = C => (C.D.duo && C.D.duo.desde) || DUO_LEGADO;
+const duoAntes = (t, de) => /^duo:/.test(t.rec || '') && String(t.rec).split(':')[1] < de;
+/* nível por hábito (0.6.4): cada hábito tem o seu, de 1 a 10, e vale nível + 2 XP (3 a 12). Do 1 ao 6 sobe a cada 7 dias seguidos
+   feitos; depois cada nível pede uma semana a mais (6→7: 14 dias, 7→8: 21, 8→9: 28, 9→10: 35). Falhar um dia cai um nível (nunca
+   zera) e a contagem recomeça. Hábito semanal: o mesmo em semanas com a meta batida. O nível sai do histórico inteiro; a tabela
+   paga a partir de HAB_DESDE (antes, os 5 XP fixos, para não inflar os dias passados). Férias não derrubam. */
+const HAB_DESDE = '2026-10-13', HAB_NV_MAX = 10;
+const habPede = (nv, sem) => (nv < 6 ? 1 : nv - 4) * (sem ? 1 : 7);
+const habXP = nv => nv + 2;
 const HAB_EXTRA = 2;   // hábito semanal feito acima da meta da semana: XP ×2 (a calibrar)
 function xpDe(t){ if((t.rec||'').startsWith('cf') && !(t.done && t.done < CF_DESDE)) return CF_BONUS; let x = isRec(t) ? 10 : isEnt(t) ? 25 : isEst(t) ? 15 : isFac(t) ? 15 : 10; if(isRec(t)) x *= .5; if(t.due && t.done && t.done <= t.due) x *= 1.5; return Math.round(x); }
 /* tipo de Nen: treino → Transmutação; hábito → Manipulação; entrega → Emissão; estudo → Intensificação (com ou sem disciplina);
@@ -317,20 +331,57 @@ const xpAte = (n, dif) => { let s = 0; for(let i=1;i<n;i++) s += custo(i,dif); r
 /* férias (#31): do dia seguinte ao fim das aulas até a véspera da volta (linha temporada do avaliacoes.txt). A temporada só
    fecha na volta; as estatísticas e a projeção do andar vão até o fim das aulas */
 const feriasDe = TEMP => d => !!(TEMP && TEMP.volta && TEMP.volta > TEMP.fim && d > TEMP.fim && d < TEMP.volta);
-function ten(set, first, HOJE, zetsuExtra, fer){
+/* Ten (0.6.4): o dia conta com uma tarefa que não seja hábito (set, montado no estado()); o hábito sozinho não acende.
+   salvo: dias salvos pela carta Zetsu (hoje ou ontem, escolhendo o Ten), que contam sem gastar a folga automática */
+function ten(set, first, HOJE, zetsuExtra, fer, salvo){
   const st = {}; let cur = 0, max = 0, zet = 1, seq = 0;
   if(!first) return {cur:0, max:0, zet:1, st};
-  const extra = Object.assign({}, zetsuExtra||{});            // feitiço Zetsu extra: +1 folga a partir do dia do uso
+  const extra = Object.assign({}, zetsuExtra||{});            // carta Zetsu de antes da 0.6.4: +1 folga a partir do dia do uso
   for(let d = first; d <= HOJE; d = addD(d,1)){
     if(extra[d]){ zet = Math.min(zet + extra[d], 3); delete extra[d]; }
     if(!set.has(d) && fer && fer(d)){ st[d] = 'f'; continue; }   // férias: o Ten sobe com dia feito, mas dia vazio não o derruba nem gasta Zetsu
     if(set.has(d)){ cur++; seq++; st[d] = 'on'; if(seq % 7 === 0) zet = Math.min(zet+1, Math.max(2, zet)); }
+    else if(salvo && salvo[d]){ cur++; st[d] = 'z'; }
     else if(d === HOJE){}
     else if(zet > 0 && cur > 0){ zet--; cur++; st[d] = 'z'; }
     else { if(cur > 0) st[d] = 'x'; cur = 0; seq = 0; zet = 1; }
     max = Math.max(max,cur);
   }
   return {cur, max, zet, st};
+}
+/* nível de cada hábito (ver habPede): linha concluída → XP pela tabela, e por hábito o nível de hoje.
+   salvos: {id: Set(dias)} da carta Zetsu escolhendo um hábito (o dia conta como feito, sem dar XP) */
+function niveisHab(C, feitas, fer, salvos){
+  const {HOJE} = C, de = duoDesde(C), xp = new Map(), hoje = {}, porId = {};
+  for(const t of feitas){ const r = String(t.rec || '').split(':');
+    if(!t.done || !r[1] || r[0].startsWith('cf') || duoAntes(t, de)) continue;
+    (porId[r[0]] = porId[r[0]] || []).push([r[1], t]); }
+  for(const id of new Set([...Object.keys(porId), ...Object.keys(salvos || {})])){
+    const L = porId[id] || [], sal = (salvos || {})[id] || new Set(), meta = semanalDe(C.JOG, id);
+    const dias0 = L.map(x => x[0]).concat([...sal]).sort(); if(!dias0.length) continue;
+    let nv = 1, s = 0, nvHoje = 1;
+    const sobe = () => { s++; if(nv < HAB_NV_MAX && s >= habPede(nv, meta)){ nv++; s = 0; } }, cai = () => { nv = Math.max(1, nv - 1); s = 0; };
+    if(meta){   // semanal: a semana (seg a dom) com a meta batida sobe; a que já passou sem a meta cai
+      const SEG = addD(HOJE, -dow(HOJE)), noDia = d => addD(d, -dow(d));
+      for(let w = noDia(dias0[0]); w <= SEG; w = addD(w, 7)){
+        const fim = addD(w, 6), naSem = L.filter(x => x[0] >= w && x[0] <= fim), salva = [...sal].some(d => d >= w && d <= fim);
+        if(w === SEG) nvHoje = nv;
+        for(const [, t] of naSem) xp.set(t, habXP(nv));
+        if(naSem.length >= meta || salva) sobe(); else if(w < SEG && !fer(w)) cai();
+      }
+    } else {
+      const ds = new Set(L.map(x => x[0]));
+      for(let d = dias0[0]; d <= HOJE; d = addD(d, 1)){
+        if(d === HOJE) nvHoje = nv;
+        if(ds.has(d)){ for(const [dd, t] of L) if(dd === d) xp.set(t, habXP(nv)); sobe(); }
+        else if(sal.has(d)) sobe();
+        else if(d < HOJE && !fer(d)) cai();
+      }
+    }
+    // nv/xp: o nível agora e quanto a próxima vez vale; s de pede: o caminho até o próximo; nvHoje: o nível que pagou hoje
+    hoje[id] = {nv, xp: habXP(nv), s, pede: habPede(nv, meta), max: nv >= HAB_NV_MAX, nvHoje, sem: !!meta};
+  }
+  return {xp, hoje};
 }
 /* liga uma tarefa da disciplina a uma avaliação e diz por quê: av:CHAVE · prova:DATA · palavra-chave do plano · entrega → contínua ·
    a próxima avaliação a partir da referência (o dia em que foi feita; aberta: o prazo, se houver, senão hoje) */
@@ -450,21 +501,25 @@ function grupos(C, feitas, abertas){
    um peso, reescrever o plano ou sair da fúria nunca tire Jenny ou XP já dados. Antes tudo era recalculado a cada abertura
    e o gasto ficava gravado: um peso menor deixava a carteira negativa. A página grava o que mudou (S.rec.mudou).
    notasJ: {"DISC:aval": {nota, w, j, em}} · furias: {DISC: [[início, fim ou null]]} · acertos: {versão: J creditados uma vez} */
-const ACERTO = '0.5.2';   // na 1ª abertura desta versão, a carteira negativa pelo bug antigo volta a zero
+const ACERTO = '0.5.2';
+const MIGRA = '0.6.4';    // acerto do balanceamento da 0.6.4 (estado(): migra, tenRec e acertos)   // na 1ª abertura desta versão, a carteira negativa pelo bug antigo volta a zero
 const jNota = (n, w) => n >= MEDIA ? Math.round(n*(+w||0)*5) : 0;
 function recibos(C, bs){
   const notasJ = JSON.parse(JSON.stringify(C.EST.notasJ || {})), furias = JSON.parse(JSON.stringify(C.EST.furias || {}));
   let mudou = false; const cortes = [];   // notas corrigidas para menos: quanto cada uma tirou (o estado() perdoa o que passar da carteira)
-  const com = bs.flatMap(b => b.avs.filter(a => !a.cont && a.nota != null).map(a => [b.d, a]));
+  // peso pela parte da nota final (0.6.4): os pesos de cada disciplina deveriam somar 100; se não somam (escala de 10, plano
+  // incompleto), o bônus usa a proporção, para uma prova de 50% valer o mesmo em qualquer escala
+  const pesoN = b => { const soma = b.avs.reduce((s, a) => s + (+a.w || 0), 0); return a => soma > 0 ? Math.round((+a.w || 0) * 1000 / soma) / 10 : 0; };
+  const com = bs.flatMap(b => { const pn = pesoN(b); return b.avs.filter(a => !a.cont && a.nota != null).map(a => [b.d, a, pn(a)]); });
   const vivas = new Set(com.map(([d, a]) => d+':'+a.k));
-  for(const [d, a] of com){
+  for(const [d, a, wN] of com){
     const k = d+':'+a.k, r = notasJ[k];
     if(r){ if(r.nota !== a.nota){ const antes = +r.j || 0; r.nota = a.nota; r.j = jNota(a.nota, r.w); mudou = true;   // nota corrigida: vale o peso do recibo
       if(r.j < antes) cortes.push({k, j: antes - r.j}); } continue; }
     // avaliação renomeada (a IA trocou P1 por N1): o recibo órfão da mesma disciplina e com a mesma nota passa para a chave nova
     const orf = Object.keys(notasJ).find(o => o.startsWith(d+':') && !vivas.has(o) && notasJ[o].nota === a.nota);
     if(orf){ notasJ[k] = notasJ[orf]; delete notasJ[orf]; }
-    else notasJ[k] = {nota:a.nota, w:+a.w||0, j:jNota(a.nota, a.w), em:C.HOJE};
+    else notasJ[k] = {nota:a.nota, w:wN, j:jNota(a.nota, wN), em:C.HOJE};
     mudou = true;
   }
   for(const b of bs){
@@ -484,7 +539,7 @@ const cfExtra = (n, d) => d && d < CF_DESDE ? Math.min(Math.max((n||0) - 3, 0), 
 /* usos de feitiço guardados em estado.json (usos: [{k, d, n0, como?, alvo?}]); "escolha" vira o feitiço de "como" */
 function efeitos(C, feitas){
   const usos = (C.EST.usos || []).map(u => ({...u, ef: u.k === 'escolha' ? u.como : u.k}));
-  const mult = new Map(), ken = new Map(), zetsu = {}, gyo = {}, extras = [];
+  const mult = new Map(), ken = new Map(), zetsu = {}, gyo = {}, extras = [], salvoTen = {}, salvoHab = {};
   // alvo = a primeira tarefa concluída DEPOIS do uso: dia posterior, ou o mesmo dia sem estar na lista "ja" (marcas das já feitas no momento do uso)
   const alvo = (u, f) => { const ja = new Set(String(u.ja||'').split(',').filter(Boolean)); let melhor = -1;
     feitas.forEach((t,i) => { if(mult.has(i) || !f(t) || !t.done || t.done < u.d || (t.done === u.d && ja.has(marca(t.raw)))) return;
@@ -493,12 +548,14 @@ function efeitos(C, feitas){
   for(const u of usos){
     if(u.ef === 'ko'){ const i = alvo(u, t => !isRec(t)); if(i >= 0) mult.set(i, 2); }
     else if(u.ef === 'acomp'){ const i = alvo(u, isEnt); if(i >= 0) mult.set(i, 2); }
-    else if(u.ef === 'zetsu') zetsu[u.d] = (zetsu[u.d]||0) + 1;
+    else if(u.ef === 'zetsu' && u.zalvo){ const dia = u.zdia || u.d;   // 0.6.4: salva hoje ou ontem, o Ten ou um hábito
+      if(u.zalvo === 'ten') salvoTen[dia] = 1; else (salvoHab[u.zalvo] = salvoHab[u.zalvo] || new Set()).add(dia); }
+    else if(u.ef === 'zetsu') zetsu[u.d] = (zetsu[u.d]||0) + 1;   // de antes: +1 folga guardada no Ten
     else if(u.ef === 'gyo' && u.alvo !== undefined) gyo[semanaISO(u.d)] = +u.alvo;
     else if(u.ef === 'ken' && u.alvo) ken.set(norm(u.alvo), (ken.get(norm(u.alvo))||0) + 1);
     else if(u.ef === 'retorno') extras.push({done: addD(u.d,-1), rec:'cf:retorno', proj:['rotina'], ctx:[], txt:'Codeforces (feitiço Retorno)', raw:''});
   }
-  return {usos, mult, ken, zetsu, gyo, extras};
+  return {usos, mult, ken, zetsu, gyo, extras, salvoTen, salvoHab};
 }
 function estado(C){
   const {D, HOJE, TEMP, EST} = C;
@@ -506,7 +563,10 @@ function estado(C){
   const feitas = D.feitas.concat(F.extras), abertas = D.abertas.filter(t => !t.done);
   const bs = chefoes(C, feitas, abertas);
   const rec = recibos(C, bs), naFuria = (d, dia) => (rec.furias[d] || []).some(([i, f]) => dia >= i && (!f || dia <= f));
-  const xpBase = t => { const k = F.ken.get(norm(t.txt)) || 0; return xpDe(k && t.due ? {...t, due: addD(t.due, k)} : t); };
+  // hábito: XP pelo nível (a partir de HAB_DESDE); Duolingo de antes de ligar: nada
+  const duoDe = duoDesde(C), NV = niveisHab(C, feitas, fer, F.salvoHab);
+  const xpBase = t => { if(duoAntes(t, duoDe)) return 0; if(NV.xp.has(t) && t.done >= HAB_DESDE) return NV.xp.get(t);
+    const k = F.ken.get(norm(t.txt)) || 0; return xpDe(k && t.due ? {...t, due: addD(t.due, k)} : t); };
   // missão da semana: o atributo mais fraco ANTES da semana começar (fixo durante a semana; Gyo escolhe outro)
   const fracoDa = ws => { if(F.gyo[semanaISO(ws)] !== undefined) return F.gyo[semanaISO(ws)];
     const at = [0,0,0,0,0,0]; for(const t of feitas) if(t.done < ws) at[nenDe(t)] += xpBase(t); return at.indexOf(Math.min(...at)); };
@@ -517,11 +577,12 @@ function estado(C){
   const extraHab = new Set(), contaSem = {};
   feitas.map((t, i) => [String(t.rec || '').split(':'), i]).filter(([r]) => metaSem[r[0]] && r[1]).sort((a, b) => a[0][1].localeCompare(b[0][1]))
     .forEach(([[id, dia], i]) => { const k = id + '@' + addD(dia, -dow(dia)); contaSem[k] = (contaSem[k] || 0) + 1; if(contaSem[k] > metaSem[id]) extraHab.add(i); });
-  let total = 0;
+  let total = 0; const duoAntesXP = {};   // o que o Duolingo de antes de ligar dava pela regra antiga (acerto da 0.6.4)
   // XP de cada dia por origem, para o relatório de balanceamento (relatorio): o XP base de cada tipo e, à parte, o que os
   // multiplicadores somaram (missão, fúria, Ko/Acompanhar, hábito acima da meta)
   const fonteDia = {}, somaF = (d, k, x) => { if(!d || !x) return; const f = fonteDia[d] = fonteDia[d] || {}; f[k] = (f[k]||0) + x; };
   feitas.forEach((t,i) => {
+    if(duoAntes(t, duoDe)){ let x = xpDe(t); if(!fer(t.done) && nenDe(t) === fracoSem(t.done)) x *= 1.5; duoAntesXP[t.done] = (duoAntesXP[t.done]||0) + Math.round(x); return; }
     let x = xpBase(t); const base = x;
     if(extraHab.has(i)) x *= HAB_EXTRA;                                 // hábito semanal acima da meta
     if(!fer(t.done) && nenDe(t) === fracoSem(t.done)) x *= 1.5;       // missão da semana (pausada nas férias)
@@ -547,12 +608,27 @@ function estado(C){
   // dias fechados (0.5.3): o XP de cada dia anterior fica gravado no estado.json (xpDias) e só sobe. Linha concluída que some
   // do todo/done (IA reescrevendo, todo.sh archive) não tira mais XP do passado; "esqueci de marcar ontem" ainda soma.
   rec.xpDias = {...(EST.xpDias || {})};
+  const first = feitas.filter(t => !duoAntes(t, duoDe)).map(t => t.done).filter(Boolean).sort()[0];
+  /* acerto da 0.6.4 (uma vez): tira dos dias fechados o que a regra antiga dava ao Duolingo de antes de ligar e às contribuições,
+     e guarda o recorde do Ten pela regra antiga (sem o Duolingo de antes), para a regra nova não tomar conquista já ganha.
+     migra[MIGRA] guarda quanto mudou, para a janela da versão mostrar a cada um */
+  rec.migra = {...(EST.migra || {})}; rec.tenRec = +EST.tenRec || 0;
+  if(!rec.migra[MIGRA]){
+    const tira = {...duoAntesXP}; let dXP = Object.values(duoAntesXP).reduce((a, b) => a + b, 0), dJ = dXP*10;
+    for(const i of contrib){ const a = CONTRIB_ANTES[i.tipo], n = CONTRIB[i.tipo], x = a.xp - n.xp;
+      tira[i.dia] = (tira[i.dia]||0) + x; dXP += x; dJ += x*10 + a.j - n.j; }
+    for(const d in tira) if(d < HOJE && rec.xpDias[d] != null) rec.xpDias[d] = Math.max(0, rec.xpDias[d] - tira[d]);
+    const T0 = ten(new Set(Object.keys(porDia)), first, HOJE, F.zetsu, fer);
+    rec.tenRec = Math.max(rec.tenRec, T0.max);
+    rec.migra[MIGRA] = {xp:dXP, j:dJ, ten:T0.max, em:HOJE}; rec.mudou = true;
+  }
   for(const d of new Set([...Object.keys(xpDia), ...Object.keys(rec.xpDias)])){
     if(!(d < HOJE)) continue;
     const g = +rec.xpDias[d] || 0, x = xpDia[d] || 0;
     if(x > g){ rec.xpDias[d] = x; rec.mudou = true; } else if(g > x){ total += g - x; xpDia[d] = g; somaF(d, 'gravado', g - x); }
   }
-  const first = feitas.map(t => t.done).sort()[0], set = new Set(Object.keys(porDia));
+  const set = new Set(feitas.filter(t => t.done && !isRec(t)).map(t => t.done));   // Ten: só tarefa que não é hábito
+  const T = ten(set, first, HOJE, F.zetsu, fer, F.salvoTen); T.max = Math.max(T.max, rec.tenRec);
   const ritmo = first ? total/Math.max(1, dias(first,HOJE)/7) : 0;
   const fraco = fracoSem(HOJE), pausa = fer(HOJE), frAgora = pausa ? -1 : fraco;   // frAgora: o atributo que rende ×1,5 hoje (nenhum nas férias)
   const ws = addD(HOJE,-dow(HOJE)); let missDias = 0; for(let i=0;i<7;i++){ const d = addD(ws,i); if(!fer(d) && feitas.some(t => t.done === d && nenDe(t) === fraco)) missDias++; }
@@ -575,6 +651,9 @@ function estado(C){
   const conqJ = resg.reduce((s, c) => s + (c.resgate.como === 'jenny' ? +c.resgate.j || 0 : 0), 0);
   rec.acertos = {...(EST.acertos || {})};
   if(rec.acertos[ACERTO] === undefined){ rec.acertos[ACERTO] = Math.max(0, (EST.spent||0) - (total*10 + bonusNotas + conqJ + contribJ)); rec.mudou = true; }
+  // 0.6.4: se o acerto (Duolingo de antes, contribuições) deixar a carteira negativa, ela fica em zero
+  if(rec.acertos[MIGRA] === undefined){ const a0 = Object.values(rec.acertos).reduce((s, j) => s + (+j || 0), 0);
+    rec.acertos[MIGRA] = Math.max(0, (EST.spent||0) - (total*10 + bonusNotas + conqJ + contribJ + a0)); rec.mudou = true; }
   const acerto = Object.values(rec.acertos).reduce((s, j) => s + (+j || 0), 0);
   let ganho = total*10 + bonusNotas + conqJ + contribJ + acerto;
   // nota corrigida para menos (0.5.3): tira no máximo o que há na carteira; o resto fica perdoado em acertos
@@ -595,7 +674,7 @@ function estado(C){
     (habDias[k] = habDias[k] || {n:t.txt, d:new Set()}).d.add(t.done); }
   const hab = Object.values(habDias).reduce((m,h) => h.d.size > m.max ? {max:h.d.size, nome:h.n} : m, {max:0, nome:''});
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
-  return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:ten(set,first,HOJE,F.zetsu,fer), hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
+  return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:T, nv:NV.hoje, duoDe, hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
     proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto)), rec, jenny: ganho - (EST.spent||0),
     inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, grupos: G, gXP, fonteDia, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
@@ -891,7 +970,7 @@ function capsula(api){
     compras:C.EST.compras, equipado:C.EST.equip};
 }
 
-window.HJ = {TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.HJ = {HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,

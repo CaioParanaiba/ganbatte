@@ -372,7 +372,7 @@ recompensa, que saem do jogo pela estimativa de dias, nunca da IA:
 
 | Rank | Estimativa | Recompensa (à escolha, ao conquistar) |
 |---|---|---|
-| D · fácil | até 7 dias | 800 J ou o feitiço Zetsu extra |
+| D · fácil | até 7 dias | 800 J ou o feitiço Zetsu |
 | C · média | até 14 dias | 1.500 J ou Gyo |
 | B · difícil | até 30 dias | 3.000 J ou Ko |
 | A · muito difícil | mais de 30 dias | 6.000 J ou um feitiço à escolha |

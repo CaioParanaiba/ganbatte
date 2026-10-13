@@ -136,7 +136,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 - **A IA não aparece em Configurações → IA:** instale e entre na conta da IA pelo terminal (`codex login`, `claude`,
   `gemini`) e clique em **procurar de novo**. O jogo procura no PATH do seu terminal e nas pastas comuns (npm, nvm, ~/.local/bin).
 - **Esqueci de marcar um hábito ontem:** no card "hábitos de hoje", clique em **esqueci de marcar ontem**. Ele conta
-  para ontem (XP, Ten e heatmap). Só vale para o dia anterior.
+  para ontem (XP, nível do hábito e heatmap). Só vale para o dia anterior.
 - **Codeforces não conta:** confira o handle na aba Configurações. A contagem atualiza a cada 10 minutos e precisa de internet.
   Problema feito onde a API não enxerga (ITMO Academy, contest de grupo privado): clique no ✋ ao lado de "Codeforces" no
   heatmap da Lista e confirme; cada confirmação soma 1 problema hoje.
@@ -144,7 +144,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   conta a issue que você abriu e que foi fechada como resolvida (bug corrigido, ideia feita); repetida ou recusada não conta.
 - **Duolingo não conta:** confira o usuário na aba Configurações (o nome do perfil, sem senha). O jogo lê a ofensiva do
   perfil a cada 10 minutos e precisa de internet. O dia salvo pelo bloqueio de ofensiva não conta, de propósito: no jogo,
-  quem guarda folga é o Zetsu. Com o jogo fechado vários dias e um bloqueio no meio, o Duolingo diz quantos dias você fez,
+  quem guarda folga é o Zetsu. Os dias da ofensiva de antes de ligar ficam no heatmap e nas conquistas, sem XP nem Ten. Com o jogo fechado vários dias e um bloqueio no meio, o Duolingo diz quantos dias você fez,
   não quais: o jogo marca os mais recentes.
 - **Não sei qual tipo escolher para a tarefa:** o jogo sugere pelas palavras do texto; o **?** ao lado dos tipos mostra o
   que encaixa em quê, e com a IA ligada o **IA?** pergunta a ela.
@@ -177,6 +177,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.4-beta2 | atualização das expedições | **Rebalanceamento, com aviso grande** (#47) (`"aviso"` no `novidades.js`, janela que mostra a cada um quanto mudou): contribuições menores (bug 15 XP + 150 J, ideia 10 XP + 50 J); Duolingo de antes de ligar sem XP, Jenny e Ten (`duo.json` → `desde`); Ten só com tarefa que não é hábito; nível por hábito de 1 a 10 (3 a 12 XP, `niveisHab()`); carta Zetsu salva hoje ou ontem, o Ten ou um hábito; bônus de nota pelo peso normalizado da disciplina. Acerto único `MIGRA` no `estado()`: tira dos `xpDias` o que a regra antiga dava, guarda o recorde do Ten (`tenRec`) e não deixa a carteira negativa |
 | 0.6.4-beta1 | atualização das expedições | Temporada guardada (#7): na volta às aulas, `HJ.capsula()` congela os números finais em `temporadas/NOME/resumo.json` (chaves neutras e os nomes do tema em `TEMA`), com cópia dos arquivos (`POST /api/temporada`); também antes de o assistente trocar a temporada e pelo card em Configurações |
 | 0.6.3 | atualização das expedições | **Junta as betas 0.6.3** (as duas linhas abaixo): férias (#31), recompensa por contribuição (#23), reabrir etapa (#27), testes do servidor (#12) e o balanceamento: relatório, registro de compras e simulador (#32) |
 | 0.6.3-beta2 | atualização das expedições | Relatório de balanceamento em Configurações (`HJ.relatorio()`: XP e Jenny por dia e por origem, em .json ou .csv, sem texto de tarefa); registro de compras (`estado.json` → `compras`); simulador de temporada com jogadores inventados (`node ferramentas/simulador.mjs`) |

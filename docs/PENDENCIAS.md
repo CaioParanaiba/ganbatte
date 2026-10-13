@@ -150,7 +150,37 @@ peso atual, caiu de 2502 para 1212 J. O gasto (`spent`) fica gravado; o ganho er
 - **Ao balancear:** baixar um valor não muda o passado (os `xpDias` seguram os dias fechados; marcos, notas e conquistas
   têm recibo). **Subir** um valor recalculado (XP por tipo em `xpDe()`, multiplicadores, `HAB_EXTRA`, `CF_*`, `CONTRIB`)
   infla os dias antigos: ponha uma data, como o `CF_DESDE` (regra antiga antes dela). Se muitos valores ganharem data,
-  junte-os numa tabela de eras (decidido em 13/10/2026 não fazer antes de precisar).
+  junte-os numa tabela de eras (decidido em 13/10/2026 não fazer antes de precisar). Mexeu em pontos já ganhos: aviso grande
+  na Novidades (ver a seção abaixo).
+
+## Balanceamento (análise de 13/10/2026, relatórios do Caio e de um amigo)
+
+O que se viu: a Jenny do amigo (15.262) veio 37% de contribuições (5 issues antigas creditadas de uma vez no dia em que ele
+pôs o GitHub: 190 XP + 3.800 J), 19% do Duolingo de antes (58 dias da ofensiva creditados ao ligar: 290 XP), 18% de notas e
+só ~26% de jogar. O Ten dele ficou "on" em todos esses dias.
+
+**Feito na 0.6.4-beta2** (decidido em 13/10/2026):
+- **Nível por hábito (1 a 10)**: cada hábito tem o seu, vale nível + 2 XP (3 a 12). Do 1 ao 6, sobe a cada 7 dias seguidos;
+  depois cada nível pede uma semana a mais (6→7: 2 semanas ... 9→10: 5). Falhar cai um nível, sem zerar. Semanal: o mesmo
+  em semanas com a meta. `niveisHab()` no motor; a tabela paga a partir de `HAB_DESDE` (antes, os 5 fixos). Ao lado do
+  heatmap de hábitos da Lista: nível, XP e a barra até o próximo nível de cada um.
+- **Contribuições** menores: bug 15 XP + 150 J, ideia 10 XP + 50 J (valem também para as issues já creditadas).
+- **Duolingo de antes de ligar** (`duo.json` → `desde`; sem ele, `DUO_LEGADO`): heatmap e conquistas, sem XP, Jenny, nível e Ten.
+- **Ten** só com tarefa que não é hábito, para a temporada inteira; o recorde pela regra antiga fica em `tenRec` (conquistas
+  do Ten já ganhas não somem).
+- **Carta Zetsu**: salva hoje ou ontem, o Ten ou um hábito (`zalvo`/`zdia` no uso); as usadas antes continuam como folga.
+- **Bônus de nota** pelo peso normalizado da disciplina (soma dos pesos ≠ 100 não distorce mais).
+- **Acerto único `MIGRA`** no `estado()`: tira dos `xpDias` o que a regra antiga dava ao Duolingo de antes e às contribuições,
+  grava quanto mudou (`migra`) e não deixa a carteira negativa (`acertos`).
+- **Regra (13/10/2026): toda mudança em XP, Jenny ou pontos já ganhos sai com aviso grande** (`"aviso"` no `novidades.js`):
+  janela como a da 0.6, com o que mudou e quanto mudou no jogo de cada um. Também corrigido: Gyo usado direto (sem ser
+  "à escolha") gravava o atributo errado.
+
+**Falta decidir:**
+1. **Caçadas e expedições** (#28): calibrar `MARCO_ETAPA`, `MARCO_DIA`, `EXP_SEMANA` (marco vale até 120 XP). Esperar o
+   relatório do jogador que mais usa expedições.
+2. Codeforces é hábito para o Ten (não acende sozinho). Confirmar com o uso se é o que se quer.
+3. Simulador: os perfis jogam bem mais que os jogadores reais (leve: 46 XP por dia jogado; o amigo: 14); ajustar os perfis.
 
 ## Planejado para a v0.6
 

@@ -14,7 +14,7 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   conquistas.json           conquistas criadas pela IA (200 em diante) e o que foi resgatado
   planos/                   planos de ensino (PDF, HTML...) que a IA lê
   cf.json                   cache do Codeforces (problemas aceitos por dia e os marcados à mão)
-  duo.json                  cache do Duolingo (a última ofensiva lida e os dias já creditados)
+  duo.json                  cache do Duolingo (a última ofensiva lida, os dias já creditados e desde quando está ligado)
   contrib.json              issues do jogador no GitHub fechadas como resolvidas (bug corrigido, ideia feita) e o dia em que o jogo as viu
 
 Rotas (as mesmas que web/demo.js simula no modo demonstração):
@@ -45,7 +45,8 @@ Todo dia o servidor cria as recorrentes de hoje (um hábito por linha, rec:ID:DA
 tira as que ficaram abertas de dias anteriores e conclui sozinho a do Codeforces quando a meta do dia é batida. Se a meta foi
 batida num dia em que o jogo ficou fechado, o bônus é creditado depois, no done.txt (só a partir do dia em que o handle foi ligado).
 O Duolingo (só o nome de usuário, perfil público, sem senha) conclui sozinho a rec:duo de cada dia com lição feita; os dias da
-ofensiva desde o início da temporada entram no done.txt, e o dia salvo pelo bloqueio de ofensiva do Duolingo não conta.
+ofensiva desde o início da temporada entram no done.txt, e o dia salvo pelo bloqueio de ofensiva do Duolingo não conta. Os de
+antes de ligar (duo.json → desde) ficam no heatmap e nas conquistas, sem XP nem Ten (o motor decide).
 
 Iniciar com o computador (opcional): serviço do usuário no systemd (Linux; sem systemd, ~/.config/autostart), atalho .vbs na
 pasta Inicializar (Windows) ou LaunchAgent (Mac). O servidor de segundo plano roda com --fundo e grava o log em servidor.log.
@@ -68,7 +69,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.4-beta1"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
+VERSAO = "0.6.4-beta2"
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -779,7 +780,7 @@ def duo_atualiza(duo):
         with lock:
             cache = ler_json("duo.json", {})
             if cache.get("usuario") != duo["usuario"]:   # usuário novo: a ofensiva inteira dele entra (na temporada)
-                cache = {"usuario": duo["usuario"], "creditados": []}
+                cache = {"usuario": duo["usuario"], "creditados": [], "desde": d}   # desde: os dias antes dele não dão XP (motor)
             feitos = set(cache.get("creditados") or [])
             novos = sorted(x for x in duo_dias_novos(cache.get("ult"), of) if ini <= x <= d and x not in feitos)
             if novos:
@@ -820,7 +821,7 @@ def duo_leitura(j):
     cache = ler_json("duo.json", {})
     if cache.get("usuario") != duo["usuario"]:
         return {"usuario": duo["usuario"], "ofensiva": None}
-    return {"usuario": duo["usuario"], "ofensiva": cache.get("ofensiva")}
+    return {"usuario": duo["usuario"], "ofensiva": cache.get("ofensiva"), "desde": cache.get("desde")}
 
 
 # ---------- contribuições (#23) ----------

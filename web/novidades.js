@@ -6,10 +6,24 @@
  * O servidor e as páginas antigas só leem as entradas de fora, então "versoes" não atrapalha quem ainda vai atualizar.
  * Quem atualiza para uma versão grande vê os destaques numa janela grande, uma vez (boasNovas). A marca dela fica em
  * estado.json → tour["nv:X.Y"], separada do visto: abrir a aba Novidades (onde fica o atualizar) não a gasta.
+ * Aviso de pontos ("aviso": "X.Y.Z", desde a 0.6.4): toda versão que mexe em XP, Jenny ou pontos já ganhos abre a mesma janela
+ * grande, uma vez, explicando o que mudou e quanto mudou no jogo de cada um (S.rec.migra). A marca é tour["nv:aviso:X.Y.Z"]:
+ * a chave sobrevive à junção das betas na versão final, então quem viu na beta não vê de novo.
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.4-beta2", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.4",
+   "resumo": "Rebalanceamento: o seu XP e a sua Jenny podem ter diminuído. Hábitos ganham nível, o Ten passa a pedir uma tarefa de verdade, e as contribuições e o Duolingo de antes de ligar valem menos.",
+   "itens": [
+     {"ic": "coin", "t": "Por que os números mudaram", "d": "Os relatórios de balanceamento mostraram duas fontes dando muito mais que jogar: as contribuições (um bug valia 1.500 J, quase uma semana de jogo) e os dias do Duolingo de antes de ligar, que entravam todos de uma vez com XP e Ten. Elas foram recalculadas para todo mundo, inclusive para o que já tinha entrado: por isso a torre e a carteira podem ter caído. O que você comprou continua seu, e a carteira nunca fica negativa."},
+     {"ic": "bug", "t": "Contribuições", "d": "Bug corrigido: +15 XP e +150 J (antes +50 XP e +1.000 J). Ideia feita: +10 XP e +50 J (antes +30 XP e +600 J). Com a Jenny do próprio XP, um bug vale 300 J e uma ideia, 150 J."},
+     {"ic": "scroll", "t": "Duolingo de antes de ligar", "d": "Os dias da ofensiva de antes de você ligar o Duolingo continuam no heatmap e nas conquistas do Duolingo, mas não dão XP, Jenny nem Ten. Do dia em que ligou em diante, conta normal."},
+     {"ic": "flame", "t": "O Ten pede uma tarefa", "d": "Um dia só acende o Ten com pelo menos uma tarefa que não seja hábito. Vale para a temporada inteira, então o seu Ten atual pode ter mudado; o recorde e as conquistas do Ten que você já tinha ficam."},
+     {"ic": "tower", "t": "Nível dos hábitos", "d": "Cada hábito tem o próprio nível, de 1 a 10: começa valendo 3 XP e sobe 1 XP por nível (até 12). Do 1 ao 6, sobe a cada 7 dias seguidos; depois cada nível pede uma semana a mais. Falhar um dia cai um nível, sem zerar. O nível e o XP de cada hábito aparecem ao lado do heatmap, na Lista."},
+     {"ic": "moon", "t": "Carta Zetsu", "d": "A carta agora salva hoje ou ontem, e você escolhe o quê: o Ten ou um hábito (que não cai de nível). Ontem só aparece quando de fato quebrou. As folgas automáticas do Ten continuam iguais."},
+     {"ic": "card", "t": "Nota pela parte da nota final", "d": "O bônus de cada nota segue o peso da avaliação na nota final da disciplina, mesmo que o plano esteja em outra escala: um 10 numa prova de 10% vale menos que um 6 numa de 50%."}
+   ]},
   {"versao": "0.6.4-beta1", "nome": "atualização das expedições", "data": "2026-10-13",
    "resumo": "A temporada que acaba fica guardada, com os números finais congelados.",
    "itens": [
@@ -268,6 +282,10 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .nv-big .nv-it:first-child{grid-column:1/-1;border-color:color-mix(in srgb,var(--volt) 55%,var(--hair));background:color-mix(in srgb,var(--volt) 8%,var(--panel2))}
 .nv-big .pe{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 30px 24px} .nv-big .pe .sp{flex:1}
 .nv-big .grande{padding:10px 18px;font:700 14px var(--f-hud);border-radius:10px}
+.nv-big.aviso > div{border-color:var(--amb)} .nv-big.aviso .cab{background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--amb) 24%,transparent),transparent 60%)} .nv-big.aviso h2 span{color:var(--amb)}
+.nv-seu{margin-top:16px;display:grid;gap:4px;padding:14px 16px;border:1px solid var(--amb);border-radius:12px;background:color-mix(in srgb,var(--amb) 10%,var(--panel2));max-width:70ch}
+.nv-seu b{font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--amb)} .nv-seu span{font-size:15px} .nv-seu strong{color:var(--ink)}
+.nv-seu.ok{border-color:var(--grn);background:color-mix(in srgb,var(--grn) 8%,var(--panel2))} .nv-seu.ok b{color:var(--grn)}
 .gnav .nv-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amb);margin-left:4px;vertical-align:top}
 @media (max-width:820px){ .nv-big .cab,.nv-big .nv-itens,.nv-big .pe{padding-left:18px;padding-right:18px} .nv-hero{grid-template-columns:minmax(0,1fr)} .nv-st{border-left:0;border-top:1px solid var(--hair)} .nv-ver .num{font-size:52px} }
 </style>`);
@@ -359,12 +377,13 @@ document.addEventListener('click', e => {
 /* quem acabou de atualizar vê o aviso uma vez; quem está começando agora (sem nada feito) não.
    A janela da última versão grande tem marca própria: a página volta na aba Novidades depois de atualizar, e ela marca o visto */
 let VISTO0 = null;   // o visto de quando a página abriu (a aba Novidades o preenche antes de boasNovas rodar)
-const chaveG = g => 'nv:' + g.versao, viuG = g => !!(EST.tour || {})[chaveG(g)];
-function marcaG(g){ EST.tour = Object.assign({}, EST.tour, {[chaveG(g)]:1}); }
+const chaveG = g => g.aviso ? 'nv:aviso:' + g.aviso : 'nv:' + g.versao, viuG = g => !!(EST.tour || {})[chaveG(g)];
+function marcaG(g){ if(g) EST.tour = Object.assign({}, EST.tour, {[chaveG(g)]:1}); }
 function boasNovas(){
   if(!CTX || !(CTX.JOG && CTX.JOG.configurado)) return;
-  const g = NOV.find(grande);
-  if(!VISTO0 && !D.feitas.length){ EST.visto = VERSAO_PAGINA; if(g) marcaG(g); salvaUI(); return; }
+  const g = NOV.find(grande), av = NOV.find(x => x.aviso);
+  if(!VISTO0 && !D.feitas.length){ EST.visto = VERSAO_PAGINA; marcaG(g); marcaG(av); salvaUI(); return; }
+  if(av && !viuG(av) && !document.getElementById('nv-big')){ janelaGrande(av); return; }   // aviso de pontos primeiro
   if(g && !viuG(g) && !document.getElementById('nv-big')){ janelaGrande(g); return; }
   if(!naoVista()) return;
   const v = NOV.find(x => x.versao === VERSAO_PAGINA); if(!v) return;
@@ -372,19 +391,26 @@ function boasNovas(){
   to.innerHTML = `${ic('antenna')} Jogo atualizado para a ${esc(v.versao)} <small>${esc(v.resumo || '')}</small><button class="l-undo" data-go="nv">ver o que mudou</button>`;
   document.body.appendChild(to); setTimeout(() => to.remove(), 12000);
 }
-/* versão grande: os destaques numa janela que cobre a tela, uma vez (fechar marca como vista) */
+/* o que o acerto de uma versão com aviso mudou no jogo de quem lê (motor: rec.migra[versão] = {xp, j, ten}) */
+function seuAviso(v){
+  let m = null, ac = 0; try { const r = estado().rec; m = (r.migra || {})[v.aviso]; ac = +(r.acertos || {})[v.aviso] || 0; } catch(e){}
+  if(!m) return '';
+  const tirou = m.xp > 0 || m.j > 0;
+  return `<div class="nv-seu${tirou ? '' : ' ok'}"><b>No seu jogo</b><span>${tirou ? `a torre ficou com <strong>${m.xp.toLocaleString('pt-BR')} XP a menos</strong> e a carteira com <strong>${(m.j).toLocaleString('pt-BR')} J a menos</strong>.${ac > 0 ? ' Como o saldo ficaria negativo, ele parou no zero.' : ''}` : 'nada do XP e da Jenny que você já tinha mudou.'}${m.ten ? ` O seu recorde do Ten (${m.ten} dias) e as conquistas que você já tinha ficam.` : ''}</span></div>`;
+}
+/* versão grande e aviso de pontos: os destaques numa janela que cobre a tela, uma vez (fechar marca como vista) */
 function janelaGrande(v){
-  const [a, b] = String(v.versao).split('.'), exp = (v.itens || []).some(x => x.ic === 'island') && RENDER.x;
-  document.body.insertAdjacentHTML('beforeend', `<div class="nv-big" id="nv-big" role="dialog" aria-modal="true" aria-labelledby="nv-big-t"><div>
-    <div class="cab"><p class="cap">o jogo foi atualizado</p><h2 id="nv-big-t">${esc(a)}<span>.${esc(b)}</span></h2><div class="nome">${esc(v.nome || '')}</div>${v.resumo ? `<p>${esc(v.resumo)}</p>` : ''}</div>
+  const [a, b] = String(v.versao).split(/\.(.*)/s), exp = !v.aviso && (v.itens || []).some(x => x.ic === 'island') && RENDER.x;
+  document.body.insertAdjacentHTML('beforeend', `<div class="nv-big${v.aviso ? ' aviso' : ''}" id="nv-big" data-chave="${esc(chaveG(v))}" role="dialog" aria-modal="true" aria-labelledby="nv-big-t"><div>
+    <div class="cab"><p class="cap">${v.aviso ? 'mudança nos pontos · leia antes de jogar' : 'o jogo foi atualizado'}</p><h2 id="nv-big-t">${esc(a)}<span>.${esc(b)}</span></h2><div class="nome">${esc(v.nome || '')}</div>${v.resumo ? `<p>${esc(v.resumo)}</p>` : ''}${v.aviso ? seuAviso(v) : ''}</div>
     <div class="nv-itens">${itensHTML(v)}</div>
     <div class="pe">${exp ? '<button type="button" class="btn v grande" data-nvbig="x">conhecer as Expedições</button>' : ''}<button type="button" class="btn grande" data-nvbig="nv">ver tudo o que mudou</button><span class="sp"></span><button type="button" class="btn" data-nvbig="">fechar</button></div>
   </div></div>`);
-  document.querySelector('#nv-big [data-nvbig]').focus();
+  document.querySelector('#nv-big [data-nvbig]').focus({preventScroll:true});   // o foco no botão do pé não rola a janela: o topo (e o "no seu jogo") aparece primeiro
 }
 function fechaGrande(ir){
   const el = document.getElementById('nv-big'); if(!el) return;
-  el.remove(); EST.visto = VERSAO_PAGINA; marcaG(NOV.find(grande)); salvaUI();
+  el.remove(); EST.visto = VERSAO_PAGINA; EST.tour = Object.assign({}, EST.tour, {[el.dataset.chave]:1}); salvaUI();
   if(ir) tab(ir); else render();
 }
 document.addEventListener('click', e => {

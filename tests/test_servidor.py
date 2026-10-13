@@ -207,6 +207,13 @@ class Duolingo(Base):
         self.assertEqual(len(dias), 12)
         self.assertTrue(any(l.startswith("x 2026-10-12") and "rec:duo:2026-10-12" in l for l in self.todo()))
 
+    def test_guarda_desde_quando_esta_ligado(self):
+        """O dia em que o usuário foi ligado fica no duo.json (os dias antes dele não dão XP no motor) e não muda depois."""
+        self.ler("2026-10-08", "2026-10-12", 5)
+        self.assertEqual(s.ler_json("duo.json", {}).get("desde"), "2026-10-12")
+        self.ler("2026-10-08", "2026-10-12", 5)
+        self.assertEqual(s.duo_leitura(s.jogador())["desde"], "2026-10-12")
+
     def test_bloqueio_nao_conta_e_nao_repete(self):
         self.ler("2026-10-10", "2026-10-11", 2)
         self.ler("2026-10-10", "2026-10-12", 2)   # o dia 12 foi salvo pelo bloqueio: a ofensiva não cresceu
