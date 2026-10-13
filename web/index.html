@@ -1385,7 +1385,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.3-beta1';
+const VERSAO_PAGINA = '0.6.3-beta2';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1402,6 +1402,9 @@ async function post(url, body){
   return j;
 }
 async function recarrega(){ const r = await fetch('/api/jogo', {cache:'no-store'}); const j = await r.json(); if(!j.ok) throw new Error(j.error || 'sem dados'); sync(j); }
+/* registro de compras (0.6.3-beta2): cada gasto de Jenny com o dia, para o relatório de balanceamento (Configurações).
+   O prêmio real entra só com o preço, sem o nome. No modo teste não grava nada. */
+const compra = (tipo, id, j) => { if(!TESTE && j > 0) EST.compras = (EST.compras || []).concat({d:HOJE, h:new Date().toTimeString().slice(0,8), tipo, id, j}); };
 /* grava a loja e o que está equipado em jogo/estado.json */
 function salvaUI(){
   if(TESTE) Object.assign(TESTE, {own:OWN, eq:equipAgora()});   // modo teste: a loja fica só na memória; o resto (tour, visto) grava
@@ -1846,7 +1849,29 @@ function rTT(){
 function rCfg(S){
   document.getElementById('cfg-root').innerHTML = `
     <div class="card"><h2><span class="c">~/</span>configurações deste computador</h2><div class="togg" style="margin:0"><span class="sub">efeitos:</span><button data-fxoff="0" aria-pressed="${!UI.fxOff}">os comprados</button><button data-fxoff="1" aria-pressed="${!!UI.fxOff}">nenhum (calmo)</button></div><div class="togg" style="margin:8px 0 0"><span class="sub">sons:</span><button data-somoff="0" aria-pressed="${!somOff()}">ligados</button><button data-somoff="1" aria-pressed="${somOff()}">mudo</button></div></div>
-    <div class="card"><h2><span class="c">~/</span>backup</h2><p style="margin:0 0 10px;font-size:14px">Baixa um ZIP com todos os seus dados: tarefas, notas, plano de avaliação, loja e configurações. Guarde de vez em quando, ou use para levar o jogo para outro computador (é só descompactar na pasta de dados, <span class="mono">${esc((CTX.SRV && CTX.SRV.dados) || '~/.hunter-todo')}</span>).</p>${window.HJ_DEMO ? '<button class="btn" disabled>no modo demonstração não há dados para baixar</button>' : '<a class="btn v" href="/api/backup" download>baixar meus dados</a>'}</div>`;
+    <div class="card"><h2><span class="c">~/</span>backup</h2><p style="margin:0 0 10px;font-size:14px">Baixa um ZIP com todos os seus dados: tarefas, notas, plano de avaliação, loja e configurações. Guarde de vez em quando, ou use para levar o jogo para outro computador (é só descompactar na pasta de dados, <span class="mono">${esc((CTX.SRV && CTX.SRV.dados) || '~/.hunter-todo')}</span>).</p>${window.HJ_DEMO ? '<button class="btn" disabled>no modo demonstração não há dados para baixar</button>' : '<a class="btn v" href="/api/backup" download>baixar meus dados</a>'}</div>
+    ${cardBalanco(S)}`;
+}
+/* relatório de balanceamento (0.6.3-beta2): XP e Jenny de cada dia por origem, e as compras, para calibrar o jogo.
+   Gera tudo aqui na página (HJ.relatorio, o mesmo do simulador em ferramentas/simulador.mjs) e baixa como arquivo */
+function cardBalanco(S){
+  const R = HJx.relatorio(CTX, S), r = R.resumo, top = Object.entries(r.origemXP).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const num = x => String(x).replace('.', ','), lin = (k, v) => `<div style="display:flex;justify-content:space-between;gap:12px"><span>${k}</span><b style="color:var(--ink)">${v}</b></div>`;
+  return `<div class="card"><h2><span class="c">~/</span>balanceamento</h2><p style="margin:0 0 10px;font-size:14px">Os seus números de XP e Jenny dia a dia, por origem, e o que você gastou. Serve para ver se o jogo paga demais ou de menos. O arquivo não leva o texto das tarefas nem o nome dos prêmios: se quiser ajudar a calibrar, anexe numa issue. As compras são registradas desde a 0.6.3-beta2; o gasto de antes aparece sem data.</p>
+    <div style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:0 0 12px;max-width:460px">
+      ${lin('dias jogados', `${r.diasAtivos} de ${r.dias} (${num(r.pctDiasAtivos)}%)`)}${lin('XP por dia jogado', fmt(r.xp.porDiaAtivo))}${lin('XP por semana', fmt(r.xp.porSemana))}
+      ${lin('de onde vem o XP', top.map(([k, v]) => `${R.fontes[k]} ${num(v)}%`).join(' · ') || '—')}
+      ${lin('saldo parado', `${fmt(r.jenny.saldo)} J ≈ ${num(r.jenny.saldoEmDiasProdutivos)} dias produtivos`)}
+      ${lin('compras registradas', r.compras.n + (r.compras.diasEntreCompras != null ? ` · uma a cada ${num(r.compras.diasEntreCompras)} dias` : ''))}
+      ${lin('andares por semana', num(r.torre.andaresPorSemana))}${lin('a temporada compra da loja', `${num(r.loja.pctCompravelNaTemporada)}%`)}
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn v" data-relat="json">baixar relatório (.json)</button><button type="button" class="btn" data-relat="csv">planilha por dia (.csv)</button></div></div>`;
+}
+function baixaRelatorio(tipo){
+  const R = HJx.relatorio(CTX, estado()), csv = tipo === 'csv';
+  const blob = new Blob([csv ? '\ufeff' + HJx.relatorioCSV(R) : JSON.stringify(R, null, 1)], {type: csv ? 'text/csv;charset=utf-8' : 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `hunter-balanceamento-${HOJE}.${csv ? 'csv' : 'json'}`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 /* ---------- Regras (o que o jogo considera) ---------- */
 function rSys(S){
@@ -2281,10 +2306,10 @@ document.addEventListener('click', async e => {
   const pr = q('[data-prova]'); if(pr){ UI.prova = pr.dataset.prova; render(); return; }
   const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(); if(!it || S.jenny < it.p) return;
-    SPENT += it.p; OWN.add(it.id); HJx.expandeOwn(OWN); UI.prova = ''; equipa(it); salvaUI(); toast(`${esc(it.n)} é seu <small>−${fmt(it.p)} J · já equipado${it.parts ? ' · as peças ficam separadas também' : ''}</small>`); render(); return; }
+    SPENT += it.p; compra('cos', it.id, it.p); OWN.add(it.id); HJx.expandeOwn(OWN); UI.prova = ''; equipa(it); salvaUI(); toast(`${esc(it.n)} é seu <small>−${fmt(it.p)} J · já equipado${it.parts ? ' · as peças ficam separadas também' : ''}</small>`); render(); return; }
   const eq = q('[data-equip]'); if(eq){ const it = COS.find(i => i.id === eq.dataset.equip); if(it){ equipa(it); salvaUI(); render(); } return; }
   const rl = q('[data-real]'); if(rl){ const x = meusPremios()[+rl.dataset.real], S = estado(); if(!x || !podeResgatar(S, x)) return;
-    SPENT += x.p; COFRE_USADO += x.rs||0; RESG.push(`${x.n} · ${ddmm(HOJE)}`); salvaUI(); toast(`Resgatado: ${esc(x.n)} <small>aproveite</small>`); render(); return; }
+    SPENT += x.p; compra('premio', 'premio', x.p); COFRE_USADO += x.rs||0; RESG.push(`${x.n} · ${ddmm(HOJE)}`); salvaUI(); toast(`Resgatado: ${esc(x.n)} <small>aproveite</small>`); render(); return; }
   if(q('[data-pedit]')){ UI.pedit = true; UI.pdraft = meusPremios().map(x => ({...x})); UI.pcofre = HJx.cofreMes(EST); render(); return; }
   if(q('[data-padd]')){ lePremios(); UI.pdraft.push({n:'', p:null, rs:0}); render(); const r = document.querySelectorAll('[data-pf$=":n"]'); if(r.length) r[r.length-1].focus(); return; }
   const pd = q('[data-pdel]'); if(pd){ lePremios(); UI.pdraft.splice(+pd.dataset.pdel, 1); render(); return; }
@@ -2298,7 +2323,7 @@ document.addEventListener('click', async e => {
     UI.pedit = false; salvaUI(); toast(`Prêmios salvos <small>${L.length} na lista</small>`); render(); return; }
   const by = q('[data-buy]'); if(by){ const S = estado(), [kind,k] = by.dataset.buy.split(':'), [ok,why] = buyable(S,kind,k);
     if(!ok){ toast(`Não dá: ${esc(why)}`); return; }
-    const s = spell(k); SPENT += s.p; BOUGHT[k] = 1; salvaUI(); toast(`${s.n} na bolsa <small>−${fmt(s.p)} J</small>`); render(); return; }
+    const s = spell(k); SPENT += s.p; compra('feitico', k, s.p); BOUGHT[k] = 1; salvaUI(); toast(`${s.n} na bolsa <small>−${fmt(s.p)} J</small>`); render(); return; }
   const cm = q('[data-como]'); if(cm){ UI.como = cm.dataset.como; render(); return; }
   const uz = q('[data-usar]'); if(uz){ const [k, como, alvo] = uz.dataset.usar.split(':'), ef = k === 'escolha' ? como : k;
     const u = {k, d:HOJE, ja: D.feitas.filter(t => t.done === HOJE && t.raw).map(t => HJx.marca(t.raw)).join(',').slice(0,190)};
@@ -2308,6 +2333,7 @@ document.addEventListener('click', async e => {
     EST.usos = (EST.usos || []).concat(u); UI.como = ''; salvaUI();
     const msg = {ko:'a próxima tarefa vale XP ×2', acomp:'a próxima entrega vale XP ×2', zetsu:'+1 folga guardada no Ten', retorno:'ontem conta como meta do Codeforces', gyo:'missão da semana trocada', ken:'o prazo dessa tarefa ganhou 1 dia'}[ef];
     toast(`${spell(ef).n} usado <small>${msg}</small>`); render(); return; }
+  const rl2 = q('[data-relat]'); if(rl2){ baixaRelatorio(rl2.dataset.relat); return; }
   const so = q('[data-somoff]'); if(so){ try { localStorage.setItem('hj-somoff', so.dataset.somoff); } catch(err){} render(); return; }
   const fo = q('[data-fxoff]'); if(fo){ UI.fxOff = fo.dataset.fxoff === '1'; try { localStorage.setItem('hj-fxoff', UI.fxOff ? '1' : '0'); } catch(err){} render(); return; }
   if(q('[data-inbox]')){ const el = document.getElementById('inbox-txt'), t = el.value.trim(); if(!t){ toast('Escreva a mudança primeiro'); return; }

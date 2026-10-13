@@ -128,6 +128,16 @@ class Tarefas(Base):
         with self.assertRaises(s.Erro):
             s.api_jogo_estado({"estado": {"campo_estranho": 1}})
 
+    def test_registro_de_compras_so_cresce(self):
+        """Uma aba antiga, sem a compra que a outra gravou, não apaga essa compra do registro."""
+        a = {"d": "2026-10-10", "h": "10:00:00", "tipo": "cos", "id": "pal-gon", "j": 800}
+        b = {"d": "2026-10-11", "h": "09:00:00", "tipo": "premio", "id": "premio", "j": 250}
+        s.api_jogo_estado({"estado": {"spent": 1050, "compras": [a, b]}})
+        s.api_jogo_estado({"estado": {"spent": 800, "compras": [a]}})
+        self.assertEqual(s.ler_json("estado.json", {})["compras"], [a, b])
+        with self.assertRaises(s.Erro):
+            s.api_jogo_estado({"estado": {"compras": [{"d": "ontem", "tipo": "cos", "id": "x", "j": 1}]}})
+
 
 class Temporada(Base):
     def test_inicio_pela_linha(self):

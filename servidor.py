@@ -68,7 +68,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.3-beta1"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
+VERSAO = "0.6.3-beta2"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -996,6 +996,7 @@ def api_jogo_narrada(d):
     return {"ok": True, "no": carta["no"]}
 
 
+COMPRAS_MAX = 3000   # compras guardadas no registro (as mais antigas saem primeiro)
 RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas e expedições (web/motor.js)
 
 
@@ -1005,7 +1006,7 @@ def api_jogo_estado(d):
         raise Erro("estado inválido")
     ok = {"spent": (int, float), "cofreUsado": (int, float), "own": list, "resg": list, "bought": dict, "usados": dict, "usos": list,
           "equip": dict, "tour": dict, "premios": list, "cofreMes": (int, float), "visto": str,
-          "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict, "cacadas": dict, "expedicoes": dict}
+          "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict, "cacadas": dict, "expedicoes": dict, "compras": list}
     for k, v in e.items():
         if k not in ok or not isinstance(v, ok[k]):
             raise Erro(f"campo inválido no estado: {k}")
@@ -1015,6 +1016,11 @@ def api_jogo_estado(d):
             raise Erro("prêmio inválido: precisa de nome (até 80 letras) e preço")
     if len(e.get("premios", [])) > 60 or e.get("cofreMes", 0) < 0:
         raise Erro("prêmios demais (máx. 60) ou cofre negativo")
+    for c in e.get("compras", []):   # registro de compras (relatório de balanceamento): {d, h, tipo, id, j}
+        if not (isinstance(c, dict) and re.fullmatch(r"\d{4}-\d\d-\d\d", str(c.get("d", ""))) and isinstance(c.get("h", ""), str)
+                and c.get("tipo") in ("cos", "feitico", "premio") and isinstance(c.get("id"), str) and len(c["id"]) <= 60
+                and isinstance(c.get("j"), (int, float)) and c["j"] >= 0):
+            raise Erro("compra inválida no registro")
     with lock:
         antigo = ler_json("estado.json", {})
         for k in RECIBOS:   # recibos da carteira: uma aba antiga aberta não apaga o que outra já gravou
@@ -1023,8 +1029,15 @@ def api_jogo_estado(d):
                 if k == "xpDias":   # XP de um dia fechado só sobe
                     e[k] = {d: max(v, antigo[k][d]) if isinstance(v, (int, float)) and isinstance(antigo[k].get(d), (int, float)) else v
                             for d, v in e[k].items()}
+        if isinstance(antigo, dict) and isinstance(antigo.get("compras"), list):   # o registro de compras só cresce: junta o das duas abas
+            ja = {json.dumps(c, sort_keys=True) for c in e.get("compras", [])}
+            e["compras"] = sorted(e.get("compras", []) + [c for c in antigo["compras"] if json.dumps(c, sort_keys=True) not in ja],
+                                  key=lambda c: (str(c.get("d", "")), str(c.get("h", ""))))
+        e["compras"] = e.get("compras", [])[-COMPRAS_MAX:]
+        if not e["compras"]:
+            del e["compras"]
         corpo = json.dumps(e, ensure_ascii=False, indent=1)
-        if len(corpo) > 60000:
+        if len(corpo) > 500000:
             raise Erro("estado grande demais", 413)
         gravar_txt("estado.json", corpo + "\n")
     return {"ok": True}
@@ -1595,7 +1608,7 @@ ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
          "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal}
-LIMITE = {"/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 65536, "/api/jogo/planos": 130000}
+LIMITE = {"/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),

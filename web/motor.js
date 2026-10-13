@@ -518,27 +518,31 @@ function estado(C){
   feitas.map((t, i) => [String(t.rec || '').split(':'), i]).filter(([r]) => metaSem[r[0]] && r[1]).sort((a, b) => a[0][1].localeCompare(b[0][1]))
     .forEach(([[id, dia], i]) => { const k = id + '@' + addD(dia, -dow(dia)); contaSem[k] = (contaSem[k] || 0) + 1; if(contaSem[k] > metaSem[id]) extraHab.add(i); });
   let total = 0;
+  // XP de cada dia por origem, para o relatório de balanceamento (relatorio): o XP base de cada tipo e, à parte, o que os
+  // multiplicadores somaram (missão, fúria, Ko/Acompanhar, hábito acima da meta)
+  const fonteDia = {}, somaF = (d, k, x) => { if(!d || !x) return; const f = fonteDia[d] = fonteDia[d] || {}; f[k] = (f[k]||0) + x; };
   feitas.forEach((t,i) => {
-    let x = xpBase(t);
+    let x = xpBase(t); const base = x;
     if(extraHab.has(i)) x *= HAB_EXTRA;                                 // hábito semanal acima da meta
     if(!fer(t.done) && nenDe(t) === fracoSem(t.done)) x *= 1.5;       // missão da semana (pausada nas férias)
     const d = discOf(t,C); if(d && t.done && !fer(t.done) && naFuria(d, t.done)) x *= 1.5;   // fúria (pelos períodos gravados; pausada nas férias)
     if(F.mult.has(i)) x *= F.mult.get(i);                              // Ko / Acompanhar
     x = Math.round(x); total += x; xs.push({t,x});
+    somaF(t.done, (t.rec||'').startsWith('cf') ? 'cf' : isRec(t) ? 'hab' : tipoDe(t), base); somaF(t.done, 'bonus', x - base);
     porDia[t.done] = (porDia[t.done]||0)+1; xpDia[t.done] = (xpDia[t.done]||0)+x; attr[nenDe(t)] += x;
   });
   // Codeforces: 5 XP por problema do dia, até 6 (dados.json/codeforces.por_dia), a partir do início da temporada; missão da semana ×1,5
   const cfDia = (D.cf && D.cf.por_dia) || {}; let cfXP = 0;
-  for(const d in cfDia){ if(d < TEMP.ini || d > HOJE) continue; const e = Math.round(cfExtra(cfDia[d], d) * (d >= CF_DESDE && !fer(d) && fracoSem(d) === 1 ? 1.5 : 1)); if(e){ cfXP += e; total += e; xpDia[d] = (xpDia[d]||0)+e; attr[1] += e; } }
+  for(const d in cfDia){ if(d < TEMP.ini || d > HOJE) continue; const e = Math.round(cfExtra(cfDia[d], d) * (d >= CF_DESDE && !fer(d) && fracoSem(d) === 1 ? 1.5 : 1)); if(e){ cfXP += e; total += e; xpDia[d] = (xpDia[d]||0)+e; attr[1] += e; somaF(d, 'cf', cfExtra(cfDia[d], d)); somaF(d, 'bonus', e - cfExtra(cfDia[d], d)); } }
   // caçadas e expedições (0.5.8): marco fechado e expedição concluída somam o bônus gravado no dia em que fecharam
   const G = grupos(C, D.feitas, abertas), xpDe2 = new Map(xs.map(o => [o.t, o.x]));
   let gXP = 0;
-  const somaG = (d, x) => { if(!d || !(x > 0) || d > HOJE) return; gXP += x; total += x; xpDia[d] = (xpDia[d]||0) + x; };
+  const somaG = (d, x) => { if(!d || !(x > 0) || d > HOJE) return; gXP += x; total += x; xpDia[d] = (xpDia[d]||0) + x; somaF(d, 'exp', x); };
   for(const c of Object.values(G.cac)) if(c.fim && c.exp) somaG(c.fim, c.bonus);
   for(const e of Object.values(G.exp)){ if(e.fim) somaG(e.fim, e.bonus); e.xp = e.tarefas.reduce((s, t) => s + (xpDe2.get(t) || 0), 0); }
   // contribuições (#23): bug corrigido ou ideia feita, aberta pelo jogador no GitHub, dá XP no dia em que o jogo viu a issue fechada
   const contrib = ((D.contrib && D.contrib.issues) || []).filter(i => CONTRIB[i.tipo] && i.dia && i.dia <= HOJE);
-  let contribXP = 0; for(const i of contrib){ const x = CONTRIB[i.tipo].xp; contribXP += x; total += x; xpDia[i.dia] = (xpDia[i.dia]||0) + x; }
+  let contribXP = 0; for(const i of contrib){ const x = CONTRIB[i.tipo].xp; contribXP += x; total += x; xpDia[i.dia] = (xpDia[i.dia]||0) + x; somaF(i.dia, 'contrib', x); }
   const contribJ = contrib.reduce((s, i) => s + CONTRIB[i.tipo].j, 0);
   // dias fechados (0.5.3): o XP de cada dia anterior fica gravado no estado.json (xpDias) e só sobe. Linha concluída que some
   // do todo/done (IA reescrevendo, todo.sh archive) não tira mais XP do passado; "esqueci de marcar ontem" ainda soma.
@@ -546,7 +550,7 @@ function estado(C){
   for(const d of new Set([...Object.keys(xpDia), ...Object.keys(rec.xpDias)])){
     if(!(d < HOJE)) continue;
     const g = +rec.xpDias[d] || 0, x = xpDia[d] || 0;
-    if(x > g){ rec.xpDias[d] = x; rec.mudou = true; } else if(g > x){ total += g - x; xpDia[d] = g; }
+    if(x > g){ rec.xpDias[d] = x; rec.mudou = true; } else if(g > x){ total += g - x; xpDia[d] = g; somaF(d, 'gravado', g - x); }
   }
   const first = feitas.map(t => t.done).sort()[0], set = new Set(Object.keys(porDia));
   const ritmo = first ? total/Math.max(1, dias(first,HOJE)/7) : 0;
@@ -593,7 +597,7 @@ function estado(C){
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
   return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:ten(set,first,HOJE,F.zetsu,fer), hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
     proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto)), rec, jenny: ganho - (EST.spent||0),
-    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, grupos: G, gXP, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
+    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, grupos: G, gXP, fonteDia, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
 }
 /* conquistas 000–099: regras fixas, conferidas pelo motor. Gerais (001–059, 090–099) e, para cada disciplina do plano
@@ -792,9 +796,69 @@ function conqIA(C, S){
   }).sort((p, q) => String(p.no).localeCompare(String(q.no)));
 }
 
+/* ---------- relatório de balanceamento (0.6.3-beta2, Configurações → balanceamento) ----------
+   O XP e a Jenny de cada dia, por origem, e o que foi gasto (estado.json → compras, gravado desde a 0.6.3-beta2; o gasto
+   de antes fica em gastoSemData). Não leva texto de tarefa nem nome de prêmio: dá para anexar numa issue. O simulador
+   (ferramentas/simulador.mjs) gera o mesmo relatório para jogadores inventados, para comparar um com o outro. */
+const FONTES = {hab:'hábitos', ent:'entregas', est:'estudo', fac:'faculdade', tre:'treino e projetos', vid:'vida', cf:'Codeforces',
+  exp:'caçadas e expedições', contrib:'contribuições', bonus:'multiplicadores', gravado:'dias fechados'};
+const lojaTotal = () => COS.filter(it => it.p > 0 && !it.lend && !it.excl).reduce((s, it) => s + it.p, 0);
+function relatorio(C, S){
+  const {HOJE, TEMP, EST} = C, E = esforco(S.xpDia, HOJE), r1 = x => Math.round(x*10)/10;
+  const ini = [TEMP.ini, S.first].filter(d => d && d <= HOJE).sort()[0] || HOJE;
+  const ganhoDia = {}, gastoDia = {}, soma = (o, d, x) => { if(d && x) o[d] = (o[d]||0) + x; };
+  for(const d in S.xpDia) soma(ganhoDia, d, S.xpDia[d]*10);
+  for(const r of Object.values(S.rec.notasJ || {})) soma(ganhoDia, r.em, +r.j || 0);
+  for(const c of C.CONQ || []) if(c && c.resgate && !c.descartada && c.resgate.como === 'jenny') soma(ganhoDia, c.resgate.em || c.criada, +c.resgate.j || 0);
+  for(const i of S.contrib) soma(ganhoDia, i.dia, CONTRIB[i.tipo].j);
+  const compras = (EST.compras || []).filter(c => c && /^\d{4}-\d\d-\d\d$/.test(c.d) && c.j > 0);
+  for(const c of compras) soma(gastoDia, c.d, c.j);
+  const gastoReg = compras.reduce((s, c) => s + c.j, 0), gastoSemData = Math.max(0, (EST.spent||0) - gastoReg);
+  // antes do primeiro dia do relatório: o que já vinha acumulado
+  let xpAc = 0, ganhoAc = 0, gastoAc = 0;
+  for(const d in S.xpDia) if(d < ini) xpAc += S.xpDia[d];
+  for(const d in ganhoDia) if(d < ini) ganhoAc += ganhoDia[d];
+  for(const d in gastoDia) if(d < ini) gastoAc += gastoDia[d];
+  const linhas = [], sem = {};
+  for(let d = ini; d <= HOJE; d = addD(d, 1)){
+    const xp = S.xpDia[d] || 0, g = ganhoDia[d] || 0, q = gastoDia[d] || 0;
+    xpAc += xp; ganhoAc += g; gastoAc += q;
+    const f = {}; for(const k in FONTES) f[k] = (S.fonteDia[d] || {})[k] || 0;
+    linhas.push({dia:d, xp, ...f, tarefas: S.porDia[d] || 0, jGanha:g, jGasta:q, saldo: ganhoAc - gastoAc, andar: andar(xpAc, C.dif).n, ten: S.ten.st[d] || ''});
+    const w = addD(d, -dow(d)), s = sem[w] = sem[w] || {semana:w, xp:0, jGanha:0, jGasta:0, diasAtivos:0, tarefas:0};
+    s.xp += xp; s.jGanha += g; s.jGasta += q; s.tarefas += S.porDia[d] || 0; if(xp > 0) s.diasAtivos++; s.andar = andar(xpAc, C.dif).n;
+  }
+  const semanas = Object.values(sem), ativos = linhas.filter(l => l.xp > 0), nSem = Math.max(1, (dias(ini, HOJE) + 1)/7);
+  const origem = {}; for(const k in FONTES){ const x = linhas.reduce((s, l) => s + l[k], 0); if(x) origem[k] = r1(x/Math.max(1, S.total)*100); }
+  const porTipo = {}, porFaixa = [0,0,0,0];
+  for(const c of compras){ const t = porTipo[c.tipo] = porTipo[c.tipo] || {n:0, j:0}; t.n++; t.j += c.j; porFaixa[faixaDe(c.j, E)]++; }
+  const diasCompra = [...new Set(compras.map(c => c.d))].sort(), gaps = diasCompra.slice(1).map((d, i) => dias(diasCompra[i], d));
+  const fimAulas = TEMP.fim > HOJE ? TEMP.fim : HOJE, ganhoFim = S.ganho + S.ritmo*10*Math.max(0, dias(HOJE, fimAulas))/7;
+  const resumo = {
+    dias: linhas.length, diasAtivos: ativos.length, pctDiasAtivos: r1(ativos.length/Math.max(1, linhas.length)*100),
+    xp: {total:S.total, porDiaAtivo: Math.round(S.total/Math.max(1, ativos.length)), porSemana: Math.round(S.total/nSem), melhorSemana: Math.max(0, ...semanas.map(s => s.xp))},
+    origemXP: origem,
+    jenny: {ganha:S.ganho, gasta:EST.spent||0, saldo:S.jenny, saldoEmDiasProdutivos: r1(S.jenny/E.dia), semData:S.acerto, gastoSemData},
+    regua: E,
+    compras: {n:compras.length, porTipo, porFaixa: Object.fromEntries(FAIXAS.map((n, i) => [n, porFaixa[i]])), diasEntreCompras: gaps.length ? r1(gaps.reduce((a, b) => a + b, 0)/gaps.length) : null},
+    torre: {andar:S.a.n, projecaoFimDasAulas:S.proj.n, andaresPorSemana: r1((S.a.n - 1)/nSem)},
+    loja: {catalogo: lojaTotal(), pctCompravelNaTemporada: r1(ganhoFim/lojaTotal()*100)},
+  };
+  const J = C.JOG || {};
+  return {formato:1, gerado:HOJE, versao:(C.SRV && C.SRV.versao) || '', dif:C.dif,
+    temporada:{ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta}, jogo:{habitos:(J.habitos||[]).length, disciplinas:C.BOSSES.length, cf:!!(J.cf && J.cf.handle), duo:!!(J.duo && J.duo.usuario)},
+    fontes:FONTES, resumo, semanas, dias:linhas};
+}
+/* os dias do relatório como planilha (CSV com ; e vírgula decimal, que o Excel e o LibreOffice em português abrem direto) */
+function relatorioCSV(R){
+  const cols = ['dia','xp',...Object.keys(R.fontes),'tarefas','jGanha','jGasta','saldo','andar','ten'];
+  return [cols.join(';')].concat(R.dias.map(l => cols.map(c => String(l[c]).replace('.', ',')).join(';'))).join('\n') + '\n';
+}
+
 window.HJ = {TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
-  MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, feriasDe};
+  MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, feriasDe,
+  FONTES, lojaTotal, relatorio, relatorioCSV};
 })();

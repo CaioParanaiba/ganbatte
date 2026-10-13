@@ -193,6 +193,15 @@ O que entrou:
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
+**0.6.3-beta2** (13/10/2026): balanceamento. O motor guarda o XP de cada dia por origem (`S.fonteDia`: tipo da tarefa,
+hábito, Codeforces, caçadas/expedições, contribuições, `bonus` = o que os multiplicadores somaram, `gravado` = dias
+fechados) e `HJ.relatorio(C, S)` monta resumo, semanas e dias (Jenny ganha pelo dia do recibo; gasto pelo `compras`).
+`compras` no `estado.json` (`{d, h, tipo: cos|feitico|premio, id, j}`, prêmio real sem o nome): o servidor junta o
+registro das duas abas (só cresce, até 3000) e o limite do `estado.json` subiu para 500 KB. `ferramentas/simulador.mjs`
+roda o motor no Node com três perfis (leve, médio, pesado) e uma loja comprada do mais barato ao mais caro.
+Primeira rodada do simulador (temporada de 132 dias): a torre chega ao topo (251) no dia 59 para o perfil médio e no
+dia 21 para o pesado, e o pesado compra a loja inteira no dia 90. Falta decidir as metas (andar no fim, dias por prêmio) antes de mexer nas fórmulas.
+
 **0.6.2-beta5** (12/10/2026, issue #13): as fotos de perfil são o banco de `web/a/`, versionado (o autor garante os
 direitos de cada imagem que entra). `avatares()` e a rota `/a/` leem só de lá; a pasta `avatares/` dos dados deixou de
 existir para o jogo (quem tinha fotos lá não as vê mais). As 12 primeiras vieram da pasta do autor, renomeadas para
