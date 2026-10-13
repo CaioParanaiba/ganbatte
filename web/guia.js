@@ -270,6 +270,7 @@ function abreDisciplinas(nova){   // nova = {d, n}: disciplina sugerida (ex.: um
 async function salvaW(tour){
   const jogador = {configurado:true, nome:W.nome, nick:W.nick, tags:W.tags, semestre:{ini:W.ini, fim:W.fim},
     disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n, n1:d.n1, n2:d.n2})), habitos:habsJSON(W.habs, W.hf), cf: W.cfOn ? {handle:W.cfH, meta:W.cfM} : null, duo: W.duoOn ? {usuario:W.duoU} : null};
+  if(window.HJ_TEMP && !(await HJ_TEMP.antesDeTrocar(avaliacoesTxt()))){ W.err = 'Não salvou: a temporada atual precisa ser guardada antes de trocar.'; desenhaW(); return; }
   try { await post('/api/config', {jogador, avaliacoes: avaliacoesTxt()}); await recarrega(); }
   catch(e){ W.err = 'Não salvou: ' + e.message; desenhaW(); return; }
   UI.avatar = W.av; EST.tour = tour ? {} : Object.fromEntries(['l','b','b2','d2','bk','ms','sys','cfg','nv','x'].map(k => [k,1])); salvaUI();
@@ -294,7 +295,8 @@ document.addEventListener('click', e => {
     if(perdidas.length && !W.confirma){ W.confirma = 1; W.err = `${perdidas.map(b => b.d).join(', ')} tem nota registrada e vai sair do jogo. Clique em salvar de novo para confirmar.`; desenhaW(); return; }
     W.confirma = 0;
     const jogador = {...CTX.JOG, semestre:{ini:W.ini, fim:W.fim}, disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n}))};
-    post('/api/config', {jogador, avaliacoes: avaliacoesTxt()}).then(recarrega).then(() => { document.getElementById('wz').remove(); W.editar = false; render(); toast('Disciplinas salvas'); })
+    (window.HJ_TEMP ? HJ_TEMP.antesDeTrocar(avaliacoesTxt()) : Promise.resolve(true))
+      .then(ok => { if(!ok) throw new Error('a temporada atual precisa ser guardada antes de trocar'); return post('/api/config', {jogador, avaliacoes: avaliacoesTxt()}); }).then(recarrega).then(() => { document.getElementById('wz').remove(); W.editar = false; render(); toast('Disciplinas salvas'); })
       .catch(err => { W.err = 'Não salvou: ' + err.message; desenhaW(); });
     return; }
   const fim = q('[data-wzfim]'); if(fim){ salvaW(fim.dataset.wzfim === '1'); return; }

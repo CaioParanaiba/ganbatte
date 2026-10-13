@@ -147,6 +147,10 @@ peso atual, caiu de 2502 para 1212 J. O gasto (`spent`) fica gravado; o ganho er
 - **Nota corrigida para menos:** `recibos()` devolve `cortes`; se a correção deixaria a carteira negativa, o excedente
   vira `acertos["nota:DISC:aval:dia"]`. Na Masadora a linha passou a se chamar "acertos".
 - Ainda recalculado: Codeforces além das últimas 2000 submissões (`cf.json` é trocado inteiro) e a missão da semana.
+- **Ao balancear:** baixar um valor não muda o passado (os `xpDias` seguram os dias fechados; marcos, notas e conquistas
+  têm recibo). **Subir** um valor recalculado (XP por tipo em `xpDe()`, multiplicadores, `HAB_EXTRA`, `CF_*`, `CONTRIB`)
+  infla os dias antigos: ponha uma data, como o `CF_DESDE` (regra antiga antes dela). Se muitos valores ganharem data,
+  junte-os numa tabela de eras (decidido em 13/10/2026 não fazer antes de precisar).
 
 ## Planejado para a v0.6
 
@@ -157,7 +161,7 @@ peso atual, caiu de 2502 para 1212 J. O gasto (`spent`) fica gravado; o ganho er
 ## Arquivado (decidir depois, em outra temporada)
 
 - **Calendário do Semestre:** os meses da aba Semestre estão fixos (ago/2026 a fev/2027); devem sair da temporada.
-- **Temporadas antigas:** o jogo só conhece a temporada atual (carta do semestre de temporadas passadas, histórico).
+- **Temporadas antigas:** em andamento na issue #7 (cápsula da temporada em `temporadas/NOME/`, ver o comentário de 13/10/2026).
 
 ## IA integrada ao jogo (v0.4)
 
@@ -192,6 +196,16 @@ O que entrou:
   cadastro de Regras já preenchido (`HJ_GUIA.abreDisciplinas({d, n})`).
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
+
+**Cápsula da temporada** (0.6.4-beta1, 13/10/2026, issue #7): `HJ.capsula(api)` no motor calcula a temporada como o
+jogo mostrava no último dia (`fimTemporada`: véspera da volta; antes disso, uma foto até hoje): roda `carregar` com `hoje`
+no corte e tira tarefas, compras (e o `spent` delas) e `xpDias` de depois. Resumo com chaves neutras (`moeda`, `sequencia`,
+`chefoes`, `atributos` pelas categorias do NEN) e `tema` (o `TEMA` do motor, único lugar com os nomes temáticos; a página
+ainda não o usa). `POST /api/temporada` grava `temporadas/NOME/resumo.json` e copia `COPIAS_TEMP`; nunca troca uma foto por
+outra com `ate` menor. `GET /api/jogo` → `temporadas` ([{nome, ate, guardada}]). `web/temporadas.js`: guarda sozinho ao
+abrir depois do fim (uma tentativa por aba), antes de o assistente gravar outra temporada (`antesDeTrocar`, nas duas
+gravações do `guia.js`) e pelo card *temporada* em Configurações (foto parcial). Falta: a tela de histórico e decidir o que
+zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
 
 **0.6.3** (13/10/2026): lançada na `main`, juntando a 0.6.3-beta1 e a beta2 (issues #12, #23, #27, #31, #32).
 

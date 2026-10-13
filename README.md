@@ -87,6 +87,7 @@ Tudo o que é seu fica numa pasta separada do código:
 | `conquistas.json` | conquistas criadas pela IA (Book, 200 em diante) e o que você resgatou |
 | `estado.json` | loja, Jenny gasta (com o registro de compras, desde a 0.6.3-beta2) e o que está equipado |
 | `cf.json`, `duo.json`, `contrib.json` | o que o jogo leu do Codeforces, do Duolingo e das suas issues no GitHub |
+| `temporadas/` | cada temporada que acabou (`2026-2/`...): `resumo.json` com os números finais congelados e uma cópia dos arquivos daquele momento |
 | `servidor.log` | o que o servidor anotou quando roda em segundo plano |
 
 Para fazer backup, use o botão **baixar meus dados** na aba Configurações (um ZIP da pasta) ou copie a pasta. Para usar outra pasta: `python3 servidor.py --dados CAMINHO`. Se você já tem um todo.txt em outra pasta (com o todo.sh ou outro app), use `--todo PASTA`: o jogo lê e grava o `todo.txt` e o `done.txt` de lá, e o resto continua na pasta de dados.
@@ -156,7 +157,8 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   `web/chefes.js`: editor de avaliações e notas. `web/ia.js`: pedidos para a IA e a IA ligada. `web/conquistas.js`:
   conquistas criadas pela IA (as regras ficam no motor). `web/novidades.js`: aba Novidades, com a lista de versões que o
   servidor lê do GitHub para avisar de versão nova (ao lançar uma, ponha-a no topo). `web/feedback.js`: bug, ideia ou
-  dúvida vira uma issue preenchida pelos formulários de `.github/ISSUE_TEMPLATE/`. `web/efeitos.js`: o que os itens
+  dúvida vira uma issue preenchida pelos formulários de `.github/ISSUE_TEMPLATE/`. `web/temporadas.js`: guarda a temporada que acabou em `temporadas/NOME/` (a cápsula é `HJ.capsula` no motor; `TEMA` no motor
+  tem os nomes temáticos das funções). `web/efeitos.js`: o que os itens
   da Masadora fazem na tela (texturas, molduras, fontes, animações e sons; os itens e preços ficam no `COS` do motor). `web/demo.js`: o servidor de mentira do
   modo demonstração (também usado no GitHub Pages). `web/a/`: o banco de fotos de perfil; cada PNG (256×256, nome com
   letras, números, `-`, `_` ou `.`) vira um item da Masadora por 1.000 J (os grátis ficam no `AV_GRATIS` do motor). O
@@ -175,6 +177,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.4-beta1 | atualização das expedições | Temporada guardada (#7): na volta às aulas, `HJ.capsula()` congela os números finais em `temporadas/NOME/resumo.json` (chaves neutras e os nomes do tema em `TEMA`), com cópia dos arquivos (`POST /api/temporada`); também antes de o assistente trocar a temporada e pelo card em Configurações |
 | 0.6.3 | atualização das expedições | **Junta as betas 0.6.3** (as duas linhas abaixo): férias (#31), recompensa por contribuição (#23), reabrir etapa (#27), testes do servidor (#12) e o balanceamento: relatório, registro de compras e simulador (#32) |
 | 0.6.3-beta2 | atualização das expedições | Relatório de balanceamento em Configurações (`HJ.relatorio()`: XP e Jenny por dia e por origem, em .json ou .csv, sem texto de tarefa); registro de compras (`estado.json` → `compras`); simulador de temporada com jogadores inventados (`node ferramentas/simulador.mjs`) |
 | 0.6.3-beta1 | atualização das expedições | Férias (#31): Ten não cai, missão e fúria pausadas, XP normal; recompensa por bug corrigido e ideia feita pelo usuário do GitHub (#23, `contrib.json`); reabrir etapa do `done.txt` (`POST /api/reabre`, #27); testes do servidor em `tests/` (#12) |

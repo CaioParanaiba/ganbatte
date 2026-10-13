@@ -294,7 +294,7 @@ function carregar(api){
   const hoje = api.hoje || new Date().toISOString().slice(0,10);
   return {D:{feitas, abertas, cf:api.cf||null, duo:api.duo||null, contrib:api.contrib||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
     BOSSES: av.bosses, AVAL: av.aval, NOTAS: nt.NOTAS, PARC: nt.PARC, NDATA: nt.NDATA, INBOX: parseAjustes(api.ajustes), EST: est, AVATARES: api.avatares||[],
-    NARRADAS: Array.isArray(api.narradas) ? api.narradas : [], CONQ: Array.isArray(api.conquistas) ? api.conquistas : [], JOG: Object.assign({nome:'Hunter'}, api.jogador||{}), SRV: api.servidor||null, AV_TXT: String(api.avaliacoes||''), NT_TXT: String(api.notas||''), dif:'normal'};
+    NARRADAS: Array.isArray(api.narradas) ? api.narradas : [], TEMPORADAS: Array.isArray(api.temporadas) ? api.temporadas : [], CONQ: Array.isArray(api.conquistas) ? api.conquistas : [], JOG: Object.assign({nome:'Hunter'}, api.jogador||{}), SRV: api.servidor||null, AV_TXT: String(api.avaliacoes||''), NT_TXT: String(api.notas||''), dif:'normal'};
 }
 
 /* ---------- regras ---------- */
@@ -854,11 +854,47 @@ function relatorioCSV(R){
   const cols = ['dia','xp',...Object.keys(R.fontes),'tarefas','jGanha','jGasta','saldo','andar','ten'];
   return [cols.join(';')].concat(R.dias.map(l => cols.map(c => String(l[c]).replace('.', ',')).join(';'))).join('\n') + '\n';
 }
+/* ---------- cápsula da temporada (#7) ----------
+   Quando a temporada acaba (na volta às aulas), ela é congelada em temporadas/NOME/resumo.json (servidor.py): os números
+   finais já calculados, com chaves neutras, e os nomes do tema daquela temporada. O histórico nunca é recalculado, então
+   um balanceamento futuro não muda o passado, e um tema novo não apaga os nomes do antigo.
+   TEMA é o único lugar com os nomes temáticos das funções (prepara a #15); a página ainda tem esses nomes no próprio texto. */
+const TEMA = {serie:'Hunter x Hunter', moeda:'Jenny', cartas:'Book', torre:'Arena Celestial', sequencia:'Ten', loja:'Masadora',
+  chefoes:'Genei Ryodan', missao:'Missão Nen', poderes:'Feitiços', perfil:'Licença Hunter', grupo:'Torre Trick'};
+const nomeTemporada = T => String(T.nome || '').replace(/^Temporada /, '');
+const fimTemporada = T => T.volta && T.volta > T.fim ? addD(T.volta, -1) : T.fim;   // último dia: a véspera da volta (as férias contam)
+/* api = a resposta do GET /api/jogo. Calcula como o jogo mostrava no último dia da temporada (ou hoje, se ela ainda não
+   acabou: uma foto parcial, que a da volta às aulas substitui). O que foi feito ou comprado depois fica de fora. */
+function capsula(api){
+  const T = carregar(api).TEMP, hoje = carregar(api).HOJE, ate = hoje < fimTemporada(T) ? hoje : fimTemporada(T);
+  const C = carregar({...api, hoje: ate}), nome = nomeTemporada(T);
+  C.D.feitas = C.D.feitas.filter(t => !t.done || t.done <= ate);
+  const depois = (C.EST.compras || []).filter(c => c && c.d > ate);
+  C.EST = {...C.EST, compras: (C.EST.compras || []).filter(c => !(c && c.d > ate)),
+    spent: Math.max(0, (C.EST.spent || 0) - depois.reduce((s, c) => s + (+c.j || 0), 0)),
+    xpDias: Object.fromEntries(Object.entries(C.EST.xpDias || {}).filter(([d]) => d <= ate))};
+  const S = estado(C), r = relatorio(C, S).resumo, K = cartas(C, S);
+  return {formato:1, nome, ini:T.ini, fim:T.fim, volta:T.volta || '', ate, guardada:hoje, versao:(C.SRV && C.SRV.versao) || '', tema:{...TEMA},
+    jogador:{nome:C.JOG.nome || '', nick:C.JOG.nick || ''},
+    xp:S.total, andar:S.a.n, topo:!!S.a.topo, dificuldade:C.dif, sequencia:{max:S.ten.max, final:S.ten.cur},
+    moeda:{ganha:S.ganho, gasta:C.EST.spent || 0, saldo:S.jenny},
+    tarefas:S.n, diasAtivos:r.diasAtivos, origemXP:r.origemXP,
+    atributos:Object.fromEntries(NEN.map((n, i) => [n.c, S.attr[i]])),
+    dias:Object.fromEntries(Object.keys(S.xpDia).filter(d => d <= ate).sort().map(d => [d, [S.xpDia[d], S.porDia[d] || 0]])),   // dia: [XP, tarefas]
+    chefoes:S.bs.map(b => ({sigla:b.d, nome:b.n, icone:b.ic, frase:b.why, nota:Math.round(b.pts*10)/100, derrotado:b.dead,
+      avaliacoes:b.avs.map(a => ({chave:a.k, nome:a.n, peso:a.w, data:a.dt, nota:a.nota ?? null}))})),
+    conquistas:K.filter(k => k.o === 'slot').map(k => ({no:k.no, nome:k.n, rank:k.rk, feita:k.on})),
+    conquistasIA:(C.CONQ || []).filter(c => c && (!c.temporada || c.temporada === T.nome))
+      .map(c => ({nome:c.nome || '', rank:c.rk || '', resgatada:!!(c.resgate && !c.descartada), descartada:!!c.descartada})),
+    cartas:C.NARRADAS.filter(c => c && ((c.tipo === 'semestre' && c.periodo === nome) || (c.escrita >= T.ini && c.escrita <= addD(ate, 7))))
+      .map(c => ({tipo:c.tipo, periodo:c.periodo, titulo:c.titulo || '', texto:c.texto || '', cronica:c.cronica || '', icone:c.ic || 'scroll'})),
+    compras:C.EST.compras, equipado:C.EST.equip};
+}
 
 window.HJ = {TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
   MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, feriasDe,
-  FONTES, lojaTotal, relatorio, relatorioCSV};
+  FONTES, lojaTotal, relatorio, relatorioCSV, TEMA, nomeTemporada, fimTemporada, capsula};
 })();

@@ -247,5 +247,31 @@ class Leitura(Base):
             s.api_config({"jogador": "não é objeto"})
 
 
+class Temporadas(Base):
+    """Cápsula da temporada (#7): a página manda o resumo congelado; o servidor grava temporadas/NOME/ com uma cópia dos arquivos."""
+
+    def test_guarda_resumo_e_copias(self):
+        s.gravar_txt("done.txt", "x 2026-10-10 2026-10-10 Tarefa\n")
+        r = s.api_temporada({"resumo": {"nome": "2026-2", "ate": "2026-10-12", "xp": 10}})
+        self.assertTrue(r["guardada"])
+        pasta = s.DADOS / "temporadas" / "2026-2"
+        self.assertEqual(json.loads((pasta / "resumo.json").read_text(encoding="utf-8"))["xp"], 10)
+        self.assertEqual((pasta / "done.txt").read_text(encoding="utf-8"), "x 2026-10-10 2026-10-10 Tarefa\n")
+        self.assertEqual((pasta / "avaliacoes.txt").read_text(encoding="utf-8"), TEMPORADA)
+        self.assertEqual(s.api_jogo_get()["temporadas"], [{"nome": "2026-2", "ate": "2026-10-12", "guardada": ""}])
+
+    def test_foto_parcial_nao_troca_a_completa(self):
+        s.api_temporada({"resumo": {"nome": "2026-2", "ate": "2027-02-19", "xp": 900}})
+        self.assertFalse(s.api_temporada({"resumo": {"nome": "2026-2", "ate": "2026-10-12", "xp": 10}})["guardada"])
+        self.assertTrue(s.api_temporada({"resumo": {"nome": "2026-2", "ate": "2027-02-19", "xp": 901}})["guardada"])
+        self.assertEqual(s.ler_json("temporadas/2026-2/resumo.json", {})["xp"], 901)
+
+    def test_nome_invalido(self):
+        for nome in ("../fora", "", "a/b", ".oculta"):
+            with self.assertRaises(s.Erro):
+                s.api_temporada({"resumo": {"nome": nome, "ate": "2026-10-12"}})
+        self.assertFalse((s.DADOS / "temporadas").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

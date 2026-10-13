@@ -1346,7 +1346,7 @@ function sync(api){
   if(!BOSSES.some(b => b.d === UI.bsel)) UI.bsel = BOSSES[0] ? BOSSES[0].d : '';
   if(!BOSSES.some(b => b.d === UI.mapsel)) UI.mapsel = UI.bsel;
   if(TESTE){ if(!podeTeste()) TESTE = null; else { OWN = TESTE.own; Object.assign(UI, structuredClone(TESTE.eq)); } }   // recarregou no meio do teste: continua nele
-  avisoVersao(); guardaRecibos();
+  avisoVersao(); guardaRecibos(); if(window.HJ_TEMP) HJ_TEMP.confere();   // temporada acabou: guarda a cápsula (temporadas.js)
 }
 /* modo teste da Masadora, só para quem está no canal beta: Jenny infinita para experimentar qualquer item. É temporário de
    propósito: as compras e o que for equipado ficam só na memória desta página. Sair, recarregar a página ou voltar para
@@ -1385,7 +1385,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.3';
+const VERSAO_PAGINA = '0.6.4-beta1';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1850,7 +1850,7 @@ function rCfg(S){
   document.getElementById('cfg-root').innerHTML = `
     <div class="card"><h2><span class="c">~/</span>configurações deste computador</h2><div class="togg" style="margin:0"><span class="sub">efeitos:</span><button data-fxoff="0" aria-pressed="${!UI.fxOff}">os comprados</button><button data-fxoff="1" aria-pressed="${!!UI.fxOff}">nenhum (calmo)</button></div><div class="togg" style="margin:8px 0 0"><span class="sub">sons:</span><button data-somoff="0" aria-pressed="${!somOff()}">ligados</button><button data-somoff="1" aria-pressed="${somOff()}">mudo</button></div></div>
     <div class="card"><h2><span class="c">~/</span>backup</h2><p style="margin:0 0 10px;font-size:14px">Baixa um ZIP com todos os seus dados: tarefas, notas, plano de avaliação, loja e configurações. Guarde de vez em quando, ou use para levar o jogo para outro computador (é só descompactar na pasta de dados, <span class="mono">${esc((CTX.SRV && CTX.SRV.dados) || '~/.hunter-todo')}</span>).</p>${window.HJ_DEMO ? '<button class="btn" disabled>no modo demonstração não há dados para baixar</button>' : '<a class="btn v" href="/api/backup" download>baixar meus dados</a>'}</div>
-    ${cardBalanco(S)}`;
+    ${window.HJ_TEMP ? HJ_TEMP.card() : ''}${cardBalanco(S)}`;
 }
 /* relatório de balanceamento (0.6.3-beta2): XP e Jenny de cada dia por origem, e as compras, para calibrar o jogo.
    Gera tudo aqui na página (HJ.relatorio, o mesmo do simulador em ferramentas/simulador.mjs) e baixa como arquivo */
@@ -2374,6 +2374,7 @@ recarrega().then(() => tab((location.hash||'').slice(1))).catch(err => {
 <script src="ia.js"></script>
 <script src="conquistas.js"></script>
 <script src="expedicoes.js"></script>
+<script src="temporadas.js"></script>
 <script src="novidades.js"></script>
 <script src="feedback.js"></script>
 <script src="efeitos.js"></script>

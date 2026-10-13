@@ -68,7 +68,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.3"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
+VERSAO = "0.6.4-beta1"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -908,7 +908,7 @@ def api_jogo_get():
     return {"ok": True, "hoje": hoje().isoformat(), "todo": todo, "done": done, "avaliacoes": ler_txt("avaliacoes.txt"),
             "notas": ler_txt("notas.txt"), "ajustes": ler_txt("ajustes.txt"), "estado": estado if isinstance(estado, dict) else {},
             "cf": cf, "duo": duo, "contrib": contrib, "avatares": avatares(), "narradas": narradas if isinstance(narradas, list) else [], "jogador": j,
-            "conquistas": conquistas if isinstance(conquistas, list) else [],
+            "conquistas": conquistas if isinstance(conquistas, list) else [], "temporadas": temporadas(),
             "servidor": {"versao": VERSAO, "nome": VERSAO_NOME, "sistema": sistema(), "auto": auto_ligado(), "fundo": EXEC["fundo"], "dados": str(DADOS),
                          "canal": canal(), "metodo": metodo_atualizar()}}
 
@@ -1041,6 +1041,46 @@ def api_jogo_estado(d):
             raise Erro("estado grande demais", 413)
         gravar_txt("estado.json", corpo + "\n")
     return {"ok": True}
+
+
+# ---------- temporadas guardadas (#7) ----------
+# Quando a temporada acaba, a página calcula a cápsula (HJ.capsula em web/motor.js: números finais congelados, chaves neutras
+# e os nomes do tema) e o servidor grava temporadas/NOME/ com ela e uma cópia dos arquivos daquele momento.
+NOME_TEMP = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$")
+DIA = re.compile(r"^\d{4}-\d\d-\d\d$")
+COPIAS_TEMP = ("avaliacoes.txt", "notas.txt", "done.txt", "narradas.json", "conquistas.json", "estado.json", "jogador.json")
+
+
+def temporadas():
+    """As temporadas guardadas: nome, até que dia os números vão e quando foi guardada."""
+    out = []
+    for f in sorted((DADOS / "temporadas").glob("*/resumo.json")):
+        r = ler_json(f"temporadas/{f.parent.name}/resumo.json", {})
+        if isinstance(r, dict):
+            out.append({"nome": f.parent.name, "ate": str(r.get("ate", "")), "guardada": str(r.get("guardada", ""))})
+    return out
+
+
+def api_temporada(d):
+    """Grava a cápsula. Uma foto parcial (guardada antes do fim) é trocada pela mais completa; a mais completa nunca é
+    trocada por uma parcial (duas abas abertas, ou o relógio de um computador atrasado)."""
+    r = d.get("resumo")
+    if not isinstance(r, dict):
+        raise Erro("resumo inválido")
+    nome, ate = str(r.get("nome", "")), str(r.get("ate", ""))
+    if not NOME_TEMP.match(nome) or not DIA.match(ate):
+        raise Erro("nome ou data da temporada inválido")
+    with lock:
+        antigo = ler_json(f"temporadas/{nome}/resumo.json", {})
+        if isinstance(antigo, dict) and str(antigo.get("ate", "")) > ate:
+            return {"ok": True, "guardada": False}
+        (DADOS / "temporadas" / nome).mkdir(parents=True, exist_ok=True)
+        for arq in COPIAS_TEMP:
+            if caminho(arq).is_file():
+                gravar_txt(f"temporadas/{nome}/{arq}", ler_txt(arq))
+        gravar_json(f"temporadas/{nome}/resumo.json", r)
+    log(f"temporada {nome} guardada (números até {ate})")
+    return {"ok": True, "guardada": True}
 
 
 CONQ_REGRAS = {"contagem", "sequencia", "nota", "constancia", "semana"}
@@ -1607,14 +1647,14 @@ def api_autostart(d):
 ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/reabre": api_reabre, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
          "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
-         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal}
-LIMITE = {"/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000}
+         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada}
+LIMITE = {"/api/temporada": 3_000_000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),
              "/ia.js": ("ia.js", "text/javascript; charset=utf-8"), "/conquistas.js": ("conquistas.js", "text/javascript; charset=utf-8"),
              "/novidades.js": ("novidades.js", "text/javascript; charset=utf-8"), "/expedicoes.js": ("expedicoes.js", "text/javascript; charset=utf-8"),
-             "/feedback.js": ("feedback.js", "text/javascript; charset=utf-8"),
+             "/feedback.js": ("feedback.js", "text/javascript; charset=utf-8"), "/temporadas.js": ("temporadas.js", "text/javascript; charset=utf-8"),
              "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8")}
 
 

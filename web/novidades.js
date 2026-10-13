@@ -10,6 +10,11 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.4-beta1", "nome": "atualização das expedições", "data": "2026-10-13",
+   "resumo": "A temporada que acaba fica guardada, com os números finais congelados.",
+   "itens": [
+     {"ic": "scroll", "t": "Temporada guardada", "d": "Quando a temporada acaba, na volta às aulas, o jogo guarda sozinho os números dela (XP, andar, Ten, Jenny, chefões, cartas e compras) na pasta temporadas/ dos seus dados. Eles ficam congelados: nenhuma mudança do jogo nem um tema novo mexe neles depois. Também guarda antes de você trocar o semestre no assistente, e em Configurações → temporada dá para guardar uma foto antes do fim. A tela para ver as temporadas antigas vem depois."}
+   ]},
   {"versao": "0.6.3", "nome": "atualização das expedições", "data": "2026-10-13",
    "resumo": "Férias de verdade, recompensa por bug corrigido e ideia feita, e um relatório dos seus números de XP e Jenny.",
    "itens": [

@@ -101,6 +101,7 @@ O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer
 | `narradas.json` | cartas do Book | acrescentar, **pela API** |
 | `conquistas.json` | conquistas criadas pela IA e o que foi resgatado | só ler: quem cria é o jogador, pelo Book |
 | `planos/` | planos de ensino (PDF, HTML...) | ler |
+| `temporadas/` | temporadas guardadas: `NOME/resumo.json` com os números finais congelados (chaves neutras e os nomes do tema em `tema`) e uma cópia dos arquivos daquele momento | só ler: quem guarda é o jogo |
 | `jogador.json` | nome, tags, hábitos, disciplinas, Codeforces, Duolingo, formato de data, IA ligada (`ia`) | só ler |
 | `estado.json`, `cf.json`, `duo.json`, `contrib.json` | loja, carteira; cache do Codeforces, do Duolingo e das contribuições no GitHub | não mexer |
 
