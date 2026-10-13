@@ -69,7 +69,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.4"
+VERSAO = "0.6.5-beta1"
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -821,7 +821,7 @@ def duo_leitura(j):
     cache = ler_json("duo.json", {})
     if cache.get("usuario") != duo["usuario"]:
         return {"usuario": duo["usuario"], "ofensiva": None}
-    return {"usuario": duo["usuario"], "ofensiva": cache.get("ofensiva"), "desde": cache.get("desde")}
+    return {"usuario": duo["usuario"], "ofensiva": cache.get("ofensiva"), "desde": cache.get("desde"), "ini": (cache.get("ult") or {}).get("ini")}
 
 
 # ---------- contribuições (#23) ----------
@@ -998,6 +998,22 @@ def api_jogo_narrada(d):
 
 
 COMPRAS_MAX = 3000   # compras guardadas no registro (as mais antigas saem primeiro)
+def devolve_filtra(e):
+    """Devolução (#51, devolucao() no motor.js): o que voltou para a loja não volta para o jogador quando uma aba antiga grava o
+    estado. Comprado de novo depois da devolução (registro de compras), fica."""
+    dv = e.get("devolve")
+    if not isinstance(dv, dict):
+        return
+    quando = (str(dv.get("em", "")), str(dv.get("h", "")))
+    de_novo = {c.get("id") for c in e.get("compras", []) if isinstance(c, dict) and (str(c.get("d", "")), str(c.get("h", ""))) > quando}
+    tira = {x for x in dv.get("own") or [] if isinstance(x, str)} - de_novo
+    if isinstance(e.get("own"), list):
+        e["own"] = [x for x in e["own"] if x not in tira]
+    sem, fe = dv.get("semana"), {x for x in dv.get("feiticos") or [] if isinstance(x, str)} - de_novo
+    if isinstance(e.get("bought"), dict) and isinstance(e["bought"].get(sem), list):
+        e["bought"][sem] = [k for k in e["bought"][sem] if k not in fe]
+
+
 RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas e expedições (web/motor.js)
 
 
@@ -1007,7 +1023,8 @@ def api_jogo_estado(d):
         raise Erro("estado inválido")
     ok = {"spent": (int, float), "cofreUsado": (int, float), "own": list, "resg": list, "bought": dict, "usados": dict, "usos": list,
           "equip": dict, "tour": dict, "premios": list, "cofreMes": (int, float), "visto": str,
-          "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict, "cacadas": dict, "expedicoes": dict, "compras": list}
+          "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict, "cacadas": dict, "expedicoes": dict, "compras": list,
+          "migra": dict, "tenRec": (int, float), "devolve": dict}   # acerto da 0.6.4 (web/motor.js: rec.migra, rec.tenRec) e a devolução (#51)
     for k, v in e.items():
         if k not in ok or not isinstance(v, ok[k]):
             raise Erro(f"campo inválido no estado: {k}")
@@ -1034,6 +1051,9 @@ def api_jogo_estado(d):
             ja = {json.dumps(c, sort_keys=True) for c in e.get("compras", [])}
             e["compras"] = sorted(e.get("compras", []) + [c for c in antigo["compras"] if json.dumps(c, sort_keys=True) not in ja],
                                   key=lambda c: (str(c.get("d", "")), str(c.get("h", ""))))
+        if isinstance(antigo, dict) and isinstance(antigo.get("devolve"), dict):   # devolução (#51): vale a primeira
+            e["devolve"] = antigo["devolve"]
+        devolve_filtra(e)
         e["compras"] = e.get("compras", [])[-COMPRAS_MAX:]
         if not e["compras"]:
             del e["compras"]

@@ -1355,6 +1355,7 @@ const R = {dif:'normal'};
 const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
   avatar:'logo', lic:'l2', hud:'logo', anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
 try { UI.fxOff = localStorage.getItem('hj-fxoff') === '1'; } catch(e){}
+try { UI.cfold = JSON.parse(localStorage.getItem('hj-cfold') || '{}') || {}; } catch(e){ UI.cfold = {}; }   // caçadas recolhidas na Lista, por navegador
 const PXSKINS = {map:[['dia','Dia'],['tarde','Tarde'],['noite','Noite']], p1:[['lilas','Lilás'],['gameboy','Game Boy'],['noite','Noite']], p3:[['couro','Couro'],['joy','Joystation'],['noite','Noite']], p3b:[['madeira','Madeira'],['neon','Neon'],['papel','Papel']]};
 const THEMES = [['simples','Simples'],['painel','Painel'],['leorio','Leorio'],['claro','Claro'],['gon','Gon'],['biscuit','Biscuit'],['kurapika','Kurapika'],['netero','Netero'],['killua','Killua'],['hisoka','Hisoka'],['meruem','Meruem'],['pergaminho','Pergaminho'],['zoldyck','Zoldyck'],['ryodan','Genei Ryodan'],['greed','Greed Island'],['abismo','Continente Negro'],['aurora','Aurora']];
 const avSrc = f => (window.HJ_AV && window.HJ_AV[f]) || 'a/' + f + '.png';   // no protótipo de arquivo único as fotos vêm embutidas
@@ -1373,7 +1374,7 @@ function sync(api){
   if(!BOSSES.some(b => b.d === UI.bsel)) UI.bsel = BOSSES[0] ? BOSSES[0].d : '';
   if(!BOSSES.some(b => b.d === UI.mapsel)) UI.mapsel = UI.bsel;
   if(TESTE){ if(!podeTeste()) TESTE = null; else { OWN = TESTE.own; Object.assign(UI, structuredClone(TESTE.eq)); } }   // recarregou no meio do teste: continua nele
-  avisoVersao(); guardaRecibos(); if(window.HJ_TEMP) HJ_TEMP.confere();   // temporada acabou: guarda a cápsula (temporadas.js)
+  avisoVersao(); guardaRecibos(); devolve(); if(window.HJ_TEMP) HJ_TEMP.confere();   // temporada acabou: guarda a cápsula (temporadas.js)
 }
 /* modo teste da Masadora, só para quem está nos canais beta e grupo: Jenny infinita para experimentar qualquer item. É temporário de
    propósito: as compras e o que for equipado ficam só na memória desta página. Sair, recarregar a página ou voltar para
@@ -1411,8 +1412,22 @@ function guardaRecibos(){
   Object.assign(EST, {notasJ:r.notasJ, furias:r.furias, acertos:r.acertos, xpDias:r.xpDias, migra:r.migra, tenRec:r.tenRec});
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
+/* devolução (#51, devolucao() no motor): uma vez, o que foi comprado com a Jenny que o rebalanceamento da 0.6.4 tirou volta
+   para a loja. O que estiver equipado sai; o servidor guarda a lista (estado.json → devolve) e não deixa uma aba antiga devolvê-la */
+function devolve(){
+  if(TESTE) return;
+  const dv = HJx.devolucao(CTX, HJx.estado(CTX)); if(!dv) return;
+  for(const id of dv.own){ const it = COS.find(i => i.id === id); OWN.delete(id); if(!it || !equipado(it)) continue;
+    if(it.cat === 'avatar') UI.avatar = 'logo'; else if(it.cat === 'pal') UI.theme = 'simples'; else if(it.cat === 'tex') UI.bg = '';
+    else if(it.cat === 'fx') UI.fx = UI.fx.filter(f => f !== it.fx); else if(it.skin) UI.skin[it.skin[0]] = PXSKINS[it.skin[0]][0][0];
+    else if(['frame', 'title', 'font', 'som'].includes(it.cat)) UI[it.cat] = ''; }
+  HJx.expandeOwn(OWN);
+  EST.bought[dv.semana] = (EST.bought[dv.semana] || []).filter(k => !dv.feiticos.includes(k));
+  if(dv.semana === HJx.semanaISO(HOJE)) dv.feiticos.forEach(k => delete BOUGHT[k]);
+  EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
+}
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.4';
+const VERSAO_PAGINA = '0.6.5-beta1';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }

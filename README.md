@@ -145,7 +145,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   conta a issue que você abriu e que foi fechada como resolvida (bug corrigido, ideia feita); repetida ou recusada não conta.
 - **Duolingo não conta:** confira o usuário na aba Configurações (o nome do perfil, sem senha). O jogo lê a ofensiva do
   perfil a cada 10 minutos e precisa de internet. O dia salvo pelo bloqueio de ofensiva não conta, de propósito: no jogo,
-  quem guarda folga é o Zetsu. Os dias da ofensiva de antes de ligar ficam no heatmap e nas conquistas, sem XP nem Ten. Com o jogo fechado vários dias e um bloqueio no meio, o Duolingo diz quantos dias você fez,
+  quem guarda folga é o Zetsu. Os dias da ofensiva de antes de ligar ficam no heatmap e nas conquistas e sobem o nível do hábito (até os de antes da temporada, pela ofensiva lida; #51), sem XP nem Ten. Com o jogo fechado vários dias e um bloqueio no meio, o Duolingo diz quantos dias você fez,
   não quais: o jogo marca os mais recentes.
 - **Não sei qual tipo escolher para a tarefa:** o jogo sugere pelas palavras do texto; o **?** ao lado dos tipos mostra o
   que encaixa em quê, e com a IA ligada o **IA?** pergunta a ela.
@@ -178,6 +178,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.5-beta1 | atualização das expedições | **Aviso grande** (`"aviso": "0.6.5"`). Nível do Duolingo pela ofensiva inteira (#51): os dias de antes de ligar sobem o nível, sem XP; os de antes da temporada pela ofensiva lida (`duoPre()`, `ini` no `/api/jogo`). Devolução única (`devolucao()`, `estado.json` → `devolve`): quem teve a carteira zerada pelo acerto da 0.6.4 perde as aparências e os feitiços na bolsa comprados em 13/10 e recebe só o que passou do perdão; o servidor não deixa uma aba antiga devolvê-los (`devolve_filtra`) |
 | 0.6.4 | atualização das expedições | **Junta as betas 0.6.4** (as cinco linhas abaixo): rebalanceamento com aviso grande (#47), temporada guardada (#7), Book reorganizado e 10 desafios da IA (#49, #6), Regras reescritas e lateral da Lista (#50), canal estável/beta/grupo e resumo para o grupo (#36, #46, #37) |
 | 0.6.4-beta5 | atualização das expedições | Preparação do modo em grupo: o canal de atualização segue a branch da cópia (`CANAIS`: main, beta, grupo; #36) e Configurações → servidor escolhe entre Estável, Beta e Grupo (#46; o modo teste da Masadora vale na beta e no grupo). `HJ.resumoGrupo` (#37): por dia, o XP, os hábitos do grupo (Codeforces, Duolingo) e os dias da missão, exportável em Configurações → balanceamento |
 | 0.6.4-beta4 | atualização das expedições | Regras reescritas (#50): seções com índice, tabelas e contas de exemplo, com os números do motor e um resumo do jogador; a aba vai para o fim do menu, depois de Novidades. Cards da lateral da Lista abrem e fecham pelo título (`<details data-lado>`, guardado em `localStorage` → `hj-lado`) |

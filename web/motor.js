@@ -303,7 +303,7 @@ function carregar(api){
 const CONTRIB = {bug:{xp:15, j:150}, ideia:{xp:10, j:50}};
 const CONTRIB_ANTES = {bug:{xp:50, j:1000}, ideia:{xp:30, j:600}};   // até a 0.6.4-beta1: o acerto da 0.6.4 tira a diferença dos dias fechados
 /* Duolingo (0.6.4): os dias da ofensiva de antes de ligar entram no heatmap e nas conquistas do Duolingo, mas sem XP, sem Jenny,
-   sem nível e sem Ten. duo.json → desde é o dia em que o usuário foi ligado; quem ligou antes da 0.6.4 não tem: vale o dia em
+   sem Ten (o nível sobe, #51). duo.json → desde é o dia em que o usuário foi ligado; quem ligou antes da 0.6.4 não tem: vale o dia em
    que o Duolingo automático saiu */
 const DUO_LEGADO = '2026-10-12';
 const duoDesde = C => (C.D.duo && C.D.duo.desde) || DUO_LEGADO;
@@ -349,31 +349,38 @@ function ten(set, first, HOJE, zetsuExtra, fer, salvo){
   }
   return {cur, max, zet, st};
 }
+/* Duolingo (#51): os dias da ofensiva atual que não estão no done.txt (os de antes da temporada) também sobem o nível do hábito,
+   sem XP: a ofensiva lida (duo.json → ult) menos os dias dela que já estão na lista */
+function duoPre(C, dias){
+  const o = C.D.duo; if(!o || !o.ini || !(o.ofensiva > 0)) return 0;
+  return Math.max(0, o.ofensiva - new Set(dias.filter(d => d >= o.ini)).size);
+}
 /* nível de cada hábito (ver habPede): linha concluída → XP pela tabela, e por hábito o nível de hoje.
    salvos: {id: Set(dias)} da carta Zetsu escolhendo um hábito (o dia conta como feito, sem dar XP) */
 function niveisHab(C, feitas, fer, salvos){
   const {HOJE} = C, de = duoDesde(C), xp = new Map(), hoje = {}, porId = {};
-  for(const t of feitas){ const r = String(t.rec || '').split(':');
-    if(!t.done || !r[1] || r[0].startsWith('cf') || duoAntes(t, de)) continue;
-    (porId[r[0]] = porId[r[0]] || []).push([r[1], t]); }
+  for(const t of feitas){ const r = String(t.rec || '').split(':');   // o Duolingo de antes de ligar sobe o nível, sem XP (#51)
+    if(!t.done || !r[1] || r[0].startsWith('cf')) continue;
+    (porId[r[0]] = porId[r[0]] || []).push([r[1], duoAntes(t, de) ? null : t]); }
   for(const id of new Set([...Object.keys(porId), ...Object.keys(salvos || {})])){
     const L = porId[id] || [], sal = (salvos || {})[id] || new Set(), meta = semanalDe(C.JOG, id);
     const dias0 = L.map(x => x[0]).concat([...sal]).sort(); if(!dias0.length) continue;
     let nv = 1, s = 0, nvHoje = 1, top = 1;   // top: o maior nível já alcançado (as cartas do hábito no Book)
     const sobe = () => { s++; if(nv < HAB_NV_MAX && s >= habPede(nv, meta)){ nv++; s = 0; top = Math.max(top, nv); } }, cai = () => { nv = Math.max(1, nv - 1); s = 0; };
+    if(id === 'duo' && !meta) for(let i = duoPre(C, dias0); i > 0; i--) sobe();
     if(meta){   // semanal: a semana (seg a dom) com a meta batida sobe; a que já passou sem a meta cai
       const SEG = addD(HOJE, -dow(HOJE)), noDia = d => addD(d, -dow(d));
       for(let w = noDia(dias0[0]); w <= SEG; w = addD(w, 7)){
         const fim = addD(w, 6), naSem = L.filter(x => x[0] >= w && x[0] <= fim), salva = [...sal].some(d => d >= w && d <= fim);
         if(w === SEG) nvHoje = nv;
-        for(const [, t] of naSem) xp.set(t, habXP(nv));
+        for(const [, t] of naSem) if(t) xp.set(t, habXP(nv));
         if(naSem.length >= meta || salva) sobe(); else if(w < SEG && !fer(w)) cai();
       }
     } else {
       const ds = new Set(L.map(x => x[0]));
       for(let d = dias0[0]; d <= HOJE; d = addD(d, 1)){
         if(d === HOJE) nvHoje = nv;
-        if(ds.has(d)){ for(const [dd, t] of L) if(dd === d) xp.set(t, habXP(nv)); sobe(); }
+        if(ds.has(d)){ for(const [dd, t] of L) if(dd === d && t) xp.set(t, habXP(nv)); sobe(); }
         else if(sal.has(d)) sobe();
         else if(d < HOJE && !fer(d)) cai();
       }
@@ -654,7 +661,8 @@ function estado(C){
   // 0.6.4: se o acerto (Duolingo de antes, contribuições) deixar a carteira negativa, ela fica em zero
   if(rec.acertos[MIGRA] === undefined){ const a0 = Object.values(rec.acertos).reduce((s, j) => s + (+j || 0), 0);
     rec.acertos[MIGRA] = Math.max(0, (EST.spent||0) - (total*10 + bonusNotas + conqJ + contribJ + a0)); rec.mudou = true; }
-  const acerto = Object.values(rec.acertos).reduce((s, j) => s + (+j || 0), 0);
+  // devolução (#51): os itens do dia voltaram para a loja sem tirar do gasto; a carteira recebe o que passou do perdão da 0.6.4
+  const acerto = Object.values(rec.acertos).reduce((s, j) => s + (+j || 0), 0) + (EST.devolve && +EST.devolve.j || 0);
   let ganho = total*10 + bonusNotas + conqJ + contribJ + acerto;
   // nota corrigida para menos (0.5.3): tira no máximo o que há na carteira; o resto fica perdoado em acertos
   const corte = rec.cortes.reduce((s, c) => s + c.j, 0), falta = (EST.spent||0) - ganho;
@@ -678,6 +686,26 @@ function estado(C){
     proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto)), rec, jenny: ganho - (EST.spent||0),
     inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, grupos: G, gXP, fonteDia, missaoDias, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
+}
+/* devolução (#51): quem teve a carteira zerada pelo acerto da 0.6.4 (acertos[MIGRA] > 0) gastou, no dia do rebalanceamento, a
+   Jenny que ele tirou. As aparências e os feitiços ainda na bolsa comprados nesse dia voltam para a loja, sem sair do gasto; a
+   carteira recebe só o que passou do perdão (a parte paga com Jenny ganha jogando). Uma vez: estado.json → devolve.
+   Prêmio real e feitiço já usado ficam. Peças de um tema devolvido saem junto, menos as compradas à parte */
+const DEVOLVE_DIA = '2026-10-13';
+function devolucao(C, S){
+  const E = C.EST, F = +((E.acertos || {})[MIGRA]) || 0;
+  if(E.devolve || !(F > 0)) return null;
+  const own = new Set(E.own || []), cat = catalogo(C.AVATARES), bolsa = {...S.inv}, sem = (E.bought || {})[semanaISO(DEVOLVE_DIA)] || [];
+  const avulsas = new Set((E.compras || []).filter(c => c && c.tipo === 'cos' && c.d !== DEVOLVE_DIA).map(c => c.id));
+  const itens = [], ids = [], feiticos = [];
+  for(const c of (E.compras || []).filter(c => c && c.d === DEVOLVE_DIA && c.j > 0)){
+    if(c.tipo === 'cos' && own.has(c.id)){ const it = cat.find(i => i.id === c.id);
+      itens.push(c); ids.push(c.id, ...((it && it.parts) || []).filter(p => !avulsas.has(p))); own.delete(c.id); }
+    else if(c.tipo === 'feitico' && bolsa[c.id] > 0 && sem.includes(c.id) && !feiticos.includes(c.id)){ bolsa[c.id]--; itens.push(c); feiticos.push(c.id); }
+  }
+  if(!itens.length) return null;
+  const T = itens.reduce((s, c) => s + c.j, 0);
+  return {v:DEVOLVE_DIA, em:C.HOJE, itens, own:[...new Set(ids)], feiticos, semana:semanaISO(DEVOLVE_DIA), total:T, perdao:F, j:Math.max(0, T - F)};
 }
 /* conquistas 000–099: regras fixas, conferidas pelo motor. Gerais (001–059, 090–099) e, para cada disciplina do plano
    de avaliação, quatro geradas pela sigla (060–087, até 7 disciplinas). As narradas (100+) vêm da IA, em narradas.json. */
@@ -1000,7 +1028,7 @@ function resumoGrupo(C, S){
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 
-window.HJ = {HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.HJ = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,

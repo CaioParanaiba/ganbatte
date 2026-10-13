@@ -13,6 +13,12 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.5-beta1", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.5",
+   "resumo": "O nível do Duolingo segue a sua ofensiva inteira, e o que foi comprado com a Jenny que o rebalanceamento tirou volta para a loja.",
+   "itens": [
+     {"ic": "scroll", "t": "Nível do Duolingo pela ofensiva", "d": "Os dias da sua ofensiva de antes de ligar o Duolingo, até os de antes da temporada, agora sobem o nível do hábito. Quem tem uma ofensiva longa já começa num nível alto e ganha o XP dele daqui para frente; os dias passados continuam sem XP e sem Jenny."},
+     {"ic": "coin", "t": "Compras do dia do rebalanceamento", "d": "Na 0.6.4, quem tinha gastado mais do que ficou depois do rebalanceamento teve a carteira parada no zero. O que essa pessoa comprou em 13/10 (aparências e feitiços ainda na bolsa) volta para a loja, e a carteira recebe só a parte que foi paga com Jenny ganha jogando. Prêmios reais e feitiços já usados ficam. Para quem não estava nesse caso, nada muda."}
+   ]},
   {"versao": "0.6.4", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.4",
    "resumo": "Rebalanceamento (o seu XP e a sua Jenny podem ter diminuído), hábitos com nível, temporada guardada, Book e Regras reorganizados e a preparação do modo em grupo.",
    "itens": [
@@ -427,6 +433,11 @@ function boasNovas(){
 /* o que o acerto de uma versão com aviso mudou no jogo de quem lê (motor: rec.migra[versão] = {xp, j, ten}) */
 function seuAviso(v){
   let m = null, ac = 0; try { const r = estado().rec; m = (r.migra || {})[v.aviso]; ac = +(r.acertos || {})[v.aviso] || 0; } catch(e){}
+  const dv = EST.devolve;
+  if(!m && dv && v.aviso === '0.6.5'){   // devolução (#51): o que voltou para a loja e o que a carteira recebeu
+    const nome = c => c.tipo === 'feitico' ? 'feitiço ' + ((HJx.SPELLS.find(s => s.k === c.id) || {}).n || c.id) : ((COS.find(i => i.id === c.id) || {}).n || c.id);
+    return `<div class="nv-seu"><b>No seu jogo</b><span>voltaram para a loja: <strong>${esc((dv.itens || []).map(nome).join(', '))}</strong>${dv.j > 0 ? `, e a carteira recebeu <strong>${(+dv.j).toLocaleString('pt-BR')} J</strong>, a parte paga com Jenny ganha jogando` : ''}.</span></div>`;
+  }
   if(!m) return '';
   const tirou = m.xp > 0 || m.j > 0;
   return `<div class="nv-seu${tirou ? '' : ' ok'}"><b>No seu jogo</b><span>${tirou ? `a torre ficou com <strong>${m.xp.toLocaleString('pt-BR')} XP a menos</strong> e a carteira com <strong>${(m.j).toLocaleString('pt-BR')} J a menos</strong>.${ac > 0 ? ' Como o saldo ficaria negativo, ele parou no zero.' : ''}` : 'nada do XP e da Jenny que você já tinha mudou.'}${m.ten ? ` O seu recorde do Ten (${m.ten} dias) e as conquistas que você já tinha ficam.` : ''}</span></div>`;

@@ -321,3 +321,28 @@ class Canal(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Devolucao(Base):
+    """#51: o que voltou para a loja na devolução não volta pela gravação de uma aba antiga; comprado de novo depois, fica."""
+    DV = {"v": "2026-10-13", "em": "2026-10-13", "h": "12:00:00", "own": ["th-killua", "pal-killua"], "feiticos": ["ko"], "semana": "2026-W42", "j": 0}
+
+    def grava(self, est):
+        s.api_jogo_estado({"estado": est})
+        return s.ler_json("estado.json", {})
+
+    def test_aba_antiga_nao_devolve(self):
+        self.grava({"own": ["fr-hunter"], "bought": {"2026-W42": []}, "devolve": self.DV})
+        e = self.grava({"own": ["fr-hunter", "th-killua", "pal-killua"], "bought": {"2026-W42": ["ko"]}})
+        self.assertEqual(e["own"], ["fr-hunter"])
+        self.assertEqual(e["bought"]["2026-W42"], [])
+        self.assertEqual(e["devolve"]["h"], "12:00:00")
+
+    def test_comprado_de_novo_fica(self):
+        self.grava({"own": [], "devolve": self.DV})
+        e = self.grava({"own": ["th-killua"], "bought": {"2026-W42": ["ko"]}, "devolve": {**self.DV, "h": "23:00:00"},
+                        "compras": [{"d": "2026-10-13", "h": "15:00:00", "tipo": "cos", "id": "th-killua", "j": 6000},
+                                    {"d": "2026-10-14", "h": "09:00:00", "tipo": "feitico", "id": "ko", "j": 800}]})
+        self.assertEqual(e["own"], ["th-killua"])
+        self.assertEqual(e["bought"]["2026-W42"], ["ko"])
+        self.assertEqual(e["devolve"]["h"], "12:00:00")   # vale a primeira
