@@ -13,39 +13,54 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
-  {"versao": "0.6.4-beta5", "nome": "atualização das expedições", "data": "2026-10-13",
-   "resumo": "Preparação para o modo em grupo: escolha de versão (estável, beta ou grupo) e o resumo para o grupo.",
-   "itens": [
-     {"ic": "antenna", "t": "Escolha a versão", "d": "Em Configurações → servidor, Versão escolhe entre Estável (a normal), Beta (as novidades antes) e Grupo (o modo em grupo em construção, para quem testa com os amigos). O aviso de versão nova segue a escolhida. Só no jogo instalado com git."},
-     {"ic": "tower", "t": "Resumo para o grupo", "d": "Em Configurações → balanceamento, exporte o que o modo em grupo vai enviar: o XP de cada dia, o Codeforces e o Duolingo (se ligados) e os dias da missão da semana. Nada de tarefas, disciplinas nem dos seus outros hábitos. Mande ao host do grupo para calibrar a Torre Trick antes de o servidor existir."}
-   ]},
-  {"versao": "0.6.4-beta4", "nome": "atualização das expedições", "data": "2026-10-13",
-   "resumo": "Regras reescritas, com o XP de cada coisa e as contas, e a lateral da Lista que abre e fecha.",
-   "itens": [
-     {"ic": "crown", "t": "Regras novas", "d": "A aba Regras explica, com tabelas e contas de exemplo, quanto vale cada tarefa, os multiplicadores, o nível dos hábitos, o Ten, a torre, a Jenny, os chefões e os feitiços. Os números vêm do próprio jogo, e o topo mostra os seus. A aba agora fica no fim do menu, depois de Novidades."},
-     {"ic": "scroll", "t": "Lateral da Lista", "d": "Cada card ao lado da Lista (quanto vale, rende mais agora, chefões, expedições e hábitos de hoje) abre e fecha pelo título, e o jogo lembra o que você deixou aberto."}
-   ]},
-  {"versao": "0.6.4-beta3", "nome": "atualização das expedições", "data": "2026-10-13",
-   "resumo": "O Book reorganizado: a coleção sem casas vazias, três cartas para cada hábito e 10 vagas para os desafios da IA.",
-   "itens": [
-     {"ic": "card", "t": "Coleção de conquistas", "d": "Book → Conquistas mostra só as cartas do seu jogo, sem casas vazias: primeiro as conquistadas, depois as que faltam. Cada hábito ganha três cartas, pelo nível (3, 6 e 10), e o Ten ganha a de 60 dias. Os desafios da IA que você resgata entram aqui."},
-     {"ic": "crown", "t": "10 desafios da IA", "d": "A aba Desafios da IA tem 10 vagas: 4 fáceis, 3 médias, 2 difíceis e 1 lendária. O pedido diz à IA quantos de cada dificuldade faltam. Resgatado, o desafio vai para a coleção e a vaga abre para outro."}
-   ]},
-  {"versao": "0.6.4-beta2", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.4",
-   "resumo": "Rebalanceamento: o seu XP e a sua Jenny podem ter diminuído. Hábitos ganham nível, o Ten passa a pedir uma tarefa de verdade, e as contribuições e o Duolingo de antes de ligar valem menos.",
+  {"versao": "0.6.4", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.4",
+   "resumo": "Rebalanceamento (o seu XP e a sua Jenny podem ter diminuído), hábitos com nível, temporada guardada, Book e Regras reorganizados e a preparação do modo em grupo.",
    "itens": [
      {"ic": "coin", "t": "Por que os números mudaram", "d": "Os relatórios de balanceamento mostraram duas fontes dando muito mais que jogar: as contribuições (um bug valia 1.500 J, quase uma semana de jogo) e os dias do Duolingo de antes de ligar, que entravam todos de uma vez com XP e Ten. Elas foram recalculadas para todo mundo, inclusive para o que já tinha entrado: por isso a torre e a carteira podem ter caído. O que você comprou continua seu, e a carteira nunca fica negativa."},
-     {"ic": "bug", "t": "Contribuições", "d": "Bug corrigido: +15 XP e +150 J (antes +50 XP e +1.000 J). Ideia feita: +10 XP e +50 J (antes +30 XP e +600 J). Com a Jenny do próprio XP, um bug vale 300 J e uma ideia, 150 J."},
-     {"ic": "scroll", "t": "Duolingo de antes de ligar", "d": "Os dias da ofensiva de antes de você ligar o Duolingo continuam no heatmap e nas conquistas do Duolingo, mas não dão XP, Jenny nem Ten. Do dia em que ligou em diante, conta normal."},
-     {"ic": "flame", "t": "O Ten pede uma tarefa", "d": "Um dia só acende o Ten com pelo menos uma tarefa que não seja hábito. Vale para a temporada inteira, então o seu Ten atual pode ter mudado; o recorde e as conquistas do Ten que você já tinha ficam."},
-     {"ic": "tower", "t": "Nível dos hábitos", "d": "Cada hábito tem o próprio nível, de 1 a 10: começa valendo 3 XP e sobe 1 XP por nível (até 12). Do 1 ao 6, sobe a cada 7 dias seguidos; depois cada nível pede uma semana a mais. Falhar um dia cai um nível, sem zerar. O nível e o XP de cada hábito aparecem ao lado do heatmap, na Lista."},
-     {"ic": "moon", "t": "Carta Zetsu", "d": "A carta agora salva hoje ou ontem, e você escolhe o quê: o Ten ou um hábito (que não cai de nível). Ontem só aparece quando de fato quebrou. As folgas automáticas do Ten continuam iguais."},
-     {"ic": "card", "t": "Nota pela parte da nota final", "d": "O bônus de cada nota segue o peso da avaliação na nota final da disciplina, mesmo que o plano esteja em outra escala: um 10 numa prova de 10% vale menos que um 6 numa de 50%."}
-   ]},
-  {"versao": "0.6.4-beta1", "nome": "atualização das expedições", "data": "2026-10-13",
-   "resumo": "A temporada que acaba fica guardada, com os números finais congelados.",
-   "itens": [
-     {"ic": "scroll", "t": "Temporada guardada", "d": "Quando a temporada acaba, na volta às aulas, o jogo guarda sozinho os números dela (XP, andar, Ten, Jenny, chefões, cartas e compras) na pasta temporadas/ dos seus dados. Eles ficam congelados: nenhuma mudança do jogo nem um tema novo mexe neles depois. Também guarda antes de você trocar o semestre no assistente, e em Configurações → temporada dá para guardar uma foto antes do fim. A tela para ver as temporadas antigas vem depois."}
+     {"ic": "bug", "t": "Contribuições", "d": "Bug corrigido: +15 XP e +150 J (antes +50 XP e +1.000 J). Ideia feita: +10 XP e +50 J (antes +30 XP e +600 J)."},
+     {"ic": "scroll", "t": "Duolingo de antes de ligar", "d": "Os dias da ofensiva de antes de você ligar o Duolingo continuam no heatmap e nas conquistas, mas não dão XP, Jenny nem Ten."},
+     {"ic": "flame", "t": "O Ten pede uma tarefa", "d": "Um dia só acende o Ten com pelo menos uma tarefa que não seja hábito. O recorde e as conquistas do Ten que você já tinha ficam."},
+     {"ic": "tower", "t": "Nível dos hábitos", "d": "Cada hábito tem o próprio nível, de 1 a 10: começa valendo 3 XP e sobe com os dias seguidos. Falhar um dia cai um nível, sem zerar. A carta Zetsu salva hoje ou ontem, o Ten ou um hábito."},
+     {"ic": "card", "t": "Nota pela parte da nota final", "d": "O bônus de cada nota segue o peso da avaliação na nota final da disciplina."},
+     {"ic": "scroll", "t": "Temporada guardada", "d": "Quando a temporada acaba, na volta às aulas, o jogo guarda sozinho os números dela, congelados, na pasta temporadas/ dos seus dados."},
+     {"ic": "card", "t": "Book e Regras", "d": "Book → Conquistas sem casas vazias, três cartas por hábito e 10 vagas para os desafios da IA. A aba Regras explica com tabelas e contas quanto vale cada coisa, e a lateral da Lista abre e fecha."},
+     {"ic": "antenna", "t": "Escolha a versão e resumo para o grupo", "d": "Em Configurações → servidor, Versão escolhe entre Estável, Beta e Grupo. Em Configurações → balanceamento, exporte o resumo para o grupo (XP do dia, Codeforces, Duolingo e missão, sem tarefas) e mande ao host para calibrar a Torre Trick."}
+   ],
+   "versoes": [
+     {"versao": "0.6.4-beta5", "nome": "atualização das expedições", "data": "2026-10-13",
+      "resumo": "Preparação para o modo em grupo: escolha de versão (estável, beta ou grupo) e o resumo para o grupo.",
+      "itens": [
+        {"ic": "antenna", "t": "Escolha a versão", "d": "Em Configurações → servidor, Versão escolhe entre Estável (a normal), Beta (as novidades antes) e Grupo (o modo em grupo em construção, para quem testa com os amigos). O aviso de versão nova segue a escolhida. Só no jogo instalado com git."},
+        {"ic": "tower", "t": "Resumo para o grupo", "d": "Em Configurações → balanceamento, exporte o que o modo em grupo vai enviar: o XP de cada dia, o Codeforces e o Duolingo (se ligados) e os dias da missão da semana. Nada de tarefas, disciplinas nem dos seus outros hábitos. Mande ao host do grupo para calibrar a Torre Trick antes de o servidor existir."}
+      ]},
+     {"versao": "0.6.4-beta4", "nome": "atualização das expedições", "data": "2026-10-13",
+      "resumo": "Regras reescritas, com o XP de cada coisa e as contas, e a lateral da Lista que abre e fecha.",
+      "itens": [
+        {"ic": "crown", "t": "Regras novas", "d": "A aba Regras explica, com tabelas e contas de exemplo, quanto vale cada tarefa, os multiplicadores, o nível dos hábitos, o Ten, a torre, a Jenny, os chefões e os feitiços. Os números vêm do próprio jogo, e o topo mostra os seus. A aba agora fica no fim do menu, depois de Novidades."},
+        {"ic": "scroll", "t": "Lateral da Lista", "d": "Cada card ao lado da Lista (quanto vale, rende mais agora, chefões, expedições e hábitos de hoje) abre e fecha pelo título, e o jogo lembra o que você deixou aberto."}
+      ]},
+     {"versao": "0.6.4-beta3", "nome": "atualização das expedições", "data": "2026-10-13",
+      "resumo": "O Book reorganizado: a coleção sem casas vazias, três cartas para cada hábito e 10 vagas para os desafios da IA.",
+      "itens": [
+        {"ic": "card", "t": "Coleção de conquistas", "d": "Book → Conquistas mostra só as cartas do seu jogo, sem casas vazias: primeiro as conquistadas, depois as que faltam. Cada hábito ganha três cartas, pelo nível (3, 6 e 10), e o Ten ganha a de 60 dias. Os desafios da IA que você resgata entram aqui."},
+        {"ic": "crown", "t": "10 desafios da IA", "d": "A aba Desafios da IA tem 10 vagas: 4 fáceis, 3 médias, 2 difíceis e 1 lendária. O pedido diz à IA quantos de cada dificuldade faltam. Resgatado, o desafio vai para a coleção e a vaga abre para outro."}
+      ]},
+     {"versao": "0.6.4-beta2", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.4",
+      "resumo": "Rebalanceamento: o seu XP e a sua Jenny podem ter diminuído. Hábitos ganham nível, o Ten passa a pedir uma tarefa de verdade, e as contribuições e o Duolingo de antes de ligar valem menos.",
+      "itens": [
+        {"ic": "coin", "t": "Por que os números mudaram", "d": "Os relatórios de balanceamento mostraram duas fontes dando muito mais que jogar: as contribuições (um bug valia 1.500 J, quase uma semana de jogo) e os dias do Duolingo de antes de ligar, que entravam todos de uma vez com XP e Ten. Elas foram recalculadas para todo mundo, inclusive para o que já tinha entrado: por isso a torre e a carteira podem ter caído. O que você comprou continua seu, e a carteira nunca fica negativa."},
+        {"ic": "bug", "t": "Contribuições", "d": "Bug corrigido: +15 XP e +150 J (antes +50 XP e +1.000 J). Ideia feita: +10 XP e +50 J (antes +30 XP e +600 J). Com a Jenny do próprio XP, um bug vale 300 J e uma ideia, 150 J."},
+        {"ic": "scroll", "t": "Duolingo de antes de ligar", "d": "Os dias da ofensiva de antes de você ligar o Duolingo continuam no heatmap e nas conquistas do Duolingo, mas não dão XP, Jenny nem Ten. Do dia em que ligou em diante, conta normal."},
+        {"ic": "flame", "t": "O Ten pede uma tarefa", "d": "Um dia só acende o Ten com pelo menos uma tarefa que não seja hábito. Vale para a temporada inteira, então o seu Ten atual pode ter mudado; o recorde e as conquistas do Ten que você já tinha ficam."},
+        {"ic": "tower", "t": "Nível dos hábitos", "d": "Cada hábito tem o próprio nível, de 1 a 10: começa valendo 3 XP e sobe 1 XP por nível (até 12). Do 1 ao 6, sobe a cada 7 dias seguidos; depois cada nível pede uma semana a mais. Falhar um dia cai um nível, sem zerar. O nível e o XP de cada hábito aparecem ao lado do heatmap, na Lista."},
+        {"ic": "moon", "t": "Carta Zetsu", "d": "A carta agora salva hoje ou ontem, e você escolhe o quê: o Ten ou um hábito (que não cai de nível). Ontem só aparece quando de fato quebrou. As folgas automáticas do Ten continuam iguais."},
+        {"ic": "card", "t": "Nota pela parte da nota final", "d": "O bônus de cada nota segue o peso da avaliação na nota final da disciplina, mesmo que o plano esteja em outra escala: um 10 numa prova de 10% vale menos que um 6 numa de 50%."}
+      ]},
+     {"versao": "0.6.4-beta1", "nome": "atualização das expedições", "data": "2026-10-13",
+      "resumo": "A temporada que acaba fica guardada, com os números finais congelados.",
+      "itens": [
+        {"ic": "scroll", "t": "Temporada guardada", "d": "Quando a temporada acaba, na volta às aulas, o jogo guarda sozinho os números dela (XP, andar, Ten, Jenny, chefões, cartas e compras) na pasta temporadas/ dos seus dados. Eles ficam congelados: nenhuma mudança do jogo nem um tema novo mexe neles depois. Também guarda antes de você trocar o semestre no assistente, e em Configurações → temporada dá para guardar uma foto antes do fim. A tela para ver as temporadas antigas vem depois."}
+      ]}
    ]},
   {"versao": "0.6.3", "nome": "atualização das expedições", "data": "2026-10-13",
    "resumo": "Férias de verdade, recompensa por bug corrigido e ideia feita, e um relatório dos seus números de XP e Jenny.",
