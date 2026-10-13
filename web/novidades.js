@@ -9,17 +9,39 @@
  * Aviso de pontos ("aviso": "X.Y.Z", desde a 0.6.4): toda versão que mexe em XP, Jenny ou pontos já ganhos abre a mesma janela
  * grande, uma vez, explicando o que mudou e quanto mudou no jogo de cada um (S.rec.migra). A marca é tour["nv:aviso:X.Y.Z"]:
  * a chave sobrevive à junção das betas na versão final, então quem viu na beta não vê de novo.
+ * "janela": {"de", "resumo", "itens"} (0.6.5): a janela grande junta outra versão, de "de" até esta, com os destaques das duas
+ * e o "no seu jogo" de cada uma; a linha do tempo da aba continua com os "itens" da própria versão.
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
-  {"versao": "0.6.5-beta1", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.5",
-   "resumo": "O nível do Duolingo segue a sua ofensiva inteira, e o que foi comprado com a Jenny que o rebalanceamento tirou volta para a loja.",
+  {"versao": "0.6.5", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.5",
+   "resumo": "Correções da 0.6.4: a loja volta a salvar, o nível do Duolingo segue a sua ofensiva, os hábitos não perdem mais o histórico e as compras feitas com a Jenny que o rebalanceamento tirou voltam para a loja.",
    "itens": [
      {"ic": "bug", "t": "A loja volta a salvar", "d": "Na 0.6.4, o jogo não conseguia guardar a carteira: compras, o que você equipou e o tour se perdiam ao recarregar a página. Agora fica tudo salvo. As caçadas que você recolhe na Lista também ficam recolhidas."},
      {"ic": "scroll", "t": "Nível do Duolingo pela ofensiva", "d": "Os dias da sua ofensiva de antes de ligar o Duolingo, até os de antes da temporada, agora sobem o nível do hábito. Quem tem uma ofensiva longa já começa num nível alto e ganha o XP dele daqui para frente; os dias passados continuam sem XP e sem Jenny."},
      {"ic": "tower", "t": "Renomear um hábito", "d": "Salvar Configurações às vezes trocava o código interno dos hábitos, e o hábito voltava ao nível 1 sem o histórico. Agora mudar o nome não zera mais nada, e quem já tinha perdido o histórico assim o recupera sozinho ao abrir o jogo. Para começar um hábito do zero, remova o antigo e adicione um novo."},
      {"ic": "coin", "t": "Compras do dia do rebalanceamento", "d": "Na 0.6.4, quem tinha gastado mais do que ficou depois do rebalanceamento teve a carteira parada no zero. O que essa pessoa comprou em 13/10 (aparências e feitiços ainda na bolsa) volta para a loja, e a carteira recebe só a parte que foi paga com Jenny ganha jogando. Prêmios reais e feitiços já usados ficam. Para quem não estava nesse caso, nada muda."}
+   ],
+   "janela": {"de": "0.6.4", "resumo": "A 0.6.4 rebalanceou os pontos e a 0.6.5 corrige o que ela deixou quebrado. Se você pulou alguma das duas, este é o resumo do que mudou no seu jogo.",
+    "itens": [
+     {"ic": "coin", "t": "Rebalanceamento (0.6.4)", "d": "As contribuições valem menos (bug: +15 XP e +150 J; ideia: +10 XP e +50 J) e os dias do Duolingo de antes de ligar não dão XP nem Jenny. Isso foi recalculado também para o que já tinha entrado, por isso a torre e a carteira podem ter caído. O que você comprou continua seu."},
+     {"ic": "tower", "t": "Nível dos hábitos (0.6.4)", "d": "Cada hábito tem o próprio nível, de 1 a 10, valendo de 3 a 12 XP. Sobe com os dias seguidos e cai um nível a cada dia perdido, sem zerar."},
+     {"ic": "flame", "t": "O Ten pede uma tarefa (0.6.4)", "d": "Um dia só acende o Ten com pelo menos uma tarefa que não seja hábito. O seu recorde e as conquistas do Ten que você já tinha ficam."},
+     {"ic": "bug", "t": "A loja volta a salvar (0.6.5)", "d": "Na 0.6.4, compras, o que você equipou e o tour se perdiam ao recarregar a página. Agora fica tudo salvo."},
+     {"ic": "scroll", "t": "Duolingo e hábitos (0.6.5)", "d": "A sua ofensiva inteira do Duolingo, até a de antes de ligar, sobe o nível do hábito (sem XP pelos dias passados). Hábitos que voltaram ao nível 1 depois de salvar Configurações recuperam o histórico sozinhos, e renomear não zera mais nada."},
+     {"ic": "coin", "t": "Compras do dia do rebalanceamento (0.6.5)", "d": "Quem gastou em 13/10 a Jenny que o rebalanceamento tirou recebe de volta só a parte paga com Jenny ganha jogando; as aparências e os feitiços na bolsa comprados nesse dia voltam para a loja. Para quem não estava nesse caso, nada muda."},
+     {"ic": "antenna", "t": "Também na 0.6.4", "d": "Temporada guardada no fim das aulas, Book e Regras reorganizados, e em Configurações → servidor a escolha entre as versões Estável, Beta e Grupo. Tudo na aba Novidades."}
+    ]},
+   "versoes": [
+     {"versao": "0.6.5-beta1", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.5",
+      "resumo": "O nível do Duolingo segue a sua ofensiva inteira, e o que foi comprado com a Jenny que o rebalanceamento tirou volta para a loja.",
+      "itens": [
+        {"ic": "bug", "t": "A loja volta a salvar", "d": "Na 0.6.4, o jogo não conseguia guardar a carteira: compras, o que você equipou e o tour se perdiam ao recarregar a página. Agora fica tudo salvo. As caçadas que você recolhe na Lista também ficam recolhidas."},
+        {"ic": "scroll", "t": "Nível do Duolingo pela ofensiva", "d": "Os dias da sua ofensiva de antes de ligar o Duolingo, até os de antes da temporada, agora sobem o nível do hábito. Quem tem uma ofensiva longa já começa num nível alto e ganha o XP dele daqui para frente; os dias passados continuam sem XP e sem Jenny."},
+        {"ic": "tower", "t": "Renomear um hábito", "d": "Salvar Configurações às vezes trocava o código interno dos hábitos, e o hábito voltava ao nível 1 sem o histórico. Agora mudar o nome não zera mais nada, e quem já tinha perdido o histórico assim o recupera sozinho ao abrir o jogo. Para começar um hábito do zero, remova o antigo e adicione um novo."},
+        {"ic": "coin", "t": "Compras do dia do rebalanceamento", "d": "Na 0.6.4, quem tinha gastado mais do que ficou depois do rebalanceamento teve a carteira parada no zero. O que essa pessoa comprou em 13/10 (aparências e feitiços ainda na bolsa) volta para a loja, e a carteira recebe só a parte que foi paga com Jenny ganha jogando. Prêmios reais e feitiços já usados ficam. Para quem não estava nesse caso, nada muda."}
+      ]}
    ]},
   {"versao": "0.6.4", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.4",
    "resumo": "Rebalanceamento (o seu XP e a sua Jenny podem ter diminuído), hábitos com nível, temporada guardada, Book e Regras reorganizados e a preparação do modo em grupo.",
@@ -434,22 +456,30 @@ function boasNovas(){
 }
 /* o que o acerto de uma versão com aviso mudou no jogo de quem lê (motor: rec.migra[versão] = {xp, j, ten}) */
 function seuAviso(v){
-  let m = null, ac = 0; try { const r = estado().rec; m = (r.migra || {})[v.aviso]; ac = +(r.acertos || {})[v.aviso] || 0; } catch(e){}
-  const dv = EST.devolve;
-  if(!m && dv && v.aviso === '0.6.5'){   // devolução (#51): o que voltou para a loja e o que a carteira recebeu
-    const nome = c => c.tipo === 'feitico' ? 'feitiço ' + ((HJx.SPELLS.find(s => s.k === c.id) || {}).n || c.id) : ((COS.find(i => i.id === c.id) || {}).n || c.id);
-    return `<div class="nv-seu"><b>No seu jogo</b><span>voltaram para a loja: <strong>${esc((dv.itens || []).map(nome).join(', '))}</strong>${dv.j > 0 ? `, e a carteira recebeu <strong>${(+dv.j).toLocaleString('pt-BR')} J</strong>, a parte paga com Jenny ganha jogando` : ''}.</span></div>`;
+  let r = null; try { r = estado().rec; } catch(e){}
+  if(!r) return '';
+  const partes = [], ok = [];
+  for(const k of [v.janela && v.janela.de, v.aviso].filter(Boolean)){   // o acerto de cada versão (motor: rec.migra[versão] = {xp, j, ten})
+    const m = (r.migra || {})[k]; if(!m) continue;
+    const ac = +(r.acertos || {})[k] || 0, tirou = m.xp > 0 || m.j > 0;
+    (tirou ? partes : ok).push((tirou ? `na ${esc(k)}, a torre ficou com <strong>${m.xp.toLocaleString('pt-BR')} XP a menos</strong> e a carteira com <strong>${(m.j).toLocaleString('pt-BR')} J a menos</strong>.${ac > 0 ? ' Como o saldo ficaria negativo, ele parou no zero.' : ''}` : `na ${esc(k)}, nada do XP e da Jenny que você já tinha mudou.`)
+      + (m.ten ? ` O seu recorde do Ten (${m.ten} dias) e as conquistas que você já tinha ficam.` : ''));
   }
-  if(!m) return '';
-  const tirou = m.xp > 0 || m.j > 0;
-  return `<div class="nv-seu${tirou ? '' : ' ok'}"><b>No seu jogo</b><span>${tirou ? `a torre ficou com <strong>${m.xp.toLocaleString('pt-BR')} XP a menos</strong> e a carteira com <strong>${(m.j).toLocaleString('pt-BR')} J a menos</strong>.${ac > 0 ? ' Como o saldo ficaria negativo, ele parou no zero.' : ''}` : 'nada do XP e da Jenny que você já tinha mudou.'}${m.ten ? ` O seu recorde do Ten (${m.ten} dias) e as conquistas que você já tinha ficam.` : ''}</span></div>`;
+  const dv = EST.devolve;
+  if(dv && v.aviso === '0.6.5'){   // devolução (#51): o que voltou para a loja e o que a carteira recebeu
+    const nome = c => c.tipo === 'feitico' ? 'feitiço ' + ((HJx.SPELLS.find(s => s.k === c.id) || {}).n || c.id) : ((COS.find(i => i.id === c.id) || {}).n || c.id);
+    partes.push(`Na 0.6.5, voltaram para a loja: <strong>${esc((dv.itens || []).map(nome).join(', '))}</strong>${dv.j > 0 ? `, e a carteira recebeu <strong>${(+dv.j).toLocaleString('pt-BR')} J</strong>, a parte paga com Jenny ganha jogando` : ''}.`);
+  }
+  const todas = partes.concat(ok); if(!todas.length) return '';
+  return `<div class="nv-seu${partes.length ? '' : ' ok'}"><b>No seu jogo</b><span>${todas.map(t => t[0].toUpperCase() + t.slice(1)).join(' ')}</span></div>`;
 }
 /* versão grande e aviso de pontos: os destaques numa janela que cobre a tela, uma vez (fechar marca como vista) */
 function janelaGrande(v){
   const [a, b] = String(v.versao).split(/\.(.*)/s), exp = !v.aviso && (v.itens || []).some(x => x.ic === 'island') && RENDER.x;
+  const J = v.janela, w = J ? {...v, resumo: J.resumo || v.resumo, itens: J.itens || v.itens} : v;   // "janela": a janela junta outra versão (0.6.4 → 0.6.5)
   document.body.insertAdjacentHTML('beforeend', `<div class="nv-big${v.aviso ? ' aviso' : ''}" id="nv-big" data-chave="${esc(chaveG(v))}" role="dialog" aria-modal="true" aria-labelledby="nv-big-t"><div>
-    <div class="cab"><p class="cap">${v.aviso ? 'mudança nos pontos · leia antes de jogar' : 'o jogo foi atualizado'}</p><h2 id="nv-big-t">${esc(a)}<span>.${esc(b)}</span></h2><div class="nome">${esc(v.nome || '')}</div>${v.resumo ? `<p>${esc(v.resumo)}</p>` : ''}${v.aviso ? seuAviso(v) : ''}</div>
-    <div class="nv-itens">${itensHTML(v)}</div>
+    <div class="cab"><p class="cap">${v.aviso ? 'mudança nos pontos · leia antes de jogar' : 'o jogo foi atualizado'}</p><h2 id="nv-big-t">${J && J.de ? `${esc(J.de)}<span> → ${esc(v.versao)}</span>` : `${esc(a)}<span>.${esc(b)}</span>`}</h2><div class="nome">${esc(v.nome || '')}</div>${w.resumo ? `<p>${esc(w.resumo)}</p>` : ''}${v.aviso ? seuAviso(v) : ''}</div>
+    <div class="nv-itens">${itensHTML(w)}</div>
     <div class="pe">${exp ? '<button type="button" class="btn v grande" data-nvbig="x">conhecer as Expedições</button>' : ''}<button type="button" class="btn grande" data-nvbig="nv">ver tudo o que mudou</button><span class="sp"></span><button type="button" class="btn" data-nvbig="">fechar</button></div>
   </div></div>`);
   document.querySelector('#nv-big [data-nvbig]').focus({preventScroll:true});   // o foco no botão do pé não rola a janela: o topo (e o "no seu jogo") aparece primeiro

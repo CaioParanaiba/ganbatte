@@ -6,7 +6,7 @@ Um jogo (tema Hunter x Hunter) em cima do [todo.txt](https://github.com/todotxt/
 conferência de versão nova (uma leitura do GitHub a cada 6 horas) saem do computador.
 Precisa apenas do Python 3.8 ou mais novo, no Linux, Windows ou Mac.
 
-> **Versão 0.6.4.** A 0.3 foi testada no Linux por amigos, com foco em usabilidade. No Windows e no Mac ainda não foi testada
+> **Versão 0.6.5.** A 0.3 foi testada no Linux por amigos, com foco em usabilidade. No Windows e no Mac ainda não foi testada
 > (inclusive o instalador e o início automático): se algo der errado, avise. O que está planejado fica em [`docs/PENDENCIAS.md`](docs/PENDENCIAS.md).
 > O desenho do modo em grupo (placar **Torre Trick**) está em [`docs/COLETIVO.md`](docs/COLETIVO.md) e ainda não existe.
 
@@ -178,6 +178,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.5 | atualização das expedições | **Junta a 0.6.5-beta1** (a linha abaixo), as correções da 0.6.4 (#51). A janela grande junta a 0.6.4 e a 0.6.5 (`"janela"` no `novidades.js`), com o "no seu jogo" das duas |
 | 0.6.5-beta1 | atualização das expedições | **Corrige o estado da 0.6.4**: o servidor recusava o `estado.json` com `migra` e `tenRec`, e nada da loja, do tour e dos recibos ficava salvo. **Aviso grande** (`"aviso": "0.6.5"`). Nível do Duolingo pela ofensiva inteira (#51): os dias de antes de ligar sobem o nível, sem XP; os de antes da temporada pela ofensiva lida (`duoPre()`, `ini` no `/api/jogo`). Devolução única (`devolucao()`, `estado.json` → `devolve`): quem teve a carteira zerada pelo acerto da 0.6.4 perde as aparências e os feitiços na bolsa comprados em 13/10 e recebe só o que passou do perdão; o servidor não deixa uma aba antiga devolvê-los (`devolve_filtra`). Renomear um hábito (Configurações ou o assistente) mantém o id (`habsJSON`), e com ele o nível e o histórico; quem já tinha o histórico preso num id antigo pelo bug volta a ele sozinho (`religa_habitos()` no `arruma_dia`: mesmo nome, id que ninguém usa, um só candidato) |
 | 0.6.4 | atualização das expedições | **Junta as betas 0.6.4** (as cinco linhas abaixo): rebalanceamento com aviso grande (#47), temporada guardada (#7), Book reorganizado e 10 desafios da IA (#49, #6), Regras reescritas e lateral da Lista (#50), canal estável/beta/grupo e resumo para o grupo (#36, #46, #37) |
 | 0.6.4-beta5 | atualização das expedições | Preparação do modo em grupo: o canal de atualização segue a branch da cópia (`CANAIS`: main, beta, grupo; #36) e Configurações → servidor escolhe entre Estável, Beta e Grupo (#46; o modo teste da Masadora vale na beta e no grupo). `HJ.resumoGrupo` (#37): por dia, o XP, os hábitos do grupo (Codeforces, Duolingo) e os dias da missão, exportável em Configurações → balanceamento |

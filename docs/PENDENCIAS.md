@@ -256,6 +256,10 @@ abrir depois do fim (uma tentativa por aba), antes de o assistente gravar outra 
 gravações do `guia.js`) e pelo card *temporada* em Configurações (foto parcial). Falta: a tela de histórico e decidir o que
 zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
 
+**0.6.5** (13/10/2026): lançada na `main`, juntando a 0.6.5-beta1 (issue #51): o estado volta a salvar (a 0.6.4 recusava `migra`
+e `tenRec`), nível do Duolingo pela ofensiva, ids de hábito preservados e religados, devolução das compras do rebalanceamento.
+A janela grande junta a 0.6.4 e a 0.6.5.
+
 **0.6.4** (13/10/2026): lançada na `main`, juntando a 0.6.4-beta1 a beta5 (issues #6, #7, #36, #37, #46, #47, #49, #50).
 A tela do histórico de temporadas, que faltava da #7, virou a #52.
 
