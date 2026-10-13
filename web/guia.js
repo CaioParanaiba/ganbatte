@@ -310,7 +310,7 @@ const vai = o => () => { Object.assign(UI, o); render(); };
 const TOURS = {
   l:[['.gnav','Abas do jogo','A <b>Lista</b> é onde você trabalha. As outras abas mostram o jogo. O botão <b>? tutorial</b> repete esta explicação na aba em que você estiver.'],
      ['#l-hud .l-me','Seu Hunter','Cada XP sobe a <b>Arena Celestial</b>: 251 andares, que zeram no fim do semestre. A barra mostra quanto falta para o próximo andar, e a meta do dia acompanha o seu ritmo.'],
-     ['#l-hud .l-ten','Ten','Dias seguidos com pelo menos uma tarefa feita. O <b>Zetsu</b> é uma folga guardada: um dia vazio não quebra a sequência. Você ganha outra a cada 7 dias ativos.'],
+     ['#l-hud .l-ten','Ten','Dias seguidos com pelo menos uma tarefa feita. Nas <b>férias</b>, dia vazio não derruba o Ten (e dia feito ainda soma). O <b>Zetsu</b> é uma folga guardada: um dia vazio não quebra a sequência. Você ganha outra a cada 7 dias ativos.'],
      ['#l-hud .l-mis','Missão da semana','O seu tipo de Nen mais fraco na semana passada. As tarefas dele valem <b>×1,5</b> até domingo, e 3 dias com ele dão um feitiço.'],
      ['#l-hud .l-jen','Jenny','A moeda da loja. Cada XP vale 10 J, e nota ≥ 6 dá bônus. Gastar não baixa o andar.'],
      ['#l-add','Adicionar tarefa','Escreva o que é: o jogo sugere o <b>tipo</b> pelas palavras e mostra no campo quanto ela vale. Em <b>detalhes</b> ficam o tipo, a <b>disciplina</b>, o <b>prazo</b>, a <b>prioridade</b> (em "o jogo decide", ele sugere pela prova chegando, pelo prazo e pela fúria do chefão) e a <b>caçada</b>, para juntar as etapas de uma tarefa grande. A tecla <b>N</b> abre este formulário de qualquer aba; a <b>C</b> cria uma caçada inteira.'],
@@ -436,8 +436,13 @@ tab = t => {
 let CF2 = null;   // rascunho; null = sem edição em andamento
 function rascunhoCfg(){
   const j = CTX.JOG;
-  return CF2 || (CF2 = {nome:j.nome || '', nick:j.nick || '', habs:(j.habitos || []).map(h => h.n), hf:(j.habitos || []).map(h => h.semana || 0), datas:j.datas === 'mdy' ? 'mdy' : 'dmy', cfOn:!!(j.cf && j.cf.handle), cfH:(j.cf && j.cf.handle) || '', cfM:(j.cf && j.cf.meta) || 3, duoOn:!!(j.duo && j.duo.usuario), duoU:(j.duo && j.duo.usuario) || '',
+  return CF2 || (CF2 = {nome:j.nome || '', nick:j.nick || '', habs:(j.habitos || []).map(h => h.n), hf:(j.habitos || []).map(h => h.semana || 0), datas:j.datas === 'mdy' ? 'mdy' : 'dmy', cfOn:!!(j.cf && j.cf.handle), cfH:(j.cf && j.cf.handle) || '', cfM:(j.cf && j.cf.meta) || 3, duoOn:!!(j.duo && j.duo.usuario), duoU:(j.duo && j.duo.usuario) || '', gh:(j.github && j.github.usuario) || '',
     tags:Object.fromEntries(TIPOS.filter(t => !t.fixo).map(t => [t.k, (j.tags && j.tags[t.k]) || tagPadrao(t.k)])), err:'', novo:''});
+}
+/* contribuições recompensadas (#23): o servidor confere no GitHub as issues do jogador fechadas como resolvidas */
+function contribHTML(){
+  const c = D.contrib; if(!c || !c.issues.length) return '';
+  return `<p class="sub" style="margin:-4px 0 0">${c.issues.length} contribuição${c.issues.length === 1 ? '' : 'ões'} recompensada${c.issues.length === 1 ? '' : 's'}: ${c.issues.map(i => `<a href="https://github.com/CaioParanaiba/todo-engine/issues/${i.n}" target="_blank" rel="noopener">#${i.n}</a> ${i.tipo}`).join(' · ')}</p>`;
 }
 function cfgHTML(){
   const c = rascunhoCfg();
@@ -455,6 +460,8 @@ function cfgHTML(){
       <div class="wz-f" style="grid-template-columns:auto minmax(0,1fr);align-items:end">
         <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink);padding-bottom:9px"><input type="checkbox" data-cfg="duoOn"${c.duoOn ? ' checked' : ''}> Duolingo</label>
         <label>Usuário (sem senha: o jogo lê a ofensiva do perfil e marca sozinho o dia com lição)<input data-cfg="duoU" value="${esc(c.duoU)}" maxlength="40"${c.duoOn ? '' : ' disabled'}></label></div>
+      <label>Usuário do GitHub (opcional: bug que você reportou e foi corrigido vale +${HJ.CONTRIB.bug.xp} XP e +${HJ.CONTRIB.bug.j.toLocaleString('pt-BR')} J; ideia que entrou no jogo, +${HJ.CONTRIB.ideia.xp} XP e +${HJ.CONTRIB.ideia.j.toLocaleString('pt-BR')} J)<input data-cfg="gh" value="${esc(c.gh)}" maxlength="39" placeholder="deixe vazio se não usa"></label>
+      ${contribHTML()}
       <label>Tags (o nome muda; o significado de cada tipo continua o mesmo)</label>
       <div class="wz-f" style="grid-template-columns:repeat(4,minmax(0,1fr))">${TIPOS.filter(t => !t.fixo).map(t => `<label style="color:${NC(t.c)}">${t.n}<input data-cfgt="${t.k}" value="${esc(c.tags[t.k])}" maxlength="24"></label>`).join('')}</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button type="button" class="btn v" data-cfgsave>salvar</button><button type="button" class="btn" data-cfgreset>descartar</button>
@@ -542,9 +549,10 @@ document.addEventListener('click', async e => {
     : new Set(habs.map(slug)).size !== habs.length ? 'Há dois hábitos com o mesmo nome.'
     : c.cfOn && !HANDLE.test(c.cfH.trim()) ? 'Handle do Codeforces inválido.' : c.cfOn && !(meta >= 1 && meta <= 6) ? 'A meta do Codeforces vai de 1 a 6.'
     : c.duoOn && !DUO_US.test(c.duoU.trim().replace(/^@/, '')) ? 'Usuário do Duolingo inválido.'
+    : c.gh.trim() && !/^[A-Za-z0-9-]{1,39}$/.test(c.gh.trim().replace(/^@/, '')) ? 'Usuário do GitHub inválido.'
     : vs.some(x => !x) || new Set(vs).size !== vs.length ? 'Cada tag precisa de um nome diferente.' : '';
   if(c.err){ render(); return; }
-  const jogador = {...CTX.JOG, nome:c.nome.trim(), nick, datas:c.datas, tags, habitos:habsJSON(c.habs, c.hf), cf: c.cfOn ? {handle:c.cfH.trim(), meta} : null, duo: c.duoOn ? {usuario:c.duoU.trim().replace(/^@/, '')} : null};
+  const jogador = {...CTX.JOG, nome:c.nome.trim(), nick, datas:c.datas, tags, habitos:habsJSON(c.habs, c.hf), cf: c.cfOn ? {handle:c.cfH.trim(), meta} : null, duo: c.duoOn ? {usuario:c.duoU.trim().replace(/^@/, '')} : null, github: c.gh.trim() ? {usuario:c.gh.trim().replace(/^@/, '')} : null};
   try { await post('/api/config', {jogador}); await recarrega(); } catch(err){ c.err = 'Não salvou: ' + err.message; render(); return; }
   CF2 = null; render(); toast('Salvo <small>os hábitos novos aparecem na Lista</small>');
 });

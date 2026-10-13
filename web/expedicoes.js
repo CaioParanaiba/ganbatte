@@ -156,8 +156,14 @@ const salva = () => post('/api/jogo/estado', {estado:EST});
 const meta = (k, slug) => { EST[k] = EST[k] || {}; return EST[k][slug] = EST[k][slug] || {}; };
 const novoSlug = (nome, k) => { const b = HJ.slugDe(nome) || 'sem-nome', usado = s => (EST[k] && EST[k][s]) || (k === 'cacadas' ? D.abertas.concat(D.feitas).some(t => HJ.cacDe(t) === s) : D.abertas.concat(D.feitas).some(t => HJ.expDe(t) === s));
   let s = b, i = 2; while(usado(s)) s = `${b}-${i++}`; return s; };
-/* uma etapa já feita que saiu do todo.txt (foi para o done.txt) não pode ser reaberta pela página: aparece sem botões */
-const rowE = (t, S) => t.done && !t.n ? `<li class="l-task done" style="--c:${NC(HJ.nenDe(t))}"><span class="l-ck" aria-hidden="true">✓</span><div class="l-body"><span class="l-txt">${esc(t.txt)}</span></div><div class="l-right"><span class="l-xp">+${xpDa(t, S)}</span></div></li>`
+/* uma etapa já feita que saiu do todo.txt (foi para o done.txt): o ✓ reabre pela rota /api/reabre (#27) */
+const ckDone = t => CTX.SRV || window.HJ_DEMO ? `<button type="button" class="l-ck" data-xreab="${esc(t.raw)}" aria-label="reabrir: ${esc(t.txt)}">✓</button>` : '<span class="l-ck" aria-hidden="true">✓</span>';
+async function reabreE(raw){
+  const S = estado(), t = D.feitas.find(t => t.raw === raw), x = t ? xpDa(t, S) : 0;
+  /* o XP do dia já fechado fica gravado (xpDias, que só sobe): o servidor tira o desta etapa, senão ela contaria duas vezes */
+  await acaoL(() => post('/api/reabre', {raw, xp:x}), `Reaberta <small>${t ? esc(t.txt) : ''}</small>`);
+}
+const rowE = (t, S) => t.done && !t.n ? `<li class="l-task done" style="--c:${NC(HJ.nenDe(t))}">${ckDone(t)}<div class="l-body"><span class="l-txt">${esc(t.txt)}</span></div><div class="l-right"><span class="l-xp">+${xpDa(t, S)}</span></div></li>`
   : rowL(t, S, t.done ? xpDa(t, S) : undefined);
 const addIn = (alvo, ph) => `<form class="x-add" data-xadd="${esc(alvo)}" autocomplete="off"><input aria-label="${esc(ph)}" placeholder="${esc(ph)}"><button class="btn" type="submit">+</button></form>`;
 const fechaBtn = (c, S) => `<button type="button" class="btn" data-cfecha="${esc(c.slug)}">${c.exp ? `fechar marco · +${HJ.bonusMarco(c)} XP` : 'fechar caçada'}</button>`;
@@ -393,7 +399,7 @@ function vTrilha(L, e, S){
 }
 /* 3 · quadro: uma coluna por marco, como a aba Chefões */
 const cartao = (t, S) => { const dc = t.due && !t.done ? (t.due < HOJE ? ' l-late' : t.due === HOJE ? ' l-hoje' : '') : '', pode = !t.done || t.n;
-  return `<div class="x-kc${t.done ? ' done' : ''}" style="--c:${NC(HJ.nenDe(t))}"${pode ? ` data-ln="${t.n}"` : ''}>${pode ? `<button type="button" class="l-ck" data-l="${t.done ? 'reopen' : 'done'}" aria-label="${t.done ? 'reabrir' : 'concluir'}: ${esc(t.txt)}">${t.done ? '✓' : ''}</button>` : '<span class="l-ck" aria-hidden="true">✓</span>'}
+  return `<div class="x-kc${t.done ? ' done' : ''}" style="--c:${NC(HJ.nenDe(t))}"${pode ? ` data-ln="${t.n}"` : ''}>${pode ? `<button type="button" class="l-ck" data-l="${t.done ? 'reopen' : 'done'}" aria-label="${t.done ? 'reabrir' : 'concluir'}: ${esc(t.txt)}">${t.done ? '✓' : ''}</button>` : ckDone(t)}
     <span class="l-body"><span class="tx">${esc(t.txt)}</span>${t.due && !t.done ? `<span class="l-tags"><span class="l-tag${dc}">${dueTxt(t.due)}</span></span>` : ''}</span><span class="l-xp">+${t.done ? xpDa(t, S) : valeL(t, S).x}</span></div>`; };
 function vQuadro(L, e, S){
   const cols = e.marcos.map((c, i) => { const ver = X.verFeitas[c.slug], fe = c.etapas.filter(t => t.done);
@@ -423,7 +429,7 @@ function vCrono(L, e, S){
   const linha = (c, i) => { const ds = c.etapas.map(t => t.done || t.due).filter(Boolean).sort(), a = ds[0] || HOJE, b = ds[ds.length - 1] || HOJE, l = x(a < ini ? ini : a), w = Math.max(1.5, x(b) - l);
     return `<div class="lb"><span class="x-n" style="width:20px;height:20px;font-size:10px;${c.fim ? 'background:var(--aura);color:var(--bg)' : ''}">${c.fim ? '✓' : i + 1}</span>${esc(c.n)}<small>${c.feitas}/${c.etapas.length}</small></div>
       <div class="tr">${b >= ini ? `<span class="br${c.fim ? ' ok' : ''}" style="left:${l}%;width:${w}%"></span>` : ''}${c.etapas.filter(t => { const d = t.done || t.due; return d && d >= ini && d <= fimJ; }).map(t => { const d = t.done || t.due, k = `pt${t.done ? ' f' : t.due < HOJE ? ' late' : ''}`, tt = `${esc(t.txt)} · ${t.done ? 'feita ' + ddmm(t.done) : 'prazo ' + ddmm(t.due)}`;
-        return !t.done || t.n ? `<button type="button" class="${k}" data-ln="${t.n}" data-l="${t.done ? 'reopen' : 'done'}" style="left:${x(d)}%" title="${tt} (clique para ${t.done ? 'reabrir' : 'concluir'})" aria-label="${tt}"></button>` : `<span class="${k}" style="left:${x(d)}%" title="${tt}"></span>`; }).join('')}
+        return !t.done || t.n ? `<button type="button" class="${k}" data-ln="${t.n}" data-l="${t.done ? 'reopen' : 'done'}" style="left:${x(d)}%" title="${tt} (clique para ${t.done ? 'reabrir' : 'concluir'})" aria-label="${tt}"></button>` : `<button type="button" class="${k}" data-xreab="${esc(t.raw)}" style="left:${x(d)}%" title="${tt} (clique para reabrir)" aria-label="${tt}"></button>`; }).join('')}
         ${i === 0 ? `<span class="hj" style="left:${x(HOJE)}%"><span>hoje</span></span>` : ''}</div>`; };
   const abertas = e.marcos.flatMap(c => c.abertas).concat(e.soltas.filter(t => !t.done)).sort(porDue), dom = HJ.addD(HOJE, 6 - HJ.dow(HOJE));
   const grupos = [['Atrasadas', t => t.due && t.due < HOJE], ['Esta semana', t => t.due && t.due >= HOJE && t.due <= dom], ['Próxima semana', t => t.due && t.due > dom && t.due <= HJ.addD(dom, 7)], ['Depois', t => t.due && t.due > HJ.addD(dom, 7)], ['Sem data', t => !t.due]];
@@ -473,6 +479,7 @@ document.addEventListener('click', async ev => {
   if((b = q('[data-xfim]'))){ X.conf = b.dataset.xfim; render(); return; }
   if((b = q('[data-xfimok]'))){ b.disabled = true; concluiX(b.dataset.xfimok); return; }
   if((b = q('[data-xreabre]'))){ reabreX(b.dataset.xreabre); return; }
+  if((b = q('[data-xreab]'))){ b.disabled = true; reabreE(b.dataset.xreab); return; }
   if(q('[data-xvelhas]')){ X.velhas = !document.querySelector('[data-xvelhas]').parentNode.open; return; }
   if((b = q('[data-xic]'))){ X.xic = b.dataset.xic; document.querySelectorAll('[data-xic]').forEach(x => x.setAttribute('aria-pressed', x === b)); return; }
   if(q('[data-xfecha]')){ fechaJanela(); return; }

@@ -1385,7 +1385,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.2';
+const VERSAO_PAGINA = '0.6.3-beta1';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1490,7 +1490,8 @@ function metaDia(S){
     <span class="slots" title="${S.cfHoje} hoje no Codeforces">${[0,1,2].map(i=>`<i class="${S.cfHoje>i||(cf&&cf.ok)?'on':''}"></i>`).join('')}<span class="sep"></span>${[3,4,5].map(i=>`<i class="bn${S.cfHoje>i?' on':''}"></i>`).join('')}</span></div>
     ${duoMeta(S)}${S.rot.filter(t => t !== cf && !isDuo(t)).map(t => `<button class="tk" data-hit="${t.n}" style="padding:4px 0">${avTask(t)}<span class="t">${esc(t.txt)}</span><span class="v" style="color:var(--soft)">${t.ok?'✓':'+'+xpDe({...t,done:HOJE})}</span></button>`).join('')}</div>`;
 }
-const mission = S => { const l = NEN[S.fraco]; return `<div class="mission" style="--c:${NC(S.fraco)}">${avNen(S.fraco)}<span><b>Missão da semana: ${l.n} (${l.c})</b><span class="sub">Seu atributo mais fraco rende ×1,5 até domingo. ${S.missDias}/3 dias feitos → 1 feitiço.</span></span></div>`; };
+const mission = S => { const l = NEN[S.fraco]; return S.pausa ? `<div class="mission" style="--c:var(--grn)">${avNen(S.fraco)}<span><b>Férias: missão da semana pausada</b><span class="sub">Até a volta às aulas (${ddmm(TEMP.volta)}) não há missão nem fúria dos chefões, e dia vazio não derruba o Ten. O XP continua subindo a torre.</span></span></div>`
+  : `<div class="mission" style="--c:${NC(S.fraco)}">${avNen(S.fraco)}<span><b>Missão da semana: ${l.n} (${l.c})</b><span class="sub">Seu atributo mais fraco rende ×1,5 até domingo. ${S.missDias}/3 dias feitos → 1 feitiço.</span></span></div>`; };
 function avList(b, where, withField){
   return b.avs.map(a => `<div class="av4"><span class="nm">${esc(a.n)}<small>${a.w}%${a.real?'':' · ex.'}${a.cont?' · contínuo':''}</small></span><span class="st ${a.st==='ok'?'ok':a.st==='low'?'low':a.st==='wait'||a.st==='hoje'?'wait':'fut'}">${stTxt(a)}</span>
     <span class="ln2"><span>${a.tot ? `preparação ${a.ok}/${a.tot}${a.prepOk?' · bônus ganho':a.prepFull?' · completa, bônus no dia':''}` : 'nenhuma tarefa ligada ainda'}</span>${prepBar(a)}</span>
@@ -1688,7 +1689,7 @@ function rMS(S){
     <div class="lay7"><div>${main}</div>
       <div class="side7">
         <div class="card"><h2><span class="c">~/</span>carteira</h2><div class="wal7">${fmt(S.jenny)} J<small>${TESTE ? 'modo teste: nada fica guardado' : 'disponível'}</small></div>${podeTeste() ? `<button type="button" class="btn${TESTE ? '' : ' v'}" data-teste="${TESTE ? 0 : 1}" style="margin:8px 0 2px">${TESTE ? 'sair do modo teste' : 'modo teste: Jenny infinita'}</button><p class="sub" style="margin:4px 0 0">${TESTE ? 'Feitiços e prêmios reais ficam fora do teste.' : 'Só na versão de teste (beta). Experimente os itens sem gastar; ao sair, tudo volta como estava.'}</p>` : ''}
-          <div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></div>
+          <div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.contribJ ? `<div style="display:flex;justify-content:space-between" title="bugs corrigidos e ideias feitas que você abriu no GitHub (o XP delas já está no XP × 10)"><span>contribuições (${S.contrib.length})</span><b style="color:var(--ink)">+${fmt(S.contribJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></div>
         <div class="card"><h2><span class="c">~/</span>cofre do mês</h2><div class="wal7" style="font-size:22px">R$ ${fmt(cofreTotal() - COFRE_USADO)}<small>R$ ${fmt(HJx.cofreMes(EST))} por mês, acumula · usado R$ ${fmt(COFRE_USADO)}</small></div><div class="cofre"><b style="width:${pct(cofreTotal()-COFRE_USADO, cofreTotal())}%"></b></div></div>
         <div class="card"><h2><span class="c">~/</span>usando agora</h2><div class="eqlist">${eqs.map(([a,b]) => `<div><span>${a}</span><span>${esc(b)}</span></div>`).join('')}</div></div>
         ${RESG.length ? `<div class="card"><h2><span class="c">~/</span>resgatados</h2><ul class="got">${RESG.map(r => `<li style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:13px"><span>${esc(r)}</span><span class="sub">${ddmm(HOJE)}</span></li>`).join('')}</ul></div>` : ''}
@@ -1881,8 +1882,8 @@ const dueTxt = d => { const k = dias(HOJE, d); return k < 0 ? `atrasada ${-k}d` 
 function valeL(t, S){
   const base = xpDe({...t, due:null, done:HOJE}), ms = []; let x = base;
   if(t.due && t.due >= HOJE && !(t.rec||'').startsWith('cf')){ x *= 1.5; ms.push('prazo'); }
-  if(nenDe(t) === S.fraco){ x *= 1.5; ms.push('missão'); }
-  const b = S.bs.find(b => b.d === discOf(t)); if(b && b.fury){ x *= 1.5; ms.push('fúria'); }
+  if(!S.pausa && nenDe(t) === S.fraco){ x *= 1.5; ms.push('missão'); }
+  const b = S.bs.find(b => b.d === discOf(t)); if(!S.pausa && b && b.fury){ x *= 1.5; ms.push('fúria'); }
   return {x: Math.round(x), base, ms};
 }
 const PRI_TXT = /^\(([A-Za-z])\)\s+/;   // "(A) " digitado no começo do texto vale mais que os botões
@@ -1993,11 +1994,11 @@ function rL(S){
   formL();
   const a = S.a, fr = NEN[S.fraco];
   document.getElementById('l-hud').innerHTML = `
-    <div class="card l-me">${avMe(54)}<div class="l-fl"><div class="l-row"><b class="l-nm">${esc(CTX.JOG.nome)}</b>${UI.title ? `<span class="titulo">${esc(UI.title)}</span>` : ''}<span class="l-meta">${esc(TEMP.nome)} · semana ${S.sem.n}/${S.sem.tot}</span></div>
+    <div class="card l-me">${avMe(54)}<div class="l-fl"><div class="l-row"><b class="l-nm">${esc(CTX.JOG.nome)}</b>${UI.title ? `<span class="titulo">${esc(UI.title)}</span>` : ''}<span class="l-meta">${esc(TEMP.nome)} · ${S.pausa ? `férias até ${ddmm(addD(TEMP.volta, -1))}` : `${S.pausa ? `férias até ${ddmm(addD(TEMP.volta, -1))}` : `semana ${S.sem.n}/${S.sem.tot}`}`}</span></div>
       <div class="l-row"><span class="l-n"><small>ARENA CELESTIAL</small>andar ${a.n}</span><span class="l-meta">faltam ${a.need - a.into} XP para o ${a.n + 1}</span></div>
       <div class="l-bar"><i style="width:${pct(a.into, a.need)}%"></i></div>
       <div class="l-row"><span class="l-meta">hoje <b>+${S.hojeXP}</b> XP · meta ${S.metaDia} · ${fmt(S.total)} XP na temporada</span><span class="l-meta"><span class="l-ten" title="recorde ${S.ten.max} · ${S.ten.zet} Zetsu guardado${S.ten.zet === 1 ? '' : 's'}">Ten <b>${S.ten.cur}</b> ${S.ten.cur === 1 ? 'dia' : 'dias'}</span> · <span class="l-jen"><b>${fmt(S.jenny)}</b> J <button class="go" data-go="ms">Masadora →</button></span></span></div></div>
-      <div class="l-mis" style="--c:${NC(S.fraco)}"><span class="l-k">missão da semana</span><span class="l-v" style="color:var(--c)">${esc(fr.n)}</span><span class="l-s">${esc(fr.c)} ×1,5 · ${S.missDias}/3 dias → 1 feitiço</span><div class="l-pips">${[0,1,2].map(i => `<i class="${i < S.missDias ? 'on' : ''}"></i>`).join('')}</div></div></div>`;
+      ${S.pausa ? `<div class="l-mis" style="--c:var(--grn)"><span class="l-k">férias</span><span class="l-v" style="color:var(--c)">até ${ddmm(addD(TEMP.volta, -1))}</span><span class="l-s">missão e fúria pausadas · o Ten não cai</span></div></div>` : `<div class="l-mis" style="--c:${NC(S.fraco)}"><span class="l-k">missão da semana</span><span class="l-v" style="color:var(--c)">${esc(fr.n)}</span><span class="l-s">${esc(fr.c)} ×1,5 · ${S.missDias}/3 dias → 1 feitiço</span><div class="l-pips">${[0,1,2].map(i => `<i class="${i < S.missDias ? 'on' : ''}"></i>`).join('')}</div></div></div>`}`;
   const ab = D.abertas.filter(t => !t.done).sort((p,q) => (p.pri||'Z').localeCompare(q.pri||'Z') || (p.due||'9').localeCompare(q.due||'9'));
   /* cada item é uma tarefa solta ou uma caçada inteira (bloco com as etapas abertas, no grupo da etapa mais urgente) */
   const its = ab.filter(t => !isRec(t) && !HJx.cacDe(t)).map(t => ({due:t.due, prova:t.prova, h:rowL(t,S), x:valeL(t,S).x}))
@@ -2095,7 +2096,7 @@ function habitosL(S){
   const lv = r => r <= 0 ? '' : r < .34 ? 'h1' : r < .67 ? 'h2' : r < 1 ? 'h3' : 'h4';
   const leg = cor => `<div class="l-hl">menos ${['','h1','h2','h3','h4'].map(c => `<i style="background:${c ? `color-mix(in srgb,${cor} ${({h1:30,h2:55,h3:80,h4:100})[c]}%,var(--track))` : 'var(--track)'}"></i>`).join('')} mais${FIMG > TEMP.fim ? ' <i class="fer" style="margin-left:10px"></i> férias' : ''}</div>`;
   let H = `<div class="l-hm">
-    <span class="nm">Ten<small>${S.ten.cur} dias · recorde ${S.ten.max}</small></span>${grade('var(--grn)', d => S.ten.st[d] === 'on' ? 'h4' : S.ten.st[d] === 'z' ? 'z' : '', d => S.ten.st[d] === 'on' ? 'ativo' : S.ten.st[d] === 'z' ? 'Zetsu' : 'vazio',
+    <span class="nm">Ten<small>${S.ten.cur} dias · recorde ${S.ten.max}</small></span>${grade('var(--grn)', d => S.ten.st[d] === 'on' ? 'h4' : S.ten.st[d] === 'z' ? 'z' : '', d => S.ten.st[d] === 'on' ? 'ativo' : S.ten.st[d] === 'z' ? 'Zetsu' : S.ten.st[d] === 'f' ? 'vazio, sem cair' : 'vazio',
       resumo(d => S.ten.st[d] === 'on' || S.ten.st[d] === 'z' ? 1 : 0, m => [`${Math.round(m*100)}%`, 'dos dias com o Ten aceso']))}
     ${diarios.length || !(J.habitos || []).length ? `<span class="nm">Hábitos<small>${nh} por dia</small></span>${grade(NC(4), d => lv((hd[d]||0)/nh), d => `${hd[d]||0} de ${nh}`, resumo(d => Math.min(1, (hd[d]||0)/nh), m => [`${Math.round(m*100)}%`, 'dos hábitos diários feitos']))}` : ''}
     ${semanais.map(x => `<span class="nm">${esc(x.n)}<small>${x.semana}× por semana</small></span>${gradeSem(x, NC(4))}`).join('')}`;
@@ -2223,7 +2224,7 @@ function render(){
   if(!CTX) return;
   const S = estado(); aplicaTema(); RENDER[cur](S); faixaTeste(); faixaProva();
   const gn = document.getElementById('gnav-'+cur); if(gn) gn.innerHTML = gnav(cur);
-  document.getElementById('facts').innerHTML = `<span class="fact">Andar <b>${S.a.n}</b></span><span class="fact">hoje <b>+${S.hojeXP}</b></span><span class="fact"><b>${fmt(S.jenny)}</b> J</span><span class="fact">${esc(TEMP.nome)} · semana <b>${S.sem.n}/${S.sem.tot}</b></span>`;
+  document.getElementById('facts').innerHTML = `<span class="fact">Andar <b>${S.a.n}</b></span><span class="fact">hoje <b>+${S.hojeXP}</b></span><span class="fact"><b>${fmt(S.jenny)}</b> J</span><span class="fact">${esc(TEMP.nome)} · ${S.pausa ? `férias até <b>${ddmm(addD(TEMP.volta, -1))}</b>` : `semana <b>${S.sem.n}/${S.sem.tot}</b>`}</span>`;
 }
 function tab(t){
   if(!TABS.includes(t)) t = 'l'; cur = t;

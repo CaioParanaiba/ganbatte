@@ -126,7 +126,12 @@ function rota(url, body){
     const nova = transformar(todo[i], body.action, body.value); undo.push({from:todo[i], to:nova}); todo[i] = nova; return {ok:true};
   }
   if(url === '/api/add'){ const t = String(body.text||'').trim(); if(!t) throw new Error('texto vazio'); const p = t.match(/^\(([A-Za-z])\)\s+/), l = (p ? `(${p[1].toUpperCase()}) ` : '') + HOJE + ' ' + (p ? t.slice(p[0].length) : t); todo.splice(todo.length - 1, 0, l); undo.push({from:null, to:l}); return {ok:true}; }
+  if(url === '/api/reabre'){ const i = done.indexOf(body.raw); if(i < 0) throw new Error('a linha mudou no done.txt; recarregue');
+    if(/(^|\s)rec:/.test(body.raw)) throw new Error('hábito de outro dia não se reabre');
+    const nova = body.raw.replace(DONE_RE, ''), dia = body.raw.slice(2, 12); done.splice(i, 1);
+    if(body.xp && estado.xpDias && estado.xpDias[dia]) estado.xpDias[dia] = Math.max(0, estado.xpDias[dia] - body.xp); todo.splice(todo.length - 1, 0, nova); undo.push({from:body.raw, to:nova, reabre:true}); return {ok:true, to:nova}; }
   if(url === '/api/undo'){ const op = undo.pop(); if(!op) throw new Error('nada para desfazer');
+    if(op.reabre){ const i = todo.indexOf(op.to); if(i >= 0) todo.splice(i, 1); done.push(op.from); return {ok:true}; }
     if(op.done){ const i = done.indexOf(op.to); if(i >= 0) done.splice(i, 1); return {ok:true}; }
     if(op.to === null) todo.splice(todo.length - 1, 0, op.from); else { const i = todo.indexOf(op.to); if(i < 0) throw new Error('a linha mudou'); if(op.from === null) todo.splice(i, 1); else todo[i] = op.from; }
     return {ok:true}; }

@@ -102,7 +102,7 @@ O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer
 | `conquistas.json` | conquistas criadas pela IA e o que foi resgatado | só ler: quem cria é o jogador, pelo Book |
 | `planos/` | planos de ensino (PDF, HTML...) | ler |
 | `jogador.json` | nome, tags, hábitos, disciplinas, Codeforces, Duolingo, formato de data, IA ligada (`ia`) | só ler |
-| `estado.json`, `cf.json`, `duo.json` | loja, carteira; cache do Codeforces e do Duolingo | não mexer |
+| `estado.json`, `cf.json`, `duo.json`, `contrib.json` | loja, carteira; cache do Codeforces, do Duolingo e das contribuições no GitHub | não mexer |
 
 ### 2. Como ler e gravar
 

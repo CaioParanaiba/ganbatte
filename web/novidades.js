@@ -10,6 +10,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.3-beta1", "nome": "atualização das expedições", "data": "2026-10-12",
+   "resumo": "Férias de verdade, recompensa por bug corrigido e ideia feita, e etapa antiga que se reabre.",
+   "itens": [
+     {"ic": "moon", "t": "Férias", "d": "Do fim das aulas até a volta, dia vazio não derruba o Ten (e dia feito ainda soma), a missão da semana e a fúria dos chefões ficam pausadas, e o XP continua subindo a torre. A temporada só fecha na volta às aulas; a projeção do andar e as médias vão até o fim das aulas."},
+     {"ic": "bug", "t": "Recompensa por contribuição", "d": "Ponha o seu usuário do GitHub em Configurações: bug que você reportou e foi corrigido vale +50 XP e +1.000 J; ideia que entrou no jogo, +30 XP e +600 J. Só conta quando a issue é fechada como resolvida: repetida ou recusada não rende nada."},
+     {"ic": "card", "t": "Reabrir etapa antiga", "d": "Na aba Expedições, a etapa feita que já foi para o done.txt agora se reabre pelo ✓, e o XP dela sai do dia em que foi feita."},
+     {"ic": "tower", "t": "Testes do servidor", "d": "Para quem desenvolve: python3 -m unittest discover tests confere a virada do dia, os hábitos, o Codeforces, o Duolingo e as rotas principais."}
+   ]},
   {"versao": "0.6.2", "nome": "atualização das expedições", "data": "2026-10-12",
    "resumo": "O Duolingo conta sozinho, como o Codeforces, e os heatmaps mostram a temporada inteira.",
    "itens": [

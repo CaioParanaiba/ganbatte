@@ -15,6 +15,7 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   planos/                   planos de ensino (PDF, HTML...) que a IA lê
   cf.json                   cache do Codeforces (problemas aceitos por dia e os marcados à mão)
   duo.json                  cache do Duolingo (a última ofensiva lida e os dias já creditados)
+  contrib.json              issues do jogador no GitHub fechadas como resolvidas (bug corrigido, ideia feita) e o dia em que o jogo as viu
 
 Rotas (as mesmas que web/demo.js simula no modo demonstração):
   GET  /api/jogo                          tudo o que a página precisa
@@ -22,6 +23,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/act   {raw, action, value?, pri?}   done | reopen | delete | up | down | d1 | d7 | a1 | hoje | amanha | rmdue | setdate | edit
   POST /api/add   {text}                  linha no formato todo.txt; due:hoje|amanha|+N|DD/MM|AAAA-MM-DD
   POST /api/undo  {}                      desfaz a última operação deste servidor
+  POST /api/reabre {raw, xp?}             reabre uma tarefa concluída que já está no done.txt (volta aberta para o todo.txt)
   POST /api/config {jogador, avaliacoes?} grava jogador.json (e avaliacoes.txt) e refaz os hábitos de hoje
   POST /api/ontem {id}                    "esqueci de marcar ontem": grava o hábito no done.txt como feito ontem
   POST /api/denovo {id}                   "fiz de novo": hábito semanal com a meta cumprida, feito mais uma vez hoje
@@ -66,7 +68,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.2"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
+VERSAO = "0.6.3-beta1"   # beta: X.Y.Z-betaN; ao ir para a main, vira X.Y.Z
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -302,6 +304,40 @@ def api_act(d):
     return operar(fn)
 
 
+def api_reabre(d):
+    """Reabre uma tarefa concluída que já foi para o done.txt (#27): a linha sai do done.txt e volta aberta para o todo.txt.
+    Hábito, Codeforces e Duolingo (rec:) não: o servidor tira as recorrentes abertas de dias anteriores.
+    xp = o XP que a tarefa deu: sai do XP gravado daquele dia (estado.json → xpDias, que de outro jeito só sobe), senão ela
+    contaria duas vezes quando for feita de novo. Desfazer devolve a linha, e o motor regrava o dia."""
+    raw = d.get("raw")
+    if not isinstance(raw, str) or not DONE_RE.match(raw):
+        raise Erro("linha ausente ou não concluída")
+    if REC.search(raw):
+        raise Erro("hábito de outro dia não se reabre")
+    with lock:
+        done = ler("done.txt")
+        if raw not in done:
+            raise Erro("a linha mudou no done.txt; recarregue a página", 409)
+        nova = transformar(raw, "reopen")
+        linhas = ler()
+        done.remove(raw)
+        inserir(linhas, nova)
+        gravar(done, "done.txt")
+        gravar(linhas)
+        try:
+            xp = max(0, int(d.get("xp") or 0))
+        except (TypeError, ValueError):
+            xp = 0
+        est, dia = ler_json("estado.json", {}), DONE_RE.match(raw).group(1)
+        xd = est.get("xpDias") if isinstance(est, dict) else None
+        if xp and isinstance(xd, dict) and isinstance(xd.get(dia), (int, float)):
+            xd[dia] = max(0, xd[dia] - xp)
+            gravar_json("estado.json", est)
+        undo_stack.append({"from": raw, "to": nova, "reabre": True})
+        del undo_stack[:-40]
+        return {"ok": True, "to": nova}
+
+
 def api_add(d):
     def fn(linhas):
         nova = montar(d.get("text", ""))
@@ -315,6 +351,17 @@ def api_undo(_):
         if not undo_stack:
             raise Erro("nada para desfazer")
         op = undo_stack[-1]
+        if op.get("reabre"):   # reabrir do done.txt: a linha volta concluída para o done.txt
+            linhas = ler()
+            if op["to"] not in linhas:
+                raise Erro("a linha mudou depois da operação; não deu para desfazer", 409)
+            linhas.remove(op["to"])
+            done = ler("done.txt")
+            inserir(done, op["from"])
+            gravar(linhas)
+            gravar(done, "done.txt")
+            undo_stack.pop()
+            return {"ok": True, "undo": len(undo_stack)}
         arq = op.get("arq", "todo.txt")
         linhas = ler(arq)
         if op["to"] is None:   # desfaz uma exclusão: a linha volta para o fim do arquivo
@@ -520,7 +567,7 @@ def api_config(d):
         if av is not None:
             gravar_txt("avaliacoes.txt", av if av.endswith("\n") else av + "\n")
         arruma_dia(refazer=True)
-    cf_vivo["t"] = duo_vivo["t"] = 0.0   # handle ou usuário podem ter mudado: consulta de novo na próxima leitura
+    cf_vivo["t"] = duo_vivo["t"] = contrib_vivo["t"] = 0.0   # handle ou usuários podem ter mudado: consulta de novo na próxima leitura
     return {"ok": True}
 
 
@@ -776,6 +823,68 @@ def duo_leitura(j):
     return {"usuario": duo["usuario"], "ofensiva": cache.get("ofensiva")}
 
 
+# ---------- contribuições (#23) ----------
+# Quem informa o usuário do GitHub em Configurações ganha XP e Jenny por bug ou ideia que abriu no repositório, mas só
+# quando a issue é fechada como resolvida (state_reason "completed"). Repetida, recusada ("not planned"), dúvida ou com o
+# label "sem recompensa" não conta: reportar qualquer coisa não rende nada. A conta (quanto vale cada tipo) fica no motor.
+contrib_vivo = {"t": 0.0, "rodando": False}
+DONO = "CaioParanaiba"   # quem desenvolve: as issues dele são anotações do desenvolvimento
+
+
+def contrib_issues(usuario):
+    q = f"repo:{DONO}/todo-engine is:issue author:{usuario} reason:completed"
+    url = "https://api.github.com/search/issues?" + urllib.parse.urlencode({"q": q, "per_page": 100})
+    req = urllib.request.Request(url, headers={"User-Agent": f"hunter-todo/{VERSAO}", "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        itens = json.load(r).get("items") or []
+    out = {}
+    for it in itens:
+        if str((it.get("user") or {}).get("login", "")).lower() != usuario.lower() or it.get("state_reason") != "completed":
+            continue
+        labels = {str(l.get("name", "")).lower() for l in it.get("labels") or []}
+        tipo = "bug" if "bug" in labels else "ideia" if "enhancement" in labels else None
+        if tipo and "sem recompensa" not in labels:
+            out[str(it["number"])] = {"tipo": tipo, "titulo": str(it.get("title", ""))[:120]}
+    return out
+
+
+def contrib_atualiza(usuario):
+    """Confere as issues resolvidas (no máximo a cada 6 h). Cada uma ganha o dia em que o jogo a viu fechada pela primeira vez:
+    o XP entra nesse dia, sem mexer nos dias passados. Roda numa thread."""
+    try:
+        achadas = contrib_issues(usuario)
+        with lock:
+            cache = ler_json("contrib.json", {})
+            if cache.get("usuario") != usuario:
+                cache = {"usuario": usuario, "issues": {}}
+            iss = cache.get("issues") or {}
+            for n, i in achadas.items():
+                if n not in iss:
+                    iss[n] = {**i, "dia": hoje().isoformat()}
+                    log(f"contribuição: issue #{n} resolvida ({i['tipo']}), recompensa creditada")
+            cache["issues"] = iss
+            gravar_json("contrib.json", cache)
+    except Exception as e:   # sem internet ou limite da API do GitHub: fica o que estava
+        log("contribuições:", e)
+    finally:
+        contrib_vivo["t"] = time.time()
+        contrib_vivo["rodando"] = False
+
+
+def contrib_leitura(j):
+    gh = j.get("github")
+    usuario = str(gh.get("usuario", "")) if isinstance(gh, dict) else ""
+    if not HANDLE.match(usuario) or usuario.lower() == DONO.lower():
+        return None
+    if time.time() - contrib_vivo["t"] > 6 * 3600 and not contrib_vivo["rodando"]:
+        contrib_vivo["rodando"] = True
+        threading.Thread(target=contrib_atualiza, args=(usuario,), daemon=True).start()
+    cache = ler_json("contrib.json", {})
+    if cache.get("usuario") != usuario:
+        return {"usuario": usuario, "issues": []}
+    return {"usuario": usuario, "issues": [{"n": int(n), **i} for n, i in sorted((cache.get("issues") or {}).items(), key=lambda x: int(x[0]))]}
+
+
 # ---------- jogo: leitura e as três gravações ----------
 NOME_AV = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
 SIGLA = re.compile(r"^[A-Z0-9]{1,12}$")
@@ -790,7 +899,7 @@ def avatares():
 def api_jogo_get():
     arruma_dia()
     j = jogador()
-    cf, duo = cf_leitura(j), duo_leitura(j)
+    cf, duo, contrib = cf_leitura(j), duo_leitura(j), contrib_leitura(j)
     narradas = ler_json("narradas.json", [])
     conquistas = ler_json("conquistas.json", [])
     estado = ler_json("estado.json", {})
@@ -798,7 +907,7 @@ def api_jogo_get():
         todo, done = ler(), ler_txt("done.txt").split("\n")
     return {"ok": True, "hoje": hoje().isoformat(), "todo": todo, "done": done, "avaliacoes": ler_txt("avaliacoes.txt"),
             "notas": ler_txt("notas.txt"), "ajustes": ler_txt("ajustes.txt"), "estado": estado if isinstance(estado, dict) else {},
-            "cf": cf, "duo": duo, "avatares": avatares(), "narradas": narradas if isinstance(narradas, list) else [], "jogador": j,
+            "cf": cf, "duo": duo, "contrib": contrib, "avatares": avatares(), "narradas": narradas if isinstance(narradas, list) else [], "jogador": j,
             "conquistas": conquistas if isinstance(conquistas, list) else [],
             "servidor": {"versao": VERSAO, "nome": VERSAO_NOME, "sistema": sistema(), "auto": auto_ligado(), "fundo": EXEC["fundo"], "dados": str(DADOS),
                          "canal": canal(), "metodo": metodo_atualizar()}}
@@ -1482,7 +1591,7 @@ def api_autostart(d):
             + (" Este continua rodando até você reiniciar o PC." if EXEC["fundo"] else "")}
 
 
-ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
+ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/reabre": api_reabre, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
          "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal}

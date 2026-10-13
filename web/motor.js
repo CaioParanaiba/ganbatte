@@ -292,12 +292,15 @@ function carregar(api){
   if(est.equip && AV_ANTIGO[est.equip.avatar]) est.equip = Object.assign({}, est.equip, {avatar: AV_ANTIGO[est.equip.avatar]});
   est.equip = Object.assign({theme:'simples', fx:[], bg:'', frame:'', title:'', avatar:'logo', lic:'l2', hud:'logo', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}}, est.equip||{});
   const hoje = api.hoje || new Date().toISOString().slice(0,10);
-  return {D:{feitas, abertas, cf:api.cf||null, duo:api.duo||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
+  return {D:{feitas, abertas, cf:api.cf||null, duo:api.duo||null, contrib:api.contrib||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
     BOSSES: av.bosses, AVAL: av.aval, NOTAS: nt.NOTAS, PARC: nt.PARC, NDATA: nt.NDATA, INBOX: parseAjustes(api.ajustes), EST: est, AVATARES: api.avatares||[],
     NARRADAS: Array.isArray(api.narradas) ? api.narradas : [], CONQ: Array.isArray(api.conquistas) ? api.conquistas : [], JOG: Object.assign({nome:'Hunter'}, api.jogador||{}), SRV: api.servidor||null, AV_TXT: String(api.avaliacoes||''), NT_TXT: String(api.notas||''), dif:'normal'};
 }
 
 /* ---------- regras ---------- */
+/* recompensa por contribuição (#23): só quando a issue do jogador é fechada como resolvida (bug corrigido, ideia feita);
+   repetida, recusada ou dúvida não conta. Além da Jenny do próprio XP (×10) */
+const CONTRIB = {bug:{xp:50, j:1000}, ideia:{xp:30, j:600}};
 const HAB_EXTRA = 2;   // hábito semanal feito acima da meta da semana: XP ×2 (a calibrar)
 function xpDe(t){ if((t.rec||'').startsWith('cf') && !(t.done && t.done < CF_DESDE)) return CF_BONUS; let x = isRec(t) ? 10 : isEnt(t) ? 25 : isEst(t) ? 15 : isFac(t) ? 15 : 10; if(isRec(t)) x *= .5; if(t.due && t.done && t.done <= t.due) x *= 1.5; return Math.round(x); }
 /* tipo de Nen: treino → Transmutação; hábito → Manipulação; entrega → Emissão; estudo → Intensificação (com ou sem disciplina);
@@ -311,12 +314,16 @@ function discOf(t, C){
 const custo = (n, dif='normal') => Math.max(1, Math.round((n < 100 ? 8 : n < 200 ? 16 : 40) * DIF[dif]));
 function andar(xp, dif){ let n = 1, r = xp; while(n < 251){ const c = custo(n,dif); if(r < c) return {n, into:r, need:c}; r -= c; n++; } return {n:251, into:1, need:1, topo:true}; }
 const xpAte = (n, dif) => { let s = 0; for(let i=1;i<n;i++) s += custo(i,dif); return s; };
-function ten(set, first, HOJE, zetsuExtra){
+/* férias (#31): do dia seguinte ao fim das aulas até a véspera da volta (linha temporada do avaliacoes.txt). A temporada só
+   fecha na volta; as estatísticas e a projeção do andar vão até o fim das aulas */
+const feriasDe = TEMP => d => !!(TEMP && TEMP.volta && TEMP.volta > TEMP.fim && d > TEMP.fim && d < TEMP.volta);
+function ten(set, first, HOJE, zetsuExtra, fer){
   const st = {}; let cur = 0, max = 0, zet = 1, seq = 0;
   if(!first) return {cur:0, max:0, zet:1, st};
   const extra = Object.assign({}, zetsuExtra||{});            // feitiço Zetsu extra: +1 folga a partir do dia do uso
   for(let d = first; d <= HOJE; d = addD(d,1)){
     if(extra[d]){ zet = Math.min(zet + extra[d], 3); delete extra[d]; }
+    if(!set.has(d) && fer && fer(d)){ st[d] = 'f'; continue; }   // férias: o Ten sobe com dia feito, mas dia vazio não o derruba nem gasta Zetsu
     if(set.has(d)){ cur++; seq++; st[d] = 'on'; if(seq % 7 === 0) zet = Math.min(zet+1, Math.max(2, zet)); }
     else if(d === HOJE){}
     else if(zet > 0 && cur > 0){ zet--; cur++; st[d] = 'z'; }
@@ -495,7 +502,7 @@ function efeitos(C, feitas){
 }
 function estado(C){
   const {D, HOJE, TEMP, EST} = C;
-  const F = efeitos(C, D.feitas);
+  const F = efeitos(C, D.feitas), fer = feriasDe(TEMP);   // nas férias a missão da semana e a fúria dos chefões ficam pausadas
   const feitas = D.feitas.concat(F.extras), abertas = D.abertas.filter(t => !t.done);
   const bs = chefoes(C, feitas, abertas);
   const rec = recibos(C, bs), naFuria = (d, dia) => (rec.furias[d] || []).some(([i, f]) => dia >= i && (!f || dia <= f));
@@ -514,21 +521,25 @@ function estado(C){
   feitas.forEach((t,i) => {
     let x = xpBase(t);
     if(extraHab.has(i)) x *= HAB_EXTRA;                                 // hábito semanal acima da meta
-    if(nenDe(t) === fracoSem(t.done)) x *= 1.5;                       // missão da semana
-    const d = discOf(t,C); if(d && t.done && naFuria(d, t.done)) x *= 1.5;   // fúria (pelos períodos gravados)
+    if(!fer(t.done) && nenDe(t) === fracoSem(t.done)) x *= 1.5;       // missão da semana (pausada nas férias)
+    const d = discOf(t,C); if(d && t.done && !fer(t.done) && naFuria(d, t.done)) x *= 1.5;   // fúria (pelos períodos gravados; pausada nas férias)
     if(F.mult.has(i)) x *= F.mult.get(i);                              // Ko / Acompanhar
     x = Math.round(x); total += x; xs.push({t,x});
     porDia[t.done] = (porDia[t.done]||0)+1; xpDia[t.done] = (xpDia[t.done]||0)+x; attr[nenDe(t)] += x;
   });
   // Codeforces: 5 XP por problema do dia, até 6 (dados.json/codeforces.por_dia), a partir do início da temporada; missão da semana ×1,5
   const cfDia = (D.cf && D.cf.por_dia) || {}; let cfXP = 0;
-  for(const d in cfDia){ if(d < TEMP.ini || d > HOJE) continue; const e = Math.round(cfExtra(cfDia[d], d) * (d >= CF_DESDE && fracoSem(d) === 1 ? 1.5 : 1)); if(e){ cfXP += e; total += e; xpDia[d] = (xpDia[d]||0)+e; attr[1] += e; } }
+  for(const d in cfDia){ if(d < TEMP.ini || d > HOJE) continue; const e = Math.round(cfExtra(cfDia[d], d) * (d >= CF_DESDE && !fer(d) && fracoSem(d) === 1 ? 1.5 : 1)); if(e){ cfXP += e; total += e; xpDia[d] = (xpDia[d]||0)+e; attr[1] += e; } }
   // caçadas e expedições (0.5.8): marco fechado e expedição concluída somam o bônus gravado no dia em que fecharam
   const G = grupos(C, D.feitas, abertas), xpDe2 = new Map(xs.map(o => [o.t, o.x]));
   let gXP = 0;
   const somaG = (d, x) => { if(!d || !(x > 0) || d > HOJE) return; gXP += x; total += x; xpDia[d] = (xpDia[d]||0) + x; };
   for(const c of Object.values(G.cac)) if(c.fim && c.exp) somaG(c.fim, c.bonus);
   for(const e of Object.values(G.exp)){ if(e.fim) somaG(e.fim, e.bonus); e.xp = e.tarefas.reduce((s, t) => s + (xpDe2.get(t) || 0), 0); }
+  // contribuições (#23): bug corrigido ou ideia feita, aberta pelo jogador no GitHub, dá XP no dia em que o jogo viu a issue fechada
+  const contrib = ((D.contrib && D.contrib.issues) || []).filter(i => CONTRIB[i.tipo] && i.dia && i.dia <= HOJE);
+  let contribXP = 0; for(const i of contrib){ const x = CONTRIB[i.tipo].xp; contribXP += x; total += x; xpDia[i.dia] = (xpDia[i.dia]||0) + x; }
+  const contribJ = contrib.reduce((s, i) => s + CONTRIB[i.tipo].j, 0);
   // dias fechados (0.5.3): o XP de cada dia anterior fica gravado no estado.json (xpDias) e só sobe. Linha concluída que some
   // do todo/done (IA reescrevendo, todo.sh archive) não tira mais XP do passado; "esqueci de marcar ontem" ainda soma.
   rec.xpDias = {...(EST.xpDias || {})};
@@ -539,28 +550,29 @@ function estado(C){
   }
   const first = feitas.map(t => t.done).sort()[0], set = new Set(Object.keys(porDia));
   const ritmo = first ? total/Math.max(1, dias(first,HOJE)/7) : 0;
-  const fraco = fracoSem(HOJE);
-  const ws = addD(HOJE,-dow(HOJE)); let missDias = 0; for(let i=0;i<7;i++){ const d = addD(ws,i); if(feitas.some(t => t.done === d && nenDe(t) === fraco)) missDias++; }
+  const fraco = fracoSem(HOJE), pausa = fer(HOJE), frAgora = pausa ? -1 : fraco;   // frAgora: o atributo que rende ×1,5 hoje (nenhum nas férias)
+  const ws = addD(HOJE,-dow(HOJE)); let missDias = 0; for(let i=0;i<7;i++){ const d = addD(ws,i); if(!fer(d) && feitas.some(t => t.done === d && nenDe(t) === fraco)) missDias++; }
   // recompensa da missão: cada semana com 3+ dias do atributo da semana dá 1 feitiço à escolha
   let missoes = 0;
-  if(first) for(let w = addD(first,-dow(first)); w <= HOJE; w = addD(w,7)){ const fr = fracoSem(w); let k = 0; for(let i=0;i<7;i++){ const d = addD(w,i); if(d <= HOJE && feitas.some(t => t.done === d && nenDe(t) === fr)) k++; } if(k >= 3) missoes++; }
+  if(first) for(let w = addD(first,-dow(first)); w <= HOJE; w = addD(w,7)){ const fr = fracoSem(w); let k = 0; for(let i=0;i<7;i++){ const d = addD(w,i); if(d <= HOJE && !fer(d) && feitas.some(t => t.done === d && nenDe(t) === fr)) k++; } if(k >= 3) missoes++; }
   const cfHoje = cfDia[HOJE] || 0;
   const rot = abertas.filter(isRec).map(t => ({...t, ok:false})).concat(feitas.filter(t => isRec(t) && t.done === HOJE && t.raw).map(t => ({...t, ok:true})));
   const golpes = abertas.filter(t => !isRec(t)).map(t => {
     const b = bs.find(b => b.d === discOf(t,C)), av = b ? b.avs.find(a => a.abertas.includes(t)) : null;
     let sc = 0; if(t.prova === HOJE) sc += 150; else if(av && dias(HOJE,av.dt) >= 0 && dias(HOJE,av.dt) <= 7) sc += 60;
     if(t.due){ const k = dias(HOJE,t.due); sc += k <= 1 ? 60 : k <= 3 ? 40 : k <= 7 ? 20 : 0; }
-    if(nenDe(t) === fraco) sc += 15; if(b && b.fury) sc += 25; if(t.pri === 'A') sc += 10;
-    let x = xpBase({...t, done:HOJE}); if(nenDe(t) === fraco) x *= 1.5; if(b && b.fury) x *= 1.5;
-    return {t, sc, x: Math.round(x), b, av, bonus: nenDe(t) === fraco, fury: !!(b && b.fury)};
+    const fu = !pausa && !!(b && b.fury);
+    if(nenDe(t) === frAgora) sc += 15; if(fu) sc += 25; if(t.pri === 'A') sc += 10;
+    let x = xpBase({...t, done:HOJE}); if(nenDe(t) === frAgora) x *= 1.5; if(fu) x *= 1.5;
+    return {t, sc, x: Math.round(x), b, av, bonus: nenDe(t) === frAgora, fury: fu};
   }).sort((a,b) => b.sc - a.sc);
   const bonusNotas = Object.values(rec.notasJ).reduce((s, r) => s + (+r.j || 0), 0);   // pelos recibos: o peso do dia em que a nota entrou
   const resg = (C.CONQ || []).filter(c => c && c.resgate && !c.descartada);   // conquistas da IA resgatadas: Jenny ou um feitiço
   const conqJ = resg.reduce((s, c) => s + (c.resgate.como === 'jenny' ? +c.resgate.j || 0 : 0), 0);
   rec.acertos = {...(EST.acertos || {})};
-  if(rec.acertos[ACERTO] === undefined){ rec.acertos[ACERTO] = Math.max(0, (EST.spent||0) - (total*10 + bonusNotas + conqJ)); rec.mudou = true; }
+  if(rec.acertos[ACERTO] === undefined){ rec.acertos[ACERTO] = Math.max(0, (EST.spent||0) - (total*10 + bonusNotas + conqJ + contribJ)); rec.mudou = true; }
   const acerto = Object.values(rec.acertos).reduce((s, j) => s + (+j || 0), 0);
-  let ganho = total*10 + bonusNotas + conqJ + acerto;
+  let ganho = total*10 + bonusNotas + conqJ + contribJ + acerto;
   // nota corrigida para menos (0.5.3): tira no máximo o que há na carteira; o resto fica perdoado em acertos
   const corte = rec.cortes.reduce((s, c) => s + c.j, 0), falta = (EST.spent||0) - ganho;
   if(corte && falta > 0){ const p = Math.min(corte, falta), k = 'nota:' + rec.cortes.map(c => c.k).join(',') + ':' + HOJE;
@@ -579,8 +591,8 @@ function estado(C){
     (habDias[k] = habDias[k] || {n:t.txt, d:new Set()}).d.add(t.done); }
   const hab = Object.values(habDias).reduce((m,h) => h.d.size > m.max ? {max:h.d.size, nome:h.n} : m, {max:0, nome:''});
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
-  return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:ten(set,first,HOJE,F.zetsu), hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
-    proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + acerto)), rec, jenny: ganho - (EST.spent||0),
+  return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:ten(set,first,HOJE,F.zetsu,fer), hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
+    proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto)), rec, jenny: ganho - (EST.spent||0),
     inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, grupos: G, gXP, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
 }
@@ -690,7 +702,7 @@ function diasHab(C, id){
   if(id === 'cf'){ const cf = (C.D.cf && C.D.cf.por_dia) || {}; return new Set(Object.keys(cf).filter(d => cf[d] > 0)); }
   return new Set(C.D.feitas.filter(t => String(t.rec || '').split(':')[0] === id).map(t => String(t.rec).split(':')[1] || t.done));
 }
-const maiorSeq = (de, ate, ok) => { let m = 0, cur = 0; for(let d = de; d <= ate; d = addD(d, 1)){ cur = ok(d) ? cur + 1 : 0; m = Math.max(m, cur); } return m; };
+const maiorSeq = (de, ate, ok, neutro) => { let m = 0, cur = 0; for(let d = de; d <= ate; d = addD(d, 1)){ if(neutro && neutro(d)) continue; cur = ok(d) ? cur + 1 : 0; m = Math.max(m, cur); } return m; };
 /* progresso de uma regra contado a partir de `de`: {at, meta, on} */
 function progConq(r, C, S, de){
   const {HOJE} = C;
@@ -703,7 +715,7 @@ function progConq(r, C, S, de){
       cur = k >= sem ? cur + 1 : addD(w, 6) >= HOJE ? cur : 0; m = Math.max(m, cur); }   // a semana em curso não quebra a sequência
     return {at:m, meta:r.n, on: m >= r.n};
   }
-  if(r.regra === 'constancia'){ const at = maiorSeq(de, HOJE, d => S.ten.st[d] === 'on' || S.ten.st[d] === 'z'); return {at, meta:r.n, on: at >= r.n}; }
+  if(r.regra === 'constancia'){ const at = maiorSeq(de, HOJE, d => S.ten.st[d] === 'on' || S.ten.st[d] === 'z', d => S.ten.st[d] === 'f'); return {at, meta:r.n, on: at >= r.n}; }
   if(r.regra === 'semana'){ let m = 0; for(let w = addD(de, -dow(de)); w <= HOJE; w = addD(w, 7)){ let x = 0; for(let i = 0; i < 7; i++){ const d = addD(w, i); if(d >= de) x += S.xpDia[d] || 0; } m = Math.max(m, x); }
     return {at:m, meta:r.xp, on: m >= r.xp}; }
   if(r.regra === 'nota'){ const b = S.bs.find(b => b.d === r.disc); if(!b) return {at:0, meta:r.media || r.nota, on:false};
@@ -784,5 +796,5 @@ window.HJ = {TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, 
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
-  MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos};
+  MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, feriasDe};
 })();
