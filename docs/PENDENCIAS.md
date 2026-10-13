@@ -362,17 +362,22 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
 - **Aba Lista, bloco "constância":** sobra muito espaço entre os heatmaps (20 semanas) e a borda direita. Avaliar: mais
   semanas conforme a largura, quadradinhos maiores, ou outra coisa ao lado (resumo dos números, por exemplo).
 
-## Renomear para `feito` (decidido em 09/10/2026, fazer depois)
+## Renomear para `ganbatte` (nome decidido em 13/10/2026, #15)
 
-O nome definitivo é **`feito`**: a tarefa feita e o feito (façanha), sem depender do tema. Um repositório só; o servidor
-do modo em grupo entra como pasta (`grupo/`, serviço `feito-grupo`). O que muda:
+O nome definitivo é **Ganbatte** (no código, pastas e serviços, `ganbatte`), sem depender do tema. Um repositório só; o servidor
+do modo em grupo entra como pasta (`grupo/`, serviço `ganbatte-grupo`). O que muda:
 
-- repositório `todo-engine` → `feito` (o GitHub redireciona o nome antigo; atualizar o link do Pages e do instalador);
-- pasta de dados `~/.hunter-todo/` → `~/.feito/`, com **migração automática** (o servidor move a pasta antiga na primeira
-  vez) e a variável `HUNTER_DADOS` → `FEITO_DADOS` (aceitar as duas por um tempo);
-- serviço do início automático `hunter-todo` → `feito` (desligar o antigo e ligar o novo sem pedir nada ao jogador);
-- pasta do instalador `~/todo-engine` → `~/feito`, nome do ZIP de backup e o `server_version`/`app` do `/api/ping`;
-- textos "Hunter.todo" na página, no README e no `IA.md`.
+Feito na 0.6.6-beta2 (detalhes na tabela de versões do README): pasta de dados com migração automática, variáveis
+`GANBATTE_*` (as `HUNTER_*` ainda valem), início automático `ganbatte`, instalador em `~/ganbatte` (quem tem `~/todo-engine`
+continua nela), `/api/ping`, User-Agent e ZIP de backup, textos "Hunter.todo", prefixos `GB`/`GB_`/`GBx`/`gb-` e os
+nomes base das abas (`NOMES` no motor).
+
+Falta:
+- **repositório `todo-engine` → `ganbatte`** (o Caio troca em Settings do GitHub). O GitHub redireciona o git, o ZIP e o
+  raw do nome antigo, então as cópias instaladas continuam atualizando. Depois, trocar no código os endereços
+  (`GITHUB`, `confere_github`, a busca de issues em `contribuicoes`, os instaladores, `feedback.js`, `guia.js`,
+  `motor.js`, README) e o link do Pages (`caioparanaiba.github.io/ganbatte`; o Pages **não** redireciona o antigo).
+- tirar o suporte a `HUNTER_*`, `hj-` e `APP_ANTIGO` depois que todo mundo passar da 0.6.6.
 
 Cuidado para não repetir a migração: no código, nomes neutros (`grupo`, `placar`, `moeda`); os nomes do tema
 (Associação Hunter, Torre Trick, Trick Coin) ficam só no texto que aparece na tela.

@@ -1,4 +1,4 @@
-/* Hunter.todo · aba Novidades: o que mudou em cada versão e o aviso de versão nova.
+/* Ganbatte · aba Novidades: o que mudou em cada versão e o aviso de versão nova.
  * A lista entre os marcadores abaixo é JSON puro: o servidor lê a do GitHub (GET /api/atualizacao, no máximo a cada 6 h)
  * para saber se saiu versão nova. Ao lançar uma versão, ponha a nova no topo (a mesma do VERSAO do servidor.py).
  * Versão grande (X.Y, com nome novo): uma entrada só, com os destaques em "itens" e as versões que levaram até ela em
@@ -14,7 +14,14 @@
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
-window.HJ_NOVIDADES = /*NOVIDADES*/[
+window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.6-beta2", "nome": "atualização das expedições", "data": "2026-10-13",
+   "resumo": "O jogo agora se chama Ganbatte, e as abas ganharam nomes fixos que não mudam quando o tema da temporada mudar.",
+   "itens": [
+     {"ic": "crown", "t": "Ganbatte", "d": "O Hunter.todo virou Ganbatte. Hunter x Hunter continua sendo o tema desta temporada: a próxima pode ter outro, e o nome do jogo fica. Nada do seu jogo muda: tarefas, XP, Jenny e compras continuam iguais (#15)."},
+     {"ic": "scroll", "t": "Abas com nome fixo", "d": "O menu usa nomes que valem para qualquer temporada: Progresso (Arena Celestial), Projetos (Expedições), Calendário (Semestre), Conquistas (Book), Loja (Masadora) e Grupo (Torre Trick). O nome do tema aparece ao passar o mouse e continua dentro de cada aba."},
+     {"ic": "esp", "t": "Pasta de dados nova", "d": "Os seus dados passam de ~/.hunter-todo para ~/.ganbatte, sozinhos, na primeira vez que o jogo abre. No Linux e no Mac fica um atalho no lugar da pasta antiga. O início automático também troca de nome sem você precisar fazer nada."}
+   ]},
   {"versao": "0.6.6-beta1", "nome": "atualização das expedições", "data": "2026-10-13",
    "resumo": "A caçada inteira pode ter um prazo, uma tarefa comum vira caçada pelo editor e o cofre do mês agora é opcional.",
    "itens": [
@@ -296,7 +303,7 @@ window.HJ_NOVIDADES = /*NOVIDADES*/[
 ]/*FIM*/;
 (function(){
 'use strict';
-const NOV = window.HJ_NOVIDADES, HJ = window.HJ;
+const NOV = window.GB_NOVIDADES, GB = window.GB;
 
 document.head.insertAdjacentHTML('beforeend', `<style>
 .nv{display:flex;flex-direction:column;gap:16px}
@@ -362,7 +369,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 
 let AT = null;   // GET /api/atualizacao: {versao, novas:[...], erro, metodo, conferido}; null = conferindo
 let ATUALIZANDO = false;
-const curta = d => d ? HJ.brData(d) : '';
+const curta = d => d ? GB.brData(d) : '';
 const temNova = () => !!(AT && AT.ok && AT.novas && AT.novas.length);
 const naoVista = () => CTX && EST && EST.visto !== VERSAO_PAGINA;
 const grande = v => /^\d+\.\d+$/.test(String(v.versao));   // 0.6, 0.7: versão grande, com nome novo e as menores dentro
@@ -474,7 +481,7 @@ function seuAviso(v){
   }
   const dv = EST.devolve;
   if(dv && v.aviso === '0.6.5'){   // devolução (#51): o que voltou para a loja e o que a carteira recebeu
-    const nome = c => c.tipo === 'feitico' ? 'feitiço ' + ((HJx.SPELLS.find(s => s.k === c.id) || {}).n || c.id) : ((COS.find(i => i.id === c.id) || {}).n || c.id);
+    const nome = c => c.tipo === 'feitico' ? 'feitiço ' + ((GBx.SPELLS.find(s => s.k === c.id) || {}).n || c.id) : ((COS.find(i => i.id === c.id) || {}).n || c.id);
     partes.push(`Na 0.6.5, voltaram para a loja: <strong>${esc((dv.itens || []).map(nome).join(', '))}</strong>${dv.j > 0 ? `, e a carteira recebeu <strong>${(+dv.j).toLocaleString('pt-BR')} J</strong>, a parte paga com Jenny ganha jogando` : ''}.`);
   }
   const todas = partes.concat(ok); if(!todas.length) return '';
@@ -501,6 +508,6 @@ document.addEventListener('click', e => {
   if(e.target.id === 'nv-big') fechaGrande('');
 });
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.getElementById('nv-big')) fechaGrande(''); });
-window.HJ_NOV = {confere, canal: () => AT && AT.canal};
+window.GB_NOV = {confere, canal: () => AT && AT.canal};
 (function tenta(){ if(!CTX){ setTimeout(tenta, 500); return; } VISTO0 = EST.visto || ''; if(cur === 'nv') render(); setTimeout(boasNovas, 1500); setTimeout(() => confere(false), 1800); })();
 })();

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Hunter.todo</title>
+<title>Ganbatte</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231D2027' stroke='%23CDB384' stroke-width='3'/%3E%3Cpath d='M32 9l6 15 16 1-12 10 4 16-14-9-14 9 4-16-12-10 16-1z' fill='none' stroke='%23CDB384' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial Black,Arial' font-weight='900' font-size='15' fill='%23E2E5EB'%3EH%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&family=Pixelify+Sans:wght@400;600;700&family=Silkscreen:wght@400;700&family=Anton&family=Bangers&family=DotGothic16&display=swap" rel="stylesheet">
@@ -1248,7 +1248,7 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 <div class="wrap">
   <header class="head">
     <div style="display:flex;gap:14px;align-items:center"><span class="plate" style="width:46px;height:46px"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231D2027' stroke='%23CDB384' stroke-width='3'/%3E%3Cpath d='M32 9l6 15 16 1-12 10 4 16-14-9-14 9 4-16-12-10 16-1z' fill='none' stroke='%23CDB384' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial Black,Arial' font-weight='900' font-size='15' fill='%23E2E5EB'%3EH%3C/text%3E%3C/svg%3E" alt="Associação Hunter"></span>
-      <div><h1>Hunter<span>.todo</span></h1><p style="margin:2px 0 0">O jogo do seu todo.txt. As regras estão na aba Regras; nome, hábitos e IA, em Configurações.</p></div></div>
+      <div><h1>Ganbatte</h1><p style="margin:2px 0 0">O jogo do seu todo.txt. As regras estão na aba Regras; nome, hábitos e IA, em Configurações.</p></div></div>
     <div class="facts" id="facts"></div>
   </header>
   <div class="fact" id="demo-aviso" hidden style="margin-top:12px;border-style:dashed;color:var(--amb)">Modo demonstração: jogador de exemplo, nada é gravado. Recarregar a página volta ao começo.</div>
@@ -1280,7 +1280,7 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
         <div class="card l-const" id="l-heatc"><h2><span class="c">~/</span>constância<span id="l-heatt"></span></h2><div id="l-heat"></div></div>
       </div>
       <aside class="l-side">
-        <!-- cada card da lateral abre e fecha pelo título (0.6.4); o que fica aberto é guardado neste navegador (hj-lado) -->
+        <!-- cada card da lateral abre e fecha pelo título (0.6.4); o que fica aberto é guardado neste navegador (gb-lado) -->
         <details class="card l-tg l-valec" id="l-valec" data-lado="vale"><summary><h2><span class="c">~/</span>quanto vale<span class="tg" aria-hidden="true">▸</span></h2></summary><table class="l-vale"><tbody id="l-vale"></tbody></table></details>
         <details class="card l-tg" data-lado="golpes" open><summary><h2><span class="c">~/</span>rende mais agora<span class="tg" aria-hidden="true">▸</span></h2></summary><div id="l-golpes"></div></details>
         <details class="card l-tg" data-lado="chefoes" open><summary><h2><span class="c">~/</span>chefões · vida = nota que falta<button class="go" data-go="b2">quadro →</button><span class="tg" aria-hidden="true">▸</span></h2></summary><div id="l-bosses"></div></details>
@@ -1339,14 +1339,16 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
   <section id="v-sys" hidden>
     <div id="gnav-sys"></div><div class="sys" id="sys-root"></div></section>
 </div>
+<script>/* #15: as preferências deste computador (painéis abertos, sons, efeitos) passaram de hj- para gb- */
+try { for(const k of Object.keys(localStorage)) if(k.startsWith('hj-') && localStorage.getItem('gb-' + k.slice(3)) === null) localStorage.setItem('gb-' + k.slice(3), localStorage.getItem(k)); } catch(e){}</script>
 <script src="demo.js"></script>
 <script src="motor.js"></script>
 <script>
-/* Hunter.todo · página do jogo (servida pelo servidor.py). As regras ficam em motor.js (window.HJ).
+/* Ganbatte · página do jogo (servida pelo servidor.py). As regras ficam em motor.js (window.GB).
    Os dados vêm de GET /api/jogo; tarefas usam POST /api/act, /api/add e /api/undo; nota, loja e caixa de entrada
    gravam em notas.txt, estado.json e ajustes.txt da pasta de dados via POST /api/jogo/... (rotas no topo do servidor.py). */
-const HJx = window.HJ;
-const {MEDIA, COFRE_MES, NEN, GUARDA, SPELLS, TK, PALS, palStyle, REAIS, ALLFX, mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, xpDe, nenDe} = HJx;
+const GBx = window.GB;
+const {MEDIA, COFRE_MES, NEN, GUARDA, SPELLS, TK, PALS, palStyle, REAIS, ALLFX, mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, xpDe, nenDe} = GBx;
 let CTX = null, D, HOJE, TEMP, BOSSES, AVAL, NOTAS, PARC, INBOX, EST, COS = [];
 const SIM = new Set(), NOTAS_TXT = [];
 let OWN = new Set(), SPENT = 0, BOUGHT = {}, RESG = [], COFRE_USADO = 0;
@@ -1354,28 +1356,28 @@ let TESTE = null;   // modo teste da Masadora (só nos canais beta e grupo): {ow
 const R = {dif:'normal'};
 const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
   avatar:'logo', lic:'l2', hud:'logo', anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
-try { UI.fxOff = localStorage.getItem('hj-fxoff') === '1'; } catch(e){}
-try { UI.cfold = JSON.parse(localStorage.getItem('hj-cfold') || '{}') || {}; } catch(e){ UI.cfold = {}; }   // caçadas recolhidas na Lista, por navegador
+try { UI.fxOff = localStorage.getItem('gb-fxoff') === '1'; } catch(e){}
+try { UI.cfold = JSON.parse(localStorage.getItem('gb-cfold') || '{}') || {}; } catch(e){ UI.cfold = {}; }   // caçadas recolhidas na Lista, por navegador
 const PXSKINS = {map:[['dia','Dia'],['tarde','Tarde'],['noite','Noite']], p1:[['lilas','Lilás'],['gameboy','Game Boy'],['noite','Noite']], p3:[['couro','Couro'],['joy','Joystation'],['noite','Noite']], p3b:[['madeira','Madeira'],['neon','Neon'],['papel','Papel']]};
 const THEMES = [['simples','Simples'],['painel','Painel'],['leorio','Leorio'],['claro','Claro'],['gon','Gon'],['biscuit','Biscuit'],['kurapika','Kurapika'],['netero','Netero'],['killua','Killua'],['hisoka','Hisoka'],['meruem','Meruem'],['pergaminho','Pergaminho'],['zoldyck','Zoldyck'],['ryodan','Genei Ryodan'],['greed','Greed Island'],['abismo','Continente Negro'],['aurora','Aurora']];
-const avSrc = f => (window.HJ_AV && window.HJ_AV[f]) || 'a/' + f + '.png';   // no protótipo de arquivo único as fotos vêm embutidas
+const avSrc = f => (window.GB_AV && window.GB_AV[f]) || 'a/' + f + '.png';   // no protótipo de arquivo único as fotos vêm embutidas
 const LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231D2027' stroke='%23CDB384' stroke-width='3'/%3E%3Cpath d='M32 9l6 15 16 1-12 10 4 16-14-9-14 9 4-16-12-10 16-1z' fill='none' stroke='%23CDB384' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial Black,Arial' font-weight='900' font-size='15' fill='%23E2E5EB'%3EH%3C/text%3E%3C/svg%3E";   // emblema do template (as fotos de perfil ficam em a/, servidas pelo servidor)
-const discOf = t => HJx.discOf(t, CTX);
-const andar = xp => HJx.andar(xp, R.dif), custo = n => HJx.custo(n, R.dif), xpAte = n => HJx.xpAte(n, R.dif);
-const estado = () => { const S = HJx.estado(CTX); if(TESTE) S.jenny = Infinity; return S; };   // modo teste: Jenny infinita
-const somOff = () => !!(window.HJ_FX && HJ_FX.somOff());   // sons da loja desligados neste computador (efeitos.js)
-const cartas = S => HJx.cartas(CTX, S);
-const cofreOn = () => HJx.cofreMes(EST) > 0;   // cofre do mês opcional (#34): liga em Configurações; desligado, sem card e sem limite em R$
-const cofreTotal = () => HJx.cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1);
+const discOf = t => GBx.discOf(t, CTX);
+const andar = xp => GBx.andar(xp, R.dif), custo = n => GBx.custo(n, R.dif), xpAte = n => GBx.xpAte(n, R.dif);
+const estado = () => { const S = GBx.estado(CTX); if(TESTE) S.jenny = Infinity; return S; };   // modo teste: Jenny infinita
+const somOff = () => !!(window.GB_FX && GB_FX.somOff());   // sons da loja desligados neste computador (efeitos.js)
+const cartas = S => GBx.cartas(CTX, S);
+const cofreOn = () => GBx.cofreMes(EST) > 0;   // cofre do mês opcional (#34): liga em Configurações; desligado, sem card e sem limite em R$
+const cofreTotal = () => GBx.cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1);
 function sync(api){
-  CTX = HJx.carregar(api); ({D, HOJE, TEMP, BOSSES, AVAL, NOTAS, PARC, INBOX, EST} = CTX); COS = HJx.catalogo(CTX.AVATARES);
-  OWN = HJx.expandeOwn(new Set(EST.own)); SPENT = EST.spent||0; COFRE_USADO = EST.cofreUsado||0; RESG = EST.resg||[];
-  BOUGHT = Object.fromEntries((EST.bought[HJx.semanaISO(HOJE)]||[]).map(k => [k,1]));
+  CTX = GBx.carregar(api); ({D, HOJE, TEMP, BOSSES, AVAL, NOTAS, PARC, INBOX, EST} = CTX); COS = GBx.catalogo(CTX.AVATARES);
+  OWN = GBx.expandeOwn(new Set(EST.own)); SPENT = EST.spent||0; COFRE_USADO = EST.cofreUsado||0; RESG = EST.resg||[];
+  BOUGHT = Object.fromEntries((EST.bought[GBx.semanaISO(HOJE)]||[]).map(k => [k,1]));
   const e = EST.equip; Object.assign(UI, {theme:e.theme, fx:e.fx||[], bg:e.bg||'', frame:e.frame||'', title:e.title||'', font:e.font||'', som:e.som||'', avatar:e.avatar||'logo', lic:e.lic||'l2', hud:e.hud||'logo'}); Object.assign(UI.skin, e.skin||{});
   if(!BOSSES.some(b => b.d === UI.bsel)) UI.bsel = BOSSES[0] ? BOSSES[0].d : '';
   if(!BOSSES.some(b => b.d === UI.mapsel)) UI.mapsel = UI.bsel;
   if(TESTE){ if(!podeTeste()) TESTE = null; else { OWN = TESTE.own; Object.assign(UI, structuredClone(TESTE.eq)); } }   // recarregou no meio do teste: continua nele
-  avisoVersao(); guardaRecibos(); devolve(); if(window.HJ_TEMP) HJ_TEMP.confere();   // temporada acabou: guarda a cápsula (temporadas.js)
+  avisoVersao(); guardaRecibos(); devolve(); if(window.GB_TEMP) GB_TEMP.confere();   // temporada acabou: guarda a cápsula (temporadas.js)
 }
 /* modo teste da Masadora, só para quem está nos canais beta e grupo: Jenny infinita para experimentar qualquer item. É temporário de
    propósito: as compras e o que for equipado ficam só na memória desta página. Sair, recarregar a página ou voltar para
@@ -1417,23 +1419,23 @@ function guardaRecibos(){
    para a loja. O que estiver equipado sai; o servidor guarda a lista (estado.json → devolve) e não deixa uma aba antiga devolvê-la */
 function devolve(){
   if(TESTE) return;
-  const dv = HJx.devolucao(CTX, HJx.estado(CTX)); if(!dv) return;
+  const dv = GBx.devolucao(CTX, GBx.estado(CTX)); if(!dv) return;
   for(const id of dv.own){ const it = COS.find(i => i.id === id); OWN.delete(id); if(!it || !equipado(it)) continue;
     if(it.cat === 'avatar') UI.avatar = 'logo'; else if(it.cat === 'pal') UI.theme = 'simples'; else if(it.cat === 'tex') UI.bg = '';
     else if(it.cat === 'fx') UI.fx = UI.fx.filter(f => f !== it.fx); else if(it.skin) UI.skin[it.skin[0]] = PXSKINS[it.skin[0]][0][0];
     else if(['frame', 'title', 'font', 'som'].includes(it.cat)) UI[it.cat] = ''; }
-  HJx.expandeOwn(OWN);
+  GBx.expandeOwn(OWN);
   EST.bought[dv.semana] = (EST.bought[dv.semana] || []).filter(k => !dv.feiticos.includes(k));
-  if(dv.semana === HJx.semanaISO(HOJE)) dv.feiticos.forEach(k => delete BOUGHT[k]);
+  if(dv.semana === GBx.semanaISO(HOJE)) dv.feiticos.forEach(k => delete BOUGHT[k]);
   EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.6-beta1';
+const VERSAO_PAGINA = '0.6.6-beta2';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
   if(el) return;
-  document.body.insertAdjacentHTML('afterbegin', `<div id="aviso-versao" role="alert" style="position:sticky;top:0;z-index:70;padding:10px 16px;background:var(--amb);color:#1a1300;font:600 13.5px var(--f-ui)">O servidor do jogo ainda está na versão ${esc(v)} e a página na ${VERSAO_PAGINA}: algumas funções (como a IA) não aparecem. Rode o instalador de novo ou reinicie o computador; no Linux: <code>systemctl --user restart hunter-todo</code>. Depois, recarregue a página.</div>`);
+  document.body.insertAdjacentHTML('afterbegin', `<div id="aviso-versao" role="alert" style="position:sticky;top:0;z-index:70;padding:10px 16px;background:var(--amb);color:#1a1300;font:600 13.5px var(--f-ui)">O servidor do jogo ainda está na versão ${esc(v)} e a página na ${VERSAO_PAGINA}: algumas funções (como a IA) não aparecem. Rode o instalador de novo ou reinicie o computador; no Linux: <code>systemctl --user restart ganbatte</code>. Depois, recarregue a página.</div>`);
 }
 const SEM_SERVIDOR = 'o servidor do jogo não está respondendo. Ele foi fechado? Rode o jogo de novo (python3 servidor.py) e recarregue esta página; o que você preencheu aqui precisa ser refeito.';
 async function post(url, body){
@@ -1453,7 +1455,7 @@ function salvaUI(){
   if(TESTE) Object.assign(TESTE, {own:OWN, eq:equipAgora()});   // modo teste: a loja fica só na memória; o resto (tour, visto) grava
   else {
     EST.own = [...OWN]; EST.spent = SPENT; EST.cofreUsado = COFRE_USADO; EST.resg = RESG;
-    EST.bought[HJx.semanaISO(HOJE)] = Object.keys(BOUGHT);
+    EST.bought[GBx.semanaISO(HOJE)] = Object.keys(BOUGHT);
     EST.equip = {theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, title:UI.title, font:UI.font, som:UI.som, avatar:UI.avatar, lic:UI.lic, hud:UI.hud, skin:UI.skin};
   }
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a loja: ' + esc(e.message)));
@@ -1478,7 +1480,7 @@ function aplicaTema(){
   if(V.bg) r.setAttribute('data-bg', V.bg); else r.removeAttribute('data-bg');
   if(V.frame) r.setAttribute('data-frame', V.frame); else r.removeAttribute('data-frame');
   if(V.font) r.setAttribute('data-font', V.font); else r.removeAttribute('data-font');
-  if(window.HJ_FX) HJ_FX.aplica();
+  if(window.GB_FX) GB_FX.aplica();
 }
 
 /* ---------- desenho ---------- */
@@ -1487,7 +1489,7 @@ const pct = (a,b) => b ? Math.max(0, Math.min(100, a/b*100)) : 0;
 const fmt = n => Math.round(n).toLocaleString('pt-BR');
 const nf = n => (Math.round(n*10)/10).toLocaleString('pt-BR');
 const lvA = x => Math.floor(Math.sqrt(x/4));
-const ddmm = iso => HJx.curta(iso);   // dd/mm ou mm/dd, conforme a opção de datas
+const ddmm = iso => GBx.curta(iso);   // dd/mm ou mm/dd, conforme a opção de datas
 const ic = n => `<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const NC = i => `var(--n${i+1})`;
 const avNen = (i,s) => `<span class="av" style="--c:${NC(i)}${s?';--s:'+s+'px':''}" title="${esc(NEN[i].n)}">${ic(NEN[i].k)}</span>`;
@@ -1561,7 +1563,7 @@ function buyable(S, kind, k){
 
 /* ---------- B ---------- */
 function linksB(S){
-  return [['b2','spider','Chefões',`${S.bs.filter(b=>b.dead).length}/5 derrotados · ${S.espera.length} nota aguardando`,'var(--red)'],['bk','card','Book',`${cartas(S).filter(c=>c.on).length} cartas · ${invN(S)} feitiços`,'var(--amb)'],['ms','coin','Masadora',`${fmt(S.jenny)} J na carteira`,'var(--amb)'],['d2','tower','Semestre',`semana ${semana().n} de ${semana().tot}`,'var(--volt)'],['px','island','Mundo pixel','mapa, ficha, ilha, loja','var(--grn)']]
+  return [['b2','spider',ABA.b2.n,`${S.bs.filter(b=>b.dead).length}/5 derrotados · ${S.espera.length} nota aguardando`,'var(--red)'],['bk','card',ABA.bk.n,`${cartas(S).filter(c=>c.on).length} cartas · ${invN(S)} feitiços`,'var(--amb)'],['ms','coin',ABA.ms.n,`${fmt(S.jenny)} J na carteira`,'var(--amb)'],['d2','tower',ABA.d2.n,`semana ${semana().n} de ${semana().tot}`,'var(--volt)'],['px','island','Mundo pixel','mapa, ficha, ilha, loja','var(--grn)']]
     .map(([t,i,n,s,c]) => `<button class="lk" data-go="${t}"><span class="av" style="--c:${c}">${ic(i)}</span><span>${n}<small>${s}</small></span></button>`).join('');
 }
 function rB(S){
@@ -1599,7 +1601,7 @@ function rB2(S){
     <label class="sub" for="inbox-txt">Anote mudanças do plano de ensino (data, peso, avaliação nova). Ficam em ajustes.txt: aplique no plano (editar avaliações e notas; com a IA ligada, "aplicar lembretes com IA" no editor da disciplina) e marque como aplicado.</label>
     <textarea id="inbox-txt" placeholder="ex.: ARQ1: a P2 virou dois trabalhos de 15"></textarea>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="sub mono">grava em ajustes.txt</span><button class="btn v" data-inbox>enviar</button></div>
-    <div class="log">${INBOX.map((m,i) => [m,i]).reverse().map(([m,i]) => `<div class="${m.st==='ok'?'':'p'}"><small>${HJx.brDatas(m.d)} · ${m.st==='ok'?'aplicado':'pendente'} <button class="go" data-aplic="${i}">${m.st==='ok'?'voltar a pendente':'marcar aplicado'}</button></small>${esc(m.t)}${m.r?`<small>→ ${esc(m.r)}</small>`:''}</div>`).join('')}</div>`;
+    <div class="log">${INBOX.map((m,i) => [m,i]).reverse().map(([m,i]) => `<div class="${m.st==='ok'?'':'p'}"><small>${GBx.brDatas(m.d)} · ${m.st==='ok'?'aplicado':'pendente'} <button class="go" data-aplic="${i}">${m.st==='ok'?'voltar a pendente':'marcar aplicado'}</button></small>${esc(m.t)}${m.r?`<small>→ ${esc(m.r)}</small>`:''}</div>`).join('')}</div>`;
   document.getElementById('b2-leg').innerHTML = `<h2><span class="c">~/</span>como ler</h2><p style="margin:0;font-size:13.5px">A barra é a <b>vida</b> do chefão e só cai com nota: cada avaliação tira peso × nota. Passou da linha verde (média 6), ele cai. As tarefas enchem a <b>preparação</b> e dão XP. Preparação completa antes da data vale um feitiço, seja qual for a nota.</p><p style="margin:8px 0 0;font-size:13.5px">O <span class="mono">→ P2</span> ao lado de cada tarefa é a avaliação que ela prepara (passe o mouse para ver por quê). Para trocar, edite a tarefa na Lista e escreva <span class="mono">av:P1</span>.</p>${SIM.size||Object.keys(NOTAS).length?'<button class="reset" data-reset style="margin-top:10px">desfazer simulação</button>':''}`;
 }
 /* ---------- D2 ---------- */
@@ -1636,7 +1638,7 @@ function rD2(S){
 }
 /* ---------- Book limpo ---------- */
 const TIERS = [['ano','Anual','lendária · uma por ano'],['semestre','Semestral','rara · uma por semestre'],['mes','Mensal','uma por mês'],['semana','Semanal','comum · uma por semana']];
-const espera = t => t === 'ano' ? `a de ${HOJE.slice(0,4)} sai em 1º/jan` : t === 'semestre' ? `a de ${TEMP.nome.replace('Temporada ','')} sai depois do fim do semestre (${ddmm(HJx.addD(TEMP.fim, 1))})` : t === 'mes' ? 'a deste mês sai no dia 1º' : 'a desta semana sai na segunda';
+const espera = t => t === 'ano' ? `a de ${HOJE.slice(0,4)} sai em 1º/jan` : t === 'semestre' ? `a de ${TEMP.nome.replace('Temporada ','')} sai depois do fim do semestre (${ddmm(GBx.addD(TEMP.fim, 1))})` : t === 'mes' ? 'a deste mês sai no dia 1º' : 'a desta semana sai na segunda';
 function usoHTML(S, s){
   // controles de "usar" de um feitiço: alguns pedem uma escolha (atributo, tarefa ou qual feitiço)
   const k = s.k, como = k === 'escolha' ? UI.como : k, base = k === 'escolha' ? `escolha:${como||''}` : k;
@@ -1670,11 +1672,11 @@ function zetsuOps(S){
 }
 function rBK(S){
   const C = cartas(S), narr = C.filter(c => c.o === 'claude'), cia = C.filter(c => c.o === 'ia');
-  document.getElementById('bk-prog').innerHTML = [['conquistas',`${C.filter(c=>c.o==='slot'&&c.on).length + cia.filter(c=>c.resgate).length}/${C.filter(c=>c.o==='slot').length + cia.filter(c=>c.resgate).length}`,'gerais, Ten, hábitos, chefões e os desafios da IA conquistados'],['desafios da IA',`${cia.filter(c=>!c.resgate).length}/${HJx.CONQ_MAX}`,'4 fáceis, 3 médias, 2 difíceis e 1 lendária'],['narradas',`${narr.length}`,'semanais, mensais, semestrais e anuais'],['feitiços',`${invN(S)}`,`expiram em ${ddmm(TEMP.volta)} (volta às aulas)`]]
+  document.getElementById('bk-prog').innerHTML = [['conquistas',`${C.filter(c=>c.o==='slot'&&c.on).length + cia.filter(c=>c.resgate).length}/${C.filter(c=>c.o==='slot').length + cia.filter(c=>c.resgate).length}`,'gerais, Ten, hábitos, chefões e os desafios da IA conquistados'],['desafios da IA',`${cia.filter(c=>!c.resgate).length}/${GBx.CONQ_MAX}`,'4 fáceis, 3 médias, 2 difíceis e 1 lendária'],['narradas',`${narr.length}`,'semanais, mensais, semestrais e anuais'],['feitiços',`${invN(S)}`,`expiram em ${ddmm(TEMP.volta)} (volta às aulas)`]]
     .map(([s,b,m]) => `<div class="k"><span>${s}</span><b>${b}</b><small>${m}</small></div>`).join('');
   document.getElementById('bk-tabs').innerHTML = [['slot','Conquistas'],['ia','Desafios da IA'],['claude','Narradas'],['feit','Feitiços']].map(([k,n]) => `<button data-bk="${k}" aria-pressed="${UI.bk===k}">${n}</button>`).join('');
   const carta = c => `<button class="gc claude" data-bksel="${esc(c.no)}" aria-pressed="${UI.bksel===c.no}"><span class="no">${esc(c.periodo||'')}</span><span class="rk">${c.rk}</span><span class="big">${ic(c.ic)}</span><div><div class="og">${({semana:'semanal',mes:'mensal',semestre:'semestral',ano:'anual'})[c.tipo]||'narrada'}</div><div class="gn">${esc(c.n)}</div></div></button>`;
-  if(UI.bk === 'ia' && window.HJ_CONQ){ window.HJ_CONQ.book(S, cia); return; }
+  if(UI.bk === 'ia' && window.GB_CONQ){ window.GB_CONQ.book(S, cia); return; }
   let items;
   if(UI.bk === 'feit') items = SPELLS.map(s => { const q = S.inv[s.k]||0; return `<button class="gc sp" data-bksel="F:${s.k}" aria-pressed="${UI.bksel==='F:'+s.k}" style="${q?'':'opacity:.55'}"><span class="no">×${q}</span><span class="big">${ic(s.ic)}</span><div><div class="og">feitiço</div><div class="gn">${s.n}</div></div></button>`; }).join('');
   else if(UI.bk === 'claude') items = TIERS.map(([t,n,d]) => { const cs = narr.filter(c => c.tipo === t).sort((p,q) => String(q.periodo).localeCompare(String(p.periodo)));
@@ -1689,7 +1691,7 @@ function rBK(S){
   if(UI.bksel.startsWith('F:')){ const s = spell(UI.bksel.slice(2)), q = S.inv[s.k]||0;
     det = `<div class="face" style="color:var(--aura);border-color:var(--aura)">${ic(s.ic)}</div><p class="cap">feitiço · na bolsa: ${q}</p><h3>${s.n}</h3><p>${s.e}</p><p class="sub">${s.noshop ? 'Vem da preparação completa antes de uma avaliação e de cada missão da semana cumprida.' : `Loja: ${fmt(s.p)} J (1 por semana). Também vem da preparação completa ou da missão da semana, como "à escolha".`} Expira em ${ddmm(TEMP.volta)}.</p>${q ? usoHTML(S, s) : ''}
       ${S.usos.length ? `<p class="cap" style="margin-top:14px">usados</p>${S.usos.slice(-5).reverse().map(u => `<div class="sub">${ddmm(u.d)} · ${spell(u.ef||u.k).n}${u.k==='escolha'?' (à escolha)':''}${u.ef==='gyo'?' → '+NEN[+u.alvo].n:''}${u.ef==='ken'?' → '+esc(String(u.alvo).slice(0,40)):''}${u.ef==='zetsu'&&u.zalvo?' → '+(u.zalvo==='ten'?'Ten':esc(((CTX.JOG.habitos||[]).find(h => h.id===u.zalvo)||{n:u.zalvo==='duo'?'Duolingo':u.zalvo}).n))+' de '+ddmm(u.zdia):''}</div>`).join('')}` : ''}`; }
-  else if(UI.bk === 'slot' && cia.some(c => c.resgate && c.no === UI.bksel) && window.HJ_CONQ) det = window.HJ_CONQ.det(cia.find(c => c.no === UI.bksel));
+  else if(UI.bk === 'slot' && cia.some(c => c.resgate && c.no === UI.bksel) && window.GB_CONQ) det = window.GB_CONQ.det(cia.find(c => c.no === UI.bksel));
   else { const c = C.find(c => c.no === UI.bksel) || (UI.bk === 'claude' ? narr[0] : C[0]);
     det = !c ? `<p class="sub">Nenhuma carta narrada ainda. ${espera('semana')}.</p>` : `<div class="face"${c.o==='claude'?' style="color:var(--volt);border-color:var(--volt)"':''}>${ic(c.ic)}</div><p class="cap">${c.o==='claude' ? `${({semana:'semanal · comum',mes:'mensal',semestre:'semestral · rara',ano:'anual · lendária'})[c.tipo]||'narrada'} · ${esc(c.periodo||'')}` : `Nº ${c.no} · rank ${c.rk} · ${OG[c.o]}`}</p><h3>${esc(c.n)}</h3>${c.cron ? `<p class="cron" style="white-space:pre-line">${esc(c.cron)}</p><p class="cap" style="margin:14px 0 4px">o que aconteceu</p>` : ''}<p style="white-space:pre-line">${esc(c.d)}</p><p class="sub">${c.o==='slot' ? (c.on ? 'No livro.' : 'Ainda não.') : 'Narrada com IA a partir do que aconteceu de verdade' + (c.escrita ? ` · ${ddmm(c.escrita)}` : '') + '.'}</p>`; }
   document.getElementById('bk-det').innerHTML = det + `<p style="margin-top:14px"><button class="go" data-go="ms">ir para a Masadora →</button></p>`;
@@ -1726,10 +1728,10 @@ function pvHTML(it){
   if(it.cat === 'avatar') return `<div class="pv av8" style="${palStyle(UI.theme)}"><span class="plate" style="width:76px;height:76px;background:${it.eq.avatar === 'logo' ? '#F6F3EC' : 'transparent'};box-shadow:none"><img src="${it.eq.avatar === 'logo' ? LOGO : avSrc(it.eq.avatar)}" alt="" style="width:100%"></span></div>`;
   if(it.sw) return `<div class="pv sw">${it.sw.map(c => `<i style="background:${c}"></i>`).join('')}</div>`;
   if(it.lend) return `<div class="pv leg">?</div>`;
-  if(it.cat === 'som') return `<div class="pv som" style="${palStyle(UI.theme)}">${[18,34,26,44,30,20,38,24].map((h, i) => `<i style="--h:${h}px;--d:${i*.12}s"></i>`).join('')}<span class="hj-tag">▶ ouvir</span></div>`;
+  if(it.cat === 'som') return `<div class="pv som" style="${palStyle(UI.theme)}">${[18,34,26,44,30,20,38,24].map((h, i) => `<i style="--h:${h}px;--d:${i*.12}s"></i>`).join('')}<span class="gb-tag">▶ ouvir</span></div>`;
   const pal = it.eq?.theme || UI.theme, fx = it.fx ? [it.fx] : (it.fxs || []);
   const cls = ['pv', it.eq?.bg ? 'tex-'+it.eq.bg : '', fx.length ? 'fxd '+fx.join(' ') : '', it.eq?.frame ? 'fr-'+it.eq.frame : '', it.eq?.font ? 'ft-'+it.eq.font : ''].join(' ');
-  return `<div class="${cls}" style="${palStyle(pal)}">${avMe(40)}<div class="mini"><b>Andar 97</b>${it.eq?.title?`<span class="titulo">${esc(it.eq.title)}</span>`:''}<div class="xpbar"><b style="width:62%"></b></div></div><span class="ring fury" style="--p:70"><span>${ic('antenna')}</span></span>${fx.includes('zap')?'<span class="flash"></span>':''}${it.ev ? `<span class="hj-tag">${['confete','fogos'].includes(it.fx) ? 'no andar novo' : 'ao concluir'} · ▶</span>` : ''}</div>`;
+  return `<div class="${cls}" style="${palStyle(pal)}">${avMe(40)}<div class="mini"><b>Andar 97</b>${it.eq?.title?`<span class="titulo">${esc(it.eq.title)}</span>`:''}<div class="xpbar"><b style="width:62%"></b></div></div><span class="ring fury" style="--p:70"><span>${ic('antenna')}</span></span>${fx.includes('zap')?'<span class="flash"></span>':''}${it.ev ? `<span class="gb-tag">${['confete','fogos'].includes(it.fx) ? 'no andar novo' : 'ao concluir'} · ▶</span>` : ''}</div>`;
 }
 function itemHTML(S, it){
   const own = OWN.has(it.id), eq = own && equipado(it), lk = it.lock && it.lock(S), need = it.need && !OWN.has(it.need);
@@ -1742,7 +1744,7 @@ function itemHTML(S, it){
   else btn = `<button class="btn" data-cos="${it.id}" ${S.jenny >= it.p ? '' : 'disabled'}>${S.jenny >= it.p ? 'comprar' : `faltam ${fmt(it.p - S.jenny)} J`}</button>`;
   const prova = UI.prova === it.id;
   const ver = provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
-    : it.ev || it.cat === 'som' ? `<button class="btn hj-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
+    : it.ev || it.cat === 'som' ? `<button class="btn gb-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
   return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need?' lock':''}">${pvHTML(it)}<div class="info"><b>${esc(it.n)}</b><p>${esc(it.d)}</p><div class="buy7"><span class="pr${it.p?'':' free'}">${it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis'}${own?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
 }
 const SECS = {
@@ -1756,21 +1758,21 @@ function rMS(S){
   else if(UI.cat === 'premios') main = UI.pedit ? premiosEditor(S) : premiosHTML(S);
   else main = `<div class="sec7"><h3>Feitiços</h3><p>Também vêm da preparação completa e da missão da semana. Limite de 1 de cada por semana na loja. Expiram em ${ddmm(TEMP.volta)}.</p><div class="items">${SPELLS.filter(s => !s.noshop).map(s => { const [ok,why] = buyable(S,'s',s.k);
       return `<div class="it7"><div class="pv real" style="${palStyle(UI.theme)}"><span class="av" style="--c:var(--aura)">${ic(s.ic)}</span><span>na bolsa: ${S.inv[s.k]||0}</span></div><div class="info"><b>${s.n}</b><p>${s.e}</p><div class="buy7"><span class="pr">${fmt(s.p)} J</span><button class="btn" data-buy="s:${s.k}" ${ok?'':'disabled'}>${ok?'comprar':why}</button></div></div></div>`; }).join('')}</div></div>`;
-  const eqs = [['Paleta', (THEMES.find(t => t[0]===UI.theme)||[0,UI.theme])[1]], ['Foto', HJx.catalogo([UI.avatar]).slice(-1)[0].n], ['Fundo', UI.bg || '—'], ['Efeitos', UI.fxOff ? 'desligados' : (UI.fx.join(', ') || 'nenhum')], ['Moldura', UI.frame || '—'], ['Título', UI.title || '—'], ['Fonte', UI.font || 'padrão'], ['Som', !UI.som ? 'nenhum' : somOff() ? UI.som + ' (desligado)' : UI.som]];
+  const eqs = [['Paleta', (THEMES.find(t => t[0]===UI.theme)||[0,UI.theme])[1]], ['Foto', GBx.catalogo([UI.avatar]).slice(-1)[0].n], ['Fundo', UI.bg || '—'], ['Efeitos', UI.fxOff ? 'desligados' : (UI.fx.join(', ') || 'nenhum')], ['Moldura', UI.frame || '—'], ['Título', UI.title || '—'], ['Fonte', UI.font || 'padrão'], ['Som', !UI.som ? 'nenhum' : somOff() ? UI.som + ' (desligado)' : UI.som]];
   document.getElementById('ms-root').innerHTML = `
     <div class="cats">${cats.map(([k,n]) => `<button data-cat="${k}" aria-pressed="${UI.cat===k}">${n}</button>`).join('')}</div>
     <div class="lay7"><div>${main}</div>
       <div class="side7">
         <div class="card"><h2><span class="c">~/</span>carteira</h2><div class="wal7">${fmt(S.jenny)} J<small>${TESTE ? 'modo teste: nada fica guardado' : 'disponível'}</small></div>${podeTeste() ? `<button type="button" class="btn${TESTE ? '' : ' v'}" data-teste="${TESTE ? 0 : 1}" style="margin:8px 0 2px">${TESTE ? 'sair do modo teste' : 'modo teste: Jenny infinita'}</button><p class="sub" style="margin:4px 0 0">${TESTE ? 'Feitiços e prêmios reais ficam fora do teste.' : 'Só nas versões de teste (beta e grupo). Experimente os itens sem gastar; ao sair, tudo volta como estava.'}</p>` : ''}
           <div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.contribJ ? `<div style="display:flex;justify-content:space-between" title="bugs corrigidos e ideias feitas que você abriu no GitHub (o XP delas já está no XP × 10)"><span>contribuições (${S.contrib.length})</span><b style="color:var(--ink)">+${fmt(S.contribJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></div>
-        ${cofreOn() ? `<div class="card"><h2><span class="c">~/</span>cofre do mês</h2><div class="wal7" style="font-size:22px">R$ ${fmt(cofreTotal() - COFRE_USADO)}<small>R$ ${fmt(HJx.cofreMes(EST))} por mês, acumula · usado R$ ${fmt(COFRE_USADO)}</small></div><div class="cofre"><b style="width:${pct(cofreTotal()-COFRE_USADO, cofreTotal())}%"></b></div></div>` : ''}
+        ${cofreOn() ? `<div class="card"><h2><span class="c">~/</span>cofre do mês</h2><div class="wal7" style="font-size:22px">R$ ${fmt(cofreTotal() - COFRE_USADO)}<small>R$ ${fmt(GBx.cofreMes(EST))} por mês, acumula · usado R$ ${fmt(COFRE_USADO)}</small></div><div class="cofre"><b style="width:${pct(cofreTotal()-COFRE_USADO, cofreTotal())}%"></b></div></div>` : ''}
         <div class="card"><h2><span class="c">~/</span>usando agora</h2><div class="eqlist">${eqs.map(([a,b]) => `<div><span>${a}</span><span>${esc(b)}</span></div>`).join('')}</div></div>
         ${RESG.length ? `<div class="card"><h2><span class="c">~/</span>resgatados</h2><ul class="got">${RESG.map(r => `<li style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:13px"><span>${esc(r)}</span><span class="sub">${ddmm(HOJE)}</span></li>`).join('')}</ul></div>` : ''}
       </div></div>`;
 }
 
 /* ---------- prêmios reais (a lista é do jogador: estado.json → premios; sem lista, os padrão do motor) ---------- */
-const meusPremios = () => HJx.premios(EST);
+const meusPremios = () => GBx.premios(EST);
 const podeResgatar = (S, x) => !TESTE && S.jenny >= x.p && (!cofreOn() || (x.rs||0) <= cofreTotal() - COFRE_USADO);
 function reguaHTML(E){
   return `<div class="sec7"><h3>Quanto vale cada preço</h3><p>${E.est ? 'Estimativa: depois de 5 dias jogados, a régua passa a usar o seu próprio ritmo.' : 'Pelo seu ritmo nas últimas 4 semanas.'}
@@ -1778,21 +1780,21 @@ function reguaHTML(E){
     Preço baixo demais vira hábito; alto demais desanima. Um bom começo: pequenos prazeres por até um dia, os grandes por uma semana ou mais.</p></div>`;
 }
 function premiosHTML(S){
-  const E = HJx.esforco(S.xpDia, HOJE), L = meusPremios().map((x,i) => ({...x, i})), fx = [[],[],[],[]];
-  L.forEach(x => fx[HJx.faixaDe(x.p, E)].push(x));
+  const E = GBx.esforco(S.xpDia, HOJE), L = meusPremios().map((x,i) => ({...x, i})), fx = [[],[],[],[]];
+  L.forEach(x => fx[GBx.faixaDe(x.p, E)].push(x));
   const card = x => { const ok = podeResgatar(S, x);
-    return `<div class="it7"><div class="pv real" style="${palStyle(UI.theme)}"><span class="av" style="--c:var(--amb)">${ic(x.ic || (x.rs ? 'coin' : 'card'))}</span><span>${x.rs ? `até R$ ${fmt(x.rs)}${cofreOn() ? ', do cofre' : ''}` : 'não custa dinheiro'}</span></div><div class="info"><b>${esc(x.n)}</b><p>${HJx.esforcoTxt(x.p, E)}</p><div class="buy7"><span class="pr">${fmt(x.p)} J</span><button class="btn" data-real="${x.i}" ${ok?'':'disabled'}>${S.jenny < x.p ? `faltam ${fmt(x.p - S.jenny)} J` : !ok ? 'cofre insuficiente' : 'resgatar'}</button></div></div></div>`; };
+    return `<div class="it7"><div class="pv real" style="${palStyle(UI.theme)}"><span class="av" style="--c:var(--amb)">${ic(x.ic || (x.rs ? 'coin' : 'card'))}</span><span>${x.rs ? `até R$ ${fmt(x.rs)}${cofreOn() ? ', do cofre' : ''}` : 'não custa dinheiro'}</span></div><div class="info"><b>${esc(x.n)}</b><p>${GBx.esforcoTxt(x.p, E)}</p><div class="buy7"><span class="pr">${fmt(x.p)} J</span><button class="btn" data-real="${x.i}" ${ok?'':'disabled'}>${S.jenny < x.p ? `faltam ${fmt(x.p - S.jenny)} J` : !ok ? 'cofre insuficiente' : 'resgatar'}</button></div></div></div>`; };
   return `<div class="sec7"><h3>Prêmios reais</h3><p>Coisas da vida real que você se permite com a Jenny. A lista é sua: troque os nomes, os preços${cofreOn() ? ' e o que sai do cofre' : ''}.</p><p><button class="btn v" data-pedit>editar meus prêmios</button></p></div>`
-    + fx.map((l,k) => l.length ? `<div class="sec7"><h3>${HJx.FAIXAS[k]}</h3><div class="items">${l.sort((a,b) => a.p - b.p).map(card).join('')}</div></div>` : '').join('')
+    + fx.map((l,k) => l.length ? `<div class="sec7"><h3>${GBx.FAIXAS[k]}</h3><div class="items">${l.sort((a,b) => a.p - b.p).map(card).join('')}</div></div>` : '').join('')
     + (L.length ? '' : '<p class="sub">Nenhum prêmio cadastrado. Clique em editar meus prêmios.</p>') + reguaHTML(E);
 }
 function premiosEditor(S){
-  const E = HJx.esforco(S.xpDia, HOJE), L = UI.pdraft;
+  const E = GBx.esforco(S.xpDia, HOJE), L = UI.pdraft;
   const row = (x,i) => `<div class="pr-row"><input data-pf="${i}:n" value="${esc(x.n)}" maxlength="80" placeholder="ex.: 1h de videogame" aria-label="nome do prêmio">
     <label><input data-pf="${i}:p" value="${x.p == null || isNaN(x.p) ? '' : x.p}" inputmode="numeric" placeholder="1000" aria-label="preço em Jenny"> J</label>
     <label>R$ <input data-pf="${i}:rs" value="${x.rs ? String(x.rs).replace('.', ',') : ''}" inputmode="decimal" placeholder="0" aria-label="${cofreOn() ? 'quanto sai do cofre, em reais' : 'quanto custa, em reais'}"></label>
-    <span class="sub">${x.p > 0 ? HJx.esforcoTxt(+x.p, E) : ''}</span><button class="btn" data-pdel="${i}" aria-label="remover">✕</button></div>`;
-  return `<div class="sec7"><h3>Editar meus prêmios</h3><p>Nome, preço em Jenny e, se custar dinheiro, quanto custa (R$). Deixe R$ vazio para prêmios que não custam nada, como tempo livre. ${cofreOn() ? `O R$ sai do cofre do mês (R$ ${fmt(HJx.cofreMes(EST))} por mês, acumula; muda em Configurações).` : 'O R$ é só um lembrete; para ele sair de um valor separado por mês, ligue o cofre do mês em Configurações.'}</p>
+    <span class="sub">${x.p > 0 ? GBx.esforcoTxt(+x.p, E) : ''}</span><button class="btn" data-pdel="${i}" aria-label="remover">✕</button></div>`;
+  return `<div class="sec7"><h3>Editar meus prêmios</h3><p>Nome, preço em Jenny e, se custar dinheiro, quanto custa (R$). Deixe R$ vazio para prêmios que não custam nada, como tempo livre. ${cofreOn() ? `O R$ sai do cofre do mês (R$ ${fmt(GBx.cofreMes(EST))} por mês, acumula; muda em Configurações).` : 'O R$ é só um lembrete; para ele sair de um valor separado por mês, ligue o cofre do mês em Configurações.'}</p>
     <div class="pr-ed">${L.map(row).join('')}</div>
     <p style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px"><button class="btn" data-padd>+ prêmio</button>
 </p>
@@ -1880,7 +1882,7 @@ function rP3b(S){
   el.innerHTML = `
     <div class="sign"><h2>MASADORA · LOJA DE CARTAS</h2><p>CARTEIRA: ${fmt(S.jenny)} J · CLIQUE PARA COMPRAR</p></div>
     <div class="lay">
-      <div class="shelf8"><h3>PRATELEIRA 1 · PRÊMIOS REAIS</h3>${meusPremios().map((x,k) => { const ok = podeResgatar(S, x); return `<button class="it" data-real="${k}" aria-disabled="${!ok}" title="${ok?'resgatar':'jenny ou cofre insuficiente'}">${ic(x.ic || (x.rs ? 'coin' : 'card'))}<span><b>${esc(x.n)}</b><small>${HJx.esforcoTxt(x.p, HJx.esforco(S.xpDia, HOJE))}${x.rs?` · até R$ ${fmt(x.rs)}${cofreOn() ? ' do cofre' : ''}`:''}</small></span><span class="pr">${fmt(x.p)} J</span></button>`; }).join('')}</div>
+      <div class="shelf8"><h3>PRATELEIRA 1 · PRÊMIOS REAIS</h3>${meusPremios().map((x,k) => { const ok = podeResgatar(S, x); return `<button class="it" data-real="${k}" aria-disabled="${!ok}" title="${ok?'resgatar':'jenny ou cofre insuficiente'}">${ic(x.ic || (x.rs ? 'coin' : 'card'))}<span><b>${esc(x.n)}</b><small>${GBx.esforcoTxt(x.p, GBx.esforco(S.xpDia, HOJE))}${x.rs?` · até R$ ${fmt(x.rs)}${cofreOn() ? ' do cofre' : ''}`:''}</small></span><span class="pr">${fmt(x.p)} J</span></button>`; }).join('')}</div>
       <div class="shelf8"><h3>PRATELEIRA 2 · FEITIÇOS</h3>${SPELLS.filter(s => !s.noshop).map(s => it('s',s.k,s.ic,s.n,s.e,s.p,true)).join('')}</div>
       <div class="bag"><h3>BOLSA</h3><div class="coin">${fmt(S.jenny)} J</div>
         <div class="slot9">${Array.from({length:9},(_,i) => { const x = bag[i]; return x ? `<div class="f" title="${spell(x[0]).n}">${ic(spell(x[0]).ic)}<em>×${x[1]}</em></div>` : '<div></div>'; }).join('')}</div>
@@ -1889,10 +1891,14 @@ function rP3b(S){
     <div class="how8"><div><b>DE ONDE VEM A JENNY</b>Cada XP vale 10 J. Nota ≥ ${MEDIA} dá bônus: nota × peso × 5.</div><div><b>FEITIÇO SEM COMPRAR</b>Preparação completa antes da avaliação, ou a missão da semana.</div><div><b>VALIDADE</b>Feitiços expiram na volta às aulas (${ddmm(TEMP.volta)}). Nas férias, use à vontade.</div></div>`;
 }
 /* ---------- atalhos das páginas limpas ---------- */
+/* nome base de cada aba (fixo, #15) e o do tema desta temporada, que aparece ao passar o mouse */
+const ABA = Object.fromEntries([['l','lista'],['b','torre'],['b2','chefoes'],['x','projetos'],['d2','calendario'],['bk','cartas'],['ms','loja'],['cfg','config'],['tt','grupo']]
+  .map(([t,k]) => [t, {n:GBx.NOMES[k], tema:GBx.TEMA[k] || ''}]));
+const abaTit = t => ABA[t].tema ? ` title="${ABA[t].tema}"` : '';
 function gnav(cur){
-  const it = [['l','scroll','Lista'],['b','tower','Arena'],['b2','spider','Chefões'],['x','island','Expedições'],['d2','scroll','Semestre'],['bk','card','Book'],['ms','coin','Masadora'],['cfg','esp','Configurações']];
+  const it = [['l','scroll'],['b','tower'],['b2','spider'],['x','island'],['d2','scroll'],['bk','card'],['ms','coin'],['cfg','esp']].map(([t,i]) => [t,i,ABA[t].n]);
   // Torre Trick, depois Novidades (novidades.js a põe antes do botão das Regras) e as Regras no fim
-  return `<nav class="gnav" aria-label="Atalhos do jogo">${it.map(([t,i,n]) => `<button data-go="${t}"${t===cur?' aria-current="page"':''}>${ic(i)}${n}</button>`).join('')}<button data-go="tt"${cur==='tt'?' aria-current="page"':''} title="o placar do grupo (em breve)">${ic('tower')}Torre Trick <small style="opacity:.6">em breve</small></button><button data-go="sys"${cur==='sys'?' aria-current="page"':''}>${ic('crown')}Regras</button><span class="sp"></span>${cur==='b'?`<button class="px" data-go="px" data-px="map">${ic('island')} mundo pixel →</button>`:''}</nav>`;
+  return `<nav class="gnav" aria-label="Atalhos do jogo">${it.map(([t,i,n]) => `<button data-go="${t}"${t===cur?' aria-current="page"':''}${abaTit(t)}>${ic(i)}${n}</button>`).join('')}<button data-go="tt"${cur==='tt'?' aria-current="page"':''} title="${ABA.tt.tema}: o placar do grupo (em breve)">${ic('tower')}${ABA.tt.n} <small style="opacity:.6">em breve</small></button><button data-go="sys"${cur==='sys'?' aria-current="page"':''}>${ic('crown')}Regras</button><span class="sp"></span>${cur==='b'?`<button class="px" data-go="px" data-px="map">${ic('island')} mundo pixel →</button>`:''}</nav>`;
 }
 /* ---------- Torre Trick (modo em grupo, ainda não existe: só explica o que vem; desenho em docs/COLETIVO.md) ---------- */
 function rTT(){
@@ -1920,14 +1926,14 @@ function rCfg(S){
   document.getElementById('cfg-root').innerHTML = `
     <div class="card"><h2><span class="c">~/</span>configurações deste computador</h2><div class="togg" style="margin:0"><span class="sub">efeitos:</span><button data-fxoff="0" aria-pressed="${!UI.fxOff}">os comprados</button><button data-fxoff="1" aria-pressed="${!!UI.fxOff}">nenhum (calmo)</button></div><div class="togg" style="margin:8px 0 0"><span class="sub">sons:</span><button data-somoff="0" aria-pressed="${!somOff()}">ligados</button><button data-somoff="1" aria-pressed="${somOff()}">mudo</button></div></div>
     <div class="card"><h2><span class="c">~/</span>cofre do mês</h2><p style="margin:0 0 10px;font-size:14px">Para prêmios reais que custam dinheiro: você separa um valor por mês, ele acumula, e o R$ de cada prêmio sai dele. Desligado, o R$ dos prêmios é só um lembrete e não trava o resgate.</p>
-      <div class="togg" style="margin:0"><span class="sub">cofre:</span><button data-cofre="1" aria-pressed="${cofreOn()}">ligado</button><button data-cofre="0" aria-pressed="${!cofreOn()}">desligado</button>${cofreOn() ? `<label class="sub" style="margin-left:8px">R$ <input data-cofrev value="${String(HJx.cofreMes(EST)).replace('.', ',')}" inputmode="decimal" style="width:70px" aria-label="valor do cofre por mês, em reais"> por mês</label>` : ''}</div></div>
-    <div class="card"><h2><span class="c">~/</span>backup</h2><p style="margin:0 0 10px;font-size:14px">Baixa um ZIP com todos os seus dados: tarefas, notas, plano de avaliação, loja e configurações. Guarde de vez em quando, ou use para levar o jogo para outro computador (é só descompactar na pasta de dados, <span class="mono">${esc((CTX.SRV && CTX.SRV.dados) || '~/.hunter-todo')}</span>).</p>${window.HJ_DEMO ? '<button class="btn" disabled>no modo demonstração não há dados para baixar</button>' : '<a class="btn v" href="/api/backup" download>baixar meus dados</a>'}</div>
-    ${window.HJ_TEMP ? HJ_TEMP.card() : ''}${cardBalanco(S)}`;
+      <div class="togg" style="margin:0"><span class="sub">cofre:</span><button data-cofre="1" aria-pressed="${cofreOn()}">ligado</button><button data-cofre="0" aria-pressed="${!cofreOn()}">desligado</button>${cofreOn() ? `<label class="sub" style="margin-left:8px">R$ <input data-cofrev value="${String(GBx.cofreMes(EST)).replace('.', ',')}" inputmode="decimal" style="width:70px" aria-label="valor do cofre por mês, em reais"> por mês</label>` : ''}</div></div>
+    <div class="card"><h2><span class="c">~/</span>backup</h2><p style="margin:0 0 10px;font-size:14px">Baixa um ZIP com todos os seus dados: tarefas, notas, plano de avaliação, loja e configurações. Guarde de vez em quando, ou use para levar o jogo para outro computador (é só descompactar na pasta de dados, <span class="mono">${esc((CTX.SRV && CTX.SRV.dados) || '~/.ganbatte')}</span>).</p>${window.GB_DEMO ? '<button class="btn" disabled>no modo demonstração não há dados para baixar</button>' : '<a class="btn v" href="/api/backup" download>baixar meus dados</a>'}</div>
+    ${window.GB_TEMP ? GB_TEMP.card() : ''}${cardBalanco(S)}`;
 }
 /* relatório de balanceamento (0.6.3-beta2): XP e Jenny de cada dia por origem, e as compras, para calibrar o jogo.
-   Gera tudo aqui na página (HJ.relatorio, o mesmo do simulador em ferramentas/simulador.mjs) e baixa como arquivo */
+   Gera tudo aqui na página (GB.relatorio, o mesmo do simulador em ferramentas/simulador.mjs) e baixa como arquivo */
 function cardBalanco(S){
-  const R = HJx.relatorio(CTX, S), r = R.resumo, top = Object.entries(r.origemXP).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const R = GBx.relatorio(CTX, S), r = R.resumo, top = Object.entries(r.origemXP).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const num = x => String(x).replace('.', ','), lin = (k, v) => `<div style="display:flex;justify-content:space-between;gap:12px"><span>${k}</span><b style="color:var(--ink)">${v}</b></div>`;
   return `<div class="card"><h2><span class="c">~/</span>balanceamento</h2><p style="margin:0 0 10px;font-size:14px">Os seus números de XP e Jenny dia a dia, por origem, e o que você gastou. Serve para ver se o jogo paga demais ou de menos. O arquivo não leva o texto das tarefas nem o nome dos prêmios: se quiser ajudar a calibrar, anexe numa issue. As compras são registradas desde a 0.6.3; o gasto de antes aparece sem data.</p>
     <div style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:0 0 12px;max-width:460px">
@@ -1942,8 +1948,8 @@ function cardBalanco(S){
     <button type="button" class="btn" data-relat="grupo">exportar resumo para o grupo (.json)</button></div>`;
 }
 function baixaRelatorio(tipo){
-  const S = estado(), csv = tipo === 'csv', grupo = tipo === 'grupo', R = grupo ? HJx.resumoGrupo(CTX, S) : HJx.relatorio(CTX, S);
-  const blob = new Blob([csv ? '\ufeff' + HJx.relatorioCSV(R) : JSON.stringify(R, null, 1)], {type: csv ? 'text/csv;charset=utf-8' : 'application/json'});
+  const S = estado(), csv = tipo === 'csv', grupo = tipo === 'grupo', R = grupo ? GBx.resumoGrupo(CTX, S) : GBx.relatorio(CTX, S);
+  const blob = new Blob([csv ? '\ufeff' + GBx.relatorioCSV(R) : JSON.stringify(R, null, 1)], {type: csv ? 'text/csv;charset=utf-8' : 'application/json'});
   const nome = grupo ? `hunter-grupo-${(R.jogador || 'jogador').replace(/[^\w-]+/g, '_')}-${HOJE}` : `hunter-balanceamento-${HOJE}`;
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${nome}.${csv ? 'csv' : 'json'}`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -1951,7 +1957,7 @@ function baixaRelatorio(tipo){
 /* ---------- Regras (o que o jogo considera) ---------- */
 /* ---------- Regras (0.6.4): o que vale cada coisa e como o jogo faz as contas, com os números do motor ---------- */
 function rSys(S){
-  const H = HJx, x15 = '×1,5', n = v => fmt(v), dif = DIF => H.DIF[DIF] || 1;
+  const H = GBx, x15 = '×1,5', n = v => fmt(v), dif = DIF => H.DIF[DIF] || 1;
   const linha = (a, b, c) => `<tr><td>${a}</td><td>${b}</td><td>${c || ''}</td></tr>`;
   const tab = (cab, rows) => `<div class="tbl-wrap"><table class="rg-t"><thead><tr>${cab.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
   const conta = (titulo, partes, total) => `<div class="rg-conta"><span class="rg-ct">${titulo}</span><span class="rg-f">${partes.map(p => `<i>${p}</i>`).join('<em>×</em>')}<em>=</em><b>${total}</b></span></div>`;
@@ -2054,10 +2060,10 @@ function rSys(S){
 
 /* lateral da Lista: abre e fecha cada card pelo título e lembra neste navegador; o botão do título (quadro →, ver →) não fecha o card */
 const LADO_PADRAO = {vale:false, golpes:true, chefoes:true, exp:true, hab:true};
-function ladoLe(){ try { return Object.assign({}, LADO_PADRAO, JSON.parse(localStorage.getItem('hj-lado') || '{}')); } catch(e){ return {...LADO_PADRAO}; } }
+function ladoLe(){ try { return Object.assign({}, LADO_PADRAO, JSON.parse(localStorage.getItem('gb-lado') || '{}')); } catch(e){ return {...LADO_PADRAO}; } }
 document.querySelectorAll('details[data-lado]').forEach(d => { d.open = !!ladoLe()[d.dataset.lado]; });
 document.addEventListener('toggle', e => { const d = e.target; if(!(d instanceof HTMLElement) || !d.dataset || !d.dataset.lado) return;
-  const L = ladoLe(); L[d.dataset.lado] = d.open; try { localStorage.setItem('hj-lado', JSON.stringify(L)); } catch(err){} }, true);
+  const L = ladoLe(); L[d.dataset.lado] = d.open; try { localStorage.setItem('gb-lado', JSON.stringify(L)); } catch(err){} }, true);
 document.addEventListener('click', e => { if(e.target.closest('summary button')) e.preventDefault(); }, true);
 document.addEventListener('click', e => { const b = e.target.closest('[data-rg]'); if(b){ const el = document.getElementById('rg-' + b.dataset.rg); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); } });   // índice da aba Regras (sem mexer no #, que escolhe a aba)
 
@@ -2066,13 +2072,13 @@ const LTIPOS = [
   {k:'ent', n:'entrega', c:5, d:'algo que você entrega para alguém, com prazo', ex:'Lista 3 de derivadas · Trabalho de BD · Relatório do lab'},
   {k:'est', n:'estudo', c:0, d:'tempo de aprender para a matéria: ninguém cobra, mas prepara a prova', ex:'Revisar integrais · Ler o capítulo 4 · Refazer a P1'},
   {k:'fac', n:'faculdade', c:2, d:'outras coisas da faculdade, ligadas a uma disciplina, que não são entrega nem estudo', ex:'Montar o grupo do projeto · Falar com o professor'},
-  {k:'tre', n:'treino/projeto', c:1, d:'treino e projetos: programação e projetos pessoais fora da matéria', ex:'Contest no Codeforces · Ajudar no desenvolvimento do Hunter.todo · Meu site'},
+  {k:'tre', n:'treino/projeto', c:1, d:'treino e projetos: programação e projetos pessoais fora da matéria', ex:'Contest no Codeforces · Ajudar no desenvolvimento do Ganbatte · Meu site'},
   {k:'hab', n:'hábito', c:4, d:'o que se repete: vale pelo nível do hábito (3 a 12 XP), mas sozinho não acende o Ten (os fixos ficam em Configurações)', ex:'Treino de digitação · 30 min de leitura'},
   {k:'vid', n:'vida', c:3, d:'todo o resto: casa, saúde, família, documentos, trabalho ou estágio (por enquanto)', ex:'Renovar a carteirinha · Consulta no dentista · Pagar o boleto'}];
 const LA = {tipo:'est', due:'', pri:'jogo', auto:true, por:''};   // auto: o tipo segue a sugestão do texto até o jogador escolher um   // rascunho do formulário (pri: 'jogo' = o jogo decide, '' = sem, ou a letra)
 const LPRI = [['jogo','o jogo decide'], ['A','A'], ['B','B'], ['C','C'], ['','sem']], PRI_COR = {A:'var(--red)', B:'var(--amb)', C:'var(--soft)'};
 const SEM3 = ['seg','ter','qua','qui','sex','sáb','dom'];
-const tagDe = k => { const T = HJx.TAGS[k]; return !T ? '' : T.ctx[0] ? '@' + T.ctx[0] : T.proj[0] ? '+' + T.proj[0] : ''; };
+const tagDe = k => { const T = GBx.TAGS[k]; return !T ? '' : T.ctx[0] ? '@' + T.ctx[0] : T.proj[0] ? '+' + T.proj[0] : ''; };
 const dueTxt = d => { const k = dias(HOJE, d); return k < 0 ? `atrasada ${-k}d` : k === 0 ? 'hoje' : k === 1 ? 'amanhã' : k < 7 ? SEM3[dow(d)] + ' ' + ddmm(d) : ddmm(d); };
 function valeL(t, S){
   const base = xpDe({...t, due:null, done:HOJE}), ms = []; let x = base;
@@ -2085,7 +2091,7 @@ const PRI_TXT = /^\(([A-Za-z])\)\s+/;   // "(A) " digitado no começo do texto v
 function rascunho(){
   const txt = document.getElementById('l-txt').value.trim().replace(PRI_TXT, ''), disc = document.getElementById('l-disc').value;
   const tag = ['ent','est','tre','hab'].includes(LA.tipo) ? tagDe(LA.tipo) : '';
-  const cac = window.HJ_EXP ? HJ_EXP.tagForm() : '';
+  const cac = window.GB_EXP ? GB_EXP.tagForm() : '';
   return [txt || 'sua tarefa', disc ? '+fac.' + disc : '', tag && !txt.toLowerCase().includes(tag.toLowerCase()) ? tag : '', cac, LA.due ? 'due:' + LA.due : ''].filter(Boolean).join(' ');
 }
 /* prioridade do rascunho: a digitada, a do botão ou a sugerida pelo jogo (com os motivos) */
@@ -2093,7 +2099,7 @@ function priL(linha, S){
   const dig = document.getElementById('l-txt').value.trim().match(PRI_TXT);
   if(dig) return {pri: dig[1].toUpperCase(), como:'digitada no texto'};
   if(LA.pri !== 'jogo') return {pri: LA.pri || null};
-  const s = HJx.sugerePri(HJx.parseLinha(HOJE + ' ' + linha, 0), S.bs, HOJE, CTX);
+  const s = GBx.sugerePri(GBx.parseLinha(HOJE + ' ' + linha, 0), S.bs, HOJE, CTX);
   return {pri: s.pri, sug: s};
 }
 /* editor completo da tarefa (✎, issue #20): texto, tipo, disciplina, prazo, prioridade e caçada (#35: uma tarefa vira etapa de
@@ -2101,20 +2107,20 @@ function priL(linha, S){
    se perde; as datas dele ficam como no todo.txt */
 const LE = {txt:'', tipo:'vid', disc:'', due:'', pri:'', tipo0:'', tags0:[], cac:'', cacn:''};   // tipo0/tags0: como a linha veio, para voltar igual se o tipo não mudar
 function abreEd(t){
-  const tags = ['ent','est','tre','hab'].flatMap(k => [...HJx.TAGS[k].ctx.map(v => '@' + v), ...HJx.TAGS[k].proj.map(v => '+' + v)]);
+  const tags = ['ent','est','tre','hab'].flatMap(k => [...GBx.TAGS[k].ctx.map(v => '@' + v), ...GBx.TAGS[k].proj.map(v => '+' + v)]);
   const ws = t.raw.replace(/^\([A-Z]\) /, '').replace(/^\d{4}-\d\d-\d\d /, '').split(/\s+/).filter(Boolean), tipo = (LTIPOS.find(x => x.c === nenDe(t)) || LTIPOS[5]).k;
   Object.assign(LE, {txt: ws.filter(w => !tags.includes(w.toLowerCase()) && !/^\+fac\./i.test(w) && !/^due:/i.test(w) && !/^\+cac\./i.test(w)).join(' '),
-    tipo, tipo0: tipo, tags0: ws.filter(w => tags.includes(w.toLowerCase())), disc: discOf(t) || '', due: t.due || '', pri: t.pri || '', cac: HJx.cacDe(t) || '', cacn: ''});
+    tipo, tipo0: tipo, tags0: ws.filter(w => tags.includes(w.toLowerCase())), disc: discOf(t) || '', due: t.due || '', pri: t.pri || '', cac: GBx.cacDe(t) || '', cacn: ''});
 }
 /* a linha que vai para o servidor: a tag do tipo só entra se o texto, a disciplina e o rec: ainda não dão esse tipo */
 function linhaEd(){
   const base = [LE.txt.trim(), LE.disc ? '+fac.' + LE.disc : '', LE.due ? 'due:' + LE.due : '', LE.cac && LE.cac !== '+nova' ? '+cac.' + LE.cac : ''].filter(Boolean).join(' ');
   if(LE.tipo === LE.tipo0 && LE.tags0.length) return base + ' ' + LE.tags0.join(' ');
   const T = LTIPOS.find(x => x.k === LE.tipo), tag = tagDe(LE.tipo);
-  return tag && nenDe(HJx.parseLinha(HOJE + ' ' + base, 0)) !== T.c ? base + ' ' + tag : base;
+  return tag && nenDe(GBx.parseLinha(HOJE + ' ' + base, 0)) !== T.c ? base + ' ' + tag : base;
 }
 function edHTML(S){
-  const v = valeL(HJx.parseLinha(HOJE + ' ' + linhaEd(), 0), S), am = addD(HOJE, 1);
+  const v = valeL(GBx.parseLinha(HOJE + ' ' + linhaEd(), 0), S), am = addD(HOJE, 1);
   const chip = (k, on, txt, x = '') => `<button type="button" class="l-chip${x}" data-le="${k}" aria-pressed="${on}">${txt}</button>`;
   const ds = BOSSES.map(b => b.d).concat(LE.disc && !BOSSES.some(b => b.d === LE.disc) ? [LE.disc] : []);
   return `<div class="l-edit l-edfull" id="l-edbox">
@@ -2122,9 +2128,9 @@ function edHTML(S){
     <div class="l-seg" role="group" aria-label="Tipo"><span>tipo</span>${LTIPOS.map(x => chip('tipo:' + x.k, x.k === LE.tipo, `<span class="d" style="--c:${NC(x.c)}"></span>${x.n}`)).join('')}</div>
     <div class="l-opts">
       <div class="l-seg"><span>disciplina</span><select id="l-eddisc" aria-label="Disciplina"><option value="">nenhuma</option>${ds.map(d => `<option value="${esc(d)}"${d === LE.disc ? ' selected' : ''}>${esc(d)}</option>`).join('')}</select></div>
-      <div class="l-seg" role="group" aria-label="Prazo"><span>prazo</span>${[['sem',''],['hoje',HOJE],['amanhã',am]].map(([n,d]) => chip('due:' + d, d === LE.due, n)).join('')}<input class="dt" inputmode="numeric" maxlength="10" id="l-eddate" placeholder="${HJx.fmtTxt()}" value="${LE.due && LE.due !== HOJE && LE.due !== am ? HJx.brData(LE.due) : ''}" aria-label="Outra data (${HJx.fmtTxt()})"></div>
+      <div class="l-seg" role="group" aria-label="Prazo"><span>prazo</span>${[['sem',''],['hoje',HOJE],['amanhã',am]].map(([n,d]) => chip('due:' + d, d === LE.due, n)).join('')}<input class="dt" inputmode="numeric" maxlength="10" id="l-eddate" placeholder="${GBx.fmtTxt()}" value="${LE.due && LE.due !== HOJE && LE.due !== am ? GBx.brData(LE.due) : ''}" aria-label="Outra data (${GBx.fmtTxt()})"></div>
       <div class="l-seg" role="group" aria-label="Prioridade"><span>prioridade</span>${['A','B','C',''].map(k => chip('pri:' + k, k === LE.pri, k || 'sem', k ? ' l-pc' : '')).join('')}</div>
-      ${window.HJ_EXP ? `<div class="l-seg"><span>caçada</span><select id="l-edcac" aria-label="Caçada">${HJ_EXP.opcoesCac(LE.cac, '+ nova caçada com esta tarefa…')}</select>${LE.cac === '+nova' ? `<input id="l-edcacn" maxlength="80" value="${esc(LE.cacn)}" placeholder="nome da caçada" title="vazio: o texto da tarefa" aria-label="Nome da caçada nova (vazio: o texto da tarefa)">` : ''}</div>` : ''}
+      ${window.GB_EXP ? `<div class="l-seg"><span>caçada</span><select id="l-edcac" aria-label="Caçada">${GB_EXP.opcoesCac(LE.cac, '+ nova caçada com esta tarefa…')}</select>${LE.cac === '+nova' ? `<input id="l-edcacn" maxlength="80" value="${esc(LE.cacn)}" placeholder="nome da caçada" title="vazio: o texto da tarefa" aria-label="Nome da caçada nova (vazio: o texto da tarefa)">` : ''}</div>` : ''}
     </div>
     <div class="l-prev"><span>vale <span class="l-xp">+${v.x} XP</span></span><span class="l-mult">${v.base} XP${v.ms.map(m => ' · ' + m + ' ×1,5').join('')}</span><span style="color:${NC(LTIPOS.find(x => x.k === LE.tipo).c)}">${esc(NEN[LTIPOS.find(x => x.k === LE.tipo).c].n)}</span></div>
   </div>`;
@@ -2143,20 +2149,20 @@ function dataEd(){
 }
 function ajudaL(){
   return `<table><tbody>${LTIPOS.map(t => `<tr><td style="color:${NC(t.c)}">${t.n}</td><td>${esc(t.d)}.<br><i>${esc(t.ex)}</i></td></tr>`).join('')}</tbody></table>
-    <p style="margin:8px 0 0">Na dúvida, pense em quem cobra: alguém espera a entrega → <b>entrega</b>; é para a prova → <b>estudo</b>; programação ou projeto seu → <b>treino/projeto</b>. O jogo sugere o tipo pelas palavras do texto${window.HJ_IA && window.HJ_IA.ligada() ? ', e o botão <b>IA?</b> pergunta à IA' : ''}; clicar num tipo troca a sugestão.</p>`;
+    <p style="margin:8px 0 0">Na dúvida, pense em quem cobra: alguém espera a entrega → <b>entrega</b>; é para a prova → <b>estudo</b>; programação ou projeto seu → <b>treino/projeto</b>. O jogo sugere o tipo pelas palavras do texto${window.GB_IA && window.GB_IA.ligada() ? ', e o botão <b>IA?</b> pergunta à IA' : ''}; clicar num tipo troca a sugestão.</p>`;
 }
 function marcaTipo(){ document.querySelectorAll('[data-ltipo]').forEach(b => b.setAttribute('aria-pressed', b.dataset.ltipo === LA.tipo)); }
 function prevL(){
   if(!CTX) return;
-  if(LA.auto){ const sg = HJx.sugereTipo(document.getElementById('l-txt').value, !!document.getElementById('l-disc').value);
+  if(LA.auto){ const sg = GBx.sugereTipo(document.getElementById('l-txt').value, !!document.getElementById('l-disc').value);
     if(sg){ if(LA.tipo !== sg.k){ LA.tipo = sg.k; marcaTipo(); } LA.por = `pela palavra "${sg.por}"`; } else LA.por = ''; }
-  const S = estado(), linha = rascunho(), t = HJx.parseLinha(HOJE + ' ' + linha, 0), v = valeL(t, S), nen = NEN[nenDe(t)], P = priL(linha, S);
+  const S = estado(), linha = rascunho(), t = GBx.parseLinha(HOJE + ' ' + linha, 0), v = valeL(t, S), nen = NEN[nenDe(t)], P = priL(linha, S);
   document.getElementById('l-btn').disabled = !document.getElementById('l-txt').value.trim();
   document.getElementById('l-hint').innerHTML = document.getElementById('l-txt').value.trim() ? `<span style="color:${NC(nenDe(t))}">${esc(nen.n)}</span>${v.ms.length ? `<span class="l-mult">${v.ms.join(' + ')}</span>` : ''}<span class="l-xp">+${v.x}</span>` : `<span class="l-nk" title="aperte N em qualquer aba para abrir este formulário">N</span>`;
   const jb = document.querySelector('[data-lpri="jogo"]'); if(jb) jb.innerHTML = 'o jogo decide' + (P.sug ? ` · <b>${P.sug.pri || 'sem'}</b>` : '');
   const ptx = P.sug ? (P.sug.pri ? `prioridade <b style="color:${PRI_COR[P.sug.pri]}">${P.sug.pri}</b>` : 'sem prioridade') + `<small>${P.sug.por.length ? esc(P.sug.por.join(' · ')) : 'nada urgente'}</small>`
     : P.como ? `prioridade <b style="color:${PRI_COR[P.pri] || 'var(--soft)'}">${P.pri}</b><small>${P.como}</small>` : '';
-  document.getElementById('l-prev').innerHTML = `<span>vale <span class="l-xp">+${v.x} XP</span></span><span class="l-mult">${v.base} XP${v.ms.map(m => ' · ' + m + ' ×1,5').join('')}</span><span style="color:${NC(nenDe(t))}">${esc(nen.n)}${LA.por ? `<small class="l-tsug"> · ${esc((LTIPOS.find(x => x.k === LA.tipo) || {}).n || '')} ${esc(LA.por)}</small>` : ''}</span>${ptx ? `<span class="l-psug" title="o jogo olha a avaliação chegando, o prazo, a fúria do chefão, as atrasadas da disciplina e se é entrega">${ptx}</span>` : ''}<code title="como fica no todo.txt (no arquivo, as datas ficam como AAAA-MM-DD)">${esc(HJx.brDatas((P.pri ? `(${P.pri}) ` : '') + HOJE + ' ' + linha))}</code>`;
+  document.getElementById('l-prev').innerHTML = `<span>vale <span class="l-xp">+${v.x} XP</span></span><span class="l-mult">${v.base} XP${v.ms.map(m => ' · ' + m + ' ×1,5').join('')}</span><span style="color:${NC(nenDe(t))}">${esc(nen.n)}${LA.por ? `<small class="l-tsug"> · ${esc((LTIPOS.find(x => x.k === LA.tipo) || {}).n || '')} ${esc(LA.por)}</small>` : ''}</span>${ptx ? `<span class="l-psug" title="o jogo olha a avaliação chegando, o prazo, a fúria do chefão, as atrasadas da disciplina e se é entrega">${ptx}</span>` : ''}<code title="como fica no todo.txt (no arquivo, as datas ficam como AAAA-MM-DD)">${esc(GBx.brDatas((P.pri ? `(${P.pri}) ` : '') + HOJE + ' ' + linha))}</code>`;
 }
 function formL(){
   const tp = document.getElementById('l-tipo');
@@ -2166,14 +2172,14 @@ function formL(){
       + '<button type="button" class="l-chip" data-ltipoia hidden title="pergunta à IA ligada qual tipo combina com esta tarefa (modelo leve, leva alguns segundos)">IA?</button>'
       + '<button type="button" class="l-chip l-q" data-lajuda aria-expanded="false" title="o que encaixa em quê">?</button>');
     const sexta = addD(HOJE, (4 - dow(HOJE) + 7) % 7 || 7);
-    document.getElementById('l-due').insertAdjacentHTML('beforeend', [['sem',''],['hoje',HOJE],['amanhã',addD(HOJE,1)],['sexta',sexta]].map(([n,d]) => `<button type="button" class="l-chip" data-ldue="${d}" aria-pressed="${d === LA.due}">${n}</button>`).join('') + `<input class="dt" inputmode="numeric" maxlength="10" placeholder="${HJx.fmtTxt()}" id="l-date" aria-label="Outra data (${HJx.fmtTxt()})">`);
+    document.getElementById('l-due').insertAdjacentHTML('beforeend', [['sem',''],['hoje',HOJE],['amanhã',addD(HOJE,1)],['sexta',sexta]].map(([n,d]) => `<button type="button" class="l-chip" data-ldue="${d}" aria-pressed="${d === LA.due}">${n}</button>`).join('') + `<input class="dt" inputmode="numeric" maxlength="10" placeholder="${GBx.fmtTxt()}" id="l-date" aria-label="Outra data (${GBx.fmtTxt()})">`);
     document.getElementById('l-pri').insertAdjacentHTML('beforeend', LPRI.map(([k,n]) => `<button type="button" class="l-chip${k.length === 1 ? ' l-pc' : ''}"${PRI_COR[k] ? ` style="--c:${PRI_COR[k]}"` : ''} data-lpri="${k}" aria-pressed="${k === LA.pri}"${k === 'jogo' ? ' title="sugere pela avaliação chegando, prazo, fúria do chefão, atrasadas da disciplina e entrega"' : ''}>${n}</button>`).join(''));
   }
-  document.querySelector('[data-ltipoia]').hidden = !(window.HJ_IA && window.HJ_IA.ligada());
-  const ld = document.getElementById('l-date'); ld.placeholder = HJx.fmtTxt(); ld.setAttribute('aria-label', `Outra data (${HJx.fmtTxt()})`);   // a opção de datas pode mudar na aba Configurações
+  document.querySelector('[data-ltipoia]').hidden = !(window.GB_IA && window.GB_IA.ligada());
+  const ld = document.getElementById('l-date'); ld.placeholder = GBx.fmtTxt(); ld.setAttribute('aria-label', `Outra data (${GBx.fmtTxt()})`);   // a opção de datas pode mudar na aba Configurações
   const sel = document.getElementById('l-disc'), opts = BOSSES.map(b => b.d).join(',');
   if(sel.dataset.opts !== opts){ const v = sel.value; sel.dataset.opts = opts; sel.innerHTML = '<option value="">nenhuma</option>' + BOSSES.map(b => `<option value="${b.d}">${b.d}</option>`).join(''); sel.value = v; }
-  if(window.HJ_EXP) HJ_EXP.formCacadas();
+  if(window.GB_EXP) GB_EXP.formCacadas();
   prevL();
 }
 function rowL(t, S, x){
@@ -2183,7 +2189,7 @@ function rowL(t, S, x){
     <button class="l-ck" data-l="${feita ? 'reopen' : 'done'}" aria-label="${feita ? 'reabrir' : 'concluir'}: ${esc(t.txt)}">${feita ? '✓' : ''}</button>
     <div class="l-body">${UI.ledit === edKey(t) ? edHTML(S)
       : `<span class="l-txt">${t.pri && !feita ? `<span class="l-pri ${t.pri}">${t.pri}</span>` : ''}${esc(t.txt)}</span>`}
-      <span class="l-tags"><span class="l-tag nen">${esc(NEN[nen].n)}</span>${d ? `<span class="l-tag">${esc(d)}</span>` : ''}${t.due ? `<span class="l-tag${dc}">${dueTxt(t.due)}</span>` : ''}${isRec(t) ? '<span class="l-tag">rotina</span>' : ''}${window.HJ_EXP ? HJ_EXP.etiquetas(t, S) : ''}</span></div>
+      <span class="l-tags"><span class="l-tag nen">${esc(NEN[nen].n)}</span>${d ? `<span class="l-tag">${esc(d)}</span>` : ''}${t.due ? `<span class="l-tag${dc}">${dueTxt(t.due)}</span>` : ''}${isRec(t) ? '<span class="l-tag">rotina</span>' : ''}${window.GB_EXP ? GB_EXP.etiquetas(t, S) : ''}</span></div>
     <div class="l-right">${v.ms.length ? `<span class="l-mult" title="${v.base} XP · ${v.ms.map(m => m + ' ×1,5').join(' · ')}">${v.ms.join(' + ')}</span>` : ''}<span class="l-xp" title="${v.base != null ? v.base + ' XP de base' : 'XP ganho'}">+${v.x}</span>
       ${feita ? '' : `<span class="l-acts"><button class="l-ib" data-l="d1" title="adiar 1 dia" aria-label="adiar 1 dia">${ic('moon')}</button>${t.pri !== 'A' ? '<button class="l-ib" data-l="up" title="subir prioridade" aria-label="subir prioridade">▲</button>' : ''}${'ABC'.includes(t.pri || 'Z') ? '<button class="l-ib" data-l="down" title="descer prioridade" aria-label="descer prioridade">▼</button>' : ''}<button class="l-ib" data-l="edit" title="editar" aria-label="editar">✎</button><button class="l-ib del" data-l="delete" title="remover" aria-label="remover">✕</button></span>`}</div></li>`;
 }
@@ -2198,8 +2204,8 @@ function rL(S){
       ${S.pausa ? `<div class="l-mis" style="--c:var(--grn)"><span class="l-k">férias</span><span class="l-v" style="color:var(--c)">até ${ddmm(addD(TEMP.volta, -1))}</span><span class="l-s">missão e fúria pausadas · o Ten não cai</span></div></div>` : `<div class="l-mis" style="--c:${NC(S.fraco)}"><span class="l-k">missão da semana</span><span class="l-v" style="color:var(--c)">${esc(fr.n)}</span><span class="l-s">${esc(fr.c)} ×1,5 · ${S.missDias}/3 dias → 1 feitiço</span><div class="l-pips">${[0,1,2].map(i => `<i class="${i < S.missDias ? 'on' : ''}"></i>`).join('')}</div></div></div>`}`;
   const ab = D.abertas.filter(t => !t.done).sort((p,q) => (p.pri||'Z').localeCompare(q.pri||'Z') || (p.due||'9').localeCompare(q.due||'9'));
   /* cada item é uma tarefa solta ou uma caçada inteira (bloco com as etapas abertas, no grupo da etapa mais urgente) */
-  const its = ab.filter(t => !isRec(t) && !HJx.cacDe(t)).map(t => ({due:t.due, prova:t.prova, h:rowL(t,S), x:valeL(t,S).x}))
-    .concat(window.HJ_EXP ? HJ_EXP.blocosLista(S) : []);
+  const its = ab.filter(t => !isRec(t) && !GBx.cacDe(t)).map(t => ({due:t.due, prova:t.prova, h:rowL(t,S), x:valeL(t,S).x}))
+    .concat(window.GB_EXP ? GB_EXP.blocosLista(S) : []);
   const em = (t,k) => t.due && dias(HOJE, t.due) > 0 && dias(HOJE, t.due) <= k;
   const G = [
     ['Atrasadas', 'late', its.filter(t => t.due && t.due < HOJE)],
@@ -2215,7 +2221,7 @@ function rL(S){
   const ed = document.getElementById('l-ed'); if(ed){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
   document.getElementById('l-golpes').innerHTML = S.golpes.slice(0,3).map(g => `<div class="l-g"><b>${esc(g.t.txt)}</b><small>${[discOf(g.t), g.t.due ? dueTxt(g.t.due) : '', g.fury ? 'fúria ×1,5' : '', g.bonus ? 'missão ×1,5' : ''].filter(Boolean).join(' · ')}</small><span class="l-xp">+${g.x}</span></div>`).join('') || '<p class="sub" style="margin:0">Nada aberto.</p>';
   document.getElementById('l-bosses').innerHTML = S.bs.map(b => `<button class="l-boss${b.dead ? ' dead' : ''}" data-go="b2" data-bsel="${b.d}"><span class="sig">${esc(b.d)}</span><span class="hp"><i style="width:${pct(b.rest,b.tot)}%"></i></span><span class="st${b.fury ? ' fury' : ''}">${b.dead ? 'DERROTADO' : b.fury ? 'FÚRIA' : Math.round(pct(b.rest,b.tot)) + '%'}</span><span class="nm">${esc(b.n)}${b.need != null && !b.dead ? ` · precisa de ${nf(Math.max(0,b.need))} no resto` : ''}</span></button>`).join('') || '<p class="sub" style="margin:0">Nenhuma disciplina cadastrada. Cadastre na aba Chefões.</p>';
-  document.getElementById('l-exps').innerHTML = window.HJ_EXP ? HJ_EXP.lateral(S) : '';
+  document.getElementById('l-exps').innerHTML = window.GB_EXP ? GB_EXP.lateral(S) : '';
   habitosL(S);
   document.getElementById('l-vale').innerHTML = [['ent',5,25],['est',0,15],['fac',2,15],['tre',1,10],['vid',3,10],['hab',4,'3–12']].map(([k,c,x]) => `<tr><td><span class="d" style="--c:${NC(c)}"></span>${LTIPOS.find(t => t.k === k).n} <span style="color:var(--faint)">${k === 'fac' ? '+fac.SIGLA' : k === 'vid' ? 'sem tag' : esc(tagDe(k))}</span></td><td>${x}</td></tr>`).join('')
     + '<tr class="x"><td>no prazo · missão · fúria</td><td>×1,5 cada</td></tr>';
@@ -2225,8 +2231,8 @@ function rL(S){
 const isCF = t => (t.rec || '').startsWith('cf');
 function isDuo(t){ return (t.rec || '').startsWith('duo:'); }
 /* nível de cada hábito (0.6.4, nv no estado do motor): o que o hábito pagou hoje, se já feito, ou o que a próxima vez vale */
-function habNv(S, id){ const sem = HJx.semanalDe(CTX.JOG, id); return S.nv[id] || {nv:1, xp:HJx.habXP(1), s:0, pede:HJx.habPede(1, sem), max:false, nvHoje:1, sem:!!sem}; }
-function habXPHoje(S, t){ const n = habNv(S, String(t.rec || '').split(':')[0]); return t.ok ? HJx.habXP(n.nvHoje) : n.xp; }
+function habNv(S, id){ const sem = GBx.semanalDe(CTX.JOG, id); return S.nv[id] || {nv:1, xp:GBx.habXP(1), s:0, pede:GBx.habPede(1, sem), max:false, nvHoje:1, sem:!!sem}; }
+function habXPHoje(S, t){ const n = habNv(S, String(t.rec || '').split(':')[0]); return t.ok ? GBx.habXP(n.nvHoje) : n.xp; }
 function habNvTxt(n){ return n.max ? 'nível máximo' : `${n.s}/${n.pede} ${n.sem ? (n.pede === 1 ? 'semana' : 'semanas') : 'dias'} para o nv ${n.nv + 1}`; }
 /* Duolingo: o servidor lê a ofensiva do perfil público e conclui a rec:duo do dia com lição feita (o bloqueio de ofensiva não conta) */
 const duoTxt = () => { const o = D.duo && D.duo.ofensiva; return `${esc(CTX.JOG.duo.usuario)}${o != null ? ` · ofensiva de ${o} dia${o === 1 ? '' : 's'}` : ''}`; };
@@ -2240,7 +2246,7 @@ function habitosL(S){
   /* hábitos semanais: quantas vezes cada um foi feito na semana (seg a dom) que começa em seg, pelo dia do hábito */
   const recDia = t => (t.rec || '').split(':')[1] || t.done, recId = t => (t.rec || '').split(':')[0];
   const naSemana = (id, seg) => D.feitas.filter(t => recId(t) === id && recDia(t) >= seg && recDia(t) <= addD(seg, 6)).length;
-  const SEG = addD(HOJE, -dow(HOJE)), sem = id => HJx.semanalDe(J, id);
+  const SEG = addD(HOJE, -dow(HOJE)), sem = id => GBx.semanalDe(J, id);
   let h = '';
   if(cf || cfT){ const n = S.cfHoje, ok = n >= meta || (cfT && cfT.ok);
     h += `<div class="l-hb${ok ? ' ok' : ''}" style="--c:${NC(1)}"><span class="av" style="--c:${NC(1)};--s:22px">${ic('tra')}</span>
@@ -2251,10 +2257,10 @@ function habitosL(S){
       <span class="t">Duolingo <small>${duoTxt()} · nv ${habNv(S, 'duo').nv}</small></span><span class="l-xp">+${habXPHoje(S, duoT)}</span>
       <span class="l-auto">automático: o jogo confere a sua ofensiva e marca sozinho quando você faz a lição do dia (o bloqueio de ofensiva não conta)</span></div>`;
   h += habs.map(t => `<div class="l-hb${t.ok ? ' ok' : ''}" style="--c:${NC(4)}" data-ln="${t.n}"><button class="l-ck" style="--c:${NC(4)}" data-l="${t.ok ? 'reopen' : 'done'}" aria-label="${t.ok ? 'desmarcar' : 'marcar'}: ${esc(t.txt)}">${t.ok ? '✓' : ''}</button>
-      <span class="t">${esc(t.txt)}<small>nv ${habNv(S, recId(t)).nv}${sem(recId(t)) ? ` · ${sem(recId(t))}× por semana · ${naSemana(recId(t), SEG)}/${sem(recId(t))} nesta semana${naSemana(recId(t), SEG) > sem(recId(t)) ? ` · acima da meta, XP ×${HJx.HAB_EXTRA}` : ''}` : ''}</small></span><span class="l-xp">+${habXPHoje(S, t) * (sem(recId(t)) && naSemana(recId(t), SEG) > sem(recId(t)) ? HJx.HAB_EXTRA : 1)}</span></div>`).join('');
+      <span class="t">${esc(t.txt)}<small>nv ${habNv(S, recId(t)).nv}${sem(recId(t)) ? ` · ${sem(recId(t))}× por semana · ${naSemana(recId(t), SEG)}/${sem(recId(t))} nesta semana${naSemana(recId(t), SEG) > sem(recId(t)) ? ` · acima da meta, XP ×${GBx.HAB_EXTRA}` : ''}` : ''}</small></span><span class="l-xp">+${habXPHoje(S, t) * (sem(recId(t)) && naSemana(recId(t), SEG) > sem(recId(t)) ? GBx.HAB_EXTRA : 1)}</span></div>`).join('');
   /* semanal com a meta da semana cumprida: o servidor não cria a linha de hoje; mostra como completo */
   h += (J.habitos || []).filter(x => x.semana && !habs.some(t => recId(t) === x.id) && naSemana(x.id, SEG) >= x.semana).map(x => `<div class="l-hb ok" style="--c:${NC(4)}"><span class="l-ck" style="--c:${NC(4)}" aria-hidden="true">✓</span>
-      <span class="t">${esc(x.n)}<small>${x.semana}× por semana · semana completa${naSemana(x.id, SEG) > x.semana ? ` (+${naSemana(x.id, SEG) - x.semana} acima da meta)` : ''}</small></span>${CTX.SRV ? `<button type="button" class="btn l-denovo" data-denovo="${esc(x.id)}" title="fez mais uma vez hoje? acima da meta vale XP ×${HJx.HAB_EXTRA}">fiz de novo +${habNv(S, x.id).xp * HJx.HAB_EXTRA}</button>` : '<span></span>'}</div>`).join('');
+      <span class="t">${esc(x.n)}<small>${x.semana}× por semana · semana completa${naSemana(x.id, SEG) > x.semana ? ` (+${naSemana(x.id, SEG) - x.semana} acima da meta)` : ''}</small></span>${CTX.SRV ? `<button type="button" class="btn l-denovo" data-denovo="${esc(x.id)}" title="fez mais uma vez hoje? acima da meta vale XP ×${GBx.HAB_EXTRA}">fiz de novo +${habNv(S, x.id).xp * GBx.HAB_EXTRA}</button>` : '<span></span>'}</div>`).join('');
   /* esqueci de marcar ontem: hábitos de hoje que não aparecem como feitos ontem; marcar conta para ontem (XP, Ten e heatmap) */
   const ONT = addD(HOJE, -1), feitosOnt = new Set(D.feitas.filter(t => t.done === ONT && (t.rec||'').endsWith(':' + ONT)).map(t => t.rec.split(':')[0]));
   const faltam = (J.habitos || []).filter(x => !feitosOnt.has(x.id) && !(x.semana && naSemana(x.id, addD(ONT, -dow(ONT))) >= x.semana));
@@ -2278,7 +2284,7 @@ function habitosL(S){
   /* nível e XP de cada hábito (0.6.4): ao lado da grade dos diários, um por linha, com a barra até o próximo nível */
   const nvBarra = n => `<i class="l-hnvb"><i style="width:${n.max ? 100 : Math.round(n.s / n.pede * 100)}%"></i></i>`;
   const nvLista = (hs, pc) => `<div class="l-hres"><div class="l-hnv">${hs.map(x => { const n = habNv(S, x.id);
-    return `<span title="${esc(x.n)} · nível ${n.nv} de ${HJx.HAB_NV_MAX} · ${habNvTxt(n)}"><em>${esc(x.n)}</em><b>nv ${n.nv}</b><small>+${n.xp} XP</small>${nvBarra(n)}</span>`; }).join('')}
+    return `<span title="${esc(x.n)} · nível ${n.nv} de ${GBx.HAB_NV_MAX} · ${habNvTxt(n)}"><em>${esc(x.n)}</em><b>nv ${n.nv}</b><small>+${n.xp} XP</small>${nvBarra(n)}</span>`; }).join('')}
     <p>${pc} dos hábitos diários feitos · falhar um dia cai um nível</p></div></div>`;
   const nvCab = id => { const n = habNv(S, id); return `<div class="l-hcab"><strong>nv ${n.nv} · +${n.xp}</strong><small>XP · ${habNvTxt(n)}</small>${nvBarra(n)}</div>`; };
   const resumo = (v, cab) => {
@@ -2327,7 +2333,7 @@ async function tipoIA(btn){
     ...LTIPOS.map(t => `${t.k}: ${t.d}. Ex.: ${t.ex}`), '', `Disciplina escolhida: ${document.getElementById('l-disc').value || 'nenhuma'}`, `Tarefa: ${txt}`].join('\n');
   btn.disabled = true;
   try {
-    const r = await window.HJ_IA.rodaIA(pedido, 'tipo da tarefa', '', true), m = r.match(/\b(ent|est|fac|tre|hab|vid)\b\s*\|?\s*(.*)/);
+    const r = await window.GB_IA.rodaIA(pedido, 'tipo da tarefa', '', true), m = r.match(/\b(ent|est|fac|tre|hab|vid)\b\s*\|?\s*(.*)/);
     if(!m) throw new Error('resposta fora do formato: ' + r.slice(0, 80));
     LA.tipo = m[1]; LA.auto = false; LA.por = 'pela IA: ' + m[2].trim().slice(0, 90); marcaTipo(); prevL();
   } catch(err){ toast('A IA não respondeu: ' + esc(err.message)); }
@@ -2366,7 +2372,7 @@ document.addEventListener('click', async e => {
   const oa = q('[data-ontemabre]'); if(oa){ UI.ontem = oa.dataset.ontemabre === '1'; render(); return; }
   const on = q('[data-ontem]'); if(on){ UI.ontem = false; acaoL(() => post('/api/ontem', {id:on.dataset.ontem}), 'Marcado como feito ontem'); return; }
   if(q('[data-cfmao]')){ cfMaoPergunta(); return; }
-  const dn = q('[data-denovo]'); if(dn){ dn.disabled = true; acaoL(() => post('/api/denovo', {id:dn.dataset.denovo}), `Feito de novo <small>acima da meta da semana: XP ×${HJx.HAB_EXTRA}</small>`); return; }
+  const dn = q('[data-denovo]'); if(dn){ dn.disabled = true; acaoL(() => post('/api/denovo', {id:dn.dataset.denovo}), `Feito de novo <small>acima da meta da semana: XP ×${GBx.HAB_EXTRA}</small>`); return; }
   if(q('[data-cfmx]')){ document.getElementById('cfm').remove(); return; }
   if(q('[data-cfmok]')){ cfMao(false); return; }
   if(q('[data-cfmmenos]')){ q('[data-cfmmenos]').closest('.toast').remove(); cfMao(true); return; }
@@ -2383,16 +2389,16 @@ document.addEventListener('click', async e => {
   if(act === 'cancel'){ UI.ledit = null; render(); return; }
   if(act !== 'save') UI.ledit = null;
   if(act === 'save'){ LE.txt = document.getElementById('l-ed').value;
-    const dd = document.getElementById('l-eddate').value.trim(); if(dd){ const iso = HJx.isoData(dd, HOJE); if(!iso){ toast(HJx.dataRuim('')); return; } LE.due = iso; }
+    const dd = document.getElementById('l-eddate').value.trim(); if(dd){ const iso = GBx.isoData(dd, HOJE); if(!iso){ toast(GBx.dataRuim('')); return; } LE.due = iso; }
     const cn = document.getElementById('l-edcacn'); if(cn) LE.cacn = cn.value;
     UI.ledit = null; if(!LE.txt.trim()){ render(); return; }
     const nova = LE.cac === '+nova' ? (LE.cacn.trim() || LE.txt.replace(/(^|\s)[+@]\S+|(^|\s)\S+:\S+/g, '').trim()) : '';   // nome da caçada nova: o digitado ou o texto, sem tags
-    acaoL(async () => { if(nova) LE.cac = await HJ_EXP.criaCac(nova); return post('/api/act', {raw:t.raw, action:'edit', value:linhaEd(), pri:LE.pri}); },
+    acaoL(async () => { if(nova) LE.cac = await GB_EXP.criaCac(nova); return post('/api/act', {raw:t.raw, action:'edit', value:linhaEd(), pri:LE.pri}); },
       nova ? `Virou caçada <small>${esc(nova)} · adicione as outras etapas com "+ etapa"</small>` : 'Tarefa editada'); return; }
   if(act === 'done'){ const antes = estado(), rr = b.getBoundingClientRect();
     try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
     const depois = estado(), dx = depois.total - antes.total; render();
-    floatAt(rr, `+${dx} XP`); if(dx > 0 && window.HJ_FX) HJ_FX.tarefa(rr);
+    floatAt(rr, `+${dx} XP`); if(dx > 0 && window.GB_FX) GB_FX.tarefa(rr);
     if(depois.prepBonus > antes.prepBonus) toastUndo('Preparação completa! <small>+1 feitiço à escolha</small>');
     else if(depois.a.n > antes.a.n){ toastUndo(`▲ Andar ${depois.a.n} <small>a torre sobe</small>`); confete(); }
     else toastUndo(`+${dx} XP <small>+${fmt(dx*10)} J</small>`);
@@ -2416,23 +2422,23 @@ document.addEventListener('change', e => {
   if(e.target.matches('[data-cofrev]')){ const v = numIn(e.target.value); if(isNaN(v) || v < 0){ toast('Valor do cofre inválido'); return; } EST.cofreMes = Math.round(v*100)/100; salvaUI(); render(); toast(v > 0 ? `Cofre do mês: R$ ${fmt(EST.cofreMes)} por mês` : 'Cofre do mês desligado'); }
   if(e.target.id === 'l-edcac'){ LE.cac = e.target.value; redesenhaEd(); }
   if(e.target.id === 'l-eddisc'){ LE.disc = e.target.value; if(!LE.disc && LE.tipo === 'fac') LE.tipo = 'vid'; redesenhaEd(); }
-  if(e.target.id === 'l-eddate'){ const iso = HJx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(HJx.dataRuim('')); return; }
+  if(e.target.id === 'l-eddate'){ const iso = GBx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(GBx.dataRuim('')); return; }
     LE.due = iso || ''; dataEd(); }
-  if(e.target.id === 'l-date'){ const iso = HJx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(HJx.dataRuim('')); return; }
+  if(e.target.id === 'l-date'){ const iso = GBx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(GBx.dataRuim('')); return; }
     LA.due = iso; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', false)); prevL(); }
 });
 document.getElementById('l-add').addEventListener('submit', async e => {
   e.preventDefault(); if(!document.getElementById('l-txt').value.trim()) return;
-  const S = estado(), linha = rascunho(), v = valeL(HJx.parseLinha(HOJE + ' ' + linha, 0), S), P = priL(linha, S);
-  try { if(window.HJ_EXP) await HJ_EXP.antesDeAdicionar(); await post('/api/add', {text:(P.pri ? `(${P.pri}) ` : '') + linha}); } catch(err){ toast('Não adicionou: ' + esc(err.message)); return; }
-  if(window.HJ_EXP) HJ_EXP.depoisDeAdicionar();
+  const S = estado(), linha = rascunho(), v = valeL(GBx.parseLinha(HOJE + ' ' + linha, 0), S), P = priL(linha, S);
+  try { if(window.GB_EXP) await GB_EXP.antesDeAdicionar(); await post('/api/add', {text:(P.pri ? `(${P.pri}) ` : '') + linha}); } catch(err){ toast('Não adicionou: ' + esc(err.message)); return; }
+  if(window.GB_EXP) GB_EXP.depoisDeAdicionar();
   document.getElementById('l-txt').value = ''; LA.pri = 'jogo'; LA.auto = true; LA.por = ''; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lpri === 'jogo'));   // a letra escolhida vale só para esta tarefa
   await recarrega(); render(); toastUndo(`Adicionada${P.pri ? ` com prioridade ${P.pri}` : ''} <small>vale +${v.x} XP</small>`);
 });
 
 /* ---------- abas e interação (página real) ---------- */
 const TABS = ['l','b','b2','x','d2','bk','ms','px','sys','cfg','tt','nv'];
-const RENDER = {l:rL, b:rB, b2:rB2, x:S => window.HJ_EXP && HJ_EXP.aba(S), d2:rD2, bk:rBK, ms:rMS, px:rPX, sys:rSys, cfg:rCfg, tt:rTT, nv:() => {}};   // nv: novidades.js
+const RENDER = {l:rL, b:rB, b2:rB2, x:S => window.GB_EXP && GB_EXP.aba(S), d2:rD2, bk:rBK, ms:rMS, px:rPX, sys:rSys, cfg:rCfg, tt:rTT, nv:() => {}};   // nv: novidades.js
 let cur = 'l';
 function render(){
   if(!CTX) return;
@@ -2442,14 +2448,14 @@ function render(){
 }
 function tab(t){
   if(!TABS.includes(t)) t = 'l'; cur = t;
-  TABS.forEach(k => document.getElementById('v-'+k).hidden = k !== t); if(window.HJ_FX) HJ_FX.aba();
+  TABS.forEach(k => document.getElementById('v-'+k).hidden = k !== t); if(window.GB_FX) GB_FX.aba();
   try { history.replaceState(null,'','#'+t); } catch(e){}
   render(); try { window.scrollTo({top:0}); } catch(e){}
 }
 function toast(html){ const to = document.createElement('div'); to.className = 'toast'; to.innerHTML = html; document.body.appendChild(to); setTimeout(() => to.remove(), 2600); }
 function floatAt(r, txt){ const f = document.createElement('div'); f.className = 'float'; f.textContent = txt; f.style.left = (r.left + r.width/2)+'px'; f.style.top = (r.top - 6)+'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 1200); }
 function confete(forcado){
-  if(!forcado && window.HJ_FX) HJ_FX.festa();
+  if(!forcado && window.GB_FX) GB_FX.festa();
   if(!forcado && (UI.fxOff || !UI.fx.includes('confete'))) return;
   try { if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch(e){}
   const cores = ['var(--volt)','var(--aura)','var(--amb)','var(--grn)','var(--red)'];
@@ -2495,16 +2501,16 @@ document.addEventListener('click', async e => {
   const pr = q('[data-prova]'); if(pr){ UI.prova = pr.dataset.prova; render(); return; }
   const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(); if(!it || S.jenny < it.p) return;
-    SPENT += it.p; compra('cos', it.id, it.p); OWN.add(it.id); HJx.expandeOwn(OWN); UI.prova = ''; equipa(it); salvaUI(); toast(`${esc(it.n)} é seu <small>−${fmt(it.p)} J · já equipado${it.parts ? ' · as peças ficam separadas também' : ''}</small>`); render(); return; }
+    SPENT += it.p; compra('cos', it.id, it.p); OWN.add(it.id); GBx.expandeOwn(OWN); UI.prova = ''; equipa(it); salvaUI(); toast(`${esc(it.n)} é seu <small>−${fmt(it.p)} J · já equipado${it.parts ? ' · as peças ficam separadas também' : ''}</small>`); render(); return; }
   const eq = q('[data-equip]'); if(eq){ const it = COS.find(i => i.id === eq.dataset.equip); if(it){ equipa(it); salvaUI(); render(); } return; }
   const rl = q('[data-real]'); if(rl){ const x = meusPremios()[+rl.dataset.real], S = estado(); if(!x || !podeResgatar(S, x)) return;
     SPENT += x.p; compra('premio', 'premio', x.p); COFRE_USADO += x.rs||0; RESG.push(`${x.n} · ${ddmm(HOJE)}`); salvaUI(); toast(`Resgatado: ${esc(x.n)} <small>aproveite</small>`); render(); return; }
   if(q('[data-pedit]')){ UI.pedit = true; UI.pdraft = meusPremios().map(x => ({...x})); render(); return; }
-  const cf = q('[data-cofre]'); if(cf){ EST.cofreMes = cf.dataset.cofre === '1' ? (HJx.cofreMes(EST) || COFRE_MES) : 0; salvaUI(); render(); toast(cofreOn() ? `Cofre do mês ligado <small>R$ ${fmt(HJx.cofreMes(EST))} por mês</small>` : 'Cofre do mês desligado'); return; }
+  const cf = q('[data-cofre]'); if(cf){ EST.cofreMes = cf.dataset.cofre === '1' ? (GBx.cofreMes(EST) || COFRE_MES) : 0; salvaUI(); render(); toast(cofreOn() ? `Cofre do mês ligado <small>R$ ${fmt(GBx.cofreMes(EST))} por mês</small>` : 'Cofre do mês desligado'); return; }
   if(q('[data-padd]')){ lePremios(); UI.pdraft.push({n:'', p:null, rs:0}); render(); const r = document.querySelectorAll('[data-pf$=":n"]'); if(r.length) r[r.length-1].focus(); return; }
   const pd = q('[data-pdel]'); if(pd){ lePremios(); UI.pdraft.splice(+pd.dataset.pdel, 1); render(); return; }
   if(q('[data-pcancel]')){ UI.pedit = false; render(); return; }
-  if(q('[data-ppadrao]')){ UI.pdraft = HJx.PREMIOS_PADRAO.map(x => ({...x})); render(); toast('Prêmios padrão de volta <small>clique em salvar para guardar</small>'); return; }
+  if(q('[data-ppadrao]')){ UI.pdraft = GBx.PREMIOS_PADRAO.map(x => ({...x})); render(); toast('Prêmios padrão de volta <small>clique em salvar para guardar</small>'); return; }
   if(q('[data-psave]')){ lePremios();
     const L = UI.pdraft.filter(x => x.n || x.p), ruim = L.find(x => !x.n || !(x.p > 0) || isNaN(x.rs) || x.rs < 0);
     if(ruim){ toast(`Confira o prêmio ${esc(ruim.n || 'sem nome')} <small>precisa de nome e preço maior que zero</small>`); return; }
@@ -2515,7 +2521,7 @@ document.addEventListener('click', async e => {
     const s = spell(k); SPENT += s.p; compra('feitico', k, s.p); BOUGHT[k] = 1; salvaUI(); toast(`${s.n} na bolsa <small>−${fmt(s.p)} J</small>`); render(); return; }
   const cm = q('[data-como]'); if(cm){ UI.como = cm.dataset.como; render(); return; }
   const uz = q('[data-usar]'); if(uz){ const p = uz.dataset.usar.split(':'), k = p[0], como = k === 'escolha' ? p[1] : '', ef = k === 'escolha' ? como : k, [alvo, dia] = p.slice(k === 'escolha' ? 2 : 1);
-    const u = {k, d:HOJE, ja: D.feitas.filter(t => t.done === HOJE && t.raw).map(t => HJx.marca(t.raw)).join(',').slice(0,190)};
+    const u = {k, d:HOJE, ja: D.feitas.filter(t => t.done === HOJE && t.raw).map(t => GBx.marca(t.raw)).join(',').slice(0,190)};
     if(k === 'escolha') u.como = como;
     if(ef === 'gyo') u.alvo = +alvo;
     if(ef === 'ken') u.alvo = (uz.dataset.ken || '').slice(0,190);
@@ -2524,13 +2530,13 @@ document.addEventListener('click', async e => {
     const msg = {ko:'a próxima tarefa vale XP ×2', acomp:'a próxima entrega vale XP ×2', zetsu:`${alvo === 'ten' ? 'o Ten' : 'o hábito'} ${dia === HOJE ? 'está salvo hoje' : 'foi salvo ontem'}`, retorno:'ontem conta como meta do Codeforces', gyo:'missão da semana trocada', ken:'o prazo dessa tarefa ganhou 1 dia'}[ef];
     toast(`${spell(ef).n} usado <small>${msg}</small>`); render(); return; }
   const rl2 = q('[data-relat]'); if(rl2){ baixaRelatorio(rl2.dataset.relat); return; }
-  const so = q('[data-somoff]'); if(so){ try { localStorage.setItem('hj-somoff', so.dataset.somoff); } catch(err){} render(); return; }
-  const fo = q('[data-fxoff]'); if(fo){ UI.fxOff = fo.dataset.fxoff === '1'; try { localStorage.setItem('hj-fxoff', UI.fxOff ? '1' : '0'); } catch(err){} render(); return; }
+  const so = q('[data-somoff]'); if(so){ try { localStorage.setItem('gb-somoff', so.dataset.somoff); } catch(err){} render(); return; }
+  const fo = q('[data-fxoff]'); if(fo){ UI.fxOff = fo.dataset.fxoff === '1'; try { localStorage.setItem('gb-fxoff', UI.fxOff ? '1' : '0'); } catch(err){} render(); return; }
   if(q('[data-inbox]')){ const el = document.getElementById('inbox-txt'), t = el.value.trim(); if(!t){ toast('Escreva a mudança primeiro'); return; }
     try { await post('/api/jogo/ajuste', {texto:t}); await recarrega(); toast('Anotado <small>em ajustes.txt</small>'); render(); } catch(err){ toast('Não enviou: ' + esc(err.message)); } return; }
   const nb = q('[data-nota]');
   if(nb){
-    const v = HJx.nota10(document.getElementById(nb.dataset.in).value || '');
+    const v = GBx.nota10(document.getElementById(nb.dataset.in).value || '');
     if(isNaN(v) || v < 0 || v > 10){ toast('Nota de 0 a 10, ou em pontos <small>ex.: 7,5 ou 4/5 (4 de 5)</small>'); return; }
     const [d,k] = nb.dataset.nota.split(':'), antes = estado();
     try { await post('/api/jogo/nota', {disc:d, aval:k, nota:v, parcial: !!nb.dataset.cont}); await recarrega(); } catch(err){ toast('Não gravou: ' + esc(err.message)); return; }
@@ -2547,13 +2553,13 @@ document.addEventListener('click', async e => {
   try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
   const depois = estado(), dx = depois.total - antes.total;
   render();
-  if(dx > 0){ floatAt(rr, `+${dx} XP`); if(window.HJ_FX) HJ_FX.tarefa(rr);
+  if(dx > 0){ floatAt(rr, `+${dx} XP`); if(window.GB_FX) GB_FX.tarefa(rr);
     if(depois.prepBonus > antes.prepBonus) toast('Preparação completa! <small>+1 feitiço à escolha</small>');
     else if(depois.a.n > antes.a.n){ toast(`▲ Andar ${depois.a.n} <small>a torre sobe</small>`); confete(); } }
 });
 document.addEventListener('visibilitychange', () => { if(!document.hidden) recarrega().then(render).catch(() => {}); });
 setInterval(() => { if(!document.hidden && !document.activeElement.matches('input,select,textarea')) recarrega().then(render).catch(() => {}); }, 20000);   // pega o que mudou no todo.txt por fora (terminal, editor)
-if(window.HJ_DEMO) document.getElementById('demo-aviso').hidden = false;
+if(window.GB_DEMO) document.getElementById('demo-aviso').hidden = false;
 recarrega().then(() => tab((location.hash||'').slice(1))).catch(err => {
   document.getElementById('v-l').hidden = false;
   document.getElementById('v-l').innerHTML = `<div class="card" style="max-width:620px"><h2><span class="c">~/</span>jogo indisponível</h2><p>Não consegui ler os dados (${esc(err.message)}). Abra pelo servidor do jogo: rode <span class="mono">python3 servidor.py</span> e abra o endereço que ele mostrar.</p></div>`;

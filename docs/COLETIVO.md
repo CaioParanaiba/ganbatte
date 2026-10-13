@@ -30,8 +30,10 @@ Tema: **HxH para todos** nesta temporada.
 
 - Cada jogador roda o **template individual**: só o jogo (sem o painel do Caio, sem aulas/transcrição),
   com `jogador.conf` (nome, disciplinas, **mapa de tags** → categorias do motor, handle do CF, exposição de notas).
-- **Associação Hunter** num **PC dedicado 24/7**, acesso por **VPN** (Tailscale; Headscale se quiserem tudo self-hosted).
-  Direto no servidor, sem passar pelo GitHub (o GitHub serve só para distribuir o código do template).
+- **Associação Hunter**: qualquer jogador pode ser host (botão **Criar grupo**, serviço `ganbatte-grupo` separado do jogo).
+  Um servidor atende vários grupos e um jogador pode estar em vários. Exposto de preferência por **Tailscale Funnel**
+  (grátis, só o host instala, endereço fixo com qualquer IP); o servidor não depende dele. Convite = link com endereço e
+  código. Direto no servidor, sem passar pelo GitHub (o GitHub serve só para distribuir o código do template).
 - O jogo local manda um **resumo por POST** e guarda numa fila quando estiver offline. O jogo nunca depende do servidor para funcionar.
 - A Associação calcula a Torre Trick e serve a página do placar, o catálogo da loja pública e as imagens.
 

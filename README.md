@@ -1,4 +1,4 @@
-# Hunter.todo
+# Ganbatte
 
 Um jogo (tema Hunter x Hunter) em cima do [todo.txt](https://github.com/todotxt/todo.txt): você conclui tarefas e sobe a
 **Arena Celestial**, enfrenta as disciplinas como **chefões** (vida = nota), mantém o **Ten** (dias seguidos) e gasta
@@ -75,8 +75,8 @@ Tudo o que é seu fica numa pasta separada do código:
 
 | Sistema | Pasta |
 |---|---|
-| Linux / Mac | `~/.hunter-todo/` |
-| Windows | `C:\Users\SEU_USUARIO\.hunter-todo\` |
+| Linux / Mac | `~/.ganbatte/` |
+| Windows | `C:\Users\SEU_USUARIO\.ganbatte\` |
 
 | Arquivo | O que tem |
 |---|---|
@@ -133,7 +133,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 - **"A porta 8642 está ocupada":** outro programa usa essa porta. Rode com outra: `python3 servidor.py --porta 8643`.
 - **O navegador não abriu:** abra http://127.0.0.1:8642/ à mão.
 - **Aviso amarelo "o servidor do jogo ainda está na versão...":** o servidor antigo continua ligado. Rode o instalador de
-  novo ou reinicie o computador (Linux: `systemctl --user restart hunter-todo`) e recarregue a página.
+  novo ou reinicie o computador (Linux: `systemctl --user restart ganbatte`) e recarregue a página.
 - **A IA não aparece em Configurações → IA:** instale e entre na conta da IA pelo terminal (`codex login`, `claude`,
   `gemini`) e clique em **procurar de novo**. O jogo procura no PATH do seu terminal e nas pastas comuns (npm, nvm, ~/.local/bin).
 - **Esqueci de marcar um hábito ontem:** no card "hábitos de hoje", clique em **esqueci de marcar ontem**. Ele conta
@@ -158,7 +158,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   `web/chefes.js`: editor de avaliações e notas. `web/ia.js`: pedidos para a IA e a IA ligada. `web/conquistas.js`:
   conquistas criadas pela IA (as regras ficam no motor). `web/novidades.js`: aba Novidades, com a lista de versões que o
   servidor lê do GitHub para avisar de versão nova (ao lançar uma, ponha-a no topo). `web/feedback.js`: bug, ideia ou
-  dúvida vira uma issue preenchida pelos formulários de `.github/ISSUE_TEMPLATE/`. `web/temporadas.js`: guarda a temporada que acabou em `temporadas/NOME/` (a cápsula é `HJ.capsula` no motor; `TEMA` no motor
+  dúvida vira uma issue preenchida pelos formulários de `.github/ISSUE_TEMPLATE/`. `web/temporadas.js`: guarda a temporada que acabou em `temporadas/NOME/` (a cápsula é `GB.capsula` no motor; `TEMA` no motor
   tem os nomes temáticos das funções). `web/efeitos.js`: o que os itens
   da Masadora fazem na tela (texturas, molduras, fontes, animações e sons; os itens e preços ficam no `COS` do motor). `web/demo.js`: o servidor de mentira do
   modo demonstração (também usado no GitHub Pages). `web/a/`: o banco de fotos de perfil; cada PNG (256×256, nome com
@@ -170,7 +170,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   mostra XP, andar, Jenny e quanto da loja cada um compra; `--comparar relatorio.json` põe ao lado o relatório de um
   jogador de verdade (Configurações → balanceamento). Os perfis ficam no topo do arquivo.
 - **IA opcional.** O jogo funciona sem IA. Com uma IA de terminal instalada (Claude Code, Codex ou Gemini CLI), ligue-a
-  em **Configurações → IA**: o jogo passa a ler os planos de ensino (pasta `~/.hunter-todo/planos/`), aplicar a caixa de entrada
+  em **Configurações → IA**: o jogo passa a ler os planos de ensino (pasta `~/.ganbatte/planos/`), aplicar a caixa de entrada
   e escrever as cartas do Book sozinho, e propõe conquistas feitas para você (no Book); você confere antes de salvar. Sem ela, o jogo monta os pedidos e você cola
   numa IA de chat. Veja [`IA.md`](IA.md).
 
@@ -178,17 +178,18 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
-| 0.6.6-beta1 | atualização das expedições | Prazo da caçada (#54): `prazo` em `estado.json` → `cacadas`, escolhido nas janelas de criar e editar. Só organiza: `grupos()` usa o prazo no `due` da caçada (ordem da Lista) e conta as etapas com prazo depois dele (`depois`); aparece na Lista, nos marcos, na trilha, no quadro e como marca no cronograma. Não mexe no XP. Tarefa vira caçada (#35): campo caçada no editor da tarefa (`HJ_EXP.opcoesCac`, `criaCac`), aberta, nenhuma ou nova com a tarefa como 1ª etapa. Cofre do mês opcional (#34): desligado por padrão, liga em Configurações → cofre do mês (`cofreMes` > 0; sem valor gravado, só quem já gastou do cofre fica com ele); desligado, sem card na Masadora e sem limite em R$ no resgate (`cofreOn()`) |
+| 0.6.6-beta2 | atualização das expedições | **Nome Ganbatte** (#15): pasta de dados `~/.ganbatte` (`migra_pasta()` move a `~/.hunter-todo` na primeira vez e deixa um atalho; outra pasta escolhida fica onde está), variáveis `GANBATTE_*` (as `HUNTER_*` valem por um tempo, `env()`), início automático `ganbatte` (`migra_servico()` grava o novo e apaga o `hunter-todo`; o servidor que está rodando continua até o próximo login), `/api/ping` com `"app": "ganbatte"` (o `ping()` aceita os dois), instalador em `~/ganbatte` (quem tem `~/todo-engine` continua nela), prefixos `GB`/`GB_`/`GBx` e `gb-` no código (o `localStorage` copia os `hj-`). Nomes base das abas (`NOMES` no motor, `ABA` na página): o menu usa Progresso, Projetos, Calendário, Conquistas, Loja e Grupo, e o nome do `TEMA` fica no `title`. O repositório ainda é `todo-engine` |
+| 0.6.6-beta1 | atualização das expedições | Prazo da caçada (#54): `prazo` em `estado.json` → `cacadas`, escolhido nas janelas de criar e editar. Só organiza: `grupos()` usa o prazo no `due` da caçada (ordem da Lista) e conta as etapas com prazo depois dele (`depois`); aparece na Lista, nos marcos, na trilha, no quadro e como marca no cronograma. Não mexe no XP. Tarefa vira caçada (#35): campo caçada no editor da tarefa (`GB_EXP.opcoesCac`, `criaCac`), aberta, nenhuma ou nova com a tarefa como 1ª etapa. Cofre do mês opcional (#34): desligado por padrão, liga em Configurações → cofre do mês (`cofreMes` > 0; sem valor gravado, só quem já gastou do cofre fica com ele); desligado, sem card na Masadora e sem limite em R$ no resgate (`cofreOn()`) |
 | 0.6.5 | atualização das expedições | **Junta a 0.6.5-beta1** (a linha abaixo), as correções da 0.6.4 (#51). A janela grande junta a 0.6.4 e a 0.6.5 (`"janela"` no `novidades.js`), com o "no seu jogo" das duas |
 | 0.6.5-beta1 | atualização das expedições | **Corrige o estado da 0.6.4**: o servidor recusava o `estado.json` com `migra` e `tenRec`, e nada da loja, do tour e dos recibos ficava salvo. **Aviso grande** (`"aviso": "0.6.5"`). Nível do Duolingo pela ofensiva inteira (#51): os dias de antes de ligar sobem o nível, sem XP; os de antes da temporada pela ofensiva lida (`duoPre()`, `ini` no `/api/jogo`). Devolução única (`devolucao()`, `estado.json` → `devolve`): quem teve a carteira zerada pelo acerto da 0.6.4 perde as aparências e os feitiços na bolsa comprados em 13/10 e recebe só o que passou do perdão; o servidor não deixa uma aba antiga devolvê-los (`devolve_filtra`). Renomear um hábito (Configurações ou o assistente) mantém o id (`habsJSON`), e com ele o nível e o histórico; quem já tinha o histórico preso num id antigo pelo bug volta a ele sozinho (`religa_habitos()` no `arruma_dia`: mesmo nome, id que ninguém usa, um só candidato) |
 | 0.6.4 | atualização das expedições | **Junta as betas 0.6.4** (as cinco linhas abaixo): rebalanceamento com aviso grande (#47), temporada guardada (#7), Book reorganizado e 10 desafios da IA (#49, #6), Regras reescritas e lateral da Lista (#50), canal estável/beta/grupo e resumo para o grupo (#36, #46, #37) |
-| 0.6.4-beta5 | atualização das expedições | Preparação do modo em grupo: o canal de atualização segue a branch da cópia (`CANAIS`: main, beta, grupo; #36) e Configurações → servidor escolhe entre Estável, Beta e Grupo (#46; o modo teste da Masadora vale na beta e no grupo). `HJ.resumoGrupo` (#37): por dia, o XP, os hábitos do grupo (Codeforces, Duolingo) e os dias da missão, exportável em Configurações → balanceamento |
-| 0.6.4-beta4 | atualização das expedições | Regras reescritas (#50): seções com índice, tabelas e contas de exemplo, com os números do motor e um resumo do jogador; a aba vai para o fim do menu, depois de Novidades. Cards da lateral da Lista abrem e fecham pelo título (`<details data-lado>`, guardado em `localStorage` → `hj-lado`) |
+| 0.6.4-beta5 | atualização das expedições | Preparação do modo em grupo: o canal de atualização segue a branch da cópia (`CANAIS`: main, beta, grupo; #36) e Configurações → servidor escolhe entre Estável, Beta e Grupo (#46; o modo teste da Masadora vale na beta e no grupo). `GB.resumoGrupo` (#37): por dia, o XP, os hábitos do grupo (Codeforces, Duolingo) e os dias da missão, exportável em Configurações → balanceamento |
+| 0.6.4-beta4 | atualização das expedições | Regras reescritas (#50): seções com índice, tabelas e contas de exemplo, com os números do motor e um resumo do jogador; a aba vai para o fim do menu, depois de Novidades. Cards da lateral da Lista abrem e fecham pelo título (`<details data-lado>`, guardado em `localStorage` → `gb-lado`) |
 | 0.6.4-beta3 | atualização das expedições | Book reorganizado (#49): Conquistas sem casas vazias, três cartas por hábito pelo nível (3, 6, 10, nos números livres de 000–099), Ten de 60 dias e os desafios da IA resgatados; Desafios da IA com 10 vagas por rank (`CONQ_VAGAS`: 4 D, 3 C, 2 B, 1 A), conferidas também no servidor (#6) |
 | 0.6.4-beta2 | atualização das expedições | **Rebalanceamento, com aviso grande** (#47) (`"aviso"` no `novidades.js`, janela que mostra a cada um quanto mudou): contribuições menores (bug 15 XP + 150 J, ideia 10 XP + 50 J); Duolingo de antes de ligar sem XP, Jenny e Ten (`duo.json` → `desde`); Ten só com tarefa que não é hábito; nível por hábito de 1 a 10 (3 a 12 XP, `niveisHab()`); carta Zetsu salva hoje ou ontem, o Ten ou um hábito; bônus de nota pelo peso normalizado da disciplina. Acerto único `MIGRA` no `estado()`: tira dos `xpDias` o que a regra antiga dava, guarda o recorde do Ten (`tenRec`) e não deixa a carteira negativa |
-| 0.6.4-beta1 | atualização das expedições | Temporada guardada (#7): na volta às aulas, `HJ.capsula()` congela os números finais em `temporadas/NOME/resumo.json` (chaves neutras e os nomes do tema em `TEMA`), com cópia dos arquivos (`POST /api/temporada`); também antes de o assistente trocar a temporada e pelo card em Configurações |
+| 0.6.4-beta1 | atualização das expedições | Temporada guardada (#7): na volta às aulas, `GB.capsula()` congela os números finais em `temporadas/NOME/resumo.json` (chaves neutras e os nomes do tema em `TEMA`), com cópia dos arquivos (`POST /api/temporada`); também antes de o assistente trocar a temporada e pelo card em Configurações |
 | 0.6.3 | atualização das expedições | **Junta as betas 0.6.3** (as duas linhas abaixo): férias (#31), recompensa por contribuição (#23), reabrir etapa (#27), testes do servidor (#12) e o balanceamento: relatório, registro de compras e simulador (#32) |
-| 0.6.3-beta2 | atualização das expedições | Relatório de balanceamento em Configurações (`HJ.relatorio()`: XP e Jenny por dia e por origem, em .json ou .csv, sem texto de tarefa); registro de compras (`estado.json` → `compras`); simulador de temporada com jogadores inventados (`node ferramentas/simulador.mjs`) |
+| 0.6.3-beta2 | atualização das expedições | Relatório de balanceamento em Configurações (`GB.relatorio()`: XP e Jenny por dia e por origem, em .json ou .csv, sem texto de tarefa); registro de compras (`estado.json` → `compras`); simulador de temporada com jogadores inventados (`node ferramentas/simulador.mjs`) |
 | 0.6.3-beta1 | atualização das expedições | Férias (#31): Ten não cai, missão e fúria pausadas, XP normal; recompensa por bug corrigido e ideia feita pelo usuário do GitHub (#23, `contrib.json`); reabrir etapa do `done.txt` (`POST /api/reabre`, #27); testes do servidor em `tests/` (#12) |
 | 0.6.2 | atualização das expedições | **Junta as betas 0.6.2** (as cinco linhas abaixo) e traz o **Duolingo automático** (#11): só o usuário, sem senha; o servidor lê a ofensiva do perfil público, conclui a `rec:duo` do dia com lição e credita os dias da ofensiva desde o início da temporada (`duo.json`); o dia do bloqueio de ofensiva não conta |
 | 0.6.2-beta5 | atualização das expedições | Fotos de perfil vêm do banco do repositório (`web/a/`), para todos os jogadores; o jogador não coloca mais fotos na pasta de dados (#13) |

@@ -1,4 +1,4 @@
-# IA no Hunter.todo (opcional)
+# IA no Ganbatte (opcional)
 
 O jogo funciona inteiro sem IA. Com IA, você digita menos: ela monta o plano de avaliação a partir do plano de ensino,
 aplica as mudanças da caixa de entrada, cuida das suas tarefas, escreve as cartas do Book e propõe conquistas feitas
@@ -15,7 +15,7 @@ Há três jeitos de usar:
 **IA ligada no jogo.** Instale uma IA de terminal, entre na conta dela pelo terminal uma vez e, no jogo, vá em
 **Configurações → IA**, escolha a IA e clique em **testar**. A partir daí:
 
-- **Plano de ensino:** ponha os PDFs em `~/.hunter-todo/planos/` (ou use *enviar arquivo* no editor do chefão). Em
+- **Plano de ensino:** ponha os PDFs em `~/.ganbatte/planos/` (ou use *enviar arquivo* no editor do chefão). Em
   **Chefões**, *ler todos os planos* liga cada arquivo à disciplina, lê um por um e deixa cada resultado para você
   revisar no editor, ou marcar várias (*selecionar todos*) e *salvar selecionados* de uma vez (disciplina ainda não
   cadastrada vira o botão *cadastrar*). Para uma só, *ler plano com IA* no
@@ -40,7 +40,7 @@ para a empresa da IA escolhida.
 
 ## Para a IA: comece aqui
 
-Você está ajudando um jogador do **Hunter.todo**, um jogo local que transforma a lista de tarefas (formato todo.txt) em
+Você está ajudando um jogador do **Ganbatte**, um jogo local que transforma a lista de tarefas (formato todo.txt) em
 RPG com tema Hunter x Hunter. **Tudo o que você precisa está neste arquivo.** Não precisa ler o `servidor.py` nem o
 código da página para entender os dados ou como gravar.
 
@@ -77,7 +77,7 @@ automação já vem no jogo, e cada computador precisa ficar igual para dar supo
 2. Explique o que passa a acontecer sozinho: as cartas do Book que faltam, ao abrir o jogo (semana na segunda, mês no
    dia 1, semestre no dia seguinte ao fim da temporada, ano em 1º/jan). Não pergunte essas datas: são regras do jogo.
 3. Explique onde ficam os botões: *ler todos os planos* em Chefões, *ler plano com IA* e *aplicar lembretes com IA* no
-   editor de cada chefão, *IA?* no formulário da Lista, *escrever cartas antigas* e *propor conquistas com IA* no Book. Os planos de ensino ficam em `~/.hunter-todo/planos/`.
+   editor de cada chefão, *IA?* no formulário da Lista, *escrever cartas antigas* e *propor conquistas com IA* no Book. Os planos de ensino ficam em `~/.ganbatte/planos/`.
 
 O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer na conversa.
 
@@ -87,9 +87,9 @@ O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer
 
 ### 1. Onde estão os dados
 
-- **Pasta de dados:** `~/.hunter-todo/` (ou a da variável `HUNTER_DADOS`). No Windows: `%USERPROFILE%\.hunter-todo\`.
+- **Pasta de dados:** `~/.ganbatte/` (ou a da variável `GANBATTE_DADOS`). No Windows: `%USERPROFILE%\.ganbatte\`.
 - **Código do jogo:** a pasta deste arquivo. Não guarde nada do jogador nela.
-- **Servidor:** `http://127.0.0.1:8642` (ou a porta da variável `HUNTER_PORTA`).
+- **Servidor:** `http://127.0.0.1:8642` (ou a porta da variável `GANBATTE_PORTA`).
 
 | Arquivo | O que tem | Você pode |
 |---|---|---|
@@ -110,7 +110,7 @@ O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer
 **Sempre comece conferindo se o servidor está ligado:**
 
 ```sh
-curl -s http://127.0.0.1:8642/api/ping          # {"ok": true, "app": "hunter-todo", ...}
+curl -s http://127.0.0.1:8642/api/ping          # {"ok": true, "app": "ganbatte", ...}
 ```
 
 **Servidor ligado: grave só pela API.** Ela segura a trava do arquivo (a página pode estar gravando ao mesmo tempo),
@@ -349,7 +349,7 @@ semestre e no ano vão também os chefões e as cartas do nível de baixo (o mê
 | ano | até 400 | até 600 |
 
 ```text
-Escreva uma carta narrada do meu jogo de tarefas (Hunter.todo, tema Hunter x Hunter) sobre {a semana} de {início} a {fim}, com os fatos abaixo.
+Escreva uma carta narrada do meu jogo de tarefas (Ganbatte, tema Hunter x Hunter) sobre {a semana} de {início} a {fim}, com os fatos abaixo.
 Responda SÓ com um objeto JSON, sem texto antes ou depois e sem markdown:
 {"tipo": "{tipo}", "periodo": "{período}", "titulo": "...", "ic": "...", "cronica": "...", "texto": "..."}
 
@@ -384,7 +384,7 @@ A. Ficam numeradas de 200 em diante, e cada uma conta a partir do dia em que foi
 do feitiço aparecem embaixo da carta; depois de escolher, ela fica *resgatada*, vai para Book → *Conquistas* e a vaga abre. Dá para descartar uma conquista aberta para liberar a vaga.
 
 ```text
-Proponha {N} conquistas (desafios) para o meu jogo de tarefas (Hunter.todo, tema Hunter x Hunter), difíceis mas possíveis no meu ritmo, contadas a partir de hoje. Os dados estão no fim.
+Proponha {N} conquistas (desafios) para o meu jogo de tarefas (Ganbatte, tema Hunter x Hunter), difíceis mas possíveis no meu ritmo, contadas a partir de hoje. Os dados estão no fim.
 Responda SÓ com uma lista JSON, sem texto antes ou depois e sem markdown:
 [{"regra": "...", ...campos da regra..., "nome": "...", "texto": "...", "ic": "..."}]
 

@@ -1,6 +1,6 @@
 """Testes do servidor.py (#12). Rodam com um comando, na pasta do jogo:  python3 -m unittest discover tests
 
-Cada teste usa uma pasta de dados temporária (nunca a ~/.hunter-todo) e um "hoje" fixo; o que iria para a internet
+Cada teste usa uma pasta de dados temporária (nunca a ~/.ganbatte) e um "hoje" fixo; o que iria para a internet
 (Codeforces, Duolingo, GitHub) é trocado por respostas prontas. Só a biblioteca padrão, como o servidor.
 """
 import json
@@ -391,3 +391,45 @@ class Religa(Base):
         self.assertEqual(self.prepara([{"id": "h-leitura", "n": "Leitura"}],
                                       ["x 2026-10-08 2026-10-08 Leitura +rotina rec:h-leitura:2026-10-08",
                                        "x 2026-10-10 2026-10-10 Leitura +rotina rec:leit:2026-10-10"]), ["h-leitura"])
+
+
+class Renomear(unittest.TestCase):
+    """#15: a pasta ~/.hunter-todo vira ~/.ganbatte (com atalho no lugar), e outra pasta fica onde está."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.casa = Path(self.tmp.name)
+        p = mock.patch.object(Path, "home", lambda: self.casa)
+        p.start()
+        self.addCleanup(p.stop)
+        self.velha, self.nova = self.casa / ".hunter-todo", self.casa / ".ganbatte"
+
+    def test_move_a_pasta_antiga(self):
+        self.velha.mkdir()
+        (self.velha / "todo.txt").write_text("tarefa\n")
+        for p in (self.velha, self.nova):   # o --dados antigo do início automático, ou o padrão novo
+            self.assertEqual(s.migra_pasta(p), self.nova)
+        self.assertEqual((self.nova / "todo.txt").read_text(), "tarefa\n")
+        self.assertTrue(self.velha.is_symlink())
+
+    def test_outra_pasta_fica(self):
+        outra = self.casa / "meus-dados"
+        outra.mkdir()
+        self.velha.mkdir()
+        self.assertEqual(s.migra_pasta(outra), outra)
+        self.assertTrue(self.velha.is_dir() and not self.velha.is_symlink())
+
+    def test_nao_junta_duas_pastas(self):
+        """As duas já existem: não mexe em nada, cada --dados abre a sua."""
+        self.velha.mkdir()
+        self.nova.mkdir()
+        self.assertEqual(s.migra_pasta(self.velha), self.velha)
+        self.assertEqual(s.migra_pasta(self.nova), self.nova)
+
+    def test_ping_reconhece_o_nome_antigo(self):
+        for app in ("ganbatte", "hunter-todo", "outro"):
+            r = mock.MagicMock()
+            r.__enter__.return_value = r
+            with mock.patch.object(s.urllib.request, "urlopen", return_value=r), mock.patch.object(s.json, "load", return_value={"app": app}):
+                self.assertEqual(s.ping(1) is not None, app != "outro")

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Hunter.todo · servidor local do jogo. Só a biblioteca padrão do Python 3.8+ (Linux, Windows e Mac).
+"""Ganbatte · servidor local do jogo. Só a biblioteca padrão do Python 3.8+ (Linux, Windows e Mac).
 
 Uso:  python3 servidor.py [--porta 8642] [--dados PASTA] [--sem-navegador] [--instalar | --desinstalar]
 
 Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jogador numa pasta separada do código
-(padrão ~/.hunter-todo/, ou a variável HUNTER_DADOS). Atualizar o código (git pull ou ZIP novo) nunca mexe nela:
+(padrão ~/.ganbatte/, ou a variável GANBATTE_DADOS). Atualizar o código (git pull ou ZIP novo) nunca mexe nela:
   todo.txt, done.txt        tarefas no formato todo.txt (as concluídas de dias anteriores vão para o done.txt);
-                            quem já tem um todo.txt em outra pasta usa --todo PASTA (ou HUNTER_TODO) e o jogo lê e grava lá
+                            quem já tem um todo.txt em outra pasta usa --todo PASTA (ou GANBATTE_TODO) e o jogo lê e grava lá
   jogador.json              nome, tags, hábitos, disciplinas e Codeforces (o assistente da primeira entrada grava)
   avaliacoes.txt, notas.txt plano de avaliação das disciplinas e notas lançadas
   estado.json               loja, carteira, o que está equipado e os prêmios reais do jogador
@@ -69,12 +69,19 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.6-beta1"
+VERSAO = "0.6.6-beta2"
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
 DADOS = Path()   # definido em main()
 TODO_DIR = Path()   # pasta do todo.txt e do done.txt: a de dados, ou a do --todo
+APP = "ganbatte"   # nome no /api/ping, no User-Agent e no início automático
+APP_ANTIGO = "hunter-todo"   # o nome até a 0.6.6-beta1 (#15): o servidor ainda reconhece e migra o que tinha esse nome
+
+
+def env(nome):
+    """A variável GANBATTE_NOME, ou a HUNTER_NOME de antes do #15 (aceita por um tempo)."""
+    return os.environ.get("GANBATTE_" + nome) or os.environ.get("HUNTER_" + nome) or ""
 lock = threading.RLock()
 undo_stack = []
 
@@ -646,7 +653,7 @@ def cf_envios(handle, desde):
         if pg:
             time.sleep(2)
         url = "https://codeforces.com/api/user.status?" + urllib.parse.urlencode({"handle": handle, "from": 1 + pg * 1000, "count": 1000})
-        req = urllib.request.Request(url, headers={"User-Agent": f"hunter-todo/{VERSAO}"})
+        req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}"})
         with urllib.request.urlopen(req, timeout=10) as r:
             j = json.load(r)
         if j.get("status") != "OK":
@@ -788,7 +795,7 @@ duo_vivo = {"t": 0.0, "rodando": False}
 
 def duo_perfil(usuario):
     url = "https://www.duolingo.com/2017-06-30/users?" + urllib.parse.urlencode({"username": usuario, "fields": "users{id,username,streak,streakData}"})
-    req = urllib.request.Request(url, headers={"User-Agent": f"Mozilla/5.0 (hunter-todo/{VERSAO})"})
+    req = urllib.request.Request(url, headers={"User-Agent": f"Mozilla/5.0 ({APP}/{VERSAO})"})
     with urllib.request.urlopen(req, timeout=10) as r:
         us = json.load(r).get("users") or []
     u = next((u for u in us if str(u.get("username", "")).lower() == usuario.lower()), None)
@@ -882,7 +889,7 @@ DONO = "CaioParanaiba"   # quem desenvolve: as issues dele são anotações do d
 def contrib_issues(usuario):
     q = f"repo:{DONO}/todo-engine is:issue author:{usuario} reason:completed"
     url = "https://api.github.com/search/issues?" + urllib.parse.urlencode({"q": q, "per_page": 100})
-    req = urllib.request.Request(url, headers={"User-Agent": f"hunter-todo/{VERSAO}", "Accept": "application/vnd.github+json"})
+    req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}", "Accept": "application/vnd.github+json"})
     with urllib.request.urlopen(req, timeout=10) as r:
         itens = json.load(r).get("items") or []
     out = {}
@@ -1114,7 +1121,7 @@ def api_jogo_estado(d):
 
 
 # ---------- temporadas guardadas (#7) ----------
-# Quando a temporada acaba, a página calcula a cápsula (HJ.capsula em web/motor.js: números finais congelados, chaves neutras
+# Quando a temporada acaba, a página calcula a cápsula (GB.capsula em web/motor.js: números finais congelados, chaves neutras
 # e os nomes do tema) e o servidor grava temporadas/NOME/ com ela e uma cópia dos arquivos daquele momento.
 NOME_TEMP = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$")
 DIA = re.compile(r"^\d{4}-\d\d-\d\d$")
@@ -1234,7 +1241,7 @@ def api_conquistas(d):
 
 # ---------- atualização: confere no GitHub se há versão nova e, se o jogador pedir, atualiza ----------
 GITHUB = "https://github.com/CaioParanaiba/todo-engine"
-RAW = os.environ.get("HUNTER_RAW") or ""   # HUNTER_RAW: outro endereço, para testar; vazio = a branch do canal
+RAW = env("RAW")   # GANBATTE_RAW: outro endereço, para testar; vazio = a branch do canal
 
 
 CANAIS = ("main", "beta", "grupo")   # estável, versões de teste e o modo em grupo (0.9.0-betaN)
@@ -1275,7 +1282,7 @@ def confere_github(forcar=False):
         if not forcar and time.time() - ATUAL["quando"] < 6 * 3600:
             return
         try:
-            with urllib.request.urlopen(urllib.request.Request((RAW or f"https://raw.githubusercontent.com/CaioParanaiba/todo-engine/{canal()}/") + "web/novidades.js", headers={"User-Agent": "hunter-todo/" + VERSAO}), timeout=8) as r:
+            with urllib.request.urlopen(urllib.request.Request((RAW or f"https://raw.githubusercontent.com/CaioParanaiba/todo-engine/{canal()}/") + "web/novidades.js", headers={"User-Agent": APP + "/" + VERSAO}), timeout=8) as r:
                 ATUAL.update(remota=novidades_de(r.read(400_000).decode("utf-8")), erro="")
         except urllib.error.HTTPError as e:   # 404: a versão publicada ainda não tem o novidades.js (é anterior à 0.5)
             ATUAL.update(remota=[], erro="" if e.code == 404 else "o GitHub não respondeu direito")
@@ -1298,7 +1305,7 @@ def api_atualizacao_get(forcar):
 
 def baixa_zip():
     """Sem git: baixa o ZIP da versão publicada e copia os arquivos por cima do código (os dados ficam em outra pasta)."""
-    with urllib.request.urlopen(urllib.request.Request(GITHUB + "/archive/refs/heads/main.zip", headers={"User-Agent": "hunter-todo/" + VERSAO}), timeout=60) as r:
+    with urllib.request.urlopen(urllib.request.Request(GITHUB + "/archive/refs/heads/main.zip", headers={"User-Agent": APP + "/" + VERSAO}), timeout=60) as r:
         corpo = r.read(60_000_000)
     with zipfile.ZipFile(BytesIO(corpo)) as z:
         nomes = [n for n in z.namelist() if not n.endswith("/")]
@@ -1521,7 +1528,7 @@ def ia_executa(tid, ag, exe, pedido, anexos, leve):
     import tempfile
     t = ia_tarefas[tid]
     try:
-        with tempfile.TemporaryDirectory(prefix="hunter-ia-") as pasta:
+        with tempfile.TemporaryDirectory(prefix="ganbatte-ia-") as pasta:
             if anexos:
                 import shutil
                 for a in anexos:
@@ -1597,7 +1604,7 @@ def api_ia_plano(d):
 
 
 # ---------- iniciar com o computador (opcional: liga e desliga na aba Configurações, ou com --instalar / --desinstalar) ----------
-SERVICO = "hunter-todo"
+SERVICO = APP
 EXEC = {"fundo": False, "porta": 8642, "srv": None, "passou": False, "systemd": None}
 
 
@@ -1624,15 +1631,15 @@ def comando_fundo():
         ["--todo", str(TODO_DIR)] if TODO_DIR != DADOS else [])
 
 
-def arquivo_auto():
+def arquivo_auto(nome=SERVICO):
     so = sistema()
     if so == "windows":
-        return Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / f"{SERVICO}.vbs"
+        return Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / f"{nome}.vbs"
     if so == "mac":
-        return Path.home() / "Library" / "LaunchAgents" / f"com.{SERVICO}.servidor.plist"
+        return Path.home() / "Library" / "LaunchAgents" / f"com.{nome}.servidor.plist"
     if tem_systemd():
-        return Path.home() / ".config" / "systemd" / "user" / f"{SERVICO}.service"
-    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "autostart" / f"{SERVICO}.desktop"
+        return Path.home() / ".config" / "systemd" / "user" / f"{nome}.service"
+    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "autostart" / f"{nome}.desktop"
 
 
 def conteudo_auto(f):
@@ -1649,9 +1656,9 @@ def conteudo_auto(f):
     aspas = lambda x: '"' + re.sub(r'(["\\`$])', r"\\\1", x).replace("%", "%%") + '"'
     exec_ = " ".join(aspas(x) for x in cmd)
     if f.suffix == ".service":
-        return (f"[Unit]\nDescription=Hunter.todo (servidor local do jogo)\n\n[Service]\nExecStart={exec_}\nRestart=on-failure\nRestartSec=10\n\n"
+        return (f"[Unit]\nDescription=Ganbatte (servidor local do jogo)\n\n[Service]\nExecStart={exec_}\nRestart=on-failure\nRestartSec=10\n\n"
                 "[Install]\nWantedBy=default.target\n")
-    return f"[Desktop Entry]\nType=Application\nName=Hunter.todo\nExec={exec_}\nNoDisplay=true\nX-GNOME-Autostart-enabled=true\n"
+    return f"[Desktop Entry]\nType=Application\nName=Ganbatte\nExec={exec_}\nNoDisplay=true\nX-GNOME-Autostart-enabled=true\n"
 
 
 def systemctl(*args):
@@ -1673,15 +1680,49 @@ def auto_ligar():
         systemctl("enable", f.name)
 
 
-def auto_desligar():
+def auto_desligar(nome=SERVICO):
     """Não derruba o servidor que está rodando agora (a página continua aberta); só deixa de iniciar com o computador."""
-    f = arquivo_auto()
+    f = arquivo_auto(nome)
     if f.suffix == ".service" and f.exists():
         systemctl("disable", f.name)
     if f.exists():
         f.unlink()
     if f.suffix == ".service":
         systemctl("daemon-reload")
+
+
+def migra_pasta(p):
+    """#15: a pasta padrão era ~/.hunter-todo. Se o jogo abriu nela (o padrão, ou o --dados que o início automático
+    gravou antes), ela vira ~/.ganbatte e fica um atalho no lugar da antiga (Linux e Mac). Outra pasta fica onde está."""
+    velha, nova = Path.home() / ".hunter-todo", Path.home() / ".ganbatte"
+    if p.absolute() not in (velha.absolute(), nova.absolute()):
+        return p
+    if velha.is_dir() and not velha.is_symlink() and not nova.exists():
+        try:
+            velha.rename(nova)
+        except OSError as e:
+            log("não consegui mover a pasta de dados para ~/.ganbatte:", e)
+            return velha
+        log("pasta de dados movida de ~/.hunter-todo para ~/.ganbatte")
+        try:
+            velha.symlink_to(nova, target_is_directory=True)
+        except OSError:
+            pass
+    return nova if nova.is_dir() and (velha.is_symlink() or not velha.exists()) else p
+
+
+def migra_servico():
+    """#15: o início automático se chamava hunter-todo. Grava o do ganbatte (já com a pasta nova) e apaga o antigo, sem
+    pedir nada ao jogador. O servidor que está rodando continua; o do nome novo assume no próximo login."""
+    velho = arquivo_auto(APP_ANTIGO)
+    if not velho.exists():
+        return
+    try:
+        auto_ligar()
+        auto_desligar(APP_ANTIGO)
+        log("início automático trocado de hunter-todo para ganbatte")
+    except (Erro, OSError, subprocess.SubprocessError) as e:
+        log("não consegui trocar o início automático:", e)
 
 
 def iniciar_fundo():
@@ -1734,7 +1775,7 @@ ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("i
 
 
 class H(BaseHTTPRequestHandler):
-    server_version = "hunter-todo/" + VERSAO
+    server_version = APP + "/" + VERSAO
     porta = 0
 
     def log_message(self, fmt, *a):
@@ -1776,7 +1817,7 @@ class H(BaseHTTPRequestHandler):
                 return self._arquivo(WEB / "a" / caminho[3:], "image/png", "max-age=3600")
             return self._json(404, {"ok": False, "error": "foto não encontrada"})
         if caminho == "/api/ping":
-            return self._json(200, {"ok": True, "app": "hunter-todo", "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
+            return self._json(200, {"ok": True, "app": APP, "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
         if caminho == "/api/backup":
             try:
                 corpo = backup()
@@ -1785,7 +1826,7 @@ class H(BaseHTTPRequestHandler):
                 return self._json(500, {"ok": False, "error": "não consegui ler a pasta de dados"})
             self.send_response(200)
             self.send_header("Content-Type", "application/zip")
-            self.send_header("Content-Disposition", f'attachment; filename="hunter-todo-dados-{hoje().isoformat()}.zip"')
+            self.send_header("Content-Disposition", f'attachment; filename="{APP}-dados-{hoje().isoformat()}.zip"')
             self.send_header("Content-Length", str(len(corpo)))
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
@@ -1849,7 +1890,7 @@ def boas_vindas(a, url):
     linha = "=" * 64
     print(f"""
 {linha}
-  Bem-vindo ao Hunter.todo {VERSAO}
+  Bem-vindo ao Ganbatte {VERSAO}
 {linha}
 O jogo roda no seu computador. Este programa (o "servidor") guarda as suas
 tarefas em {TODO_DIR}
@@ -1895,7 +1936,7 @@ def ping(porta):
     try:
         with urllib.request.urlopen(f"http://127.0.0.1:{porta}/api/ping", timeout=2) as r:
             j = json.load(r)
-            return j if j.get("app") == "hunter-todo" else None
+            return j if j.get("app") in (APP, APP_ANTIGO) else None
     except Exception:
         return None
 
@@ -1980,11 +2021,11 @@ def vira_dia():
 
 def main():
     global DADOS, TODO_DIR
-    ap = argparse.ArgumentParser(description="Hunter.todo: servidor local do jogo")
-    ap.add_argument("--porta", type=int, default=int(os.environ.get("HUNTER_PORTA") or 8642))
-    ap.add_argument("--dados", default=os.environ.get("HUNTER_DADOS") or str(Path.home() / ".hunter-todo"),
-                    help="pasta dos seus dados (padrão: ~/.hunter-todo)")
-    ap.add_argument("--todo", default=os.environ.get("HUNTER_TODO") or "",
+    ap = argparse.ArgumentParser(description="Ganbatte: servidor local do jogo")
+    ap.add_argument("--porta", type=int, default=int(env("PORTA") or 8642))
+    ap.add_argument("--dados", default=env("DADOS") or str(Path.home() / ".ganbatte"),
+                    help="pasta dos seus dados (padrão: ~/.ganbatte)")
+    ap.add_argument("--todo", default=env("TODO"),
                     help="pasta de um todo.txt que você já usa (padrão: a pasta de dados)")
     ap.add_argument("--sem-navegador", action="store_true", help="não abre o navegador")
     ap.add_argument("--instalar", action="store_true", help="passa a iniciar o servidor junto com o computador, em segundo plano")
@@ -1993,23 +2034,27 @@ def main():
     a = ap.parse_args()
     if sys.version_info < (3, 8):
         sys.exit("Precisa do Python 3.8 ou mais novo.")
-    DADOS = Path(a.dados).expanduser().resolve()
+    DADOS = migra_pasta(Path(a.dados).expanduser()).resolve()
     DADOS.mkdir(parents=True, exist_ok=True)
     TODO_DIR = Path(a.todo).expanduser().resolve() if a.todo else DADOS
     if not TODO_DIR.is_dir():
         sys.exit(f"A pasta do --todo não existe: {TODO_DIR}")
     EXEC.update(porta=a.porta, fundo=a.fundo)
     url = f"http://127.0.0.1:{a.porta}/"
+    if not a.desinstalar:
+        migra_servico()
+    else:
+        auto_desligar(APP_ANTIGO)
     if a.instalar or a.desinstalar:
         try:
             if a.desinstalar:
                 auto_desligar()
-                return print("Pronto: o Hunter.todo não inicia mais com o computador. Se ele estiver rodando agora, continua até você reiniciar.")
+                return print("Pronto: o Ganbatte não inicia mais com o computador. Se ele estiver rodando agora, continua até você reiniciar.")
             auto_ligar()
             if ja_rodando(a.porta):
-                return print(f"Pronto: o Hunter.todo vai iniciar sozinho a partir do próximo login. Agora ele já está em {url}")
+                return print(f"Pronto: o Ganbatte vai iniciar sozinho a partir do próximo login. Agora ele já está em {url}")
             iniciar_fundo()
-            return print(f"Pronto: o Hunter.todo está rodando em segundo plano em {url} e vai iniciar sozinho com o computador.")
+            return print(f"Pronto: o Ganbatte está rodando em segundo plano em {url} e vai iniciar sozinho com o computador.")
         except (Erro, OSError, subprocess.SubprocessError) as e:
             sys.exit(f"Não deu: {e}")
     if a.fundo or sys.stdout is None:   # sem terminal (pythonw no Windows): o log vai para servidor.log na pasta de dados
@@ -2023,7 +2068,7 @@ def main():
     H.porta = a.porta
     antigo = ping(a.porta)
     if antigo and antigo.get("versao") != VERSAO and troca_antigo(a.porta, antigo) and ja_rodando(a.porta):
-        print(f"Hunter.todo atualizado para a {VERSAO} (o servidor em segundo plano foi reiniciado): {url}")
+        print(f"Ganbatte atualizado para a {VERSAO} (o servidor em segundo plano foi reiniciado): {url}")
         if not a.sem_navegador and not a.fundo:
             webbrowser.open(url)
         return
@@ -2035,7 +2080,7 @@ def main():
         if ja_rodando(a.porta):
             if a.fundo:
                 sys.exit(0)
-            print(f"O Hunter.todo já está rodando em {url}")
+            print(f"O Ganbatte já está rodando em {url}")
             if not a.sem_navegador:
                 webbrowser.open(url)
             return
@@ -2044,7 +2089,7 @@ def main():
     threading.Thread(target=vigia_codigo, daemon=True).start()
     threading.Thread(target=vira_dia, daemon=True).start()
     arruma_dia()
-    print(f"Hunter.todo {VERSAO} ({VERSAO_NOME}) em {url}")
+    print(f"Ganbatte {VERSAO} ({VERSAO_NOME}) em {url}")
     print(f"Seus dados: {DADOS}" + (f" (tarefas em {TODO_DIR})" if TODO_DIR != DADOS else ""))
     if not a.fundo:
         print("Deixe esta janela aberta enquanto joga. Para parar: Ctrl+C.")

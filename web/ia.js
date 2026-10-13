@@ -1,4 +1,4 @@
-/* Hunter.todo · IA opcional. Dois jeitos, com os mesmos pedidos (prompt + os seus dados), explicados no IA.md (mantenha os
+/* Ganbatte · IA opcional. Dois jeitos, com os mesmos pedidos (prompt + os seus dados), explicados no IA.md (mantenha os
  * textos daqui e de lá iguais):
  *   copiar e colar: você cola o pedido numa IA qualquer (ChatGPT, Claude, Gemini...) e cola a resposta de volta;
  *   IA ligada (aba Configurações → IA): o servidor chama o agente de terminal do jogador (Claude Code, Codex, Gemini CLI) com o
@@ -11,7 +11,7 @@
  */
 (function(){
 'use strict';
-const HJ = window.HJ, br = HJ.brData, F = () => HJ.fmtTxt();   // datas no formato que o jogador escolheu
+const GB = window.GB, br = GB.brData, F = () => GB.fmtTxt();   // datas no formato que o jogador escolheu
 
 document.head.insertAdjacentHTML('beforeend', `<style>
 .ia-box{display:flex;flex-direction:column;gap:8px}
@@ -60,7 +60,7 @@ function promptPlano(d, semAnexo){
     'chave | nome da avaliação | peso | data | palavra-chave | contínua', '',
     'Regras:',
     '- chave: de 1 a 8 letras ou números, sem espaço (ex.: P1, P2, T1, L).',
-    `- peso: quanto a avaliação vale na nota final, em %, só o número. ${window.HJ_CHEFES && window.HJ_CHEFES.livre(d) ? 'Os pesos somam 100 ou mais: esta disciplina tem ponto extra, então avaliações de bônus entram com o peso delas.' : 'Os pesos somam 100.'} Se o plano usar fórmula (ex.: NF = 0,4·N1 + 0,6·N2, com N1 = média de P1 e T1), faça a conta para chegar ao peso de cada avaliação na nota final.`,
+    `- peso: quanto a avaliação vale na nota final, em %, só o número. ${window.GB_CHEFES && window.GB_CHEFES.livre(d) ? 'Os pesos somam 100 ou mais: esta disciplina tem ponto extra, então avaliações de bônus entram com o peso delas.' : 'Os pesos somam 100.'} Se o plano usar fórmula (ex.: NF = 0,4·N1 + 0,6·N2, com N1 = média de P1 e T1), faça a conta para chegar ao peso de cada avaliação na nota final.`,
     `- data: ${F()}. Sem data exata no plano, estime pela semana ou aula indicada e ponha ? no fim (ex.: ${br('2026-10-15')}?). Peso incerto também leva ? (ex.: 20?).`,
     '- palavra-chave: de 1 a 3 palavras que vão aparecer nas tarefas de estudo só dessa avaliação, separadas por vírgula (ex.: integral, derivada). Pode ficar vazia.',
     '- contínua: escreva contínua quando forem várias entregas que viram uma média (listas semanais, participação). Senão, deixe vazio.',
@@ -80,19 +80,19 @@ const NOME = {semana:'semana passada', mes:'mês passado', semestre:'semestre', 
 const ROT = {semana:'a semana', mes:'o mês', semestre:'o semestre', ano:'o ano'};
 const ICS = 'int tra con esp man emi spider tower card flame moon island crown scroll';
 const NIVEL = {semana:0, mes:1, semestre:2, ano:3};
-const segISO = p => { const m = /^(\d{4})-W(\d\d)$/.exec(p || ''); if(!m) return ''; const j4 = `${m[1]}-01-04`; return HJ.addD(HJ.addD(j4, -HJ.dow(j4)), 7 * (+m[2] - 1)); };
+const segISO = p => { const m = /^(\d{4})-W(\d\d)$/.exec(p || ''); if(!m) return ''; const j4 = `${m[1]}-01-04`; return GB.addD(GB.addD(j4, -GB.dow(j4)), 7 * (+m[2] - 1)); };
 const nomeTemp = () => TEMP.nome.replace('Temporada ', '');
 /* o período de cada tipo que contém o dia ref */
 function periodoDe(tipo, ref){
-  if(tipo === 'semana'){ const ini = HJ.addD(ref, -HJ.dow(ref)); return {tipo, ini, fim:HJ.addD(ini, 6), periodo:HJ.semanaISO(ini)}; }
-  if(tipo === 'mes'){ const ini = ref.slice(0, 8) + '01', [y, m] = ini.split('-').map(Number), prox = m === 12 ? `${y+1}-01-01` : `${y}-${String(m+1).padStart(2,'0')}-01`; return {tipo, ini, fim:HJ.addD(prox, -1), periodo:ini.slice(0, 7)}; }
+  if(tipo === 'semana'){ const ini = GB.addD(ref, -GB.dow(ref)); return {tipo, ini, fim:GB.addD(ini, 6), periodo:GB.semanaISO(ini)}; }
+  if(tipo === 'mes'){ const ini = ref.slice(0, 8) + '01', [y, m] = ini.split('-').map(Number), prox = m === 12 ? `${y+1}-01-01` : `${y}-${String(m+1).padStart(2,'0')}-01`; return {tipo, ini, fim:GB.addD(prox, -1), periodo:ini.slice(0, 7)}; }
   if(tipo === 'semestre') return {tipo, ini:TEMP.ini, fim:TEMP.fim, periodo:nomeTemp()};
   const y = ref.slice(0, 4); return {tipo, ini:`${y}-01-01`, fim:`${y}-12-31`, periodo:y};
 }
 /* o último período fechado (o da carta manual): semana passada, mês passado, o semestre depois do fim, ano passado */
 function periodo(tipo){
-  if(tipo === 'semana') return periodoDe(tipo, HJ.addD(HOJE, -HJ.dow(HOJE) - 7));
-  if(tipo === 'mes') return periodoDe(tipo, HJ.addD(HOJE.slice(0, 8) + '01', -1));
+  if(tipo === 'semana') return periodoDe(tipo, GB.addD(HOJE, -GB.dow(HOJE) - 7));
+  if(tipo === 'mes') return periodoDe(tipo, GB.addD(HOJE.slice(0, 8) + '01', -1));
   if(tipo === 'semestre') return periodoDe(tipo, HOJE);
   return periodoDe(tipo, `${+HOJE.slice(0, 4) - 1}-06-01`);
 }
@@ -104,8 +104,8 @@ function faltando(de, ate){
   const ativo = P => D.feitas.some(t => t.done >= P.ini && t.done <= P.fim) || String(CTX.NT_TXT || '').split('\n').some(l => { const d = l.split('|')[0].trim(); return d >= P.ini && d <= P.fim; });
   const add = P => { const k = P.tipo + ':' + P.periodo; if(visto.has(k)) return; visto.add(k);
     if(P.fim < HOJE && P.fim >= de && (!ate || P.fim < ate) && !tem.has(k) && PERIODO_OK[P.tipo].test(P.periodo) && ativo(P)) out.push(P); };
-  for(let d = HJ.addD(de, -HJ.dow(de)); d < HOJE; d = HJ.addD(d, 7)) add(periodoDe('semana', d));
-  for(let d = de.slice(0, 8) + '01'; d < HOJE; d = periodoDe('mes', d).fim, d = HJ.addD(d, 1)) add(periodoDe('mes', d));
+  for(let d = GB.addD(de, -GB.dow(de)); d < HOJE; d = GB.addD(d, 7)) add(periodoDe('semana', d));
+  for(let d = de.slice(0, 8) + '01'; d < HOJE; d = periodoDe('mes', d).fim, d = GB.addD(d, 1)) add(periodoDe('mes', d));
   add(periodoDe('semestre', HOJE));
   for(let y = +de.slice(0, 4); y < +HOJE.slice(0, 4); y++) add(periodoDe('ano', `${y}-06-01`));
   return out.sort((a, b) => a.fim.localeCompare(b.fim) || NIVEL[a.tipo] - NIVEL[b.tipo]);
@@ -114,12 +114,12 @@ const PERIODO_OK = {semana:/^\d{4}-W\d\d$/, mes:/^\d{4}-\d\d$/, semestre:/^\d{4}
 const primeiroDia = () => D.feitas.map(t => t.done).filter(Boolean).sort()[0] || HOJE;
 function dadosPeriodo(P){
   const tipo = P.tipo, S = estado(), J = CTX.JOG, dentro = d => d && d >= P.ini && d <= P.fim, L = [];
-  const feitas = D.feitas.filter(t => dentro(t.done)), rec = feitas.filter(t => HJ.isRec(t)), tarefas = feitas.filter(t => !HJ.isRec(t));
+  const feitas = D.feitas.filter(t => dentro(t.done)), rec = feitas.filter(t => GB.isRec(t)), tarefas = feitas.filter(t => !GB.isRec(t));
   const xp = Object.keys(S.xpDia || {}).filter(dentro).reduce((s, d) => s + S.xpDia[d], 0);
   const ativos = Object.keys(S.ten.st || {}).filter(d => dentro(d) && S.ten.st[d] === 'on').length;
   L.push(`Período: ${br(P.ini)} a ${br(P.fim)}. Jogador: ${J.nome || 'Hunter'}.`, `XP no período: ${xp}. Dias com o Ten ativo: ${ativos}.`
-    + (HJ.addD(P.fim, 8) >= HOJE ? ` Ten hoje: ${S.ten.cur} dias (recorde ${S.ten.max}). Andar da Arena Celestial hoje: ${S.a.n}.` : ''));
-  L.push('', `Tarefas concluídas (${tarefas.length}):`, ...tarefas.slice(0, 160).map(t => `- ${br(t.done)} · ${t.txt}${HJ.discOf(t, CTX) ? ` (${HJ.discOf(t, CTX)})` : ''}`));
+    + (GB.addD(P.fim, 8) >= HOJE ? ` Ten hoje: ${S.ten.cur} dias (recorde ${S.ten.max}). Andar da Arena Celestial hoje: ${S.a.n}.` : ''));
+  L.push('', `Tarefas concluídas (${tarefas.length}):`, ...tarefas.slice(0, 160).map(t => `- ${br(t.done)} · ${t.txt}${GB.discOf(t, CTX) ? ` (${GB.discOf(t, CTX)})` : ''}`));
   if(tarefas.length > 160) L.push(`- e mais ${tarefas.length - 160}`);
   const habs = {}; for(const t of rec){ const id = (t.rec || '').split(':')[0]; if(!id.startsWith('cf')) habs[id] = (habs[id] || 0) + 1; }
   if(Object.keys(habs).length) L.push('', 'Hábitos (vezes feitos):', ...Object.entries(habs).map(([id, n]) => `- ${id === 'duo' ? 'Duolingo (conferido sozinho)' : ((J.habitos || []).find(h => h.id === id) || {n:id}).n}: ${n}`));
@@ -127,7 +127,7 @@ function dadosPeriodo(P){
   if(cfd.length) L.push('', `Codeforces: ${cfd.reduce((s, d) => s + cf[d], 0)} problemas aceitos em ${cfd.length} dias (meta de ${(J.cf && J.cf.meta) || 3} por dia batida em ${cfd.filter(d => cf[d] >= ((J.cf && J.cf.meta) || 3)).length}).`);
   const notas = String(CTX.NT_TXT || '').split('\n').map(l => l.split('|').map(x => x.trim())).filter(p => p.length >= 4 && dentro(p[0]));
   if(notas.length) L.push('', 'Notas lançadas:', ...notas.map(p => `- ${br(p[0])} · ${p[1]} ${p[2]}: ${p[3]}${/parcial/i.test(p[4] || '') ? ' (parcial)' : ''}`));
-  if(tipo === 'semestre' || tipo === 'ano') L.push('', 'Chefões (disciplinas; vida = nota, cai com média 6):', ...S.bs.map(b => `- ${b.d} (${b.n}): ${HJ.numBR(b.pts).toFixed(1).replace('.', ',')}/100 pontos${b.dead ? ', derrotado' : ''}`));
+  if(tipo === 'semestre' || tipo === 'ano') L.push('', 'Chefões (disciplinas; vida = nota, cai com média 6):', ...S.bs.map(b => `- ${b.d} (${b.n}): ${GB.numBR(b.pts).toFixed(1).replace('.', ',')}/100 pontos${b.dead ? ', derrotado' : ''}`));
   const baixo = {mes:'semana', semestre:'mes', ano:'semestre'}[tipo];
   const ini = c => c.tipo === 'semana' ? segISO(c.periodo) : c.tipo === 'mes' ? c.periodo + '-01' : c.escrita || '';
   const antes = (CTX.NARRADAS || []).filter(c => c.tipo === baixo && dentro(ini(c)));
@@ -137,7 +137,7 @@ function dadosPeriodo(P){
 function promptCarta(P){
   if(typeof P === 'string') P = periodo(P);
   const tipo = P.tipo, [tt, tc] = TAM[tipo];
-  return [`Escreva uma carta narrada do meu jogo de tarefas (Hunter.todo, tema Hunter x Hunter) sobre ${ROT[tipo]} de ${br(P.ini)} a ${br(P.fim)}, com os fatos abaixo.`,
+  return [`Escreva uma carta narrada do meu jogo de tarefas (Ganbatte, tema Hunter x Hunter) sobre ${ROT[tipo]} de ${br(P.ini)} a ${br(P.fim)}, com os fatos abaixo.`,
     'Responda SÓ com um objeto JSON, sem texto antes ou depois e sem markdown:',
     `{"tipo": "${tipo}", "periodo": "${P.periodo}", "titulo": "...", "ic": "...", "cronica": "...", "texto": "..."}`, '',
     'Regras:',
@@ -314,7 +314,7 @@ function loteHTML2(){
 /* salva de uma vez os planos marcados; os que não passam (pesos, data, nota que sumiria) ficam para revisar no editor */
 async function salvaSel(){
   const sel = LOTE.itens.filter(it => it.estado === 'pronto' && it.sel);
-  let r; try { r = await window.HJ_CHEFES.aplicaVarios(sel.map(it => ({d:it.d, texto:it.texto}))); } catch(err){ toast('Não salvou: ' + esc(err.message)); return; }
+  let r; try { r = await window.GB_CHEFES.aplicaVarios(sel.map(it => ({d:it.d, texto:it.texto}))); } catch(err){ toast('Não salvou: ' + esc(err.message)); return; }
   for(const it of sel){ const f = r.falha.find(x => x.d === it.d); if(f){ it.erro = f.motivo; it.sel = false; } else { it.estado = 'salvo'; it.erro = ''; it.sel = false; } }
   render(); toast(`${r.ok.length} plano(s) salvo(s)` + (r.falha.length ? `<small>${r.falha.length} para revisar no editor</small>` : ''));
 }
@@ -368,16 +368,16 @@ document.addEventListener('click', e => {
   if(q('[data-iaescreve]')){ escreveUma(); return; }
   const fa = q('[data-iafalta]'); if(fa){ escreveCartas(fa.dataset.iafalta === 'novas' ? faltando(conf().desde || HOJE) : faltando(primeiroDia(), conf().desde || HOJE)); return; }
   if(q('[data-iatesta]')){ testa(); return; }
-  if(q('[data-iatour]')){ const t = q('.toast'); if(t) t.remove(); window.HJ_GUIA.tutorial('ia'); return; }
+  if(q('[data-iatour]')){ const t = q('.toast'); if(t) t.remove(); window.GB_GUIA.tutorial('ia'); return; }
   if(q('[data-ialertodos]')){ lerTodos(); return; }
   if(q('[data-iasalvasel]')){ salvaSel(); return; }
-  const rv = q('[data-iarev]'); if(rv){ const it = LOTE.itens[+rv.dataset.iarev]; window.HJ_CHEFES.abre(it.d); window.HJ_CHEFES.cola(it.texto, () => { it.estado = 'salvo'; }); return; }
-  const nv = q('[data-ianova]'); if(nv){ const it = LOTE.novas[+nv.dataset.ianova]; window.HJ_GUIA.abreDisciplinas({d:it.d, n:it.n}); return; }
+  const rv = q('[data-iarev]'); if(rv){ const it = LOTE.itens[+rv.dataset.iarev]; window.GB_CHEFES.abre(it.d); window.GB_CHEFES.cola(it.texto, () => { it.estado = 'salvo'; }); return; }
+  const nv = q('[data-ianova]'); if(nv){ const it = LOTE.novas[+nv.dataset.ianova]; window.GB_GUIA.abreDisciplinas({d:it.d, n:it.n}); return; }
   if(q('[data-iaprocura]')){ IAS = null; render(); carregaIA().then(() => render()); return; }
   if(q('[data-iatadd]')){ addTarefas(); return; }
   if(q('#ia-lote summary')){ UI.iaLote = !document.getElementById('ia-lote').open; }
 });
-window.HJ_IA = {promptPlano, promptCarta, copia, ligada, nomeAg, rodaIA, planoIA, enviaPlano, carregaIA, lembretes, planos: () => (IAS && IAS.planos) || [], rodando: () => !!IA_RODA};
+window.GB_IA = {promptPlano, promptCarta, copia, ligada, nomeAg, rodaIA, planoIA, enviaPlano, carregaIA, lembretes, planos: () => (IAS && IAS.planos) || [], rodando: () => !!IA_RODA};
 if(CTX) tab(cur);
 (function tenta(){ if(!CTX){ setTimeout(tenta, 500); return; } if(CTX.SRV) carregaIA(); autoCartas(); })();
 })();

@@ -1,9 +1,9 @@
-/* Hunter.todo · feedback: bug, ideia ou dúvida vira uma issue já preenchida no GitHub (nada de token: o jogador confere
+/* Ganbatte · feedback: bug, ideia ou dúvida vira uma issue já preenchida no GitHub (nada de token: o jogador confere
  * e clica em "Create"). Sem conta no GitHub, "copiar texto" para mandar por mensagem.
  * O tipo aparece em português no jogo e vira a label certa do repositório pelo formulário em .github/ISSUE_TEMPLATE/
  * (bug → bug, ideia → enhancement, dúvida → question); os campos do formulário são preenchidos pelo id na URL.
  * Entrada: o ícone fixo no canto, em qualquer aba (já vem com a aba de onde o jogador abriu).
- * Carregado depois de novidades.js: usa CTX, cur, esc, ic, toast, VERSAO_PAGINA, HJ_NOV.
+ * Carregado depois de novidades.js: usa CTX, cur, esc, ic, toast, VERSAO_PAGINA, GB_NOV.
  */
 (function(){
 'use strict';
@@ -45,8 +45,8 @@ function sistema(){
   return `${so} · ${nav}`;
 }
 function versao(){
-  const c = window.HJ_NOV && HJ_NOV.canal && HJ_NOV.canal();
-  return VERSAO_PAGINA + (c && c !== 'main' ? ` (${c})` : '') + (window.HJ_DEMO ? ' (demonstração)' : '');
+  const c = window.GB_NOV && GB_NOV.canal && GB_NOV.canal();
+  return VERSAO_PAGINA + (c && c !== 'main' ? ` (${c})` : '') + (window.GB_DEMO ? ' (demonstração)' : '');
 }
 const corta = s => String(s || '').trim().slice(0, MAX);
 function urlIssue(){
@@ -58,7 +58,7 @@ function urlIssue(){
 }
 function textoCopia(){
   const T = TIPOS[F.tipo];
-  return [`[${T.n}] Hunter.todo: ${F.titulo.trim()}`, '', F.txt.trim(),
+  return [`[${T.n}] Ganbatte: ${F.titulo.trim()}`, '', F.txt.trim(),
     ...(T.extra && F.extra.trim() ? ['', `${T.extra.t.replace(/ \(opcional\)/, '')} ${F.extra.trim()}`] : []),
     '', `versão ${versao()} · ${sistema()} · aba ${ABAS[F.aba] || F.aba}`].join('\n');
 }
@@ -73,7 +73,7 @@ function formHTML(){
     ${T.extra ? `<label>${T.extra.t}<textarea data-fb="extra" maxlength="${MAX}" style="min-height:60px" placeholder="${esc(T.extra.ph)}">${esc(F.extra)}</textarea></label>` : ''}
     <label>Sobre qual aba<select data-fb="aba">${Object.entries(ABAS).map(([k, n]) => `<option value="${k}"${k === F.aba ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
     <p class="info">vai junto: versão ${esc(versao())} · ${esc(sistema())}</p>
-    ${F.tipo !== 'duvida' ? `<p class="fb-aviso" style="border-color:var(--grn)">${(R => `Se ${F.tipo === 'bug' ? 'o bug for corrigido' : 'a ideia entrar no jogo'}, você ganha <b>+${R.xp} XP e +${R.j.toLocaleString('pt-BR')} J</b>. Repetida ou recusada não conta.`)(HJ.CONTRIB[F.tipo])} ${CTX && CTX.JOG && CTX.JOG.github && CTX.JOG.github.usuario ? `Recompensa vai para <b>${esc(CTX.JOG.github.usuario)}</b>.` : 'Para receber, ponha o seu usuário do GitHub em Configurações.'}</p>` : ''}
+    ${F.tipo !== 'duvida' ? `<p class="fb-aviso" style="border-color:var(--grn)">${(R => `Se ${F.tipo === 'bug' ? 'o bug for corrigido' : 'a ideia entrar no jogo'}, você ganha <b>+${R.xp} XP e +${R.j.toLocaleString('pt-BR')} J</b>. Repetida ou recusada não conta.`)(GB.CONTRIB[F.tipo])} ${CTX && CTX.JOG && CTX.JOG.github && CTX.JOG.github.usuario ? `Recompensa vai para <b>${esc(CTX.JOG.github.usuario)}</b>.` : 'Para receber, ponha o seu usuário do GitHub em Configurações.'}</p>` : ''}
     <div class="lin"><button type="button" class="btn v" data-fbenvia>abrir no GitHub</button><button type="button" class="btn" data-fbcopia>copiar texto</button></div>
     <p class="fb-aviso">Abre a página do GitHub já preenchida: confira e clique em <b>Create</b> (precisa de conta no GitHub; sem conta, use <b>copiar texto</b> e mande por mensagem). Print ajuda: arraste a imagem para a caixa de texto lá. O repositório é público: <b>nunca anexe o todo.txt nem o ZIP de backup</b>.</p>
   </div>`;
@@ -116,6 +116,6 @@ document.addEventListener('input', e => { const k = e.target.dataset && e.target
 document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.fb; if(k) F[k] = e.target.value; });
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && F.aberto){ F.aberto = false; desenhaCanto(); } });
 
-window.HJ_FB = {urlIssue, textoCopia, F};
+window.GB_FB = {urlIssue, textoCopia, F};
 (function tenta(){ if(!CTX){ setTimeout(tenta, 500); return; } desenhaCanto(); })();
 })();

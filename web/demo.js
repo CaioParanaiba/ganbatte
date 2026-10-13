@@ -1,4 +1,4 @@
-/* Hunter.todo · modo demonstração. Só entra quando a página é aberta direto do arquivo (file://), com ?demo ou no GitHub Pages:
+/* Ganbatte · modo demonstração. Só entra quando a página é aberta direto do arquivo (file://), com ?demo ou no GitHub Pages:
  * troca o fetch das rotas /api/... por um servidor de mentira na memória, com um jogador de exemplo.
  * Nada é gravado: recarregar a página volta ao começo. Com o servidor de verdade (servidor.py), este arquivo não faz nada.
  */
@@ -119,7 +119,7 @@ function rota(url, body){
     const meta = jogador.cf && jogador.cf.meta || 3, i = todo.findIndex(l => !DONE_RE.test(l) && l.includes(`rec:cf:${HOJE}`));
     if(i >= 0 && (cfDia[HOJE] || 0) >= meta) todo[i] = `x ${HOJE} ` + todo[i].replace(PRI, '');
   }
-  if(url === '/api/jogo') return {ok:true, hoje:HOJE, todo, done, avaliacoes:AVALIACOES, notas, ajustes, estado, cf:{por_dia:cfDia}, duo: jogador.duo && jogador.duo.usuario ? {usuario:jogador.duo.usuario, ofensiva:duoOfensiva()} : null, avatares:Object.keys(window.HJ_AV || {}), narradas, conquistas, jogador};
+  if(url === '/api/jogo') return {ok:true, hoje:HOJE, todo, done, avaliacoes:AVALIACOES, notas, ajustes, estado, cf:{por_dia:cfDia}, duo: jogador.duo && jogador.duo.usuario ? {usuario:jogador.duo.usuario, ofensiva:duoOfensiva()} : null, avatares:Object.keys(window.GB_AV || {}), narradas, conquistas, jogador};
   if(url === '/api/act'){
     const i = todo.indexOf(body.raw); if(i < 0) throw new Error('a linha mudou no todo.txt; recarregue');
     if(body.action === 'delete'){ const antes = todo.splice(i, 1)[0]; undo.push({from:antes, to:null}); return {ok:true}; }
@@ -186,5 +186,5 @@ window.fetch = async (url, op) => {
   let j; try { j = rota(u, op && op.body ? JSON.parse(op.body) : {}); } catch(e){ j = {ok:false, error:e.message}; }
   return {ok:true, status:200, json: async () => JSON.parse(JSON.stringify(j))};
 };
-window.HJ_DEMO = true;
+window.GB_DEMO = true;
 })();

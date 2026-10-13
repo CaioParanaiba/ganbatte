@@ -1,7 +1,7 @@
-/* Hunter.todo · motor do jogo (regras e cálculo). Um arquivo só, usado pela página do jogo (/jogo) e pelo painel.
+/* Ganbatte · motor do jogo (regras e cálculo). Um arquivo só, usado pela página do jogo (/jogo) e pelo painel.
  *
  * Não grava nada: recebe o que o servidor manda em GET /api/jogo (todo.txt, done.txt, avaliacoes.txt, notas.txt,
- * estado.json, Codeforces) e devolve o estado do jogo. Tudo fica dentro de window.HJ para não colidir com os
+ * estado.json, Codeforces) e devolve o estado do jogo. Tudo fica dentro de window.GB para não colidir com os
  * scripts do painel. Regras explicadas em jogo/README.md; mudou uma regra aqui, atualize o README.
  */
 (function(){
@@ -414,7 +414,7 @@ const refDe = (t, HOJE) => t.done || (t.due && t.due > HOJE ? t.due : HOJE);
    entrega > treino e projetos > estudo > faculdade > vida. Sem palavra conhecida, não sugere (fica o que estava). */
 const TIPO_PAL = [
   ['ent', 'lista,trabalho,entrega,entregar,enviar,submeter,relatorio,atividade,apresentacao,seminario,artigo,tp,ep,lab,laboratorio,questionario'],
-  ['tre', 'codeforces,contest,leetcode,atcoder,cses,beecrowd,uri,maratona,icpc,obi,treino,treinar,upsolve,projeto pessoal,meu projeto,app,site,bot,github,repositorio,desenvolver,desenvolvimento,programar,hunter.todo,todo-engine'],
+  ['tre', 'codeforces,contest,leetcode,atcoder,cses,beecrowd,uri,maratona,icpc,obi,treino,treinar,upsolve,projeto pessoal,meu projeto,app,site,bot,github,repositorio,desenvolver,desenvolvimento,programar,ganbatte,hunter.todo,todo-engine'],
   ['est', 'revisar,revisao,estudar,estudo,ler,leitura,resumo,resumir,exercicio,exercicios,refazer,prova,simulado,videoaula,assistir aula,capitulo,flashcard,anki'],
   ['fac', 'grupo,professor,professora,monitoria,monitor,matricula,orientador,coordenacao,secretaria,ementa,horario,sala'],
   ['vid', 'medico,consulta,dentista,exame de sangue,compras,comprar,mercado,farmacia,pagar,conta de,boleto,banco,documento,rg,cpf,carteirinha,limpar,lavar,arrumar,cozinhar,casa,familia,mae,pai,aniversario,presente,cabelo,academia,correr,viagem,passagem'],
@@ -980,9 +980,14 @@ function relatorioCSV(R){
    Quando a temporada acaba (na volta às aulas), ela é congelada em temporadas/NOME/resumo.json (servidor.py): os números
    finais já calculados, com chaves neutras, e os nomes do tema daquela temporada. O histórico nunca é recalculado, então
    um balanceamento futuro não muda o passado, e um tema novo não apaga os nomes do antigo.
-   TEMA é o único lugar com os nomes temáticos das funções (prepara a #15); a página ainda tem esses nomes no próprio texto. */
+   TEMA é o único lugar com os nomes temáticos das funções; a página ainda tem esses nomes no próprio texto.
+   NOMES (#15) são os nomes base, fixos entre temporadas: o menu usa eles, e o do tema aparece por cima (dentro da aba). */
 const TEMA = {serie:'Hunter x Hunter', moeda:'Jenny', cartas:'Book', torre:'Arena Celestial', sequencia:'Ten', loja:'Masadora',
-  chefoes:'Genei Ryodan', missao:'Missão Nen', poderes:'Feitiços', perfil:'Licença Hunter', grupo:'Torre Trick'};
+  chefoes:'Genei Ryodan', missao:'Missão Nen', poderes:'Feitiços', perfil:'Licença Hunter', grupo:'Torre Trick',
+  projetos:'Expedições', calendario:'Semestre'};
+const NOMES = {lista:'Lista', torre:'Progresso', chefoes:'Chefões', projetos:'Projetos', calendario:'Calendário', cartas:'Conquistas',
+  loja:'Loja', config:'Configurações', grupo:'Grupo', moeda:'moedas', sequencia:'sequência', missao:'missão da semana',
+  poderes:'poderes', perfil:'perfil', marcos:'marcos', cacada:'etapas'};
 const nomeTemporada = T => String(T.nome || '').replace(/^Temporada /, '');
 const fimTemporada = T => T.volta && T.volta > T.fim ? addD(T.volta, -1) : T.fim;   // último dia: a véspera da volta (as férias contam)
 /* api = a resposta do GET /api/jogo. Calcula como o jogo mostrava no último dia da temporada (ou hoje, se ela ainda não
@@ -1032,10 +1037,10 @@ function resumoGrupo(C, S){
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 
-window.HJ = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
   MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, feriasDe,
-  FONTES, lojaTotal, relatorio, relatorioCSV, TEMA, nomeTemporada, fimTemporada, capsula, HAB_GRUPO, resumoGrupo};
+  FONTES, lojaTotal, relatorio, relatorioCSV, TEMA, NOMES, nomeTemporada, fimTemporada, capsula, HAB_GRUPO, resumoGrupo};
 })();
