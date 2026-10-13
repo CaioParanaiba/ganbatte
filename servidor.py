@@ -69,8 +69,8 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.6-beta3"
-VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
+VERSAO = "0.7"
+VERSAO_NOME = "atualização do Ganbatte"   # nome da série 0.7 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
 DADOS = Path()   # definido em main()
@@ -887,7 +887,7 @@ DONO = "CaioParanaiba"   # quem desenvolve: as issues dele são anotações do d
 
 
 def contrib_issues(usuario):
-    q = f"repo:{DONO}/todo-engine is:issue author:{usuario} reason:completed"
+    q = f"repo:{DONO}/ganbatte is:issue author:{usuario} reason:completed"
     url = "https://api.github.com/search/issues?" + urllib.parse.urlencode({"q": q, "per_page": 100})
     req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}", "Accept": "application/vnd.github+json"})
     with urllib.request.urlopen(req, timeout=10) as r:
@@ -1240,7 +1240,7 @@ def api_conquistas(d):
 
 
 # ---------- atualização: confere no GitHub se há versão nova e, se o jogador pedir, atualiza ----------
-GITHUB = "https://github.com/CaioParanaiba/todo-engine"
+GITHUB = "https://github.com/CaioParanaiba/ganbatte"
 RAW = env("RAW")   # GANBATTE_RAW: outro endereço, para testar; vazio = a branch do canal
 
 
@@ -1282,7 +1282,7 @@ def confere_github(forcar=False):
         if not forcar and time.time() - ATUAL["quando"] < 6 * 3600:
             return
         try:
-            with urllib.request.urlopen(urllib.request.Request((RAW or f"https://raw.githubusercontent.com/CaioParanaiba/todo-engine/{canal()}/") + "web/novidades.js", headers={"User-Agent": APP + "/" + VERSAO}), timeout=8) as r:
+            with urllib.request.urlopen(urllib.request.Request((RAW or f"https://raw.githubusercontent.com/CaioParanaiba/ganbatte/{canal()}/") + "web/novidades.js", headers={"User-Agent": APP + "/" + VERSAO}), timeout=8) as r:
                 ATUAL.update(remota=novidades_de(r.read(400_000).decode("utf-8")), erro="")
         except urllib.error.HTTPError as e:   # 404: a versão publicada ainda não tem o novidades.js (é anterior à 0.5)
             ATUAL.update(remota=[], erro="" if e.code == 404 else "o GitHub não respondeu direito")

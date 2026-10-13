@@ -16,10 +16,10 @@ Precisa do Python 3 (veja abaixo como conferir). Abra um terminal e rode:
 
 | Sistema | Comando |
 |---|---|
-| Linux / Mac | `curl -fsSL https://raw.githubusercontent.com/CaioParanaiba/todo-engine/main/instalar.sh \| sh` |
-| Windows (PowerShell) | `irm https://raw.githubusercontent.com/CaioParanaiba/todo-engine/main/instalar.ps1 \| iex` |
+| Linux / Mac | `curl -fsSL https://raw.githubusercontent.com/CaioParanaiba/ganbatte/main/instalar.sh \| sh` |
+| Windows (PowerShell) | `irm https://raw.githubusercontent.com/CaioParanaiba/ganbatte/main/instalar.ps1 \| iex` |
 
-Ele baixa o jogo na pasta `todo-engine` dentro da sua pasta de usuário (ou atualiza, se já estiver lá) e abre o jogo. Na
+Ele baixa o jogo na pasta `ganbatte` dentro da sua pasta de usuário (ou atualiza, se já estiver lá; quem instalou antes na `todo-engine` continua nela) e abre o jogo. Na
 primeira vez, o terminal explica o que é o servidor e pergunta se ele deve **iniciar sempre com o computador**; dizendo
 sim, é só abrir http://127.0.0.1:8642/ quando quiser jogar. Rodar o mesmo comando de novo atualiza o jogo (e reinicia o
 servidor que estiver em segundo plano; com `git pull`, o servidor percebe o código novo e se reinicia sozinho em até 20 s).
@@ -37,7 +37,7 @@ Prefere fazer à mão? Siga os passos abaixo.
 
 ### 2. Baixe o jogo
 
-- **Com git:** `git clone https://github.com/CaioParanaiba/todo-engine.git`
+- **Com git:** `git clone https://github.com/CaioParanaiba/ganbatte.git`
 - **Sem git:** no topo desta página, clique em **Code → Download ZIP** e extraia a pasta onde quiser.
 
 ### 3. Rode
@@ -112,7 +112,7 @@ As novidades saem primeiro na branch `beta` e passam para a `main` (a versão no
 **Versão** escolhe entre **Estável** (`main`), **Beta** e **Grupo**; o aviso de versão nova e o **atualizar agora** seguem
 a escolhida.
 
-Pelo terminal é o mesmo: `git -C ~/todo-engine switch beta` (ou `grupo`; `switch main` para voltar). Só funciona no jogo instalado
+Pelo terminal é o mesmo: `git -C ~/ganbatte switch beta` (ou `grupo`; `switch main` para voltar). Só funciona no jogo instalado
 com git; o instalado pelo ZIP fica sempre na versão normal.
 
 A beta pode ter erros que ainda não foram corrigidos. Os dados continuam na mesma pasta, mas uma versão de teste pode
@@ -121,7 +121,7 @@ trocar. Achou um problema? O balão de feedback no canto da tela abre uma issue 
 
 ## Sem instalar: modo demonstração
 
-**Online:** https://caioparanaiba.github.io/todo-engine/ (atualiza sozinho a cada mudança na página).
+**Online:** https://caioparanaiba.github.io/ganbatte/ (atualiza sozinho a cada mudança na página).
 **No computador:** abra o arquivo `web/index.html` direto no navegador (dois cliques).
 
 Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a página volta ao começo.
@@ -178,6 +178,8 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| **0.7** | **atualização do Ganbatte** | **Junta a 0.6.6-beta1 a beta3** (as linhas abaixo): o nome Ganbatte com os links novos (repositório `CaioParanaiba/ganbatte`, Pages em `caioparanaiba.github.io/ganbatte`; o GitHub redireciona o git, o ZIP e o raw do nome antigo, então as cópias instaladas continuam atualizando), o visual Nen, os nomes base das abas, prazo da caçada, tarefa vira caçada e cofre opcional. Janela grande com `"cap"`, a escolha do visual (`"visual"`, Nen ou clássico na hora) e o agradecimento a quem contribuiu (`"obrigado"`) |
+| 0.6.6-beta3 | atualização das expedições | Visual Nen como padrão (bloco `gb-visual` com `:where(.vis-nen)`, clássico em Configurações → configurações deste computador, `localStorage` → `gb-visual`), marca do jogo (`MARCA`) no cabeçalho, no favicon e no assistente, XP sempre na ponta da linha da Lista e o modo demonstração esperando os scripts de baixo |
 | 0.6.6-beta2 | atualização das expedições | **Nome Ganbatte** (#15): pasta de dados `~/.ganbatte` (`migra_pasta()` move a `~/.hunter-todo` na primeira vez e deixa um atalho; outra pasta escolhida fica onde está), variáveis `GANBATTE_*` (as `HUNTER_*` valem por um tempo, `env()`), início automático `ganbatte` (`migra_servico()` grava o novo e apaga o `hunter-todo`; o servidor que está rodando continua até o próximo login), `/api/ping` com `"app": "ganbatte"` (o `ping()` aceita os dois), instalador em `~/ganbatte` (quem tem `~/todo-engine` continua nela), prefixos `GB`/`GB_`/`GBx` e `gb-` no código (o `localStorage` copia os `hj-`). Nomes base das abas (`NOMES` no motor, `ABA` na página): o menu usa Progresso, Projetos, Calendário, Conquistas, Loja e Grupo, e o nome do `TEMA` fica no `title`. O repositório ainda é `todo-engine` |
 | 0.6.6-beta1 | atualização das expedições | Prazo da caçada (#54): `prazo` em `estado.json` → `cacadas`, escolhido nas janelas de criar e editar. Só organiza: `grupos()` usa o prazo no `due` da caçada (ordem da Lista) e conta as etapas com prazo depois dele (`depois`); aparece na Lista, nos marcos, na trilha, no quadro e como marca no cronograma. Não mexe no XP. Tarefa vira caçada (#35): campo caçada no editor da tarefa (`GB_EXP.opcoesCac`, `criaCac`), aberta, nenhuma ou nova com a tarefa como 1ª etapa. Cofre do mês opcional (#34): desligado por padrão, liga em Configurações → cofre do mês (`cofreMes` > 0; sem valor gravado, só quem já gastou do cofre fica com ele); desligado, sem card na Masadora e sem limite em R$ no resgate (`cofreOn()`) |
 | 0.6.5 | atualização das expedições | **Junta a 0.6.5-beta1** (a linha abaixo), as correções da 0.6.4 (#51). A janela grande junta a 0.6.4 e a 0.6.5 (`"janela"` no `novidades.js`), com o "no seu jogo" das duas |

@@ -1,5 +1,5 @@
 # Publica o modo demonstração (a pasta web/) no GitHub Pages a cada push na main que mexa na página.
-# Endereço: https://caioparanaiba.github.io/todo-engine/  (Settings → Pages → Source: "GitHub Actions", uma vez só)
+# Endereço: https://caioparanaiba.github.io/ganbatte/  (Settings → Pages → Source: "GitHub Actions", uma vez só)
 name: Demonstração no GitHub Pages
 
 on:

@@ -452,7 +452,7 @@ function rascunhoCfg(){
 /* contribuições recompensadas (#23): o servidor confere no GitHub as issues do jogador fechadas como resolvidas */
 function contribHTML(){
   const c = D.contrib; if(!c || !c.issues.length) return '';
-  return `<p class="sub" style="margin:-4px 0 0">${c.issues.length} contribuição${c.issues.length === 1 ? '' : 'ões'} recompensada${c.issues.length === 1 ? '' : 's'}: ${c.issues.map(i => `<a href="https://github.com/CaioParanaiba/todo-engine/issues/${i.n}" target="_blank" rel="noopener">#${i.n}</a> ${i.tipo}`).join(' · ')}</p>`;
+  return `<p class="sub" style="margin:-4px 0 0">${c.issues.length} contribuição${c.issues.length === 1 ? '' : 'ões'} recompensada${c.issues.length === 1 ? '' : 's'}: ${c.issues.map(i => `<a href="https://github.com/CaioParanaiba/ganbatte/issues/${i.n}" target="_blank" rel="noopener">#${i.n}</a> ${i.tipo}`).join(' · ')}</p>`;
 }
 function cfgHTML(){
   const c = rascunhoCfg();

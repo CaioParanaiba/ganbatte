@@ -1,10 +1,10 @@
 #!/bin/sh
 # Ganbatte: baixa (ou atualiza) e abre o jogo com um comando só, no Linux e no Mac.
-#   curl -fsSL https://raw.githubusercontent.com/CaioParanaiba/todo-engine/main/instalar.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/CaioParanaiba/ganbatte/main/instalar.sh | sh
 # Outra pasta:  curl -fsSL .../instalar.sh | GANBATTE_PASTA=~/jogos/todo sh
 # Na primeira vez, o servidor.py mostra as boas-vindas e pergunta se o jogo inicia com o computador.
 set -e
-REPO="https://github.com/CaioParanaiba/todo-engine"
+REPO="https://github.com/CaioParanaiba/ganbatte"
 # a pasta padrão era ~/todo-engine até o nome Ganbatte (#15): quem já tem o jogo lá continua nela
 PASTA="${GANBATTE_PASTA:-${HUNTER_PASTA:-}}"
 if [ -z "$PASTA" ]; then

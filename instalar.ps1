@@ -1,9 +1,9 @@
 # Ganbatte: baixa (ou atualiza) e abre o jogo com um comando só, no Windows (PowerShell).
-#   irm https://raw.githubusercontent.com/CaioParanaiba/todo-engine/main/instalar.ps1 | iex
+#   irm https://raw.githubusercontent.com/CaioParanaiba/ganbatte/main/instalar.ps1 | iex
 # Outra pasta: $env:GANBATTE_PASTA = "C:\jogos\todo"; antes do comando acima.
 # Na primeira vez, o servidor.py mostra as boas-vindas e pergunta se o jogo inicia com o computador.
 $ErrorActionPreference = 'Stop'
-$repo = 'https://github.com/CaioParanaiba/todo-engine'
+$repo = 'https://github.com/CaioParanaiba/ganbatte'
 # a pasta padrão era todo-engine até o nome Ganbatte (#15): quem já tem o jogo lá continua nela
 $pasta = if ($env:GANBATTE_PASTA) { $env:GANBATTE_PASTA } elseif ($env:HUNTER_PASTA) { $env:HUNTER_PASTA }
   elseif ((Test-Path (Join-Path $HOME 'todo-engine\servidor.py')) -and -not (Test-Path (Join-Path $HOME 'ganbatte'))) { Join-Path $HOME 'todo-engine' }

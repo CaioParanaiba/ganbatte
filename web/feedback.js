@@ -7,7 +7,7 @@
  */
 (function(){
 'use strict';
-const REPO = 'https://github.com/CaioParanaiba/todo-engine';
+const REPO = 'https://github.com/CaioParanaiba/ganbatte';
 const TIPOS = {
   bug:    {ic:'bug', n:'bug',    form:'bug.yml',    campo:'o-que',  t:'O que aconteceu?', ph:'Cliquei em concluir na Lista e a tarefa não sumiu...',
            extra:{id:'esperava', t:'O que você esperava?', ph:'A tarefa sumir e o XP subir.'}},

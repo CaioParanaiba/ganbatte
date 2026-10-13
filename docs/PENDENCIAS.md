@@ -256,6 +256,10 @@ abrir depois do fim (uma tentativa por aba), antes de o assistente gravar outra 
 gravações do `guia.js`) e pelo card *temporada* em Configurações (foto parcial). Falta: a tela de histórico e decidir o que
 zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
 
+**0.7 · atualização do Ganbatte** (13/10/2026): lançada na `main`, juntando a 0.6.6-beta1 a beta3 (issues #15, #34, #35,
+#54): nome Ganbatte com repositório e Pages novos, visual Nen (clássico em Configurações), nomes base das abas, prazo da
+caçada, tarefa vira caçada e cofre opcional. A janela grande escolhe o visual na hora e agradece a quem contribuiu.
+
 **0.6.5** (13/10/2026): lançada na `main`, juntando a 0.6.5-beta1 (issue #51): o estado volta a salvar (a 0.6.4 recusava `migra`
 e `tenRec`), nível do Duolingo pela ofensiva, ids de hábito preservados e religados, devolução das compras do rebalanceamento.
 A janela grande junta a 0.6.4 e a 0.6.5.
@@ -359,7 +363,7 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
 
 - **Testar no Windows e no Mac:** `instalar.ps1`, início automático (`.vbs` na pasta Inicializar, LaunchAgent no Mac),
   `pythonw` sem janela, boas-vindas no terminal. Precisa de um amigo em cada sistema.
-- **GitHub Pages:** no ar em https://caioparanaiba.github.io/todo-engine/ (atualiza a cada push que mexe em `web/`).
+- **GitHub Pages:** no ar em https://caioparanaiba.github.io/ganbatte/ (atualiza a cada push que mexe em `web/`).
 - **Testes automáticos** do `servidor.py` (hoje os testes são scripts soltos e o Firefox controlado por script).
 - **Aba Lista, bloco "constância":** sobra muito espaço entre os heatmaps (20 semanas) e a borda direita. Avaliar: mais
   semanas conforme a largura, quadradinhos maiores, ou outra coisa ao lado (resumo dos números, por exemplo).
@@ -374,11 +378,8 @@ Feito na 0.6.6-beta2 (detalhes na tabela de versões do README): pasta de dados 
 continua nela), `/api/ping`, User-Agent e ZIP de backup, textos "Hunter.todo", prefixos `GB`/`GB_`/`GBx`/`gb-` e os
 nomes base das abas (`NOMES` no motor).
 
-Falta:
-- **repositório `todo-engine` → `ganbatte`** (o Caio troca em Settings do GitHub). O GitHub redireciona o git, o ZIP e o
-  raw do nome antigo, então as cópias instaladas continuam atualizando. Depois, trocar no código os endereços
-  (`GITHUB`, `confere_github`, a busca de issues em `contribuicoes`, os instaladores, `feedback.js`, `guia.js`,
-  `motor.js`, README) e o link do Pages (`caioparanaiba.github.io/ganbatte`; o Pages **não** redireciona o antigo).
+Repositório renomeado para `ganbatte` e endereços trocados na 0.7 (o Pages novo é `caioparanaiba.github.io/ganbatte`; o
+antigo não redireciona). Falta:
 - tirar o suporte a `HUNTER_*`, `hj-` e `APP_ANTIGO` depois que todo mundo passar da 0.6.6.
 
 Cuidado para não repetir a migração: no código, nomes neutros (`grupo`, `placar`, `moeda`); os nomes do tema
