@@ -1365,6 +1365,7 @@ const andar = xp => HJx.andar(xp, R.dif), custo = n => HJx.custo(n, R.dif), xpAt
 const estado = () => { const S = HJx.estado(CTX); if(TESTE) S.jenny = Infinity; return S; };   // modo teste: Jenny infinita
 const somOff = () => !!(window.HJ_FX && HJ_FX.somOff());   // sons da loja desligados neste computador (efeitos.js)
 const cartas = S => HJx.cartas(CTX, S);
+const cofreOn = () => HJx.cofreMes(EST) > 0;   // cofre do mês opcional (#34): R$ 0 por mês = desligado, sem card e sem limite em R$
 const cofreTotal = () => HJx.cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1);
 function sync(api){
   CTX = HJx.carregar(api); ({D, HOJE, TEMP, BOSSES, AVAL, NOTAS, PARC, INBOX, EST} = CTX); COS = HJx.catalogo(CTX.AVATARES);
@@ -1762,7 +1763,7 @@ function rMS(S){
       <div class="side7">
         <div class="card"><h2><span class="c">~/</span>carteira</h2><div class="wal7">${fmt(S.jenny)} J<small>${TESTE ? 'modo teste: nada fica guardado' : 'disponível'}</small></div>${podeTeste() ? `<button type="button" class="btn${TESTE ? '' : ' v'}" data-teste="${TESTE ? 0 : 1}" style="margin:8px 0 2px">${TESTE ? 'sair do modo teste' : 'modo teste: Jenny infinita'}</button><p class="sub" style="margin:4px 0 0">${TESTE ? 'Feitiços e prêmios reais ficam fora do teste.' : 'Só nas versões de teste (beta e grupo). Experimente os itens sem gastar; ao sair, tudo volta como estava.'}</p>` : ''}
           <div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.contribJ ? `<div style="display:flex;justify-content:space-between" title="bugs corrigidos e ideias feitas que você abriu no GitHub (o XP delas já está no XP × 10)"><span>contribuições (${S.contrib.length})</span><b style="color:var(--ink)">+${fmt(S.contribJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></div>
-        <div class="card"><h2><span class="c">~/</span>cofre do mês</h2><div class="wal7" style="font-size:22px">R$ ${fmt(cofreTotal() - COFRE_USADO)}<small>R$ ${fmt(HJx.cofreMes(EST))} por mês, acumula · usado R$ ${fmt(COFRE_USADO)}</small></div><div class="cofre"><b style="width:${pct(cofreTotal()-COFRE_USADO, cofreTotal())}%"></b></div></div>
+        ${cofreOn() ? `<div class="card"><h2><span class="c">~/</span>cofre do mês</h2><div class="wal7" style="font-size:22px">R$ ${fmt(cofreTotal() - COFRE_USADO)}<small>R$ ${fmt(HJx.cofreMes(EST))} por mês, acumula · usado R$ ${fmt(COFRE_USADO)}</small></div><div class="cofre"><b style="width:${pct(cofreTotal()-COFRE_USADO, cofreTotal())}%"></b></div></div>` : ''}
         <div class="card"><h2><span class="c">~/</span>usando agora</h2><div class="eqlist">${eqs.map(([a,b]) => `<div><span>${a}</span><span>${esc(b)}</span></div>`).join('')}</div></div>
         ${RESG.length ? `<div class="card"><h2><span class="c">~/</span>resgatados</h2><ul class="got">${RESG.map(r => `<li style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:13px"><span>${esc(r)}</span><span class="sub">${ddmm(HOJE)}</span></li>`).join('')}</ul></div>` : ''}
       </div></div>`;
@@ -1770,7 +1771,7 @@ function rMS(S){
 
 /* ---------- prêmios reais (a lista é do jogador: estado.json → premios; sem lista, os padrão do motor) ---------- */
 const meusPremios = () => HJx.premios(EST);
-const podeResgatar = (S, x) => !TESTE && S.jenny >= x.p && (x.rs||0) <= cofreTotal() - COFRE_USADO;
+const podeResgatar = (S, x) => !TESTE && S.jenny >= x.p && (!cofreOn() || (x.rs||0) <= cofreTotal() - COFRE_USADO);
 function reguaHTML(E){
   return `<div class="sec7"><h3>Quanto vale cada preço</h3><p>${E.est ? 'Estimativa: depois de 5 dias jogados, a régua passa a usar o seu próprio ritmo.' : 'Pelo seu ritmo nas últimas 4 semanas.'}
     Um dia produtivo ≈ <b>${fmt(E.dia)} J</b> · uma semana boa ≈ <b>${fmt(E.semana)} J</b> · um mês ≈ <b>${fmt(E.mes)} J</b>.
@@ -1780,8 +1781,8 @@ function premiosHTML(S){
   const E = HJx.esforco(S.xpDia, HOJE), L = meusPremios().map((x,i) => ({...x, i})), fx = [[],[],[],[]];
   L.forEach(x => fx[HJx.faixaDe(x.p, E)].push(x));
   const card = x => { const ok = podeResgatar(S, x);
-    return `<div class="it7"><div class="pv real" style="${palStyle(UI.theme)}"><span class="av" style="--c:var(--amb)">${ic(x.ic || (x.rs ? 'coin' : 'card'))}</span><span>${x.rs ? `até R$ ${fmt(x.rs)}, do cofre` : 'não custa dinheiro'}</span></div><div class="info"><b>${esc(x.n)}</b><p>${HJx.esforcoTxt(x.p, E)}</p><div class="buy7"><span class="pr">${fmt(x.p)} J</span><button class="btn" data-real="${x.i}" ${ok?'':'disabled'}>${S.jenny < x.p ? `faltam ${fmt(x.p - S.jenny)} J` : !ok ? 'cofre insuficiente' : 'resgatar'}</button></div></div></div>`; };
-  return `<div class="sec7"><h3>Prêmios reais</h3><p>Coisas da vida real que você se permite com a Jenny. A lista é sua: troque os nomes, os preços e o que sai do cofre.</p><p><button class="btn v" data-pedit>editar meus prêmios</button></p></div>`
+    return `<div class="it7"><div class="pv real" style="${palStyle(UI.theme)}"><span class="av" style="--c:var(--amb)">${ic(x.ic || (x.rs ? 'coin' : 'card'))}</span><span>${x.rs ? `até R$ ${fmt(x.rs)}${cofreOn() ? ', do cofre' : ''}` : 'não custa dinheiro'}</span></div><div class="info"><b>${esc(x.n)}</b><p>${HJx.esforcoTxt(x.p, E)}</p><div class="buy7"><span class="pr">${fmt(x.p)} J</span><button class="btn" data-real="${x.i}" ${ok?'':'disabled'}>${S.jenny < x.p ? `faltam ${fmt(x.p - S.jenny)} J` : !ok ? 'cofre insuficiente' : 'resgatar'}</button></div></div></div>`; };
+  return `<div class="sec7"><h3>Prêmios reais</h3><p>Coisas da vida real que você se permite com a Jenny. A lista é sua: troque os nomes, os preços${cofreOn() ? ' e o que sai do cofre' : ''}.</p><p><button class="btn v" data-pedit>editar meus prêmios</button></p></div>`
     + fx.map((l,k) => l.length ? `<div class="sec7"><h3>${HJx.FAIXAS[k]}</h3><div class="items">${l.sort((a,b) => a.p - b.p).map(card).join('')}</div></div>` : '').join('')
     + (L.length ? '' : '<p class="sub">Nenhum prêmio cadastrado. Clique em editar meus prêmios.</p>') + reguaHTML(E);
 }
@@ -1789,12 +1790,13 @@ function premiosEditor(S){
   const E = HJx.esforco(S.xpDia, HOJE), L = UI.pdraft;
   const row = (x,i) => `<div class="pr-row"><input data-pf="${i}:n" value="${esc(x.n)}" maxlength="80" placeholder="ex.: 1h de videogame" aria-label="nome do prêmio">
     <label><input data-pf="${i}:p" value="${x.p == null || isNaN(x.p) ? '' : x.p}" inputmode="numeric" placeholder="1000" aria-label="preço em Jenny"> J</label>
-    <label>R$ <input data-pf="${i}:rs" value="${x.rs ? String(x.rs).replace('.', ',') : ''}" inputmode="decimal" placeholder="0" aria-label="quanto sai do cofre, em reais"></label>
+    <label>R$ <input data-pf="${i}:rs" value="${x.rs ? String(x.rs).replace('.', ',') : ''}" inputmode="decimal" placeholder="0" aria-label="${UI.pcofre > 0 ? 'quanto sai do cofre, em reais' : 'quanto custa, em reais'}"></label>
     <span class="sub">${x.p > 0 ? HJx.esforcoTxt(+x.p, E) : ''}</span><button class="btn" data-pdel="${i}" aria-label="remover">✕</button></div>`;
-  return `<div class="sec7"><h3>Editar meus prêmios</h3><p>Nome, preço em Jenny e, se custar dinheiro, quanto sai do cofre (R$). Deixe R$ vazio para prêmios que não custam nada, como tempo livre.</p>
+  return `<div class="sec7"><h3>Editar meus prêmios</h3><p>Nome, preço em Jenny e, se custar dinheiro, quanto custa (R$). Deixe R$ vazio para prêmios que não custam nada, como tempo livre. Com o cofre do mês ligado, o R$ sai de um valor que você separa por mês e acumula; desligado, o R$ é só um lembrete.</p>
     <div class="pr-ed">${L.map(row).join('')}</div>
     <p style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px"><button class="btn" data-padd>+ prêmio</button>
-      <label class="sub">cofre por mês: R$ <input data-pcofre value="${String(UI.pcofre).replace('.', ',')}" inputmode="decimal" style="width:70px"></label></p>
+      <label class="sub"><input type="checkbox" data-pcofreon${UI.pcofre > 0 ? ' checked' : ''}> usar o cofre do mês</label>
+      ${UI.pcofre > 0 ? `<label class="sub">cofre por mês: R$ <input data-pcofre value="${String(UI.pcofre).replace('.', ',')}" inputmode="decimal" style="width:70px"></label>` : ''}</p>
     <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn v" data-psave>salvar</button><button class="btn" data-pcancel>cancelar</button><button class="btn" data-ppadrao>voltar aos prêmios padrão</button></p></div>` + reguaHTML(E);
 }
 /* lê os campos do editor de prêmios para o rascunho (antes de redesenhar ou salvar); aceita 1.000 e 12,50 */
@@ -1880,7 +1882,7 @@ function rP3b(S){
   el.innerHTML = `
     <div class="sign"><h2>MASADORA · LOJA DE CARTAS</h2><p>CARTEIRA: ${fmt(S.jenny)} J · CLIQUE PARA COMPRAR</p></div>
     <div class="lay">
-      <div class="shelf8"><h3>PRATELEIRA 1 · PRÊMIOS REAIS</h3>${meusPremios().map((x,k) => { const ok = podeResgatar(S, x); return `<button class="it" data-real="${k}" aria-disabled="${!ok}" title="${ok?'resgatar':'jenny ou cofre insuficiente'}">${ic(x.ic || (x.rs ? 'coin' : 'card'))}<span><b>${esc(x.n)}</b><small>${HJx.esforcoTxt(x.p, HJx.esforco(S.xpDia, HOJE))}${x.rs?` · até R$ ${fmt(x.rs)} do cofre`:''}</small></span><span class="pr">${fmt(x.p)} J</span></button>`; }).join('')}</div>
+      <div class="shelf8"><h3>PRATELEIRA 1 · PRÊMIOS REAIS</h3>${meusPremios().map((x,k) => { const ok = podeResgatar(S, x); return `<button class="it" data-real="${k}" aria-disabled="${!ok}" title="${ok?'resgatar':'jenny ou cofre insuficiente'}">${ic(x.ic || (x.rs ? 'coin' : 'card'))}<span><b>${esc(x.n)}</b><small>${HJx.esforcoTxt(x.p, HJx.esforco(S.xpDia, HOJE))}${x.rs?` · até R$ ${fmt(x.rs)}${cofreOn() ? ' do cofre' : ''}`:''}</small></span><span class="pr">${fmt(x.p)} J</span></button>`; }).join('')}</div>
       <div class="shelf8"><h3>PRATELEIRA 2 · FEITIÇOS</h3>${SPELLS.filter(s => !s.noshop).map(s => it('s',s.k,s.ic,s.n,s.e,s.p,true)).join('')}</div>
       <div class="bag"><h3>BOLSA</h3><div class="coin">${fmt(S.jenny)} J</div>
         <div class="slot9">${Array.from({length:9},(_,i) => { const x = bag[i]; return x ? `<div class="f" title="${spell(x[0]).n}">${ic(spell(x[0]).ic)}<em>×${x[1]}</em></div>` : '<div></div>'; }).join('')}</div>
@@ -2094,18 +2096,19 @@ function priL(linha, S){
   const s = HJx.sugerePri(HJx.parseLinha(HOJE + ' ' + linha, 0), S.bs, HOJE, CTX);
   return {pri: s.pri, sug: s};
 }
-/* editor completo da tarefa (✎, issue #20): texto, tipo, disciplina, prazo e prioridade. O texto guarda tudo o que o editor
-   não mostra (av:, prova:, +cac., rec:...), então nada da linha se perde; as datas dele ficam como no todo.txt */
-const LE = {txt:'', tipo:'vid', disc:'', due:'', pri:'', tipo0:'', tags0:[]};   // tipo0/tags0: como a linha veio, para voltar igual se o tipo não mudar
+/* editor completo da tarefa (✎, issue #20): texto, tipo, disciplina, prazo, prioridade e caçada (#35: uma tarefa vira etapa de
+   uma caçada, nova ou aberta). O texto guarda tudo o que o editor não mostra (av:, prova:, +exp., rec:...), então nada da linha
+   se perde; as datas dele ficam como no todo.txt */
+const LE = {txt:'', tipo:'vid', disc:'', due:'', pri:'', tipo0:'', tags0:[], cac:'', cacn:''};   // tipo0/tags0: como a linha veio, para voltar igual se o tipo não mudar
 function abreEd(t){
   const tags = ['ent','est','tre','hab'].flatMap(k => [...HJx.TAGS[k].ctx.map(v => '@' + v), ...HJx.TAGS[k].proj.map(v => '+' + v)]);
   const ws = t.raw.replace(/^\([A-Z]\) /, '').replace(/^\d{4}-\d\d-\d\d /, '').split(/\s+/).filter(Boolean), tipo = (LTIPOS.find(x => x.c === nenDe(t)) || LTIPOS[5]).k;
-  Object.assign(LE, {txt: ws.filter(w => !tags.includes(w.toLowerCase()) && !/^\+fac\./i.test(w) && !/^due:/i.test(w)).join(' '),
-    tipo, tipo0: tipo, tags0: ws.filter(w => tags.includes(w.toLowerCase())), disc: discOf(t) || '', due: t.due || '', pri: t.pri || ''});
+  Object.assign(LE, {txt: ws.filter(w => !tags.includes(w.toLowerCase()) && !/^\+fac\./i.test(w) && !/^due:/i.test(w) && !/^\+cac\./i.test(w)).join(' '),
+    tipo, tipo0: tipo, tags0: ws.filter(w => tags.includes(w.toLowerCase())), disc: discOf(t) || '', due: t.due || '', pri: t.pri || '', cac: HJx.cacDe(t) || '', cacn: ''});
 }
 /* a linha que vai para o servidor: a tag do tipo só entra se o texto, a disciplina e o rec: ainda não dão esse tipo */
 function linhaEd(){
-  const base = [LE.txt.trim(), LE.disc ? '+fac.' + LE.disc : '', LE.due ? 'due:' + LE.due : ''].filter(Boolean).join(' ');
+  const base = [LE.txt.trim(), LE.disc ? '+fac.' + LE.disc : '', LE.due ? 'due:' + LE.due : '', LE.cac && LE.cac !== '+nova' ? '+cac.' + LE.cac : ''].filter(Boolean).join(' ');
   if(LE.tipo === LE.tipo0 && LE.tags0.length) return base + ' ' + LE.tags0.join(' ');
   const T = LTIPOS.find(x => x.k === LE.tipo), tag = tagDe(LE.tipo);
   return tag && nenDe(HJx.parseLinha(HOJE + ' ' + base, 0)) !== T.c ? base + ' ' + tag : base;
@@ -2121,6 +2124,7 @@ function edHTML(S){
       <div class="l-seg"><span>disciplina</span><select id="l-eddisc" aria-label="Disciplina"><option value="">nenhuma</option>${ds.map(d => `<option value="${esc(d)}"${d === LE.disc ? ' selected' : ''}>${esc(d)}</option>`).join('')}</select></div>
       <div class="l-seg" role="group" aria-label="Prazo"><span>prazo</span>${[['sem',''],['hoje',HOJE],['amanhã',am]].map(([n,d]) => chip('due:' + d, d === LE.due, n)).join('')}<input class="dt" inputmode="numeric" maxlength="10" id="l-eddate" placeholder="${HJx.fmtTxt()}" value="${LE.due && LE.due !== HOJE && LE.due !== am ? HJx.brData(LE.due) : ''}" aria-label="Outra data (${HJx.fmtTxt()})"></div>
       <div class="l-seg" role="group" aria-label="Prioridade"><span>prioridade</span>${['A','B','C',''].map(k => chip('pri:' + k, k === LE.pri, k || 'sem', k ? ' l-pc' : '')).join('')}</div>
+      ${window.HJ_EXP ? `<div class="l-seg"><span>caçada</span><select id="l-edcac" aria-label="Caçada">${HJ_EXP.opcoesCac(LE.cac, '+ nova caçada com esta tarefa…')}</select>${LE.cac === '+nova' ? `<input id="l-edcacn" maxlength="80" value="${esc(LE.cacn)}" placeholder="nome da caçada" title="vazio: o texto da tarefa" aria-label="Nome da caçada nova (vazio: o texto da tarefa)">` : ''}</div>` : ''}
     </div>
     <div class="l-prev"><span>vale <span class="l-xp">+${v.x} XP</span></span><span class="l-mult">${v.base} XP${v.ms.map(m => ' · ' + m + ' ×1,5').join('')}</span><span style="color:${NC(LTIPOS.find(x => x.k === LE.tipo).c)}">${esc(NEN[LTIPOS.find(x => x.k === LE.tipo).c].n)}</span></div>
   </div>`;
@@ -2128,7 +2132,7 @@ function edHTML(S){
 /* chips e campos do editor: redesenha só a caixa, sem perder o que foi digitado no texto */
 function redesenhaEd(){
   const box = document.getElementById('l-edbox'); if(!box) return;
-  LE.txt = document.getElementById('l-ed').value; box.outerHTML = edHTML(estado());
+  LE.txt = document.getElementById('l-ed').value; const cn = document.getElementById('l-edcacn'); if(cn) LE.cacn = cn.value; box.outerHTML = edHTML(estado());
 }
 /* a data digitada só marca os botões e a prévia: redesenhar a caixa aqui comeria o clique no salvar que tirou o foco do campo */
 function dataEd(){
@@ -2380,7 +2384,11 @@ document.addEventListener('click', async e => {
   if(act !== 'save') UI.ledit = null;
   if(act === 'save'){ LE.txt = document.getElementById('l-ed').value;
     const dd = document.getElementById('l-eddate').value.trim(); if(dd){ const iso = HJx.isoData(dd, HOJE); if(!iso){ toast(HJx.dataRuim('')); return; } LE.due = iso; }
-    UI.ledit = null; if(!LE.txt.trim()){ render(); return; } const v = linhaEd(); acaoL(() => post('/api/act', {raw:t.raw, action:'edit', value:v, pri:LE.pri}), 'Tarefa editada'); return; }
+    const cn = document.getElementById('l-edcacn'); if(cn) LE.cacn = cn.value;
+    UI.ledit = null; if(!LE.txt.trim()){ render(); return; }
+    const nova = LE.cac === '+nova' ? (LE.cacn.trim() || LE.txt.replace(/(^|\s)[+@]\S+|(^|\s)\S+:\S+/g, '').trim()) : '';   // nome da caçada nova: o digitado ou o texto, sem tags
+    acaoL(async () => { if(nova) LE.cac = await HJ_EXP.criaCac(nova); return post('/api/act', {raw:t.raw, action:'edit', value:linhaEd(), pri:LE.pri}); },
+      nova ? `Virou caçada <small>${esc(nova)} · adicione as outras etapas com "+ etapa"</small>` : 'Tarefa editada'); return; }
   if(act === 'done'){ const antes = estado(), rr = b.getBoundingClientRect();
     try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
     const depois = estado(), dx = depois.total - antes.total; render();
@@ -2405,6 +2413,7 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   if(e.target.id === 'l-disc') prevL();
+  if(e.target.id === 'l-edcac'){ LE.cac = e.target.value; redesenhaEd(); }
   if(e.target.id === 'l-eddisc'){ LE.disc = e.target.value; if(!LE.disc && LE.tipo === 'fac') LE.tipo = 'vid'; redesenhaEd(); }
   if(e.target.id === 'l-eddate'){ const iso = HJx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(HJx.dataRuim('')); return; }
     LE.due = iso || ''; dataEd(); }
@@ -2490,6 +2499,7 @@ document.addEventListener('click', async e => {
   const rl = q('[data-real]'); if(rl){ const x = meusPremios()[+rl.dataset.real], S = estado(); if(!x || !podeResgatar(S, x)) return;
     SPENT += x.p; compra('premio', 'premio', x.p); COFRE_USADO += x.rs||0; RESG.push(`${x.n} · ${ddmm(HOJE)}`); salvaUI(); toast(`Resgatado: ${esc(x.n)} <small>aproveite</small>`); render(); return; }
   if(q('[data-pedit]')){ UI.pedit = true; UI.pdraft = meusPremios().map(x => ({...x})); UI.pcofre = HJx.cofreMes(EST); render(); return; }
+  const pco = q('[data-pcofreon]'); if(pco){ lePremios(); UI.pcofre = pco.checked ? HJx.COFRE_MES : 0; render(); return; }
   if(q('[data-padd]')){ lePremios(); UI.pdraft.push({n:'', p:null, rs:0}); render(); const r = document.querySelectorAll('[data-pf$=":n"]'); if(r.length) r[r.length-1].focus(); return; }
   const pd = q('[data-pdel]'); if(pd){ lePremios(); UI.pdraft.splice(+pd.dataset.pdel, 1); render(); return; }
   if(q('[data-pcancel]')){ UI.pedit = false; render(); return; }

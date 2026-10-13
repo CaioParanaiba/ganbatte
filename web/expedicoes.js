@@ -219,13 +219,24 @@ function lateral(S){
   if(!L.length) return `<p class="sub" style="margin:0">Um projeto que dura semanas (o TCC, um app, a iniciação científica) vira uma expedição: as caçadas dele são os marcos. <button class="go" data-xnova>criar uma →</button></p>`;
   return L.map(e => `<button type="button" class="x-mini" data-xir="${esc(e.slug)}">${ring(e, 32)}<span><b>${esc(e.n)}</b><small>${e.atual ? `agora: ${esc(e.atual.n)} · ${e.atual.feitas}/${e.atual.etapas.length}` : e.marcos.length ? 'todos os marcos fechados' : 'sem marcos ainda'}</small></span><span class="pc">${e.ok}/${e.marcos.length}</span></button>`).join('');
 }
+/* as caçadas abertas (avulsas e por expedição) como <option>, para o formulário e o editor da tarefa (#35);
+   "atual": a caçada da tarefa editada, que entra mesmo fechada */
+function opcoesCac(atual, nova){
+  const S = estado(), G = g(S), abertas = Object.values(G.cac).filter(c => !c.fim || c.abertas.length || c.slug === atual);
+  const grupo = (nome, cs) => cs.length ? `<optgroup label="${esc(nome)}">${cs.map(c => `<option value="${esc(c.slug)}"${c.slug === atual ? ' selected' : ''}>${esc(c.n)}</option>`).join('')}</optgroup>` : '';
+  return '<option value="">nenhuma</option>' + grupo('avulsas', abertas.filter(c => !c.exp || !G.exp[c.exp] || G.exp[c.exp].fim))
+    + ativas(S).map(e => grupo(e.n, abertas.filter(c => c.exp === e.slug))).join('') + `<option value="+nova"${atual === '+nova' ? ' selected' : ''}>${nova || '+ nova caçada…'}</option>`;
+}
+/* caçada nova a partir de uma tarefa (editor, #35): grava o nome no estado.json e devolve o slug para a linha */
+async function criaCac(nome){
+  const n = String(nome || '').trim().slice(0, 80) || 'Caçada', slug = novoSlug(n, 'cacadas');
+  Object.assign(meta('cacadas', slug), {n, exp:null, criada:HOJE}); await salva();
+  return slug;
+}
 /* campo "caçada" do formulário: as abertas (avulsas e por expedição) e "+ nova caçada" */
 function formCacadas(){
   const sel = document.getElementById('l-cac'); if(!sel || !CTX) return;
-  const S = estado(), G = g(S), abertas = Object.values(G.cac).filter(c => !c.fim || c.abertas.length);
-  const grupo = (nome, cs) => cs.length ? `<optgroup label="${esc(nome)}">${cs.map(c => `<option value="${esc(c.slug)}">${esc(c.n)}</option>`).join('')}</optgroup>` : '';
-  const html = '<option value="">nenhuma</option>' + grupo('avulsas', abertas.filter(c => !c.exp || !G.exp[c.exp]))
-    + ativas(S).map(e => grupo(e.n, abertas.filter(c => c.exp === e.slug))).join('') + '<option value="+nova">+ nova caçada…</option>';
+  const S = estado(), html = opcoesCac();
   if(sel.dataset.h !== html){ sel.innerHTML = html; sel.dataset.h = html; }
   const v = UI.lcac || ''; sel.value = [...sel.options].some(o => o.value === v) ? v : ''; UI.lcac = sel.value;
   const nova = sel.value === '+nova', cn = document.getElementById('l-cacn'), cx = document.getElementById('l-cacx');
@@ -516,5 +527,5 @@ document.addEventListener('keydown', ev => {
   else if(ev.key === 'c' || ev.key === 'C'){ ev.preventDefault(); abreC(cur === 'x' ? X.sel : ''); }
 });
 
-window.HJ_EXP = {aba, blocosLista, etiquetas, lateral, formCacadas, tagForm, antesDeAdicionar, depoisDeAdicionar, abreN, abreC};
+window.HJ_EXP = {aba, blocosLista, etiquetas, lateral, formCacadas, opcoesCac, criaCac, tagForm, antesDeAdicionar, depoisDeAdicionar, abreN, abreC};
 })();

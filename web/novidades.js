@@ -16,9 +16,11 @@
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
   {"versao": "0.6.6-beta1", "nome": "atualização das expedições", "data": "2026-10-13",
-   "resumo": "A caçada inteira pode ter um prazo, além do prazo de cada etapa.",
+   "resumo": "A caçada inteira pode ter um prazo, uma tarefa comum vira caçada pelo editor e o cofre do mês pode ser desligado.",
    "itens": [
-     {"ic": "alvo", "t": "Prazo da caçada", "d": "Ao criar ou editar uma caçada, dá para escolher um prazo para ela toda. Ele aparece na Lista, nos marcos e no cronograma das Expedições, fica vermelho quando vence com etapas abertas e avisa quando alguma etapa tem prazo depois dele. Uma caçada com prazo próximo sobe na Lista. É só para organizar: o XP continua pelo prazo de cada etapa. Ideia de luy121314 (#54)."}
+     {"ic": "alvo", "t": "Prazo da caçada", "d": "Ao criar ou editar uma caçada, dá para escolher um prazo para ela toda. Ele aparece na Lista, nos marcos e no cronograma das Expedições, fica vermelho quando vence com etapas abertas e avisa quando alguma etapa tem prazo depois dele. Uma caçada com prazo próximo sobe na Lista. É só para organizar: o XP continua pelo prazo de cada etapa. Ideia de luy121314 (#54)."},
+     {"ic": "alvo", "t": "Tarefa vira caçada", "d": "No editor da tarefa (✎), o campo caçada põe a tarefa numa caçada aberta, tira ela de uma, ou cria uma caçada nova com a própria tarefa como primeira etapa: depois é só adicionar as outras com + etapa. Ideia de luy121314 (#35)."},
+     {"ic": "coin", "t": "Cofre do mês opcional", "d": "Na Masadora, em editar meus prêmios, dá para desligar o cofre do mês. Desligado, o card do cofre some e o R$ dos prêmios vira só um lembrete, sem travar o resgate. Quem usa o cofre não precisa mudar nada. Ideia de luy121314 (#34)."}
    ]},
   {"versao": "0.6.5", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.5",
    "resumo": "Correções da 0.6.4: a loja volta a salvar, o nível do Duolingo segue a sua ofensiva, os hábitos não perdem mais o histórico e as compras feitas com a Jenny que o rebalanceamento tirou voltam para a loja.",
