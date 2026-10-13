@@ -17,6 +17,7 @@ window.HJ_NOVIDADES = /*NOVIDADES*/[
    "resumo": "O nível do Duolingo segue a sua ofensiva inteira, e o que foi comprado com a Jenny que o rebalanceamento tirou volta para a loja.",
    "itens": [
      {"ic": "scroll", "t": "Nível do Duolingo pela ofensiva", "d": "Os dias da sua ofensiva de antes de ligar o Duolingo, até os de antes da temporada, agora sobem o nível do hábito. Quem tem uma ofensiva longa já começa num nível alto e ganha o XP dele daqui para frente; os dias passados continuam sem XP e sem Jenny."},
+     {"ic": "tower", "t": "Renomear um hábito", "d": "Mudar o nome de um hábito em Configurações não zera mais o nível, o heatmap e as conquistas dele: é o mesmo hábito com outro nome. Para começar um hábito do zero, remova o antigo e adicione um novo."},
      {"ic": "coin", "t": "Compras do dia do rebalanceamento", "d": "Na 0.6.4, quem tinha gastado mais do que ficou depois do rebalanceamento teve a carteira parada no zero. O que essa pessoa comprou em 13/10 (aparências e feitiços ainda na bolsa) volta para a loja, e a carteira recebe só a parte que foi paga com Jenny ganha jogando. Prêmios reais e feitiços já usados ficam. Para quem não estava nesse caso, nada muda."}
    ]},
   {"versao": "0.6.4", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.4",

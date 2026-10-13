@@ -69,10 +69,15 @@ const RYODAN = [['Chrollo','crown','O líder: rouba a técnica dos outros.'],['F
   ['Nobunaga','bullet','Um corte só, se você entrar no alcance.'],['Uvogin','horn','Força bruta: só cai com treino.'],['Shalnark','antenna','Controla tudo por antenas.'],
   ['Shizuku','vacuum','Aspira qualquer coisa e esquece o resto.'],['Kortopi','copy','Copia tudo, mas a cópia some.'],['Franklin','bullet','Rajada sem fim de exercícios.'],
   ['Phinks','wing','Cada giro do braço bate mais forte.'],['Pakunoda','spider','Lê as memórias: sabe o que você não estudou.'],['Bonolenov','cat','O som da batalha.']];
-const W = {editar:false, passo:0, nome:'', nick:'', av:'logo', tags:{}, habs:[], cfOn:false, cfH:'', cfM:3, disc:[], ini:'', fim:'', p1:40, p2:60, err:''};
+const W = {editar:false, passo:0, nome:'', nick:'', av:'logo', tags:{}, habs:[], hid:[], cfOn:false, cfH:'', cfM:3, disc:[], ini:'', fim:'', p1:40, p2:60, err:''};
 /* frequência do hábito: 0 = todo dia; 1 a 6 = vezes por semana (seg a dom) */
 const freqSel = (attr, v) => `<select ${attr} aria-label="Frequência">${[0,1,2,3,4,5,6].map(n => `<option value="${n}"${+v === n ? ' selected' : ''}>${n ? n + '× por semana' : 'todo dia'}</option>`).join('')}</select>`;
-const habsJSON = (nomes, freq) => nomes.map((n,i) => [String(n).trim(), +freq[i] || 0]).filter(([n]) => n).map(([n,f]) => f ? {id:slug(n), n, semana:f} : {id:slug(n), n});
+/* id do hábito: o que ele já tinha, mesmo com o nome mudado (renomear não zera o nível nem o histórico); hábito novo: pelo nome,
+   sem repetir o id de outro (renomeado "Leitura" para "Ler", um "Leitura" novo vira h-leitura-2) */
+const habsJSON = (nomes, freq, ids = []) => { const usados = new Set(ids.filter(Boolean));
+  return nomes.map((n,i) => [String(n).trim(), +freq[i] || 0, ids[i]]).filter(([n]) => n).map(([n,f,id]) => {
+    if(!id){ const b = slug(n); id = b; for(let k = 2; usados.has(id); k++) id = b + '-' + k; usados.add(id); }
+    return f ? {id, n, semana:f} : {id, n}; }); };
 const slug = n => 'h-' + (norm(n).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 20) || 'habito');
 const HANDLE = /^[A-Za-z0-9_.-]{3,24}$/, DUO_US = /^[A-Za-z0-9_.-]{1,40}$/;
 function chefaoDe(d, i){
@@ -108,6 +113,7 @@ function iniciaW(){
   for(const t of TIPOS) if(!t.fixo) W.tags[t.k] = tagPadrao(t.k);
   W.habs = (j.habitos && j.habitos.length ? j.habitos.map(h => h.n) : ['Treino de digitação', 'Leitura (20 min)', 'Academia']);
   W.hf = (j.habitos && j.habitos.length ? j.habitos.map(h => h.semana || 0) : [0, 0, 2]);
+  W.hid = (j.habitos || []).map(h => h.id);
   W.cfOn = !!(j.cf && j.cf.handle); W.cfH = (j.cf && j.cf.handle) || ''; W.cfM = (j.cf && j.cf.meta) || 3;
   W.duoOn = !!(j.duo && j.duo.usuario); W.duoU = (j.duo && j.duo.usuario) || '';
   W.disc = (j.disciplinas && j.disciplinas.length ? j.disciplinas : [{d:'', n:''}, {d:'', n:''}]).map(d => ({...d, n1: d.n1 || meio(ini, fim, .45), n2: d.n2 || meio(ini, fim, .95)}));
@@ -269,7 +275,7 @@ function abreDisciplinas(nova){   // nova = {d, n}: disciplina sugerida (ex.: um
 }
 async function salvaW(tour){
   const jogador = {configurado:true, nome:W.nome, nick:W.nick, tags:W.tags, semestre:{ini:W.ini, fim:W.fim},
-    disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n, n1:d.n1, n2:d.n2})), habitos:habsJSON(W.habs, W.hf), cf: W.cfOn ? {handle:W.cfH, meta:W.cfM} : null, duo: W.duoOn ? {usuario:W.duoU} : null};
+    disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n, n1:d.n1, n2:d.n2})), habitos:habsJSON(W.habs, W.hf, W.hid), cf: W.cfOn ? {handle:W.cfH, meta:W.cfM} : null, duo: W.duoOn ? {usuario:W.duoU} : null};
   if(window.HJ_TEMP && !(await HJ_TEMP.antesDeTrocar(avaliacoesTxt()))){ W.err = 'Não salvou: a temporada atual precisa ser guardada antes de trocar.'; desenhaW(); return; }
   try { await post('/api/config', {jogador, avaliacoes: avaliacoesTxt()}); await recarrega(); }
   catch(e){ W.err = 'Não salvou: ' + e.message; desenhaW(); return; }
@@ -285,8 +291,8 @@ document.addEventListener('click', e => {
   const av = q('[data-wzav]'); if(av){ coleta(); W.av = av.dataset.wzav; desenhaW(); return; }
   if(q('[data-wzadd]')){ coleta(); const n = W.disc.length; W.disc.push({d:'', n:'', n1:meio(W.ini, W.fim, .45), n2:meio(W.ini, W.fim, .95)}); desenhaW(); const i = document.getElementById('wz-d-' + n); if(i) i.focus(); return; }
   const dl = q('[data-wzdel]'); if(dl){ coleta(); W.disc.splice(+dl.dataset.wzdel, 1); if(!W.disc.length) W.disc.push({d:'', n:'', n1:meio(W.ini, W.fim, .45), n2:meio(W.ini, W.fim, .95)}); desenhaW(); return; }
-  if(q('[data-wzhadd]')){ coleta(); W.habs.push(''); W.hf.push(0); desenhaW(); const i = document.getElementById('wz-h-' + (W.habs.length - 1)); if(i) i.focus(); return; }
-  const hd = q('[data-wzhdel]'); if(hd){ coleta(); W.habs.splice(+hd.dataset.wzhdel, 1); W.hf.splice(+hd.dataset.wzhdel, 1); desenhaW(); return; }
+  if(q('[data-wzhadd]')){ coleta(); W.habs.push(''); W.hf.push(0); W.hid.push(''); desenhaW(); const i = document.getElementById('wz-h-' + (W.habs.length - 1)); if(i) i.focus(); return; }
+  const hd = q('[data-wzhdel]'); if(hd){ coleta(); W.habs.splice(+hd.dataset.wzhdel, 1); W.hf.splice(+hd.dataset.wzhdel, 1); W.hid.splice(+hd.dataset.wzhdel, 1); desenhaW(); return; }
   if(e.target.id === 'wz-duo'){ document.getElementById('wz-duou').disabled = !e.target.checked; if(e.target.checked) document.getElementById('wz-duou').focus(); return; }
   if(e.target.id === 'wz-cf'){ ['wz-cfh','wz-cfm'].forEach(id => document.getElementById(id).disabled = !e.target.checked); if(e.target.checked) document.getElementById('wz-cfh').focus(); return; }
   if(q('[data-wzsair]')){ document.getElementById('wz').remove(); W.editar = false; return; }
@@ -440,7 +446,7 @@ tab = t => {
 let CF2 = null;   // rascunho; null = sem edição em andamento
 function rascunhoCfg(){
   const j = CTX.JOG;
-  return CF2 || (CF2 = {nome:j.nome || '', nick:j.nick || '', habs:(j.habitos || []).map(h => h.n), hf:(j.habitos || []).map(h => h.semana || 0), datas:j.datas === 'mdy' ? 'mdy' : 'dmy', cfOn:!!(j.cf && j.cf.handle), cfH:(j.cf && j.cf.handle) || '', cfM:(j.cf && j.cf.meta) || 3, duoOn:!!(j.duo && j.duo.usuario), duoU:(j.duo && j.duo.usuario) || '', gh:(j.github && j.github.usuario) || '',
+  return CF2 || (CF2 = {nome:j.nome || '', nick:j.nick || '', habs:(j.habitos || []).map(h => h.n), hf:(j.habitos || []).map(h => h.semana || 0), hid:(j.habitos || []).map(h => h.id), datas:j.datas === 'mdy' ? 'mdy' : 'dmy', cfOn:!!(j.cf && j.cf.handle), cfH:(j.cf && j.cf.handle) || '', cfM:(j.cf && j.cf.meta) || 3, duoOn:!!(j.duo && j.duo.usuario), duoU:(j.duo && j.duo.usuario) || '', gh:(j.github && j.github.usuario) || '',
     tags:Object.fromEntries(TIPOS.filter(t => !t.fixo).map(t => [t.k, (j.tags && j.tags[t.k]) || tagPadrao(t.k)])), err:'', novo:''});
 }
 /* contribuições recompensadas (#23): o servidor confere no GitHub as issues do jogador fechadas como resolvidas */
@@ -547,8 +553,8 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('click', async e => {
   const q = s => e.target.closest(s);
-  if(q('[data-cfghadd]')){ const c = rascunhoCfg(), n = c.novo.trim(); if(n){ c.habs.push(n); c.hf.push(0); c.novo = ''; } render(); const i = document.getElementById('cfg-novo'); if(i) i.focus(); return; }
-  const hd = q('[data-cfghdel]'); if(hd){ const c = rascunhoCfg(); c.habs.splice(+hd.dataset.cfghdel, 1); c.hf.splice(+hd.dataset.cfghdel, 1); render(); return; }
+  if(q('[data-cfghadd]')){ const c = rascunhoCfg(), n = c.novo.trim(); if(n){ c.habs.push(n); c.hf.push(0); c.hid.push(''); c.novo = ''; } render(); const i = document.getElementById('cfg-novo'); if(i) i.focus(); return; }
+  const hd = q('[data-cfghdel]'); if(hd){ const c = rascunhoCfg(); c.habs.splice(+hd.dataset.cfghdel, 1); c.hf.splice(+hd.dataset.cfghdel, 1); c.hid.splice(+hd.dataset.cfghdel, 1); render(); return; }
   if(q('[data-wzdiscabre]')){ abreDisciplinas(); return; }
   if(q('[data-cfgreset]')){ CF2 = null; render(); return; }
   if(!q('[data-cfgsave]')) return;
@@ -562,7 +568,7 @@ document.addEventListener('click', async e => {
     : c.gh.trim() && !/^[A-Za-z0-9-]{1,39}$/.test(c.gh.trim().replace(/^@/, '')) ? 'Usuário do GitHub inválido.'
     : vs.some(x => !x) || new Set(vs).size !== vs.length ? 'Cada tag precisa de um nome diferente.' : '';
   if(c.err){ render(); return; }
-  const jogador = {...CTX.JOG, nome:c.nome.trim(), nick, datas:c.datas, tags, habitos:habsJSON(c.habs, c.hf), cf: c.cfOn ? {handle:c.cfH.trim(), meta} : null, duo: c.duoOn ? {usuario:c.duoU.trim().replace(/^@/, '')} : null, github: c.gh.trim() ? {usuario:c.gh.trim().replace(/^@/, '')} : null};
+  const jogador = {...CTX.JOG, nome:c.nome.trim(), nick, datas:c.datas, tags, habitos:habsJSON(c.habs, c.hf, c.hid), cf: c.cfOn ? {handle:c.cfH.trim(), meta} : null, duo: c.duoOn ? {usuario:c.duoU.trim().replace(/^@/, '')} : null, github: c.gh.trim() ? {usuario:c.gh.trim().replace(/^@/, '')} : null};
   try { await post('/api/config', {jogador}); await recarrega(); } catch(err){ c.err = 'Não salvou: ' + err.message; render(); return; }
   CF2 = null; render(); toast('Salvo <small>os hábitos novos aparecem na Lista</small>');
 });
