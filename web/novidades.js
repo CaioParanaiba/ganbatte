@@ -15,6 +15,11 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.6-beta1", "nome": "atualização das expedições", "data": "2026-10-13",
+   "resumo": "A caçada inteira pode ter um prazo, além do prazo de cada etapa.",
+   "itens": [
+     {"ic": "alvo", "t": "Prazo da caçada", "d": "Ao criar ou editar uma caçada, dá para escolher um prazo para ela toda. Ele aparece na Lista, nos marcos e no cronograma das Expedições, fica vermelho quando vence com etapas abertas e avisa quando alguma etapa tem prazo depois dele. Uma caçada com prazo próximo sobe na Lista. É só para organizar: o XP continua pelo prazo de cada etapa. Ideia de luy121314 (#54)."}
+   ]},
   {"versao": "0.6.5", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.5",
    "resumo": "Correções da 0.6.4: a loja volta a salvar, o nível do Duolingo segue a sua ofensiva, os hábitos não perdem mais o histórico e as compras feitas com a Jenny que o rebalanceamento tirou voltam para a loja.",
    "itens": [

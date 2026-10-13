@@ -4,7 +4,7 @@
  * Lista: o bloco de cada caçada, as etiquetas de caçada e de expedição nas tarefas, o campo "caçada" do formulário e as teclas
  * N (o formulário numa janela, de qualquer aba) e C (uma caçada inteira, uma etapa por linha).
  * Aba Expedições: cinco formas de ver a mesma expedição (cards, trilha, quadro, foco, cronograma); a escolhida fica neste navegador.
- * Grava em estado.json: cacadas {nome: {n, exp, criada, fim, bonus}} e expedicoes {nome: {n, ic, sub, ini, fim, bonus}}.
+ * Grava em estado.json: cacadas {nome: {n, exp, criada, fim, bonus, prazo}} e expedicoes {nome: {n, ic, sub, ini, fim, bonus}}.
  * As etapas são linhas normais do todo.txt com +cac.nome; as tarefas soltas de uma expedição levam +exp.nome.
  */
 (function(){
@@ -117,6 +117,7 @@ button.x-stn{cursor:pointer}
 .x-gt .br{position:absolute;top:9px;height:12px;border-radius:6px;background:color-mix(in srgb,var(--aura) 28%,transparent);border:1px solid color-mix(in srgb,var(--aura) 55%,transparent)}
 .x-gt .br.ok{background:color-mix(in srgb,var(--aura) 60%,transparent)}
 .x-gt .pt{position:absolute;top:8px;width:14px;height:14px;border-radius:50%;transform:translateX(-50%);border:2px solid var(--amb);background:var(--panel);cursor:pointer;padding:0}
+.x-gt .pz{position:absolute;top:2px;bottom:2px;width:3px;border-radius:2px;transform:translateX(-50%);background:var(--amb)} .x-gt .pz.late{background:var(--red)}
 .x-gt .pt.f{background:var(--aura);border-color:var(--aura)} .x-gt .pt.late{border-color:var(--red)} .x-gt span.pt{cursor:default}
 .x-gt .hj{position:absolute;top:-24px;bottom:-4px;border-left:2px solid var(--volt);pointer-events:none}
 .x-gt .hj span{position:absolute;top:13px;left:4px;font:700 10px var(--f-mono);color:var(--volt)}
@@ -166,6 +167,10 @@ async function reabreE(raw){
 const rowE = (t, S) => t.done && !t.n ? `<li class="l-task done" style="--c:${NC(HJ.nenDe(t))}">${ckDone(t)}<div class="l-body"><span class="l-txt">${esc(t.txt)}</span></div><div class="l-right"><span class="l-xp">+${xpDa(t, S)}</span></div></li>`
   : rowL(t, S, t.done ? xpDa(t, S) : undefined);
 const addIn = (alvo, ph) => `<form class="x-add" data-xadd="${esc(alvo)}" autocomplete="off"><input aria-label="${esc(ph)}" placeholder="${esc(ph)}"><button class="btn" type="submit">+</button></form>`;
+/* prazo da caçada (0.6.6, #54): só para organizar, não muda o XP; some quando a caçada fecha */
+const prazoTxt = d => { const k = HJ.dias(HOJE, d); return k < 0 ? `prazo vencido há ${-k}d` : 'prazo ' + dueTxt(d); };
+const prazoTag = c => !c.prazo || c.fim ? '' : `<span class="l-tag${c.abertas.length ? (c.prazo < HOJE ? ' l-late' : c.prazo === HOJE ? ' l-hoje' : '') : ''}" title="prazo da caçada">${prazoTxt(c.prazo)}</span>`;
+const depoisTag = c => c.depois ? `<span class="l-tag l-late" title="essas etapas têm prazo depois do prazo da caçada">${c.depois} etapa${c.depois > 1 ? 's' : ''} depois do prazo</span>` : '';
 const fechaBtn = (c, S) => `<button type="button" class="btn" data-cfecha="${esc(c.slug)}">${c.exp ? `fechar marco · +${HJ.bonusMarco(c)} XP` : 'fechar caçada'}</button>`;
 
 /* ---------- a linha de uma etapa nova (campo "+ etapa" e janela da caçada) ----------
@@ -197,11 +202,11 @@ function blocosLista(S){
     const e = c.exp && g(S).exp[c.exp], tudo = !c.abertas.length, fold = UI.cfold && UI.cfold[c.slug];
     const h = `<li class="l-cacb${tudo ? ' fim' : ''}"><div class="l-cach">
       <button type="button" class="l-cact" data-cfold="${esc(c.slug)}" aria-expanded="${!fold}"><span class="x-alvo">${tudo ? '✓' : ic('alvo')}</span>
-        <span class="l-cacn"><small>caçada</small>${esc(c.n)}${e ? `<span class="l-tag x-texp">${ic(e.ic)}${esc(e.n)} · marco ${e.marcos.indexOf(c) + 1}</span>` : ''}</span></button>
+        <span class="l-cacn"><small>caçada</small>${esc(c.n)}${e ? `<span class="l-tag x-texp">${ic(e.ic)}${esc(e.n)} · marco ${e.marcos.indexOf(c) + 1}</span>` : ''}${prazoTag(c)}</span></button>
       <span class="l-cacr">${vida(c)}${tudo ? 'todas feitas' : `faltam ${c.abertas.length} de ${c.etapas.length}`}</span>
       <span class="l-cacr"><button type="button" class="l-ib" data-cedit="${esc(c.slug)}" title="editar a caçada" aria-label="editar a caçada ${esc(c.n)}">✎</button><button type="button" class="l-ib" data-cfold="${esc(c.slug)}" aria-label="${fold ? 'abrir' : 'recolher'}">${fold ? '▸' : '▾'}</button></span></div>
       ${fold ? '' : `<ul class="l-list l-cacl">${c.abertas.slice().sort(porDue).map(t => rowL(t, S)).join('')}</ul>
-      <div class="l-cacf">${c.feitas ? `<span>${c.feitas} feita${c.feitas > 1 ? 's' : ''}</span>` : ''}<button type="button" class="go" data-cetapa="${esc(c.slug)}">+ etapa</button>${tudo ? fechaBtn(c, S) : ''}${c.fim && c.abertas.length ? '<span>reaberta: feche de novo quando terminar</span>' : ''}</div>`}</li>`;
+      <div class="l-cacf">${depoisTag(c)}${c.feitas ? `<span>${c.feitas} feita${c.feitas > 1 ? 's' : ''}</span>` : ''}<button type="button" class="go" data-cetapa="${esc(c.slug)}">+ etapa</button>${tudo ? fechaBtn(c, S) : ''}${c.fim && c.abertas.length ? '<span>reaberta: feche de novo quando terminar</span>' : ''}</div>`}</li>`;
     return {due:c.due, prova:null, h, x:c.abertas.reduce((s, t) => s + valeL(t, S).x, 0)};
   });
 }
@@ -281,17 +286,19 @@ function abreC(exp){
   janela('xc', 'Nova caçada', `<p>Uma tarefa grande dividida em etapas. Na Lista, as etapas ficam juntas, com uma barra de quantas faltam; cada uma vale o XP normal dela. Numa expedição, a caçada vira um <b>marco</b>, e fechá-la dá bônus.</p>
     <div class="wz-f"><label>nome<input id="xc-n" maxlength="80" placeholder="ex.: Trabalho da mãe"></label><label>expedição${expSelect('xc-x', exp || '')}</label>
       <label>tipo das etapas<select id="xc-t">${tipos.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></label>
-      <label>disciplina<select id="xc-d"><option value="">nenhuma</option>${BOSSES.map(b => `<option>${esc(b.d)}</option>`).join('')}</select></label></div>
+      <label>disciplina<select id="xc-d"><option value="">nenhuma</option>${BOSSES.map(b => `<option>${esc(b.d)}</option>`).join('')}</select></label>
+      <label>prazo da caçada (opcional)<input id="xc-p" type="date"><small class="h">Só organiza: o XP continua pelo prazo de cada etapa.</small></label></div>
     <label>etapas, uma por linha<textarea id="xc-e" placeholder="Pesquisar o tema&#10;Escrever a introdução&#10;Montar os slides amanhã&#10;Revisar com ela 20/10"></textarea><small class="h">"hoje", "amanhã", "sexta" ou uma data no fim da linha viram o prazo da etapa. Ctrl+Enter cria.</small></label>`, 'criar caçada');
 }
 async function criaC(){
   const n = document.getElementById('xc-n').value.trim(), exp = document.getElementById('xc-x').value || null, tipo = document.getElementById('xc-t').value, disc = document.getElementById('xc-d').value;
+  const prazo = document.getElementById('xc-p').value || null;
   const ls = document.getElementById('xc-e').value.split('\n').map(s => s.trim()).filter(Boolean);
   if(!n) return erro('xc', 'Dê um nome para a caçada.');
   if(!ls.length) return erro('xc', 'Escreva pelo menos uma etapa.');
   const slug = novoSlug(n, 'cacadas');
   try {
-    Object.assign(meta('cacadas', slug), {n:n.slice(0, 80), exp, criada:HOJE}); await salva();
+    Object.assign(meta('cacadas', slug), {n:n.slice(0, 80), exp, criada:HOJE}, prazo ? {prazo} : {}); await salva();
     for(const l of ls) await post('/api/add', {text: linhaEtapa(l, {grupo:'+cac.' + slug, tipo, disc})});
     await recarrega();
   } catch(err){ return erro('xc', 'Não criou: ' + err.message); }
@@ -299,7 +306,8 @@ async function criaC(){
 }
 function abreEditC(slug){
   const c = g(estado()).cac[slug]; if(!c) return;
-  janela('xe', 'Editar caçada', `<div class="wz-f"><label>nome<input id="xe-n" maxlength="80" value="${esc(c.n)}"></label><label>expedição${expSelect('xe-x', c.exp || '')}</label></div>
+  janela('xe', 'Editar caçada', `<div class="wz-f"><label>nome<input id="xe-n" maxlength="80" value="${esc(c.n)}"></label><label>expedição${expSelect('xe-x', c.exp || '')}</label>
+      <label>prazo da caçada (opcional)<input id="xe-p" type="date" value="${esc(c.prazo || '')}"><small class="h">Só organiza: o XP continua pelo prazo de cada etapa.</small></label></div>
     <p>As etapas continuam com <span class="mono">+cac.${esc(slug)}</span> no todo.txt; o nome aqui é só o que aparece no jogo.${c.fim ? ` Fechada em ${ddmm(c.fim)}.` : ''}</p>`, 'salvar');
   X.edita = slug;
 }
@@ -307,6 +315,7 @@ async function salvaEditC(){
   const n = document.getElementById('xe-n').value.trim(); if(!n) return erro('xe', 'O nome não pode ficar vazio.');
   const c = g(estado()).cac[X.edita], m = meta('cacadas', X.edita);
   Object.assign(m, {n:n.slice(0, 80), exp:document.getElementById('xe-x').value || null, criada:m.criada || (c && c.criada) || HOJE});
+  const prazo = document.getElementById('xe-p').value; if(prazo) m.prazo = prazo; else delete m.prazo;
   try { await salva(); } catch(err){ return erro('xe', 'Não salvou: ' + err.message); }
   fechaJanela(); render(); toast('Caçada salva');
 }
@@ -358,7 +367,7 @@ function etapas(c, S, lim){
 function marco(e, c, i, S, sempre){
   const agora = c === e.atual, aberto = sempre || X.marco === c.slug || (agora && X.marco === undefined);
   return `<div class="x-mrc${c.fim ? ' ok' : agora ? ' agora' : ''}"><div class="x-mrch"><span class="x-n">${c.fim ? '✓' : i + 1}</span><b>${esc(c.n)}</b>
-      ${c.fim ? `<span class="pill">fechado ${ddmm(c.fim)}</span><span class="pill bon">+${c.bonus} XP</span>` : `<span class="pill">${c.feitas}/${c.etapas.length} etapas</span>${agora ? '<span class="pill bon">marco atual</span>' : ''}`}
+      ${c.fim ? `<span class="pill">fechado ${ddmm(c.fim)}</span><span class="pill bon">+${c.bonus} XP</span>` : `<span class="pill">${c.feitas}/${c.etapas.length} etapas</span>${agora ? '<span class="pill bon">marco atual</span>' : ''}${prazoTag(c) || depoisTag(c) ? `<span class="l-tags">${prazoTag(c)}${depoisTag(c)}</span>` : ''}`}
       <button type="button" class="l-ib" data-cedit="${esc(c.slug)}" title="editar o marco" aria-label="editar ${esc(c.n)}">✎</button>${sempre ? '' : `<button type="button" class="go" data-xmarco="${esc(c.slug)}">${aberto ? 'recolher' : 'abrir'}</button>`}</div>
     ${c.fim ? '' : `<div class="x-pbar"><i style="width:${pct(c.feitas, c.etapas.length)}%"></i></div>`}
     ${aberto ? `<div class="x-corpo">${etapas(c, S)}</div>` : ''}</div>`;
@@ -391,7 +400,7 @@ function vTrilha(L, e, S){
   const sel = e.marcos.find(c => c.slug === X.marco) || e.atual || e.marcos[e.marcos.length - 1];
   const st = e.marcos.map(c => { const agora = c === e.atual;
     return `<button type="button" class="x-stn${c.fim ? ' ok' : agora ? ' agora' : ''}${c === sel ? ' sel' : ''}" data-xmarco="${esc(c.slug)}">${agora ? '<span class="eu">você está aqui</span>' : ''}<span class="dot">${c.fim ? '✓' : ic('alvo')}</span>
-      <b>${esc(c.n)}</b><small>${c.fim ? `fechado ${ddmm(c.fim)} · +${c.bonus} XP` : `${c.feitas}/${c.etapas.length} etapas${agora ? '' : ' · depois'}`}</small></button>`; }).join('');
+      <b>${esc(c.n)}</b><small>${c.fim ? `fechado ${ddmm(c.fim)} · +${c.bonus} XP` : `${c.feitas}/${c.etapas.length} etapas${c.prazo ? ' · prazo ' + ddmm(c.prazo) : ''}${agora ? '' : ' · depois'}`}</small></button>`; }).join('');
   return `${seletor(L, e)}<div class="card"><h2><span class="c">~/</span>mapa · ${esc(e.n)}<span class="sub" style="margin-left:auto">clique numa parada</span></h2>
       <div class="x-trailw"><div class="x-trail"><div class="x-stn ini"><span class="dot">${ic('flag')}</span><b>Partida</b><small>${ddmm(e.ini)}</small></div>${st}
         <button type="button" class="x-stn fim" data-xmarconovo="${esc(e.slug)}" title="acrescentar um marco"><span class="dot">${ic('bau')}</span><b>Fim</b><small>+${HJ.bonusExp(e)} XP hoje · + marco</small></button></div></div></div>
@@ -405,7 +414,7 @@ function vQuadro(L, e, S){
   const cols = e.marcos.map((c, i) => { const ver = X.verFeitas[c.slug], fe = c.etapas.filter(t => t.done);
     if(c.fim && !c.abertas.length && !ver) return `<div class="x-kcol ok"><div class="x-kh"><span class="x-k">marco ${i + 1} · fechado</span><b>${esc(c.n)}</b><small>${ddmm(c.fim)} · +${c.bonus} XP · ${c.etapas.length} etapa${c.etapas.length === 1 ? '' : 's'}</small><button type="button" class="go" data-xfeitas="${esc(c.slug)}" style="text-align:left">ver etapas</button></div></div>`;
     return `<div class="x-kcol${c === e.atual ? ' agora' : ''}${c.fim && !c.abertas.length ? ' ok' : ''}"><div class="x-kh"><span class="x-k">marco ${i + 1}${c === e.atual ? ' · atual' : ''}</span><b>${esc(c.n)}</b>
-        <span class="x-vida" style="width:100%">${c.etapas.map((t, j) => `<i class="${j >= c.feitas ? 'on' : ''}"></i>`).join('')}</span><small>${c.feitas}/${c.etapas.length} etapas${c.fim ? '' : ` · fechar dá +${HJ.bonusMarco(c)} XP`}</small></div>
+        <span class="x-vida" style="width:100%">${c.etapas.map((t, j) => `<i class="${j >= c.feitas ? 'on' : ''}"></i>`).join('')}</span><small>${c.feitas}/${c.etapas.length} etapas${c.fim ? '' : ` · fechar dá +${HJ.bonusMarco(c)} XP`}</small>${prazoTag(c) || depoisTag(c) ? `<span class="l-tags">${prazoTag(c)}${depoisTag(c)}</span>` : ''}</div>
       <div class="x-kbody">${c.abertas.slice().sort(porDue).map(t => cartao(t, S)).join('')}${ver || !c.abertas.length ? fe.map(t => cartao(t, S)).join('') : ''}
         ${fe.length && c.abertas.length ? `<button type="button" class="go" data-xfeitas="${esc(c.slug)}">${ver ? 'esconder as feitas' : `${fe.length} feita${fe.length > 1 ? 's' : ''}`}</button>` : ''}
         ${!c.abertas.length && !c.fim ? fechaBtn(c, S) : ''}${c.fim && !c.abertas.length ? `<button type="button" class="go" data-xfeitas="${esc(c.slug)}">recolher</button>` : addIn('cac:' + c.slug, '+ etapa')}</div></div>`; }).join('');
@@ -430,6 +439,7 @@ function vCrono(L, e, S){
     return `<div class="lb"><span class="x-n" style="width:20px;height:20px;font-size:10px;${c.fim ? 'background:var(--aura);color:var(--bg)' : ''}">${c.fim ? '✓' : i + 1}</span>${esc(c.n)}<small>${c.feitas}/${c.etapas.length}</small></div>
       <div class="tr">${b >= ini ? `<span class="br${c.fim ? ' ok' : ''}" style="left:${l}%;width:${w}%"></span>` : ''}${c.etapas.filter(t => { const d = t.done || t.due; return d && d >= ini && d <= fimJ; }).map(t => { const d = t.done || t.due, k = `pt${t.done ? ' f' : t.due < HOJE ? ' late' : ''}`, tt = `${esc(t.txt)} · ${t.done ? 'feita ' + ddmm(t.done) : 'prazo ' + ddmm(t.due)}`;
         return !t.done || t.n ? `<button type="button" class="${k}" data-ln="${t.n}" data-l="${t.done ? 'reopen' : 'done'}" style="left:${x(d)}%" title="${tt} (clique para ${t.done ? 'reabrir' : 'concluir'})" aria-label="${tt}"></button>` : `<button type="button" class="${k}" data-xreab="${esc(t.raw)}" style="left:${x(d)}%" title="${tt} (clique para reabrir)" aria-label="${tt}"></button>`; }).join('')}
+        ${c.prazo && !c.fim && c.prazo >= ini && c.prazo <= fimJ ? `<span class="pz${c.abertas.length && c.prazo < HOJE ? ' late' : ''}" style="left:${x(c.prazo)}%" title="prazo da caçada: ${ddmm(c.prazo)}"></span>` : ''}
         ${i === 0 ? `<span class="hj" style="left:${x(HOJE)}%"><span>hoje</span></span>` : ''}</div>`; };
   const abertas = e.marcos.flatMap(c => c.abertas).concat(e.soltas.filter(t => !t.done)).sort(porDue), dom = HJ.addD(HOJE, 6 - HJ.dow(HOJE));
   const grupos = [['Atrasadas', t => t.due && t.due < HOJE], ['Esta semana', t => t.due && t.due >= HOJE && t.due <= dom], ['Próxima semana', t => t.due && t.due > dom && t.due <= HJ.addD(dom, 7)], ['Depois', t => t.due && t.due > HJ.addD(dom, 7)], ['Sem data', t => !t.due]];

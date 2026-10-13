@@ -169,7 +169,9 @@ aceita `hoje`, `amanha` e `+3`; já `15/10` é lido no formato do jogador e pode
   `+cac.trabalho-mae`). Na Lista as etapas aparecem juntas, com uma barra de quantas faltam; cada uma vale o XP normal.
   NOME em minúsculas, sem acento nem espaço (use `-`). As caçadas que já existem estão em `estado` → `cacadas` (no
   `GET /api/jogo`): use o NOME de lá. Uma caçada pode ser um **marco** de uma **expedição** (projeto longo, em
-  `estado` → `expedicoes`); fechar o marco dá bônus, mas quem fecha é o jogador, na página.
+  `estado` → `expedicoes`); fechar o marco dá bônus, mas quem fecha é o jogador, na página. A caçada pode ter um
+  **prazo geral** (`prazo`, data `AAAA-MM-DD`, em `estado` → `cacadas`): só organiza (Lista e cronograma), não muda o XP,
+  e quem define é o jogador, ao criar ou editar a caçada. Ao sugerir etapas, não passe desse prazo.
 - `+exp.NOME` (opcional): tarefa solta de uma expedição, que não é de nenhum marco.
 - **não crie nem edite** linhas com `rec:` (hábitos, Codeforces e Duolingo: o servidor cria todo dia).
 - texto curto, começando por verbo (Revisar, Fazer, Ler, Entregar).

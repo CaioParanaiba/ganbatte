@@ -479,7 +479,7 @@ const bonusExp = e => EXP_SEMANA * Math.min(e.semAtivas, 20);
 function grupos(C, feitas, abertas){
   const MC = C.EST.cacadas || {}, ME = C.EST.expedicoes || {}, cac = {}, exp = {};
   const nc = s => { if(cac[s]) return cac[s]; const m = MC[s] || {};
-    return cac[s] = {slug:s, n:m.n || nomeDeSlug(s), exp:m.exp || null, criada:m.criada || '', fim:m.fim || null, bonus:+m.bonus || 0, etapas:[]}; };
+    return cac[s] = {slug:s, n:m.n || nomeDeSlug(s), exp:m.exp || null, criada:m.criada || '', fim:m.fim || null, bonus:+m.bonus || 0, prazo:m.prazo || null, etapas:[]}; };
   const ne = s => { if(exp[s]) return exp[s]; const m = ME[s] || {};
     return exp[s] = {slug:s, n:m.n || nomeDeSlug(s), ic:m.ic || 'island', sub:m.sub || '', ini:m.ini || '', fim:m.fim || null, bonus:+m.bonus || 0, marcos:[], soltas:[]}; };
   for(const s in MC) nc(s);
@@ -488,7 +488,9 @@ function grupos(C, feitas, abertas){
   for(const c of Object.values(cac)){
     c.abertas = c.etapas.filter(t => !t.done); c.feitas = c.etapas.length - c.abertas.length;
     if(!c.criada) c.criada = c.etapas.map(t => t.cri || t.done).filter(Boolean).sort()[0] || C.HOJE;
-    c.due = c.abertas.map(t => t.due).filter(Boolean).sort()[0] || null;
+    // prazo da caçada (0.6.6, #54): só organiza (Lista, cronograma, aviso); o XP continua pelo prazo de cada etapa
+    c.due = c.abertas.map(t => t.due).concat(c.fim ? [] : [c.prazo]).filter(Boolean).sort()[0] || null;
+    c.depois = c.prazo && !c.fim ? c.abertas.filter(t => t.due && t.due > c.prazo).length : 0;   // etapas com prazo depois do da caçada
     if(c.exp) ne(c.exp).marcos.push(c);
   }
   const seg = addD(C.HOJE, -dow(C.HOJE));
