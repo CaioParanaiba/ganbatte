@@ -633,8 +633,8 @@ function estado(C){
   const fraco = fracoSem(HOJE), pausa = fer(HOJE), frAgora = pausa ? -1 : fraco;   // frAgora: o atributo que rende ×1,5 hoje (nenhum nas férias)
   const ws = addD(HOJE,-dow(HOJE)); let missDias = 0; for(let i=0;i<7;i++){ const d = addD(ws,i); if(!fer(d) && feitas.some(t => t.done === d && nenDe(t) === fraco)) missDias++; }
   // recompensa da missão: cada semana com 3+ dias do atributo da semana dá 1 feitiço à escolha
-  let missoes = 0;
-  if(first) for(let w = addD(first,-dow(first)); w <= HOJE; w = addD(w,7)){ const fr = fracoSem(w); let k = 0; for(let i=0;i<7;i++){ const d = addD(w,i); if(d <= HOJE && !fer(d) && feitas.some(t => t.done === d && nenDe(t) === fr)) k++; } if(k >= 3) missoes++; }
+  let missoes = 0; const missaoDias = new Set();   // missaoDias: os dias que contaram para a missão da sua semana (resumo do grupo)
+  if(first) for(let w = addD(first,-dow(first)); w <= HOJE; w = addD(w,7)){ const fr = fracoSem(w); let k = 0; for(let i=0;i<7;i++){ const d = addD(w,i); if(d <= HOJE && !fer(d) && feitas.some(t => t.done === d && nenDe(t) === fr)){ k++; missaoDias.add(d); } } if(k >= 3) missoes++; }
   const cfHoje = cfDia[HOJE] || 0;
   const rot = abertas.filter(isRec).map(t => ({...t, ok:false})).concat(feitas.filter(t => isRec(t) && t.done === HOJE && t.raw).map(t => ({...t, ok:true})));
   const golpes = abertas.filter(t => !isRec(t)).map(t => {
@@ -676,7 +676,7 @@ function estado(C){
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
   return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:T, nv:NV.hoje, duoDe, hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
     proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto)), rec, jenny: ganho - (EST.spent||0),
-    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, grupos: G, gXP, fonteDia, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
+    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, grupos: G, gXP, fonteDia, missaoDias, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
 }
 /* conquistas 000–099: regras fixas, conferidas pelo motor. Gerais (001–059, 090–099) e, para cada disciplina do plano
@@ -981,10 +981,29 @@ function capsula(api){
     compras:C.EST.compras, equipado:C.EST.equip};
 }
 
+/* ---------- resumo para o grupo (#37) ----------
+   Um dia por linha, só com o que pode sair da máquina no modo em grupo (#16): o XP do dia (o número), os hábitos do grupo
+   (os que o jogo mede sozinho: Codeforces e Duolingo, se ligados) e se o dia contou para a missão da semana. Nunca leva
+   texto de tarefa, tag, disciplina nem os hábitos pessoais. É o formato do envio ao servidor do grupo (protocolo 1); até
+   lá, o jogador baixa o arquivo e manda ao host, para calibrar a Torre Trick com dados reais. */
+const HAB_GRUPO = ['cf', 'duo'];
+function resumoGrupo(C, S){
+  const {HOJE, TEMP, JOG} = C, J = JOG || {}, ate = HOJE < fimTemporada(TEMP) ? HOJE : fimTemporada(TEMP);
+  const cfDia = (C.D.cf && C.D.cf.por_dia) || {};
+  const liga = {cf: !!(J.cf && J.cf.handle), duo: !!(J.duo && J.duo.usuario)}, duo = liga.duo ? diasHab(C, 'duo') : new Set();
+  const habitos = HAB_GRUPO.filter(h => liga[h]), fer = feriasDe(TEMP), linhas = [];
+  for(let d = TEMP.ini; d <= ate; d = addD(d, 1)){
+    const hab = {}; if(liga.cf) hab.cf = cfDia[d] || 0; if(liga.duo) hab.duo = duo.has(d) ? 1 : 0;
+    linhas.push({dia:d, xp:S.xpDia[d] || 0, hab, missao:S.missaoDias.has(d), ferias:!!fer(d)});
+  }
+  return {formato:1, protocolo:1, gerado:HOJE, versao:(C.SRV && C.SRV.versao) || '', jogador:J.nick || J.nome || '',
+    temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
+}
+
 window.HJ = {HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
   MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, feriasDe,
-  FONTES, lojaTotal, relatorio, relatorioCSV, TEMA, nomeTemporada, fimTemporada, capsula};
+  FONTES, lojaTotal, relatorio, relatorioCSV, TEMA, nomeTemporada, fimTemporada, capsula, HAB_GRUPO, resumoGrupo};
 })();

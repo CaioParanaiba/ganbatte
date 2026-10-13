@@ -39,7 +39,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/conquistas {acao, ...}        conquistas da IA: criar {itens} | resgatar {no, como, j|k} | descartar {no}
   GET  /api/atualizacao[?agora]           versão instalada e as mais novas publicadas no GitHub (confere a cada 6 h; ?agora = na hora)
   POST /api/atualizar {}                  baixa a versão nova (git pull ou ZIP do GitHub) e reinicia o servidor
-  POST /api/canal {canal}                 troca entre a versão normal (main) e as de teste (beta), só em cópia git, e reinicia
+  POST /api/canal {canal}                 troca entre a versão normal (main) e as de teste (beta, grupo), só em cópia git, e reinicia
 
 Todo dia o servidor cria as recorrentes de hoje (um hábito por linha, rec:ID:DATA, e as do Codeforces e do Duolingo se ligados),
 tira as que ficaram abertas de dias anteriores e conclui sozinho a do Codeforces quando a meta do dia é batida. Se a meta foi
@@ -69,7 +69,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.4-beta4"
+VERSAO = "0.6.4-beta5"
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -1168,13 +1168,16 @@ GITHUB = "https://github.com/CaioParanaiba/todo-engine"
 RAW = os.environ.get("HUNTER_RAW") or ""   # HUNTER_RAW: outro endereço, para testar; vazio = a branch do canal
 
 
+CANAIS = ("main", "beta", "grupo")   # estável, versões de teste e o modo em grupo (0.9.0-betaN)
+
+
 def canal():
-    """Branch que esta cópia segue: "beta" numa cópia git na branch beta (o autor testa as versões antes), senão "main"."""
+    """Branch que esta cópia segue: a branch atual de uma cópia git, se for um dos CANAIS; senão (ZIP, outra branch) "main"."""
     if metodo_atualizar() == "git":
         try:
             r = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, timeout=10)
-            if r.stdout.strip() == "beta":
-                return "beta"
+            if r.stdout.strip() in CANAIS:
+                return r.stdout.strip()
         except (OSError, subprocess.SubprocessError):
             pass
     return "main"
@@ -1274,10 +1277,10 @@ def api_atualizar(_):
 
 
 def api_canal(d):
-    """Versões de teste: troca a cópia git para a branch beta (ou de volta para a main) e reinicia com o código dela."""
+    """Versões de teste: troca a cópia git para outro dos CANAIS (main, beta, grupo) e reinicia com o código dela."""
     alvo = d.get("canal")
-    if alvo not in ("main", "beta"):
-        raise Erro("canal deve ser main ou beta")
+    if alvo not in CANAIS:
+        raise Erro("canal deve ser " + ", ".join(CANAIS))
     if metodo_atualizar() != "git":
         raise Erro("só dá para trocar de canal num jogo instalado com git; o instalado pelo ZIP fica na versão normal")
     if ia_lock.locked():

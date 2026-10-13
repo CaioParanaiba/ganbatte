@@ -296,5 +296,28 @@ class Temporadas(Base):
         self.assertFalse((s.DADOS / "temporadas").exists())
 
 
+class Canal(Base):
+    """Canal de atualização (#36, #46): a cópia git segue a própria branch se ela for um dos CANAIS; o resto cai na main."""
+
+    def branch(self, nome):
+        r = mock.Mock(stdout=nome + "\n")
+        return mock.patch.multiple(s, metodo_atualizar=lambda: "git", subprocess=mock.Mock(run=lambda *a, **k: r, SubprocessError=Exception))
+
+    def test_segue_a_branch(self):
+        for b in ("main", "beta", "grupo"):
+            with self.branch(b):
+                self.assertEqual(s.canal(), b)
+
+    def test_outra_branch_ou_zip_e_main(self):
+        with self.branch("minha-feature"):
+            self.assertEqual(s.canal(), "main")
+        with mock.patch.object(s, "metodo_atualizar", lambda: "zip"):
+            self.assertEqual(s.canal(), "main")
+
+    def test_troca_so_para_canal_conhecido(self):
+        with self.assertRaises(s.Erro):
+            s.api_canal({"canal": "minha-feature"})
+
+
 if __name__ == "__main__":
     unittest.main()

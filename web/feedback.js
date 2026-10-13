@@ -46,7 +46,7 @@ function sistema(){
 }
 function versao(){
   const c = window.HJ_NOV && HJ_NOV.canal && HJ_NOV.canal();
-  return VERSAO_PAGINA + (c === 'beta' ? ' (beta)' : '') + (window.HJ_DEMO ? ' (demonstração)' : '');
+  return VERSAO_PAGINA + (c && c !== 'main' ? ` (${c})` : '') + (window.HJ_DEMO ? ' (demonstração)' : '');
 }
 const corta = s => String(s || '').trim().slice(0, MAX);
 function urlIssue(){

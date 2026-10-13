@@ -1350,7 +1350,7 @@ const {MEDIA, COFRE_MES, NEN, GUARDA, SPELLS, TK, PALS, palStyle, REAIS, ALLFX, 
 let CTX = null, D, HOJE, TEMP, BOSSES, AVAL, NOTAS, PARC, INBOX, EST, COS = [];
 const SIM = new Set(), NOTAS_TXT = [];
 let OWN = new Set(), SPENT = 0, BOUGHT = {}, RESG = [], COFRE_USADO = 0;
-let TESTE = null;   // modo teste da Masadora (só no canal beta): {own, eq} só na memória desta página; ver entraTeste()
+let TESTE = null;   // modo teste da Masadora (só nos canais beta e grupo): {own, eq} só na memória desta página; ver entraTeste()
 const R = {dif:'normal'};
 const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
   avatar:'logo', lic:'l2', hud:'logo', anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
@@ -1375,10 +1375,10 @@ function sync(api){
   if(TESTE){ if(!podeTeste()) TESTE = null; else { OWN = TESTE.own; Object.assign(UI, structuredClone(TESTE.eq)); } }   // recarregou no meio do teste: continua nele
   avisoVersao(); guardaRecibos(); if(window.HJ_TEMP) HJ_TEMP.confere();   // temporada acabou: guarda a cápsula (temporadas.js)
 }
-/* modo teste da Masadora, só para quem está no canal beta: Jenny infinita para experimentar qualquer item. É temporário de
+/* modo teste da Masadora, só para quem está nos canais beta e grupo: Jenny infinita para experimentar qualquer item. É temporário de
    propósito: as compras e o que for equipado ficam só na memória desta página. Sair, recarregar a página ou voltar para
    a versão normal devolve a loja e a carteira de verdade, sem nada a mais. Feitiços e prêmios reais ficam fora (mexem no jogo). */
-const podeTeste = () => !!(CTX && CTX.SRV && CTX.SRV.canal === 'beta');
+const podeTeste = () => !!(CTX && CTX.SRV && ['beta', 'grupo'].includes(CTX.SRV.canal));
 const equipAgora = () => structuredClone({theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, title:UI.title, font:UI.font, som:UI.som, avatar:UI.avatar, lic:UI.lic, hud:UI.hud, skin:UI.skin});
 function entraTeste(){
   if(!podeTeste()) return;
@@ -1412,7 +1412,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.4-beta4';
+const VERSAO_PAGINA = '0.6.4-beta5';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1745,7 +1745,7 @@ function rMS(S){
     <div class="cats">${cats.map(([k,n]) => `<button data-cat="${k}" aria-pressed="${UI.cat===k}">${n}</button>`).join('')}</div>
     <div class="lay7"><div>${main}</div>
       <div class="side7">
-        <div class="card"><h2><span class="c">~/</span>carteira</h2><div class="wal7">${fmt(S.jenny)} J<small>${TESTE ? 'modo teste: nada fica guardado' : 'disponível'}</small></div>${podeTeste() ? `<button type="button" class="btn${TESTE ? '' : ' v'}" data-teste="${TESTE ? 0 : 1}" style="margin:8px 0 2px">${TESTE ? 'sair do modo teste' : 'modo teste: Jenny infinita'}</button><p class="sub" style="margin:4px 0 0">${TESTE ? 'Feitiços e prêmios reais ficam fora do teste.' : 'Só na versão de teste (beta). Experimente os itens sem gastar; ao sair, tudo volta como estava.'}</p>` : ''}
+        <div class="card"><h2><span class="c">~/</span>carteira</h2><div class="wal7">${fmt(S.jenny)} J<small>${TESTE ? 'modo teste: nada fica guardado' : 'disponível'}</small></div>${podeTeste() ? `<button type="button" class="btn${TESTE ? '' : ' v'}" data-teste="${TESTE ? 0 : 1}" style="margin:8px 0 2px">${TESTE ? 'sair do modo teste' : 'modo teste: Jenny infinita'}</button><p class="sub" style="margin:4px 0 0">${TESTE ? 'Feitiços e prêmios reais ficam fora do teste.' : 'Só nas versões de teste (beta e grupo). Experimente os itens sem gastar; ao sair, tudo volta como estava.'}</p>` : ''}
           <div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.contribJ ? `<div style="display:flex;justify-content:space-between" title="bugs corrigidos e ideias feitas que você abriu no GitHub (o XP delas já está no XP × 10)"><span>contribuições (${S.contrib.length})</span><b style="color:var(--ink)">+${fmt(S.contribJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></div>
         <div class="card"><h2><span class="c">~/</span>cofre do mês</h2><div class="wal7" style="font-size:22px">R$ ${fmt(cofreTotal() - COFRE_USADO)}<small>R$ ${fmt(HJx.cofreMes(EST))} por mês, acumula · usado R$ ${fmt(COFRE_USADO)}</small></div><div class="cofre"><b style="width:${pct(cofreTotal()-COFRE_USADO, cofreTotal())}%"></b></div></div>
         <div class="card"><h2><span class="c">~/</span>usando agora</h2><div class="eqlist">${eqs.map(([a,b]) => `<div><span>${a}</span><span>${esc(b)}</span></div>`).join('')}</div></div>
@@ -1920,12 +1920,15 @@ function cardBalanco(S){
       ${lin('compras registradas', r.compras.n + (r.compras.diasEntreCompras != null ? ` · uma a cada ${num(r.compras.diasEntreCompras)} dias` : ''))}
       ${lin('andares por semana', num(r.torre.andaresPorSemana))}${lin('a temporada compra da loja', `${num(r.loja.pctCompravelNaTemporada)}%`)}
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn v" data-relat="json">baixar relatório (.json)</button><button type="button" class="btn" data-relat="csv">planilha por dia (.csv)</button></div></div>`;
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn v" data-relat="json">baixar relatório (.json)</button><button type="button" class="btn" data-relat="csv">planilha por dia (.csv)</button></div>
+    <p style="margin:14px 0 8px;font-size:14px"><b>Resumo para o grupo.</b> O que o modo em grupo vai enviar ao servidor, dia a dia: o XP do dia, o Codeforces e o Duolingo (se ligados) e se o dia contou para a missão da semana. Nada de tarefas, disciplinas nem dos seus outros hábitos. Enquanto o servidor não existe, mande o arquivo ao host do grupo para calibrar a Torre Trick.</p>
+    <button type="button" class="btn" data-relat="grupo">exportar resumo para o grupo (.json)</button></div>`;
 }
 function baixaRelatorio(tipo){
-  const R = HJx.relatorio(CTX, estado()), csv = tipo === 'csv';
+  const S = estado(), csv = tipo === 'csv', grupo = tipo === 'grupo', R = grupo ? HJx.resumoGrupo(CTX, S) : HJx.relatorio(CTX, S);
   const blob = new Blob([csv ? '\ufeff' + HJx.relatorioCSV(R) : JSON.stringify(R, null, 1)], {type: csv ? 'text/csv;charset=utf-8' : 'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `hunter-balanceamento-${HOJE}.${csv ? 'csv' : 'json'}`;
+  const nome = grupo ? `hunter-grupo-${(R.jogador || 'jogador').replace(/[^\w-]+/g, '_')}-${HOJE}` : `hunter-balanceamento-${HOJE}`;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${nome}.${csv ? 'csv' : 'json'}`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 /* ---------- Regras (o que o jogo considera) ---------- */

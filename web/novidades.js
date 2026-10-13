@@ -13,6 +13,12 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.4-beta5", "nome": "atualização das expedições", "data": "2026-10-13",
+   "resumo": "Preparação para o modo em grupo: escolha de versão (estável, beta ou grupo) e o resumo para o grupo.",
+   "itens": [
+     {"ic": "antenna", "t": "Escolha a versão", "d": "Em Configurações → servidor, Versão escolhe entre Estável (a normal), Beta (as novidades antes) e Grupo (o modo em grupo em construção, para quem testa com os amigos). O aviso de versão nova segue a escolhida. Só no jogo instalado com git."},
+     {"ic": "tower", "t": "Resumo para o grupo", "d": "Em Configurações → balanceamento, exporte o que o modo em grupo vai enviar: o XP de cada dia, o Codeforces e o Duolingo (se ligados) e os dias da missão da semana. Nada de tarefas, disciplinas nem dos seus outros hábitos. Mande ao host do grupo para calibrar a Torre Trick antes de o servidor existir."}
+   ]},
   {"versao": "0.6.4-beta4", "nome": "atualização das expedições", "data": "2026-10-13",
    "resumo": "Regras reescritas, com o XP de cada coisa e as contas, e a lateral da Lista que abre e fecha.",
    "itens": [
@@ -356,7 +362,7 @@ function rNV(){
   const novas = temNova() ? AT.novas.map(x => ({...x, futura:true})) : [];
   const ultG = Math.max(0, NOV.findIndex(grande));   // até ela, aberto; depois, compacto
   document.getElementById('nv-root').innerHTML = `<div class="nv">
-    <div class="card nv-hero" id="nv-hero"><div class="nv-ver"><p class="cap">sua versão</p><div class="num">${esc(a)}<span>.${esc(b || '0')}</span></div><div class="nome">${esc(v.nome || '')}${AT && AT.canal === 'beta' ? ' · canal beta' : ''}</div><p>${esc(v.resumo || '')}</p></div>
+    <div class="card nv-hero" id="nv-hero"><div class="nv-ver"><p class="cap">sua versão</p><div class="num">${esc(a)}<span>.${esc(b || '0')}</span></div><div class="nome">${esc(v.nome || '')}${AT && AT.canal && AT.canal !== 'main' ? ' · canal ' + esc(AT.canal) : ''}</div><p>${esc(v.resumo || '')}</p></div>
       <div class="nv-st" id="nv-st">${statusHTML()}</div></div>
     <h2 class="h" style="font:700 20px var(--f-hud);margin:8px 0 0">O que mudou em cada versão</h2>
     <div class="nv-tl" id="nv-lista">${novas.map((x, i) => versaoHTML(x, i, false).replace('<div class="topo">', '<div class="topo"><em>ainda não instalada</em>')).join('')}${NOV.map((x, i) => versaoHTML(x, i + (novas.length ? 1 : 0), i > ultG)).join('')}</div></div>`;

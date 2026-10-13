@@ -105,13 +105,14 @@ explica o que mudou em cada versão.
 
 Atualizar nunca mexe nos seus dados, porque eles ficam fora da pasta do código.
 
-### Versões de teste (beta)
+### Versões de teste (beta e grupo)
 
-As novidades saem primeiro na branch `beta` e passam para a `main` (a versão normal) depois de testadas. Quem quiser
-experimentar antes marca **Receber versões de teste (beta)** em **Configurações → servidor**. Daí em diante, o aviso de
-versão nova e o **atualizar agora** seguem a beta. Desmarcar volta para a versão normal.
+As novidades saem primeiro na branch `beta` e passam para a `main` (a versão normal) depois de testadas. O modo em grupo
+(0.9) é construído na branch `grupo`, que recebe também tudo o que sai na versão normal. Em **Configurações → servidor**,
+**Versão** escolhe entre **Estável** (`main`), **Beta** e **Grupo**; o aviso de versão nova e o **atualizar agora** seguem
+a escolhida.
 
-Pelo terminal é o mesmo: `git -C ~/todo-engine switch beta` (e `switch main` para voltar). Só funciona no jogo instalado
+Pelo terminal é o mesmo: `git -C ~/todo-engine switch beta` (ou `grupo`; `switch main` para voltar). Só funciona no jogo instalado
 com git; o instalado pelo ZIP fica sempre na versão normal.
 
 A beta pode ter erros que ainda não foram corrigidos. Os dados continuam na mesma pasta, mas uma versão de teste pode
@@ -177,6 +178,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.4-beta5 | atualização das expedições | Preparação do modo em grupo: o canal de atualização segue a branch da cópia (`CANAIS`: main, beta, grupo; #36) e Configurações → servidor escolhe entre Estável, Beta e Grupo (#46; o modo teste da Masadora vale na beta e no grupo). `HJ.resumoGrupo` (#37): por dia, o XP, os hábitos do grupo (Codeforces, Duolingo) e os dias da missão, exportável em Configurações → balanceamento |
 | 0.6.4-beta4 | atualização das expedições | Regras reescritas (#50): seções com índice, tabelas e contas de exemplo, com os números do motor e um resumo do jogador; a aba vai para o fim do menu, depois de Novidades. Cards da lateral da Lista abrem e fecham pelo título (`<details data-lado>`, guardado em `localStorage` → `hj-lado`) |
 | 0.6.4-beta3 | atualização das expedições | Book reorganizado (#49): Conquistas sem casas vazias, três cartas por hábito pelo nível (3, 6, 10, nos números livres de 000–099), Ten de 60 dias e os desafios da IA resgatados; Desafios da IA com 10 vagas por rank (`CONQ_VAGAS`: 4 D, 3 C, 2 B, 1 A), conferidas também no servidor (#6) |
 | 0.6.4-beta2 | atualização das expedições | **Rebalanceamento, com aviso grande** (#47) (`"aviso"` no `novidades.js`, janela que mostra a cada um quanto mudou): contribuições menores (bug 15 XP + 150 J, ideia 10 XP + 50 J); Duolingo de antes de ligar sem XP, Jenny e Ten (`duo.json` → `desde`); Ten só com tarefa que não é hábito; nível por hábito de 1 a 10 (3 a 12 XP, `niveisHab()`); carta Zetsu salva hoje ou ontem, o Ten ou um hábito; bônus de nota pelo peso normalizado da disciplina. Acerto único `MIGRA` no `estado()`: tira dos `xpDias` o que a regra antiga dava, guarda o recorde do Ten (`tenRec`) e não deixa a carteira negativa |

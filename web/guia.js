@@ -484,27 +484,33 @@ function srvHTML(){
         ? `Ligado: o servidor roda em segundo plano e você só abre <b>${esc(location.origin)}</b> (vale salvar nos favoritos). Desligue quando quiser.`
         : `Desligado: é preciso rodar <code>servidor.py</code> toda vez. Ligado, ele inicia sozinho com o computador (${onde}) e gasta quase nada parado.`}</span></div>${betaHTML(s)}</div>`;
 }
-/* versões de teste: troca a cópia git entre a main e a beta (POST /api/canal); instalado pelo ZIP, só a main */
-let BETA = null;   // null | 'pergunta' | 'trocando'
+/* versões de teste: troca a cópia git entre os canais (POST /api/canal); instalado pelo ZIP, só a main */
+const CANAIS = {
+  main: {nome:'Estável', curto:'normal', entra:'voltar para a normal', sobre:'A versão normal, a mesma de todo mundo.'},
+  beta: {nome:'Beta', curto:'beta', entra:'entrar na beta', sobre:'As novidades chegam aqui antes da versão normal, mas ainda em teste: às vezes vêm com erros que só são corrigidos depois.'},
+  grupo: {nome:'Grupo', curto:'do grupo', entra:'entrar no grupo', sobre:'O modo em grupo (0.9) em construção, para quem testa com os amigos. Recebe também tudo o que sai na versão normal.'},
+};
+let BETA = null;   // null | {alvo} (pergunta) | {alvo, trocando}
 function betaHTML(s){
   if(s.metodo !== 'git') return '';
-  const beta = s.canal === 'beta', alvo = beta ? 'main' : 'beta';
+  const atual = CANAIS[s.canal] ? s.canal : 'main';
   const linha = `<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:12px">
-      <label class="srv-op"><input type="checkbox" data-srvbeta${beta ? ' checked' : ''}${BETA ? ' disabled' : ''}> Receber versões de teste (beta)</label>
-      <span class="sub" style="flex:1;min-width:240px;margin:0">${beta
-        ? 'Ligado: você recebe as versões novas antes dos outros, para testar. Podem ter erros; o balão de feedback no canto avisa o autor.'
-        : 'As novidades chegam aqui antes da versão normal, mas ainda em teste: às vezes vêm com erros que só são corrigidos depois.'}</span></div>`;
-  if(BETA === 'trocando') return linha + `<p class="sub" style="margin:10px 0 0">${ic('antenna')} Trocando para a versão ${alvo === 'beta' ? 'de teste' : 'normal'} e reiniciando o jogo...</p>`;
-  if(BETA !== 'pergunta') return linha;
+      <span class="srv-op">Versão:</span>${Object.entries(CANAIS).map(([c, x]) =>
+        `<label class="srv-op"><input type="radio" name="srvcanal" value="${c}" data-srvcanal${c === (BETA ? BETA.alvo : atual) ? ' checked' : ''}${BETA ? ' disabled' : ''}> ${x.nome}</label>`).join('')}
+      <span class="sub" style="flex:1;min-width:240px;margin:0">${CANAIS[BETA ? BETA.alvo : atual].sobre}${atual === 'main' || BETA ? '' : ' Podem ter erros; o balão de feedback no canto avisa o autor.'}</span></div>`;
+  if(!BETA) return linha;
+  const alvo = BETA.alvo, nome = CANAIS[alvo].curto;
+  if(BETA.trocando) return linha + `<p class="sub" style="margin:10px 0 0">${ic('antenna')} Trocando para a versão ${nome} e reiniciando o jogo...</p>`;
+  const texto = alvo === 'main'
+    ? 'Voltar para a versão normal. Ela pode ser mais antiga que a de teste que você usa agora e não conhecer algo que a versão de teste já gravou nos seus dados.' + (atual === 'grupo' ? ' A aba do grupo some; os dados do grupo ficam guardados na pasta, sem uso.' : '')
+    : `Entrar na versão ${nome}. Os seus dados não mudam de pasta, mas uma versão de teste pode gravar coisas novas neles, e voltar depois para a normal nem sempre fica perfeito.`;
   return linha + `<div style="margin-top:10px;padding:12px 14px;border:1px solid var(--hair);border-radius:12px">
-      <p style="margin:0 0 8px;font-size:14px">${beta
-        ? 'Voltar para a versão normal. Ela pode ser mais antiga que a de teste que você usa agora e não conhecer algo que a beta já gravou nos seus dados. Baixe os seus dados antes, para poder restaurar se algo sair errado.'
-        : 'Entrar nas versões de teste. Os seus dados não mudam de pasta, mas uma versão de teste pode gravar coisas novas neles, e voltar depois para a normal nem sempre fica perfeito. Baixe os seus dados antes, para poder restaurar.'}</p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="/api/backup" download>baixar meus dados</a><button type="button" class="btn v" data-srvbetaok>${beta ? 'voltar para a normal' : 'entrar na beta'}</button><button type="button" class="btn" data-srvbetanao>cancelar</button></div></div>`;
+      <p style="margin:0 0 8px;font-size:14px">${texto} Baixe os seus dados antes, para poder restaurar se algo sair errado.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="/api/backup" download>baixar meus dados</a><button type="button" class="btn v" data-srvbetaok>${CANAIS[alvo].entra}</button><button type="button" class="btn" data-srvbetanao>cancelar</button></div></div>`;
 }
 async function trocaCanal(){
-  const alvo = CTX.SRV.canal === 'beta' ? 'main' : 'beta';
-  BETA = 'trocando'; render();
+  const alvo = BETA.alvo;
+  BETA = {alvo, trocando:true}; render();
   try { await post('/api/canal', {canal: alvo}); }
   catch(err){ BETA = null; render(); toast('Não trocou: ' + esc(err.message)); return; }
   for(let i = 0; i < 60; i++){
@@ -513,7 +519,7 @@ async function trocaCanal(){
   }
   toast('O jogo está demorando para voltar. Recarregue a página em alguns segundos.');
 }
-document.addEventListener('change', e => { if(e.target.matches('[data-srvbeta]')){ BETA = 'pergunta'; render(); } });
+document.addEventListener('change', e => { if(e.target.matches('[data-srvcanal]')){ BETA = {alvo: e.target.value}; render(); } });
 document.addEventListener('click', e => {
   if(e.target.closest('[data-srvbetaok]')) trocaCanal();
   else if(e.target.closest('[data-srvbetanao]')){ BETA = null; render(); }

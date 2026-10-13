@@ -18,6 +18,11 @@ O `guia.js` roda num escopo fechado: no roteiro, abra o tutorial clicando em `[d
 numa chamada separada. Depois de mexer em `web/`, rode `python3 ferramentas/standalone.py` (gera o `docs/prototipo.html`);
 o Pages atualiza a cada push.
 
+**Branch `grupo`** (desde 13/10/2026): o modo em grupo (0.9, issues no índice #16), com versões `0.9.0-betaN`. Recebe
+merge da `beta` a cada versão nova, **sempre junto com uma 0.9.0-betaN nova** cuja entrada nas novidades diz o que veio
+(só o merge não avisa ninguém: o jogo só avisa versão maior que a atual). O caminho contrário só com a 0.9 pronta
+(`grupo` → `beta` → uso real → `main`). Na pasta de dados, a `grupo` só acrescenta (`grupo.json`, `enviado.json`, `grupo/`).
+
 **Branches: `main` e `beta`.** A `main` é a versão estável: é a que o instalador baixa e a que o botão "Atualizar agora"
 confere. A `beta` é onde as versões novas são testadas em uso real antes de sair, e pode quebrar; nenhum instalador
 aponta para ela (uma cópia git na branch beta confere as novidades da beta: `canal()` no `servidor.py`).
@@ -232,6 +237,14 @@ O que entrou:
   cadastro de Regras já preenchido (`HJ_GUIA.abreDisciplinas({d, n})`).
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
+
+**Preparação do modo em grupo** (0.6.4-beta5, 13/10/2026, issues #36, #46, #37; índice em #16):
+- `CANAIS = ("main", "beta", "grupo")` no `servidor.py`: `canal()` devolve a branch da cópia git se for um deles (senão
+  `main`) e o `api_canal()` troca para qualquer um. Configurações → servidor tem **Versão: Estável · Beta · Grupo**
+  (`CANAIS` e `betaHTML()` em `web/guia.js`). `podeTeste()` (modo teste da Masadora) vale na beta e no grupo.
+- `HJ.resumoGrupo(C, S)` no motor (`protocolo: 1`): um dia por linha da temporada (`TEMP.ini` até hoje ou o fim) com
+  `xp`, `hab` (só os `HAB_GRUPO` ligados: `cf` = problemas, `duo` = 0/1), `missao` (o dia contou para a missão da semana:
+  `S.missaoDias`) e `ferias`. Nunca leva texto, tag, disciplina nem hábito pessoal. Botão em Configurações → balanceamento.
 
 **Cápsula da temporada** (0.6.4-beta1, 13/10/2026, issue #7): `HJ.capsula(api)` no motor calcula a temporada como o
 jogo mostrava no último dia (`fimTemporada`: véspera da volta; antes disso, uma foto até hoje): roda `carregar` com `hoje`
