@@ -494,11 +494,58 @@ def recorrentes_do_dia(linhas, j, refazer=False, done=()):
     return arquivo
 
 
+def nome_rec(l):
+    """O nome do hábito numa linha rec: o texto entre as datas (e a prioridade) e a primeira tag, rec: ou chave:valor."""
+    ts = l.split()
+    while ts and (ts[0] == "x" or re.fullmatch(r"\d{4}-\d{2}-\d{2}|\([A-Z]\)", ts[0])):
+        ts.pop(0)
+    nome = []
+    for t in ts:
+        if t[0] in "+@" or ":" in t:
+            break
+        nome.append(t)
+    return " ".join(nome).casefold()
+
+
+def religa_habitos(j, linhas, done):
+    """Até a 0.6.5-beta1, salvar Configurações refazia o id de todo hábito pelo nome (h-nome): quem tinha outro id (de uma versão
+    antiga, ou renomeado) ficava com o histórico preso no id velho, e o hábito voltava ao nível 1. Hábito sem dia feito antes do
+    histórico de um id que nenhum hábito usa mais, com o mesmo nome, volta a usar esse id (jogador.json e as linhas rec: do id
+    novo). Só com um candidato. Devolve True se mudou algo; muda j, linhas e done no lugar."""
+    habs = habitos(j)
+    usados, dias, nomes = {h["id"] for h in habs} | {"cf", "duo"}, {}, {}
+    for l in done + linhas:
+        r = REC.search(l)
+        if r and DONE_RE.match(l):
+            dias.setdefault(r.group(1), []).append(r.group(2))
+            nomes.setdefault(r.group(1), set()).add(nome_rec(l))
+    mudou = False
+    for h in habs:
+        nome, novos = " ".join(str(h["n"]).split()).casefold(), sorted(dias.get(h["id"], []))
+        cands = [o for o in dias if o not in usados and nomes[o] == {nome} and (not novos or max(dias[o]) < novos[0])]
+        if len(cands) != 1:
+            continue
+        velho, marca = cands[0], re.compile(rf"(?:(?<=\s)|^)rec:{re.escape(h['id'])}:(?=\d{{4}}-)")
+        for ls in (linhas, done):
+            ls[:] = [marca.sub(f"rec:{velho}:", l) for l in ls]
+        for x in j.get("habitos") or []:
+            if isinstance(x, dict) and x.get("id") == h["id"]:
+                x["id"] = velho
+        usados.add(velho)
+        mudou = True
+        log(f"hábito {h['n']}: voltou ao id {velho}, com o histórico ({len(dias[velho])} dias)")
+    return mudou
+
+
 def arruma_dia(refazer=False):
     with lock:
         linhas = ler()
         antes = list(linhas)
-        arquivo = recorrentes_do_dia(linhas, jogador(), refazer, ler("done.txt"))
+        j, done = jogador(), ler("done.txt")
+        if religa_habitos(j, linhas, done):
+            gravar_json("jogador.json", j)
+            gravar(done, "done.txt")
+        arquivo = recorrentes_do_dia(linhas, j, refazer, done)
         if arquivo:
             t = ler_txt("done.txt")
             gravar_txt("done.txt", t + ("" if not t or t.endswith("\n") else "\n") + "\n".join(arquivo) + "\n")

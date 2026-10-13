@@ -355,3 +355,39 @@ class Devolucao(Base):
         self.assertEqual(e["own"], ["th-killua"])
         self.assertEqual(e["bought"]["2026-W42"], ["ko"])
         self.assertEqual(e["devolve"]["h"], "12:00:00")   # vale a primeira
+
+
+class Religa(Base):
+    """Salvar Configurações até a 0.6.5-beta1 refazia o id pelo nome: o hábito volta ao id antigo, com o histórico."""
+
+    def prepara(self, habitos, done):
+        self.jogador({"habitos": habitos})
+        s.gravar_txt("done.txt", "\n".join(done) + "\n")
+        s.arruma_dia()
+        return [h["id"] for h in s.jogador()["habitos"]]
+
+    def test_volta_ao_id_antigo(self):
+        ids = self.prepara([{"id": "h-treino-de-digitacao", "n": "Treino de digitacao"}],
+                           ["x 2026-10-10 2026-10-10 Treino de digitacao +rotina rec:digi:2026-10-10",
+                            "x 2026-10-11 2026-10-11 Treino de digitacao +rotina rec:digi:2026-10-11"])
+        self.assertEqual(ids, ["digi"])
+        self.assertEqual(self.todo(), ["2026-10-12 Treino de digitacao +rotina rec:digi:2026-10-12"])
+
+    def test_dias_depois_da_troca_vao_junto(self):
+        self.prepara([{"id": "h-leitura", "n": "Leitura"}],
+                     ["x 2026-10-09 2026-10-09 Leitura +rotina rec:leit:2026-10-09",
+                      "x 2026-10-11 2026-10-11 Leitura +rotina rec:h-leitura:2026-10-11"])
+        self.assertIn("x 2026-10-11 2026-10-11 Leitura +rotina rec:leit:2026-10-11", self.done())
+
+    def test_nome_diferente_ou_dois_candidatos_nao_mexe(self):
+        self.assertEqual(self.prepara([{"id": "h-leitura", "n": "Leitura"}],
+                                      ["x 2026-10-10 2026-10-10 AtCoder +rotina rec:atc:2026-10-10"]), ["h-leitura"])
+        self.assertEqual(self.prepara([{"id": "h-leitura", "n": "Leitura"}],
+                                      ["x 2026-10-08 2026-10-08 Leitura +rotina rec:a:2026-10-08",
+                                       "x 2026-10-10 2026-10-10 Leitura +rotina rec:b:2026-10-10"]), ["h-leitura"])
+
+    def test_historico_misturado_nao_mexe(self):
+        """O id antigo com dias depois do primeiro do id novo não é o mesmo hábito renomeado."""
+        self.assertEqual(self.prepara([{"id": "h-leitura", "n": "Leitura"}],
+                                      ["x 2026-10-08 2026-10-08 Leitura +rotina rec:h-leitura:2026-10-08",
+                                       "x 2026-10-10 2026-10-10 Leitura +rotina rec:leit:2026-10-10"]), ["h-leitura"])
