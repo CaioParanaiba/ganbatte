@@ -10,20 +10,30 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
-  {"versao": "0.6.3-beta2", "nome": "atualização das expedições", "data": "2026-10-13",
-   "resumo": "Um relatório dos seus números de XP e Jenny para ajudar a calibrar o jogo, e as compras passam a ser registradas.",
+  {"versao": "0.6.3", "nome": "atualização das expedições", "data": "2026-10-13",
+   "resumo": "Férias de verdade, recompensa por bug corrigido e ideia feita, e um relatório dos seus números de XP e Jenny.",
    "itens": [
-     {"ic": "coin", "t": "Relatório de balanceamento", "d": "Em Configurações, ao lado do backup: quanto XP você faz por dia e por semana, de onde ele vem (hábitos, estudo, entregas, Codeforces...), quanto da Jenny fica parada e quanto da loja a temporada compra. Baixe o relatório (.json) ou a planilha por dia (.csv). Não leva o texto das tarefas nem o nome dos prêmios: se quiser ajudar a calibrar o XP e a Jenny, anexe numa issue."},
-     {"ic": "scroll", "t": "Registro de compras", "d": "Cada compra na Masadora (aparência, feitiço ou prêmio real) fica guardada com o dia, para o relatório mostrar quando a Jenny sai. O que você gastou antes desta versão aparece como gasto sem data."},
-     {"ic": "tower", "t": "Simulador", "d": "Para quem desenvolve: node ferramentas/simulador.mjs joga uma temporada com três jogadores inventados (leve, médio e pesado) e mostra andar, Jenny e quanto da loja cada um compra. Com --comparar relatorio.json, põe um jogador de verdade ao lado."}
-   ]},
-  {"versao": "0.6.3-beta1", "nome": "atualização das expedições", "data": "2026-10-12",
-   "resumo": "Férias de verdade, recompensa por bug corrigido e ideia feita, e etapa antiga que se reabre.",
-   "itens": [
-     {"ic": "moon", "t": "Férias", "d": "Do fim das aulas até a volta, dia vazio não derruba o Ten (e dia feito ainda soma), a missão da semana e a fúria dos chefões ficam pausadas, e o XP continua subindo a torre. A temporada só fecha na volta às aulas; a projeção do andar e as médias vão até o fim das aulas."},
-     {"ic": "bug", "t": "Recompensa por contribuição", "d": "Ponha o seu usuário do GitHub em Configurações: bug que você reportou e foi corrigido vale +50 XP e +1.000 J; ideia que entrou no jogo, +30 XP e +600 J. Só conta quando a issue é fechada como resolvida: repetida ou recusada não rende nada."},
-     {"ic": "card", "t": "Reabrir etapa antiga", "d": "Na aba Expedições, a etapa feita que já foi para o done.txt agora se reabre pelo ✓, e o XP dela sai do dia em que foi feita."},
-     {"ic": "tower", "t": "Testes do servidor", "d": "Para quem desenvolve: python3 -m unittest discover tests confere a virada do dia, os hábitos, o Codeforces, o Duolingo e as rotas principais."}
+     {"ic": "moon", "t": "Férias", "d": "Do fim das aulas até a volta, dia vazio não derruba o Ten (e dia feito ainda soma), a missão da semana e a fúria dos chefões ficam pausadas, e o XP continua subindo a torre. A temporada só fecha na volta às aulas."},
+     {"ic": "bug", "t": "Recompensa por contribuição", "d": "Ponha o seu usuário do GitHub em Configurações: bug que você reportou e foi corrigido vale +50 XP e +1.000 J; ideia que entrou no jogo, +30 XP e +600 J. Só conta quando a issue é fechada como resolvida."},
+     {"ic": "coin", "t": "Relatório de balanceamento", "d": "Em Configurações, ao lado do backup: quanto XP você faz, de onde ele vem, quanto da Jenny fica parada e quanto da loja a temporada compra. Baixe em .json ou .csv (sem o texto das tarefas) e, se quiser ajudar a calibrar o jogo, anexe numa issue. As compras da Masadora passam a ser registradas com o dia."},
+     {"ic": "card", "t": "Reabrir etapa antiga", "d": "Na aba Expedições, a etapa feita que já foi para o done.txt agora se reabre pelo ✓, e o XP dela sai do dia em que foi feita."}
+   ],
+   "versoes": [
+     {"versao": "0.6.3-beta2", "nome": "atualização das expedições", "data": "2026-10-13",
+      "resumo": "Um relatório dos seus números de XP e Jenny para ajudar a calibrar o jogo, e as compras passam a ser registradas.",
+      "itens": [
+        {"ic": "coin", "t": "Relatório de balanceamento", "d": "Em Configurações, ao lado do backup: quanto XP você faz por dia e por semana, de onde ele vem (hábitos, estudo, entregas, Codeforces...), quanto da Jenny fica parada e quanto da loja a temporada compra. Baixe o relatório (.json) ou a planilha por dia (.csv). Não leva o texto das tarefas nem o nome dos prêmios: se quiser ajudar a calibrar o XP e a Jenny, anexe numa issue."},
+        {"ic": "scroll", "t": "Registro de compras", "d": "Cada compra na Masadora (aparência, feitiço ou prêmio real) fica guardada com o dia, para o relatório mostrar quando a Jenny sai. O que você gastou antes desta versão aparece como gasto sem data."},
+        {"ic": "tower", "t": "Simulador", "d": "Para quem desenvolve: node ferramentas/simulador.mjs joga uma temporada com três jogadores inventados (leve, médio e pesado) e mostra andar, Jenny e quanto da loja cada um compra. Com --comparar relatorio.json, põe um jogador de verdade ao lado."}
+      ]},
+     {"versao": "0.6.3-beta1", "nome": "atualização das expedições", "data": "2026-10-12",
+      "resumo": "Férias de verdade, recompensa por bug corrigido e ideia feita, e etapa antiga que se reabre.",
+      "itens": [
+        {"ic": "moon", "t": "Férias", "d": "Do fim das aulas até a volta, dia vazio não derruba o Ten (e dia feito ainda soma), a missão da semana e a fúria dos chefões ficam pausadas, e o XP continua subindo a torre. A temporada só fecha na volta às aulas; a projeção do andar e as médias vão até o fim das aulas."},
+        {"ic": "bug", "t": "Recompensa por contribuição", "d": "Ponha o seu usuário do GitHub em Configurações: bug que você reportou e foi corrigido vale +50 XP e +1.000 J; ideia que entrou no jogo, +30 XP e +600 J. Só conta quando a issue é fechada como resolvida: repetida ou recusada não rende nada."},
+        {"ic": "card", "t": "Reabrir etapa antiga", "d": "Na aba Expedições, a etapa feita que já foi para o done.txt agora se reabre pelo ✓, e o XP dela sai do dia em que foi feita."},
+        {"ic": "tower", "t": "Testes do servidor", "d": "Para quem desenvolve: python3 -m unittest discover tests confere a virada do dia, os hábitos, o Codeforces, o Duolingo e as rotas principais."}
+      ]}
    ]},
   {"versao": "0.6.2", "nome": "atualização das expedições", "data": "2026-10-12",
    "resumo": "O Duolingo conta sozinho, como o Codeforces, e os heatmaps mostram a temporada inteira.",

@@ -1385,7 +1385,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.3-beta2';
+const VERSAO_PAGINA = '0.6.3';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1857,7 +1857,7 @@ function rCfg(S){
 function cardBalanco(S){
   const R = HJx.relatorio(CTX, S), r = R.resumo, top = Object.entries(r.origemXP).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const num = x => String(x).replace('.', ','), lin = (k, v) => `<div style="display:flex;justify-content:space-between;gap:12px"><span>${k}</span><b style="color:var(--ink)">${v}</b></div>`;
-  return `<div class="card"><h2><span class="c">~/</span>balanceamento</h2><p style="margin:0 0 10px;font-size:14px">Os seus números de XP e Jenny dia a dia, por origem, e o que você gastou. Serve para ver se o jogo paga demais ou de menos. O arquivo não leva o texto das tarefas nem o nome dos prêmios: se quiser ajudar a calibrar, anexe numa issue. As compras são registradas desde a 0.6.3-beta2; o gasto de antes aparece sem data.</p>
+  return `<div class="card"><h2><span class="c">~/</span>balanceamento</h2><p style="margin:0 0 10px;font-size:14px">Os seus números de XP e Jenny dia a dia, por origem, e o que você gastou. Serve para ver se o jogo paga demais ou de menos. O arquivo não leva o texto das tarefas nem o nome dos prêmios: se quiser ajudar a calibrar, anexe numa issue. As compras são registradas desde a 0.6.3; o gasto de antes aparece sem data.</p>
     <div style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:0 0 12px;max-width:460px">
       ${lin('dias jogados', `${r.diasAtivos} de ${r.dias} (${num(r.pctDiasAtivos)}%)`)}${lin('XP por dia jogado', fmt(r.xp.porDiaAtivo))}${lin('XP por semana', fmt(r.xp.porSemana))}
       ${lin('de onde vem o XP', top.map(([k, v]) => `${R.fontes[k]} ${num(v)}%`).join(' · ') || '—')}

@@ -6,7 +6,7 @@ Um jogo (tema Hunter x Hunter) em cima do [todo.txt](https://github.com/todotxt/
 conferência de versão nova (uma leitura do GitHub a cada 6 horas) saem do computador.
 Precisa apenas do Python 3.8 ou mais novo, no Linux, Windows ou Mac.
 
-> **Versão 0.5.5.** A 0.3 foi testada no Linux por amigos, com foco em usabilidade. No Windows e no Mac ainda não foi testada
+> **Versão 0.6.3.** A 0.3 foi testada no Linux por amigos, com foco em usabilidade. No Windows e no Mac ainda não foi testada
 > (inclusive o instalador e o início automático): se algo der errado, avise. O que está planejado fica em [`docs/PENDENCIAS.md`](docs/PENDENCIAS.md).
 > O desenho do modo em grupo (placar **Torre Trick**) está em [`docs/COLETIVO.md`](docs/COLETIVO.md) e ainda não existe.
 
@@ -175,6 +175,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.6.3 | atualização das expedições | **Junta as betas 0.6.3** (as duas linhas abaixo): férias (#31), recompensa por contribuição (#23), reabrir etapa (#27), testes do servidor (#12) e o balanceamento: relatório, registro de compras e simulador (#32) |
 | 0.6.3-beta2 | atualização das expedições | Relatório de balanceamento em Configurações (`HJ.relatorio()`: XP e Jenny por dia e por origem, em .json ou .csv, sem texto de tarefa); registro de compras (`estado.json` → `compras`); simulador de temporada com jogadores inventados (`node ferramentas/simulador.mjs`) |
 | 0.6.3-beta1 | atualização das expedições | Férias (#31): Ten não cai, missão e fúria pausadas, XP normal; recompensa por bug corrigido e ideia feita pelo usuário do GitHub (#23, `contrib.json`); reabrir etapa do `done.txt` (`POST /api/reabre`, #27); testes do servidor em `tests/` (#12) |
 | 0.6.2 | atualização das expedições | **Junta as betas 0.6.2** (as cinco linhas abaixo) e traz o **Duolingo automático** (#11): só o usuário, sem senha; o servidor lê a ofensiva do perfil público, conclui a `rec:duo` do dia com lição e credita os dias da ofensiva desde o início da temporada (`duo.json`); o dia do bloqueio de ofensiva não conta |

@@ -193,7 +193,9 @@ O que entrou:
 
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
-**0.6.3-beta2** (13/10/2026): balanceamento. O motor guarda o XP de cada dia por origem (`S.fonteDia`: tipo da tarefa,
+**0.6.3** (13/10/2026): lançada na `main`, juntando a 0.6.3-beta1 e a beta2 (issues #12, #23, #27, #31, #32).
+
+**0.6.3-beta2** (13/10/2026, issue #32): balanceamento. O motor guarda o XP de cada dia por origem (`S.fonteDia`: tipo da tarefa,
 hábito, Codeforces, caçadas/expedições, contribuições, `bonus` = o que os multiplicadores somaram, `gravado` = dias
 fechados) e `HJ.relatorio(C, S)` monta resumo, semanas e dias (Jenny ganha pelo dia do recibo; gasto pelo `compras`).
 `compras` no `estado.json` (`{d, h, tipo: cos|feitico|premio, id, j}`, prêmio real sem o nome): o servidor junta o
