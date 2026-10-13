@@ -69,7 +69,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.4-beta2"
+VERSAO = "0.6.4-beta3"
 VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -1085,7 +1085,8 @@ def api_temporada(d):
 
 
 CONQ_REGRAS = {"contagem", "sequencia", "nota", "constancia", "semana"}
-CONQ_MAX = 5   # abertas (não resgatadas) ao mesmo tempo; o mesmo número do motor.js
+CONQ_VAGAS = {"D": 4, "C": 3, "B": 2, "A": 1}   # abertas (não resgatadas) por rank: fácil, média, difícil, lendária (o mesmo do motor.js)
+CONQ_MAX = sum(CONQ_VAGAS.values())
 CONQ_RANKS = {"D", "C", "B", "A"}
 
 
@@ -1132,8 +1133,9 @@ def api_conquistas(d):
             itens = d.get("itens")
             if not isinstance(itens, list) or not 1 <= len(itens) <= CONQ_MAX:
                 raise Erro("nenhuma conquista para criar")
-            if len(abertas) + len(itens) > CONQ_MAX:
-                raise Erro(f"no máximo {CONQ_MAX} conquistas da IA abertas: conquiste ou descarte alguma antes")
+            for rk, vagas in CONQ_VAGAS.items():
+                if sum(x.get("rk") == rk for x in abertas) + sum(isinstance(p, dict) and p.get("rk") == rk for p in itens) > vagas:
+                    raise Erro(f"no máximo {vagas} conquista(s) da IA de rank {rk} abertas: conquiste ou descarte alguma antes")
             prox = max([int(x["no"]) for x in lista if str(x.get("no", "")).isdigit()] + [199]) + 1
             novas = []
             for i, p in enumerate(itens):

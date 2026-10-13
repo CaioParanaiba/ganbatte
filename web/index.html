@@ -1393,7 +1393,7 @@ function guardaRecibos(){
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a carteira: ' + esc(e.message)));
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.4-beta2';
+const VERSAO_PAGINA = '0.6.4-beta3';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1635,21 +1635,26 @@ function zetsuOps(S){
 }
 function rBK(S){
   const C = cartas(S), narr = C.filter(c => c.o === 'claude'), cia = C.filter(c => c.o === 'ia');
-  document.getElementById('bk-prog').innerHTML = [['conquistas',`${C.filter(c=>c.o==='slot'&&c.on).length}/${C.filter(c=>c.o==='slot').length}`,'regras fixas: gerais e quatro por disciplina'],['da IA',`${cia.filter(c=>c.on).length}/${cia.length}`,'desafios propostos pela IA, conferidos pelo jogo'],['narradas',`${narr.length}`,'semanais, mensais, semestrais e anuais'],['feitiços',`${invN(S)}`,`expiram em ${ddmm(TEMP.volta)} (volta às aulas)`]]
+  document.getElementById('bk-prog').innerHTML = [['conquistas',`${C.filter(c=>c.o==='slot'&&c.on).length + cia.filter(c=>c.resgate).length}/${C.filter(c=>c.o==='slot').length + cia.filter(c=>c.resgate).length}`,'gerais, Ten, hábitos, chefões e os desafios da IA conquistados'],['desafios da IA',`${cia.filter(c=>!c.resgate).length}/${HJx.CONQ_MAX}`,'4 fáceis, 3 médias, 2 difíceis e 1 lendária'],['narradas',`${narr.length}`,'semanais, mensais, semestrais e anuais'],['feitiços',`${invN(S)}`,`expiram em ${ddmm(TEMP.volta)} (volta às aulas)`]]
     .map(([s,b,m]) => `<div class="k"><span>${s}</span><b>${b}</b><small>${m}</small></div>`).join('');
-  document.getElementById('bk-tabs').innerHTML = [['slot','Conquistas 000–099'],['ia','Conquistas da IA · 200+'],['claude','Narradas'],['feit','Feitiços']].map(([k,n]) => `<button data-bk="${k}" aria-pressed="${UI.bk===k}">${n}</button>`).join('');
+  document.getElementById('bk-tabs').innerHTML = [['slot','Conquistas'],['ia','Desafios da IA'],['claude','Narradas'],['feit','Feitiços']].map(([k,n]) => `<button data-bk="${k}" aria-pressed="${UI.bk===k}">${n}</button>`).join('');
   const carta = c => `<button class="gc claude" data-bksel="${esc(c.no)}" aria-pressed="${UI.bksel===c.no}"><span class="no">${esc(c.periodo||'')}</span><span class="rk">${c.rk}</span><span class="big">${ic(c.ic)}</span><div><div class="og">${({semana:'semanal',mes:'mensal',semestre:'semestral',ano:'anual'})[c.tipo]||'narrada'}</div><div class="gn">${esc(c.n)}</div></div></button>`;
   if(UI.bk === 'ia' && window.HJ_CONQ){ window.HJ_CONQ.book(S, cia); return; }
   let items;
   if(UI.bk === 'feit') items = SPELLS.map(s => { const q = S.inv[s.k]||0; return `<button class="gc sp" data-bksel="F:${s.k}" aria-pressed="${UI.bksel==='F:'+s.k}" style="${q?'':'opacity:.55'}"><span class="no">×${q}</span><span class="big">${ic(s.ic)}</span><div><div class="og">feitiço</div><div class="gn">${s.n}</div></div></button>`; }).join('');
   else if(UI.bk === 'claude') items = TIERS.map(([t,n,d]) => { const cs = narr.filter(c => c.tipo === t).sort((p,q) => String(q.periodo).localeCompare(String(p.periodo)));
       return `<div style="grid-column:1/-1;margin-top:6px"><p class="cap" style="margin:6px 0 0">${n} · ${d}</p></div>${cs.map(carta).join('')}<div class="gc empty" style="font-size:12px;text-align:center;padding:10px">${espera(t)}</div>`; }).join('');
-  else { const by = Object.fromEntries(C.filter(c=>c.o==='slot').map(c => [c.no,c])); items = Array.from({length:30},(_,i) => String(i).padStart(3,'0')).concat(Object.keys(by).filter(n => +n >= 30)).filter((v,i,a) => a.indexOf(v)===i).map(no => { const c = by[no]; return c ? `<button class="gc ${c.on?'on':''}" data-bksel="${no}" aria-pressed="${UI.bksel===no}"><span class="no">Nº ${no}</span><span class="rk">${c.rk}</span><span class="big" style="${c.on?'':'opacity:.4'}">${ic(c.ic)}</span><div><div class="gn">${esc(c.n)}</div></div></button>` : `<div class="gc empty">${no}</div>`; }).join(''); }
+  else { /* a coleção (0.6.4): só as cartas que existem no seu jogo, sem casas vazias (conquistadas primeiro), e os desafios da IA já resgatados */
+    const slot = C.filter(c => c.o === 'slot'), feitas = slot.filter(c => c.on), falta = slot.filter(c => !c.on), iaOk = cia.filter(c => c.resgate);
+    const gc = c => `<button class="gc ${c.on?'on':''}${c.o==='ia'?' cq':''}" data-bksel="${esc(c.no)}" aria-pressed="${UI.bksel===c.no}"><span class="no">Nº ${esc(c.no)}</span><span class="rk">${c.rk}</span><span class="big" style="${c.on?'':'opacity:.4'}">${ic(c.ic)}</span><div><div class="gn">${esc(c.n)}</div></div></button>`;
+    const sec = (t, L) => L.length ? `<div style="grid-column:1/-1;margin-top:6px"><p class="cap" style="margin:6px 0 0">${t} · ${L.length}</p></div>${L.map(gc).join('')}` : '';
+    items = sec('conquistadas', feitas) + sec('desafios da IA conquistados', iaOk) + sec('ainda não', falta); }
   document.getElementById('bk-grid').innerHTML = items;
   let det;
   if(UI.bksel.startsWith('F:')){ const s = spell(UI.bksel.slice(2)), q = S.inv[s.k]||0;
     det = `<div class="face" style="color:var(--aura);border-color:var(--aura)">${ic(s.ic)}</div><p class="cap">feitiço · na bolsa: ${q}</p><h3>${s.n}</h3><p>${s.e}</p><p class="sub">${s.noshop ? 'Vem da preparação completa antes de uma avaliação e de cada missão da semana cumprida.' : `Loja: ${fmt(s.p)} J (1 por semana). Também vem da preparação completa ou da missão da semana, como "à escolha".`} Expira em ${ddmm(TEMP.volta)}.</p>${q ? usoHTML(S, s) : ''}
       ${S.usos.length ? `<p class="cap" style="margin-top:14px">usados</p>${S.usos.slice(-5).reverse().map(u => `<div class="sub">${ddmm(u.d)} · ${spell(u.ef||u.k).n}${u.k==='escolha'?' (à escolha)':''}${u.ef==='gyo'?' → '+NEN[+u.alvo].n:''}${u.ef==='ken'?' → '+esc(String(u.alvo).slice(0,40)):''}${u.ef==='zetsu'&&u.zalvo?' → '+(u.zalvo==='ten'?'Ten':esc(((CTX.JOG.habitos||[]).find(h => h.id===u.zalvo)||{n:u.zalvo==='duo'?'Duolingo':u.zalvo}).n))+' de '+ddmm(u.zdia):''}</div>`).join('')}` : ''}`; }
+  else if(UI.bk === 'slot' && cia.some(c => c.resgate && c.no === UI.bksel) && window.HJ_CONQ) det = window.HJ_CONQ.det(cia.find(c => c.no === UI.bksel));
   else { const c = C.find(c => c.no === UI.bksel) || (UI.bk === 'claude' ? narr[0] : C[0]);
     det = !c ? `<p class="sub">Nenhuma carta narrada ainda. ${espera('semana')}.</p>` : `<div class="face"${c.o==='claude'?' style="color:var(--volt);border-color:var(--volt)"':''}>${ic(c.ic)}</div><p class="cap">${c.o==='claude' ? `${({semana:'semanal · comum',mes:'mensal',semestre:'semestral · rara',ano:'anual · lendária'})[c.tipo]||'narrada'} · ${esc(c.periodo||'')}` : `Nº ${c.no} · rank ${c.rk} · ${OG[c.o]}`}</p><h3>${esc(c.n)}</h3>${c.cron ? `<p class="cron" style="white-space:pre-line">${esc(c.cron)}</p><p class="cap" style="margin:14px 0 4px">o que aconteceu</p>` : ''}<p style="white-space:pre-line">${esc(c.d)}</p><p class="sub">${c.o==='slot' ? (c.on ? 'No livro.' : 'Ainda não.') : 'Narrada com IA a partir do que aconteceu de verdade' + (c.escrita ? ` · ${ddmm(c.escrita)}` : '') + '.'}</p>`; }
   document.getElementById('bk-det').innerHTML = det + `<p style="margin-top:14px"><button class="go" data-go="ms">ir para a Masadora →</button></p>`;

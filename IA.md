@@ -27,8 +27,8 @@ Há três jeitos de usar:
 - **Cartas do Book:** as que faltam são escritas sozinhas quando você abre o jogo (semana fechada na segunda, mês no
   dia 1, semestre no dia seguinte ao fim da temporada, ano em 1º de janeiro). As de antes de ligar a IA saem pelo
   botão *escrever cartas antigas* no Book. Dá para desligar as automáticas em Configurações.
-- **Conquistas da IA:** no Book, aba *Conquistas da IA*, o botão *propor conquistas com IA* traz até 5 desafios
-  pensados para o seu ritmo. O jogo confere cada um (e recusa o que não dá), calcula o rank e a recompensa, e você
+- **Desafios da IA:** no Book, aba *Desafios da IA*, o botão *propor conquistas com IA* preenche as vagas livres
+  (4 fáceis, 3 médias, 2 difíceis e 1 lendária) com desafios pensados para o seu ritmo. O jogo confere cada um (e recusa o que não dá), calcula o rank e a recompensa, e você
   aceita os que quiser. Só por clique: nunca sozinho.
 
 A IA só devolve texto e não tem permissão para gravar nada: quem confere e grava é o jogo. Os dados de cada pedido vão
@@ -275,7 +275,7 @@ jogo.** Nada é enviado sozinho, e não precisa de conta, chave de API nem progr
 |---|---|---|
 | 1. Plano de ensino → provas e trabalhos (e lembretes da caixa de entrada) | **Chefões** → *editar avaliações e notas* → *copiar pedido para a IA* | o mesmo editor (*usar estas linhas*), e você confere e salva |
 | 2. Carta narrada da semana, do mês, do semestre ou do ano | **Book** → *Narradas* → *escrever carta com IA* | o mesmo bloco (*adicionar carta*) |
-| 3. Conquistas feitas para você | **Book** → *Conquistas da IA* → *copiar pedido* | o mesmo bloco (*conferir resposta*), e você aceita as que quiser |
+| 3. Conquistas feitas para você | **Book** → *Desafios da IA* → *copiar pedido* | o mesmo bloco (*conferir resposta*), e você aceita as que quiser |
 
 Se o navegador não deixar copiar sozinho (acontece com a página aberta direto do arquivo), aparece uma janela com o
 texto: `Ctrl+A` e `Ctrl+C`.
@@ -365,7 +365,7 @@ DADOS
 
 ### 3. Conquistas feitas para você
 
-**Como usar:** no Book, aba *Conquistas da IA*, clique em *copiar pedido* e cole numa IA. Cole a resposta (a lista JSON)
+**Como usar:** no Book, aba *Desafios da IA*, clique em *copiar pedido* e cole numa IA. Cole a resposta (a lista JSON)
 no mesmo bloco e clique em *conferir resposta*. O jogo confere cada proposta: recusa a que não usa uma regra conhecida,
 a que já está cumprida, a repetida e a que passa do possível. Para as outras, mostra a regra em palavras, o rank e a
 recompensa, que saem do jogo pela estimativa de dias, nunca da IA:
@@ -375,11 +375,11 @@ recompensa, que saem do jogo pela estimativa de dias, nunca da IA:
 | D · fácil | até 7 dias | 800 J ou o feitiço Zetsu |
 | C · média | até 14 dias | 1.500 J ou Gyo |
 | B · difícil | até 30 dias | 3.000 J ou Ko |
-| A · muito difícil | mais de 30 dias | 6.000 J ou um feitiço à escolha |
+| A · lendária | mais de 30 dias | 6.000 J ou um feitiço à escolha |
 
-Marque as que quiser e clique em *aceitar*. Ficam no máximo 5 abertas (não resgatadas) ao mesmo tempo, numeradas de 200
-em diante, e cada uma conta a partir do dia em que foi aceita. Ao conquistar, os botões de Jenny e do feitiço aparecem
-embaixo da carta; depois de escolher, ela fica *resgatada*. Dá para descartar uma conquista aberta para liberar a vaga.
+Marque as que quiser e clique em *aceitar*. São 10 vagas para abertas (não resgatadas): 4 de rank D, 3 de C, 2 de B e 1 de
+A. Ficam numeradas de 200 em diante, e cada uma conta a partir do dia em que foi aceita. Ao conquistar, os botões de Jenny e
+do feitiço aparecem embaixo da carta; depois de escolher, ela fica *resgatada*, vai para Book → *Conquistas* e a vaga abre. Dá para descartar uma conquista aberta para liberar a vaga.
 
 ```text
 Proponha {N} conquistas (desafios) para o meu jogo de tarefas (Hunter.todo, tema Hunter x Hunter), difíceis mas possíveis no meu ritmo, contadas a partir de hoje. Os dados estão no fim.
@@ -394,6 +394,7 @@ Regras que o jogo sabe conferir (use só estas, com estes campos):
 - semana: {"regra": "semana", "xp": 400} = uma semana (seg a dom) com xp ou mais, até o dobro da melhor semana.
 - nome: curto e no tema (até 60 letras). texto: uma ou duas frases no tema, sem inventar fatos (até 300 letras).
 - ic: um destes ícones: int tra con esp man emi spider tower card flame moon island crown scroll.
+- Dificuldade: quero {quantas de cada: fácil (até 7 dias no meu ritmo), média (8 a 14), difícil (15 a 30), lendária (mais de 30, até o fim da temporada)}. O jogo mede a dificuldade pelo meu ritmo das últimas 4 semanas.
 - Varie as regras e os alvos. Nada que já esteja cumprido ou que repita uma conquista aberta. Tem que dar para cumprir até o fim da temporada.
 - A recompensa e a dificuldade quem decide é o jogo: não fale de prêmio.
 

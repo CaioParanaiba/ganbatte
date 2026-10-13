@@ -239,6 +239,22 @@ class Contribuicoes(Base):
         self.assertEqual(s.contrib_leitura({"github": {"usuario": "amigo"}}), {"usuario": "amigo", "issues": []})
 
 
+class ConquistasIA(Base):
+    def item(self, rk, n=10):
+        return {"regra": "contagem", "n": n, "tipo": "est", "nome": f"Estudo {n}", "texto": "", "rk": rk}
+
+    def test_vagas_por_rank(self):
+        """10 vagas: 4 de rank D, 3 de C, 2 de B e 1 de A. A resgatada libera a vaga."""
+        r = s.api_conquistas({"acao": "criar", "itens": [self.item("D", 10 + i) for i in range(4)] + [self.item("A")]})
+        self.assertEqual(len(r["nos"]), 5)
+        with self.assertRaises(s.Erro):
+            s.api_conquistas({"acao": "criar", "itens": [self.item("D", 30)]})
+        with self.assertRaises(s.Erro):
+            s.api_conquistas({"acao": "criar", "itens": [self.item("A", 30)]})
+        s.api_conquistas({"acao": "resgatar", "no": r["nos"][0], "como": "jenny", "j": 800})
+        self.assertTrue(s.api_conquistas({"acao": "criar", "itens": [self.item("D", 30), self.item("C"), self.item("C", 11)]})["ok"])
+
+
 class Leitura(Base):
     def test_api_jogo(self):
         r = s.api_jogo_get()

@@ -41,7 +41,10 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 </style>`);
 
 const ia = () => window.HJ_IA;
-const vagas = cia => HJ.CONQ_MAX - cia.filter(c => !c.resgate).length;
+/* vagas por rank (0.6.4): 4 fáceis, 3 médias, 2 difíceis, 1 lendária; a resgatada vai para a coleção e libera a vaga */
+const vagasRk = cia => Object.fromEntries(Object.entries(HJ.CONQ_VAGAS).map(([rk, n]) => [rk, Math.max(0, n - cia.filter(c => !c.resgate && c.rk === rk).length)]));
+const vagas = cia => Object.values(vagasRk(cia)).reduce((a, b) => a + b, 0);
+const RKS = [['D', 'fáceis', 'fácil'], ['C', 'médias', 'média'], ['B', 'difíceis', 'difícil'], ['A', 'lendária', 'lendária']];
 const nomeF = k => spell(k).n;
 const recTxt = c => `${fmt(c.j)} J ou o feitiço ${nomeF(c.f)}`;
 const progTxt = c => { const at = Math.min(c.at, c.meta);
@@ -50,19 +53,21 @@ const pct = c => Math.max(0, Math.min(100, c.meta ? c.at / c.meta * 100 : 0));
 let PROP = null;   // propostas em revisão: {itens:[{p, v, sel}], erro}
 
 /* ---------- aba Book → Conquistas da IA ---------- */
-function book(S, cia){
-  if(!cia.some(c => c.no === UI.bksel)) UI.bksel = (cia.find(c => c.on && !c.resgate) || cia.find(c => !c.on) || cia[0] || {}).no || '';
-  const vg = vagas(cia);
+function book(S, ciaTodas){
+  const cia = ciaTodas.filter(c => !c.resgate);   // as resgatadas ficam em Book → Conquistas
+  if(!cia.some(c => c.no === UI.bksel)) UI.bksel = (cia.find(c => c.on) || cia[0] || {}).no || '';
+  const vg = vagas(ciaTodas), vr = vagasRk(ciaTodas);
   const carta = c => `<button class="gc cq${c.on ? ' on' : ''}" data-bksel="${esc(c.no)}" aria-pressed="${UI.bksel === c.no}"><span class="no">Nº ${esc(c.no)}</span><span class="rk">${c.rk}</span><span class="big">${ic(c.ic)}</span>
     ${c.resgate ? '<span class="selo">resgatada</span>' : c.on ? '<span class="selo pega">resgatar</span>' : ''}
     <div><div class="og">${esc(c.dif)}</div><div class="gn">${esc(c.n)}</div><div class="cqbar" style="margin-top:6px"><i style="width:${c.on ? 100 : pct(c)}%"></i></div></div></button>`;
-  document.getElementById('bk-grid').innerHTML = cia.map(carta).join('')
-    + Array.from({length:Math.max(0, vg)}, () => `<div class="gc empty" style="font-size:12px;text-align:center;padding:10px">vaga para uma conquista nova</div>`).join('')
-    + `<div style="grid-column:1/-1">${novasHTML(cia, vg)}</div>`;
+  document.getElementById('bk-grid').innerHTML = RKS.map(([rk, nome, um]) => `<div style="grid-column:1/-1;margin-top:6px"><p class="cap" style="margin:6px 0 0">rank ${rk} · ${HJ.CONQ_VAGAS[rk]} ${nome} · ${fmt(HJ.conqRk(rk).j)} J ou ${esc(nomeF(HJ.conqRk(rk).f))}</p></div>`
+      + cia.filter(c => c.rk === rk).map(carta).join('')
+      + Array.from({length:vr[rk]}, () => `<div class="gc empty" style="font-size:12px;text-align:center;padding:10px">vaga ${um}</div>`).join('')).join('')
+    + `<div style="grid-column:1/-1">${novasHTML(ciaTodas, vg)}</div>`;
   const c = cia.find(c => c.no === UI.bksel);
   document.getElementById('bk-det').innerHTML = c ? detHTML(c) : `<div class="face" style="color:var(--grn);border-color:var(--grn)">${ic('card')}</div><p class="cap">conquistas da IA · 200+</p><h3>Desafios feitos para você</h3>
     <p>A IA olha as suas disciplinas, hábitos e tarefas e propõe desafios <b>difíceis, mas possíveis</b>. Você aceita os que quiser; o jogo confere sozinho e, quando você conquista, dá para escolher <b>Jenny ou um feitiço</b>.</p>
-    <p class="sub">Até ${HJ.CONQ_MAX} abertas ao mesmo tempo. Peça as primeiras em <b>Propor conquistas com IA</b>.</p>`;
+    <p class="sub">${HJ.CONQ_MAX} vagas: 4 fáceis, 3 médias, 2 difíceis e 1 lendária. Resgatada, a carta vai para Book → Conquistas e a vaga abre. Peça as primeiras em <b>Propor conquistas com IA</b>.</p>`;
 }
 function detHTML(c){
   const rec = c.resgate ? `<div class="cq-ok">✓ resgatada · ${c.resgate.como === 'jenny' ? `+${fmt(c.resgate.j)} J` : `feitiço ${esc(nomeF(c.resgate.k))}`}${c.resgate.em ? ` · ${ddmm(c.resgate.em)}` : ''}</div>`
@@ -79,9 +84,9 @@ function detHTML(c){
 
 /* ---------- propor conquistas: o pedido (com os fatos do jogador) e a revisão das respostas ---------- */
 function novasHTML(cia, vg){
-  const lig = ia() && ia().ligada(), roda = ia() && ia().rodando(), n = Math.min(5, vg);
+  const lig = ia() && ia().ligada(), roda = ia() && ia().rodando(), n = vg;
   return `<div class="cq-novas" id="cq-novas"><h3>${ic('card')} Propor conquistas com IA</h3>
-    ${vg <= 0 ? `<p class="sub" style="margin:0">Você já tem ${HJ.CONQ_MAX} conquistas da IA abertas. Para pedir novas, conquiste (e resgate) ou descarte alguma.</p>`
+    ${vg <= 0 ? `<p class="sub" style="margin:0">As ${HJ.CONQ_MAX} vagas estão ocupadas. Para pedir novas, conquiste (e resgate) ou descarte alguma.</p>`
       : lig ? `<p class="sub" style="margin:0">A IA (${esc(ia().nomeAg())}) lê o seu ritmo, as disciplinas, os hábitos e as palavras das tarefas e propõe ${n === 1 ? '1 desafio' : `até ${n} desafios`}. O jogo confere cada um e calcula a dificuldade e a recompensa; você aceita os que quiser.</p>
         <div class="cq-linha"><button type="button" class="btn v" data-cqpede${roda ? ' disabled' : ''}>propor conquistas com IA</button><button type="button" class="go" data-cqcopia>ou copiar o pedido</button></div>`
       : `<p class="sub" style="margin:0">1. Copie o pedido: ele já vai com o seu ritmo, disciplinas, hábitos e palavras das tarefas. 2. Cole numa IA de chat. 3. Cole a resposta aqui e confira. Com a IA ligada em Configurações, ela faz isso sozinha.</p>
@@ -92,18 +97,21 @@ function novasHTML(cia, vg){
 }
 function revisaHTML(vg){
   if(PROP.erro) return `<p class="sub" style="color:var(--red);margin:0">${esc(PROP.erro)}</p>`;
-  const sel = PROP.itens.filter(it => it.sel).length, ok = PROP.itens.filter(it => !it.v.erro);
+  const sel = PROP.itens.filter(it => it.sel).length, ok = PROP.itens.filter(it => !it.v.erro), vr = vagasRk(HJ.conqIA(CTX, estado()));
+  const passa = RKS.filter(([rk]) => PROP.itens.filter(it => it.sel && it.v.rk === rk).length > vr[rk]).map(([rk]) => `rank ${rk}: só cabe${vr[rk] === 1 ? '' : 'm'} ${vr[rk]}`);
   return `<p class="cap" style="margin:6px 0 0">propostas · marque as que quer aceitar</p>
     ${PROP.itens.map((it, i) => { const v = it.v, rk = v.erro ? null : HJ.conqRk(v.rk);
       return `<label class="cq-prop${v.erro ? ' ruim' : ''}"><input type="checkbox" data-cqsel="${i}"${it.sel ? ' checked' : ''}${v.erro ? ' disabled' : ''}>
         <span><b>${esc(String(it.p.nome || 'sem nome'))}</b>${it.p.texto ? `<p>${esc(String(it.p.texto))}</p>` : ''}<p>${v.erro ? `<span class="erro">fora: ${esc(v.erro)}</span>` : `regra: ${esc(HJ.descConq(v.r, CTX))}`}</p></span>
         <span class="rk">${rk ? `rank ${rk.rk} · ${rk.n}<small>~${v.dias} dias · ${fmt(rk.j)} J ou ${esc(nomeF(rk.f))}</small>` : ''}</span></label>`; }).join('')}
-    <div class="cq-linha"><button type="button" class="btn v" data-cqcria${sel && sel <= vg ? '' : ' disabled'}>aceitar as marcadas (${sel})</button>${sel > vg ? `<span class="sub" style="color:var(--red)">só cabem ${vg}</span>` : ''}<button type="button" class="go" data-cqlimpa>descartar propostas</button>
+    <div class="cq-linha"><button type="button" class="btn v" data-cqcria${sel && !passa.length ? '' : ' disabled'}>aceitar as marcadas (${sel})</button>${passa.length ? `<span class="sub" style="color:var(--red)">${passa.join(' · ')}</span>` : ''}<button type="button" class="go" data-cqlimpa>descartar propostas</button>
       ${ok.length ? '' : '<span class="sub">nenhuma proposta passou na conferência: peça de novo</span>'}</div>`;
 }
 const ini28 = () => HJ.addD(HOJE, -27), desde = () => D.feitas.map(t => t.done).filter(Boolean).sort()[0] || HOJE;
 function pedido(cia){
-  const S = estado(), J = CTX.JOG, de = ini28(), n = Math.max(1, Math.min(5, vagas(cia)));
+  const S = estado(), J = CTX.JOG, de = ini28(), n = Math.max(1, vagas(cia)), vr = vagasRk(cia);
+  const faixas = [['D', 'fácil (dá para cumprir em até 7 dias no meu ritmo)'], ['C', 'média (8 a 14 dias)'], ['B', 'difícil (15 a 30 dias)'], ['A', 'lendária (mais de 30 dias, até o fim da temporada)']]
+    .filter(([rk]) => vr[rk] > 0).map(([rk, t]) => `${vr[rk]} ${t}`).join(', ');
   const feitas = D.feitas.filter(t => t.done && t.done >= de && !HJ.isRec(t));
   const tipos = Object.entries(HJ.CONQ_TIPOS).map(([k, nome]) => `${nome} (${k}): ${feitas.filter(t => HJ.tipoDe(t) === k).length}`).join(', ');
   let melhor = 0; for(let k = 0; k < 8; k++){ let x = 0; const w = HJ.addD(HOJE, -HJ.dow(HOJE) - 7*(k+1)); for(let i = 0; i < 7; i++) x += S.xpDia[HJ.addD(w, i)] || 0; melhor = Math.max(melhor, x); }
@@ -142,6 +150,7 @@ function pedido(cia){
     '- semana: {"regra": "semana", "xp": 400} = uma semana (seg a dom) com xp ou mais, até o dobro da melhor semana.',
     '- nome: curto e no tema (até 60 letras). texto: uma ou duas frases no tema, sem inventar fatos (até 300 letras).',
     `- ic: um destes ícones: ${HJ.CONQ_ICS.join(' ')}.`,
+    `- Dificuldade: quero ${faixas || '1 de qualquer dificuldade'}. O jogo mede a dificuldade pelo meu ritmo das últimas 4 semanas.`,
     '- Varie as regras e os alvos. Nada que já esteja cumprido ou que repita uma conquista aberta. Tem que dar para cumprir até o fim da temporada.',
     '- A recompensa e a dificuldade quem decide é o jogo: não fale de prêmio.', '', 'DADOS', ...L].join('\n');
 }
@@ -150,11 +159,11 @@ function confere(txt){
   let lista; try { lista = JSON.parse(txt.slice(i, j + 1)); } catch(e){ PROP = {itens:[], erro:'A resposta não é a lista JSON pedida. Peça de novo (ou cole só a lista).'}; return; }
   if(!Array.isArray(lista) || !lista.length){ PROP = {itens:[], erro:'A resposta veio sem conquistas.'}; return; }
   const vistos = new Set();
-  PROP = {itens: lista.slice(0, 8).filter(p => p && typeof p === 'object').map(p => { let v = HJ.avaliaConq(p, CTX, S);
+  PROP = {itens: lista.slice(0, HJ.CONQ_MAX).filter(p => p && typeof p === 'object').map(p => { let v = HJ.avaliaConq(p, CTX, S);
     if(!v.erro && !(String(p.nome || '').trim())) v = {erro:'sem nome'};
     const chave = v.erro ? '' : JSON.stringify(v.r); if(chave && vistos.has(chave)) v = {erro:'repetida'}; vistos.add(chave);
     return {p, v, sel:false}; })};
-  let vg = vagas(HJ.conqIA(CTX, S)); for(const it of PROP.itens) if(!it.v.erro && vg > 0){ it.sel = true; vg--; }
+  const vr = vagasRk(HJ.conqIA(CTX, S)); for(const it of PROP.itens) if(!it.v.erro && vr[it.v.rk] > 0){ it.sel = true; vr[it.v.rk]--; }
 }
 async function pede(cia){
   PROP = null; render();
@@ -201,6 +210,6 @@ document.addEventListener('click', e => {
 });
 const sync0 = sync;
 sync = api => { sync0(api); setTimeout(avisa, 800); };
-window.HJ_CONQ = {book, pedido, confere};
+window.HJ_CONQ = {book, pedido, confere, det: detHTML};
 if(CTX){ setTimeout(avisa, 800); if(cur === 'bk') render(); }
 })();

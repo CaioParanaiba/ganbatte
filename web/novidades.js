@@ -13,6 +13,12 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.HJ_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.4-beta3", "nome": "atualização das expedições", "data": "2026-10-13",
+   "resumo": "O Book reorganizado: a coleção sem casas vazias, três cartas para cada hábito e 10 vagas para os desafios da IA.",
+   "itens": [
+     {"ic": "card", "t": "Coleção de conquistas", "d": "Book → Conquistas mostra só as cartas do seu jogo, sem casas vazias: primeiro as conquistadas, depois as que faltam. Cada hábito ganha três cartas, pelo nível (3, 6 e 10), e o Ten ganha a de 60 dias. Os desafios da IA que você resgata entram aqui."},
+     {"ic": "crown", "t": "10 desafios da IA", "d": "A aba Desafios da IA tem 10 vagas: 4 fáceis, 3 médias, 2 difíceis e 1 lendária. O pedido diz à IA quantos de cada dificuldade faltam. Resgatado, o desafio vai para a coleção e a vaga abre para outro."}
+   ]},
   {"versao": "0.6.4-beta2", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.4",
    "resumo": "Rebalanceamento: o seu XP e a sua Jenny podem ter diminuído. Hábitos ganham nível, o Ten passa a pedir uma tarefa de verdade, e as contribuições e o Duolingo de antes de ligar valem menos.",
    "itens": [

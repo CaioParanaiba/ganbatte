@@ -24,6 +24,8 @@ aponta para ela (uma cópia git na branch beta confere as novidades da beta: `ca
 Fluxo de uma versão: desenvolver e testar na `beta` → push na `beta` → usar a versão de verdade por 1 ou 2 dias →
 merge da `beta` na `main` + tag `vX.Y`. Só o merge na `main` avisa os jogadores. Nunca dar push de trabalho novo direto na `main`.
 **Ao lançar:** `VERSAO` (servidor.py) + `VERSAO_PAGINA` (web/index.html) + topo do `web/novidades.js` + tabela de versões do README.
+**Aviso de pontos ao juntar as betas:** se alguma beta tem `"aviso": "X.Y.Z"`, a entrada final da `X.Y.Z` leva o mesmo
+`"aviso"` (e os itens dele primeiro): quem viu na beta não vê de novo (`tour["nv:aviso:X.Y.Z"]`) e quem vem da `main` vê uma vez.
 **Nome das versões (desde a 0.5.8):** na `beta`, `X.Y.Z-betaN` (0.5.8-beta1, 0.5.8-beta2...); o merge na `main` sai como
 `X.Y.Z` (0.5.8), com uma entrada só no `novidades.js` que junta o que as betas trouxeram (tire as entradas `-betaN`).
 **Versão grande (desde a 0.6):** `X.Y` com nome de série novo (`VERSAO_NOME`). No `novidades.js` vira uma entrada só, com
@@ -175,6 +177,10 @@ só ~26% de jogar. O Ten dele ficou "on" em todos esses dias.
 - **Regra (13/10/2026): toda mudança em XP, Jenny ou pontos já ganhos sai com aviso grande** (`"aviso"` no `novidades.js`):
   janela como a da 0.6, com o que mudou e quanto mudou no jogo de cada um. Também corrigido: Gyo usado direto (sem ser
   "à escolha") gravava o atributo errado.
+
+**Feito na 0.6.4-beta3** (#49): Book → Conquistas sem casas vazias, três cartas por hábito pelo nível (3, 6, 10) nos números
+livres de 000–099, Ten de 60 dias e os desafios da IA resgatados; Desafios da IA com 10 vagas por rank (`CONQ_VAGAS`). O
+que melhorar no Book (numeração, organização, validade dos desafios) está na #48.
 
 **Falta decidir:**
 1. **Caçadas e expedições** (#28): calibrar `MARCO_ETAPA`, `MARCO_DIA`, `EXP_SEMANA` (marco vale até 120 XP). Esperar o

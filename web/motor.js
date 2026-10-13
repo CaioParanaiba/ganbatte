@@ -359,8 +359,8 @@ function niveisHab(C, feitas, fer, salvos){
   for(const id of new Set([...Object.keys(porId), ...Object.keys(salvos || {})])){
     const L = porId[id] || [], sal = (salvos || {})[id] || new Set(), meta = semanalDe(C.JOG, id);
     const dias0 = L.map(x => x[0]).concat([...sal]).sort(); if(!dias0.length) continue;
-    let nv = 1, s = 0, nvHoje = 1;
-    const sobe = () => { s++; if(nv < HAB_NV_MAX && s >= habPede(nv, meta)){ nv++; s = 0; } }, cai = () => { nv = Math.max(1, nv - 1); s = 0; };
+    let nv = 1, s = 0, nvHoje = 1, top = 1;   // top: o maior nível já alcançado (as cartas do hábito no Book)
+    const sobe = () => { s++; if(nv < HAB_NV_MAX && s >= habPede(nv, meta)){ nv++; s = 0; top = Math.max(top, nv); } }, cai = () => { nv = Math.max(1, nv - 1); s = 0; };
     if(meta){   // semanal: a semana (seg a dom) com a meta batida sobe; a que já passou sem a meta cai
       const SEG = addD(HOJE, -dow(HOJE)), noDia = d => addD(d, -dow(d));
       for(let w = noDia(dias0[0]); w <= SEG; w = addD(w, 7)){
@@ -379,7 +379,7 @@ function niveisHab(C, feitas, fer, salvos){
       }
     }
     // nv/xp: o nível agora e quanto a próxima vez vale; s de pede: o caminho até o próximo; nvHoje: o nível que pagou hoje
-    hoje[id] = {nv, xp: habXP(nv), s, pede: habPede(nv, meta), max: nv >= HAB_NV_MAX, nvHoje, sem: !!meta};
+    hoje[id] = {nv, xp: habXP(nv), s, pede: habPede(nv, meta), max: nv >= HAB_NV_MAX, nvHoje, top, sem: !!meta};
   }
   return {xp, hoje};
 }
@@ -718,6 +718,7 @@ function cartas(C, S){
     c('021','E','Ten de 7 dias',`7 dias seguidos. Recorde: ${S.ten.max}.`, S.ten.max >= 7, 'flame'),
     c('022','D','Ten de 14 dias',`14 dias seguidos. Recorde: ${S.ten.max}.`, S.ten.max >= 14, 'flame'),
     c('023','B','Ten de 30 dias',`30 dias seguidos. Recorde: ${S.ten.max}.`, S.ten.max >= 30, 'flame'),
+    c('020','A','Ten de 60 dias',`60 dias seguidos. Recorde: ${S.ten.max}.`, S.ten.max >= 60, 'flame'),
     c('024','F','Constância','Um mesmo hábito feito em 7 dias.' + hn, h.max >= 7, 'man'),
     c('025','D','Segunda natureza','Um mesmo hábito feito em 30 dias.' + hn, h.max >= 30, 'man'),
     c('026','B','Parte de você','Um mesmo hábito feito em 100 dias.' + hn, h.max >= 100, 'man'),
@@ -757,7 +758,15 @@ function cartas(C, S){
       c(no(3),'B',`${b.n} derrotado`,`Passar em ${b.n}: média 6 ou mais.`, b.dead, 'spider'),
     ];
   });
-  return gerais.concat(porDisc).sort((p,q) => p.no.localeCompare(q.no))
+  /* por hábito (0.6.4): três cartas pelo nível (3, 6 e 10), nos números livres de 000–099 na ordem dos hábitos (a numeração
+     fica por enquanto: ver a issue #48) */
+  const usados = new Set(gerais.concat(porDisc).map(x => x.no).concat(Array.from({length:28}, (_, i) => String(60 + i).padStart(3, '0'))));
+  const livres = Array.from({length:100}, (_, i) => String(i).padStart(3, '0')).filter(no => !usados.has(no) && no !== '000');
+  const habsC = ((C.JOG && C.JOG.habitos) || []).map(x => [x.id, x.n]).concat(duoOn ? [['duo', 'Duolingo']] : []);
+  const porHab = habsC.slice(0, Math.floor(livres.length / 3)).flatMap(([id, n], i) => { const top = ((S.nv || {})[id] || {}).top || 1;
+    return [[3, 'E', 'firme', 'man'], [6, 'C', 'forte', 'man'], [10, 'A', 'lendário', 'crown']].map(([nv, rk, adj, icn], k) =>
+      c(livres[3*i + k], rk, `${n}: hábito ${adj}`, `Chegar ao nível ${nv} em ${n}. Maior nível: ${top}.`, top >= nv, icn)); });
+  return gerais.concat(porDisc, porHab).sort((p,q) => p.no.localeCompare(q.no))
     .concat((C.NARRADAS||[]).map(c => ({no:c.no, tipo:c.tipo, periodo:c.periodo, n:c.titulo, d:c.texto, cron:c.cronica||'', escrita:c.escrita, ic:c.ic||'scroll',
     rk:{semana:'C', mes:'B', semestre:'A', ano:'SS'}[c.tipo] || 'C', o:'claude', on:true}))).concat(conqIA(C, S));
 }
@@ -770,9 +779,11 @@ function cartas(C, S){
      nota       {disc, media} ou {disc, aval, nota}  pontos garantidos na disciplina ≥ media×10, ou a nota de uma avaliação
      constancia {n}                                  Ten de n dias seguidos
      semana     {xp}                                 uma semana (seg a dom) com xp ou mais */
-const CONQ_MAX = 5;   // conquistas da IA abertas (não resgatadas) ao mesmo tempo (a confirmar)
+/* conquistas da IA abertas (não resgatadas) ao mesmo tempo, por rank (0.6.4): 4 fáceis, 3 médias, 2 difíceis e 1 lendária.
+   Resgatada, a carta vai para a coleção (Book → Conquistas) e a vaga abre */
+const CONQ_VAGAS = {D:4, C:3, B:2, A:1}, CONQ_MAX = Object.values(CONQ_VAGAS).reduce((a, b) => a + b, 0);
 // rank pela estimativa de dias até cumprir; recompensa à escolha do jogador: Jenny ou o feitiço (a calibrar)
-const CONQ_RK = [['D', 7, 800, 'zetsu', 'fácil'], ['C', 14, 1500, 'gyo', 'média'], ['B', 30, 3000, 'ko', 'difícil'], ['A', Infinity, 6000, 'escolha', 'muito difícil']]
+const CONQ_RK = [['D', 7, 800, 'zetsu', 'fácil'], ['C', 14, 1500, 'gyo', 'média'], ['B', 30, 3000, 'ko', 'difícil'], ['A', Infinity, 6000, 'escolha', 'lendária']]
   .map(([rk, dias, j, f, n]) => ({rk, dias, j, f, n}));
 const conqRk = rk => CONQ_RK.find(x => x.rk === rk) || CONQ_RK[0];
 const CONQ_TIPOS = {ent:'entrega', est:'estudo', fac:'faculdade', tre:'treino e projetos', vid:'vida'};
@@ -973,7 +984,7 @@ function capsula(api){
 window.HJ = {HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
-  CONQ_MAX, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
+  CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
   MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, feriasDe,
   FONTES, lojaTotal, relatorio, relatorioCSV, TEMA, nomeTemporada, fimTemporada, capsula};
 })();
