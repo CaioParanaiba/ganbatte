@@ -257,7 +257,7 @@ gravações do `guia.js`) e pelo card *temporada* em Configurações (foto parci
 zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
 
 **0.6.4** (13/10/2026): lançada na `main`, juntando a 0.6.4-beta1 a beta5 (issues #6, #7, #36, #37, #46, #47, #49, #50).
-A tela do histórico de temporadas, que faltava da #7, virou issue própria.
+A tela do histórico de temporadas, que faltava da #7, virou a #52.
 
 **0.6.3** (13/10/2026): lançada na `main`, juntando a 0.6.3-beta1 e a beta2 (issues #12, #23, #27, #31, #32).
 

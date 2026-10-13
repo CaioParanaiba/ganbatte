@@ -323,6 +323,15 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class Estado(Base):
+    def test_grava_o_acerto_da_064(self):
+        """A 0.6.4 recusava o estado com migra e tenRec (gravados pelo acerto do rebalanceamento): nada da loja ficava salvo."""
+        s.api_jogo_estado({"estado": {"own": ["fr-hunter"], "migra": {"0.6.4": {"xp": 1, "j": 10, "ten": 3, "em": "2026-10-13"}},
+                                      "tenRec": 3, "acertos": {"0.6.4": 500}}})
+        e = s.ler_json("estado.json", {})
+        self.assertEqual((e["own"], e["tenRec"], e["acertos"]["0.6.4"]), (["fr-hunter"], 3, 500))
+
+
 class Devolucao(Base):
     """#51: o que voltou para a loja na devolução não volta pela gravação de uma aba antiga; comprado de novo depois, fica."""
     DV = {"v": "2026-10-13", "em": "2026-10-13", "h": "12:00:00", "own": ["th-killua", "pal-killua"], "feiticos": ["ko"], "semana": "2026-W42", "j": 0}

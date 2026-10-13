@@ -693,7 +693,7 @@ function estado(C){
    Prêmio real e feitiço já usado ficam. Peças de um tema devolvido saem junto, menos as compradas à parte */
 const DEVOLVE_DIA = '2026-10-13';
 function devolucao(C, S){
-  const E = C.EST, F = +((E.acertos || {})[MIGRA]) || 0;
+  const E = C.EST, F = +((S.rec.acertos || {})[MIGRA]) || 0;   // pelo estado calculado: a 0.6.4 não conseguia gravar o acerto (migra fora do servidor)
   if(E.devolve || !(F > 0)) return null;
   const own = new Set(E.own || []), cat = catalogo(C.AVATARES), bolsa = {...S.inv}, sem = (E.bought || {})[semanaISO(DEVOLVE_DIA)] || [];
   const avulsas = new Set((E.compras || []).filter(c => c && c.tipo === 'cos' && c.d !== DEVOLVE_DIA).map(c => c.id));

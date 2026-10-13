@@ -998,6 +998,8 @@ def api_jogo_narrada(d):
 
 
 COMPRAS_MAX = 3000   # compras guardadas no registro (as mais antigas saem primeiro)
+
+
 def devolve_filtra(e):
     """Devolução (#51, devolucao() no motor.js): o que voltou para a loja não volta para o jogador quando uma aba antiga grava o
     estado. Comprado de novo depois da devolução (registro de compras), fica."""

@@ -462,7 +462,7 @@ function aba(S){
 document.addEventListener('click', async ev => {
   const q = s => ev.target.closest(s); let b;
   if(q('#l-more')){ UI.ldet = !UI.ldet; formCacadas(); if(UI.ldet) formL(); return; }
-  if((b = q('[data-cfold]'))){ UI.cfold = UI.cfold || {}; const k = b.dataset.cfold; UI.cfold[k] = !UI.cfold[k]; render(); return; }
+  if((b = q('[data-cfold]'))){ UI.cfold = UI.cfold || {}; const k = b.dataset.cfold; UI.cfold[k] = !UI.cfold[k]; if(!UI.cfold[k]) delete UI.cfold[k]; try { localStorage.setItem('hj-cfold', JSON.stringify(UI.cfold)); } catch(e){} render(); return; }
   if((b = q('[data-cetapa]'))){ UI.ldet = true; UI.lcac = b.dataset.cetapa; formL(); const t = document.getElementById('l-txt'); t.focus(); t.scrollIntoView({block:'center'}); return; }
   if((b = q('[data-cedit]'))){ abreEditC(b.dataset.cedit); return; }
   if((b = q('[data-cfecha]'))){ b.disabled = true; fechaCac(b.dataset.cfecha); return; }
