@@ -352,6 +352,8 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
 5. **Ideias guardadas, fora do template para não complicar** (avaliar se interessam aos amigos):
    - gravar o áudio da aula e transcrever no computador, gerando resumo e tarefas (o jogo do autor faz);
    - conferir datas de prova na agenda do Google.
+6. **Peles na loja (#17).** O visual Nen seco virou o padrão na 0.6.6-beta3; duas peles testadas junto ficaram guardadas
+   em `docs/peles/` (Licença Hunter e Nen com aura), com o passo a passo para virarem itens da Masadora.
 
 ## Técnico
 

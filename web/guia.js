@@ -251,7 +251,7 @@ function desenhaW(){
   let bg = document.getElementById('wz'); if(!bg){ bg = document.createElement('div'); bg.id = 'wz'; bg.className = 'wz-bg'; document.body.appendChild(bg); }
   const ult = W.passo === PASSOS.length - 1 && !W.editar;
   bg.innerHTML = `<div class="wz" role="dialog" aria-modal="true" aria-labelledby="wz-t">
-    <div class="wz-top"><img src="${LOGO}" alt=""><div><h2 id="wz-t">Licença Hunter</h2><p>Passo ${W.passo + 1} de ${PASSOS.length} · ${PASSOS[W.passo]}</p></div>
+    <div class="wz-top"><img src="${MARCA}" alt=""><div><h2 id="wz-t">Licença Hunter</h2><p>Passo ${W.passo + 1} de ${PASSOS.length} · ${PASSOS[W.passo]}</p></div>
       <div class="wz-steps" aria-hidden="true">${PASSOS.map((_,i) => `<i class="${i <= W.passo ? 'on' : ''}"></i>`).join('')}</div></div>
     <div class="wz-body">${W.editar ? passoHTML().replace(/<p>Cada disciplina vira um chefão do Genei Ryodan\..*?<\/p>/s, '<p>Adicione, renomeie ou remova disciplinas e ajuste as datas da N1 e da N2. As notas já registradas continuam valendo enquanto a sigla for a mesma; disciplinas com plano detalhado ficam como estão no arquivo.</p>') : passoHTML()}</div>
     <div class="wz-foot"><button type="button" class="btn" data-wznav="-1"${W.passo ? '' : ' hidden'}>← voltar</button><span class="err" role="alert">${esc(W.err)}</span>

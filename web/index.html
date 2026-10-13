@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8">
+<html lang="pt-BR" class="vis-nen"><head><meta charset="utf-8">
+<script>try { if(localStorage.getItem('gb-visual') === 'classico') document.documentElement.classList.remove('vis-nen'); } catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ganbatte</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231D2027' stroke='%23CDB384' stroke-width='3'/%3E%3Cpath d='M32 9l6 15 16 1-12 10 4 16-14-9-14 9 4-16-12-10 16-1z' fill='none' stroke='%23CDB384' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial Black,Arial' font-weight='900' font-size='15' fill='%23E2E5EB'%3EH%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3 58 18v28L32 61 6 46V18z' fill='%2316181F' stroke='%23E0364F' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M14 22v20M23 22v20M14 32h9M41 22v20M50 22v20M41 32h9' stroke='%23F4F1EA' stroke-width='4.2' fill='none'/%3E%3Cpath d='M28.6 28.6l6.8 6.8M35.4 28.6l-6.8 6.8' stroke='%23E0364F' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&family=Pixelify+Sans:wght@400;600;700&family=Silkscreen:wght@400;700&family=Anton&family=Bangers&family=DotGothic16&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&text=%E5%BF%B5%E3%83%8F%E3%83%B3%E3%82%BF%E3%83%BC&display=swap" rel="stylesheet">
@@ -22,6 +23,7 @@
   --f-dot:DotGothic16,"Courier New",monospace;
   --f-manga:Anton,Impact,"Arial Narrow",sans-serif;
   --f-comic:Bangers,Impact,"Arial Black",sans-serif;
+  --hex:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
 }
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){color-scheme:light;
   --bg:#F1F2F7;--panel:#FFFFFF;--panel2:#F5F6FB;--ink:#1D2030;--soft:#5E6480;--faint:#9AA0B8;--hair:#E3E5EE;--track:#E9EBF2;
@@ -728,7 +730,7 @@ a.btn{display:inline-block;text-decoration:none}
 .lk{display:flex;gap:10px;align-items:center;border:1px solid var(--hair);background:var(--panel);border-radius:12px;padding:9px 14px;cursor:pointer;font:600 13.5px var(--f-ui);color:var(--ink);text-align:left}
 .lk:hover{border-color:color-mix(in srgb,var(--volt) 55%,var(--hair))}
 .lk .av{--s:30px} .lk small{display:block;font:500 11.5px var(--f-mono);color:var(--soft)}
-.go{background:none;border:0;padding:0;color:var(--prompt);cursor:pointer;font:600 12px var(--f-mono)} .go:hover{text-decoration:underline}
+.go{background:none;border:0;padding:0;white-space:nowrap;color:var(--prompt);cursor:pointer;font:600 12px var(--f-mono)} .go:hover{text-decoration:underline}
 .inbox textarea{width:100%;min-height:64px;resize:vertical;font:13px/1.4 var(--f-ui);padding:8px 10px;border-radius:8px;border:1px solid var(--hair);background:var(--panel2);color:var(--ink)}
 .inbox .log{display:grid;gap:6px;margin-top:10px}
 .inbox .log div{font-size:12.5px;padding:6px 9px;border-radius:8px;background:var(--panel2);border-left:3px solid var(--grn)}
@@ -1147,7 +1149,7 @@ a.btn{display:inline-block;text-decoration:none}
 .l-seg select,.l-seg input[type=date]{background:var(--panel2);border:1px solid var(--hair);border-radius:99px;padding:3px 10px;font:12.5px var(--f-ui);color:var(--ink)}
 .l-prev{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:10px;border-top:1px dashed var(--hair);font:600 12.5px var(--f-mono)}
 .l-prev code{font:12px var(--f-mono);color:var(--soft);background:var(--panel2);border-radius:6px;padding:3px 8px;overflow-wrap:anywhere;min-width:0}
-.l-xp{font:700 12px var(--f-mono);border-radius:7px;padding:2px 7px;background:color-mix(in srgb,var(--grn) 16%,transparent);color:var(--grn);white-space:nowrap;font-variant-numeric:tabular-nums}
+.l-xp{min-width:38px;text-align:center;font:700 12px var(--f-mono);border-radius:7px;padding:2px 7px;background:color-mix(in srgb,var(--grn) 16%,transparent);color:var(--grn);white-space:nowrap;font-variant-numeric:tabular-nums}
 .l-mult{font:600 11px var(--f-mono);color:var(--amb);white-space:nowrap}
 .l-groups{display:flex;flex-direction:column;gap:14px;margin-top:16px}
 .l-denovo{padding:3px 9px;font-size:11.5px;white-space:nowrap}
@@ -1173,7 +1175,7 @@ a.btn{display:inline-block;text-decoration:none}
 .l-tag.l-late{color:var(--red)} .l-tag.l-hoje{color:var(--amb)}
 .l-pri{font:700 10.5px var(--f-mono);color:var(--bg);background:var(--soft);border-radius:5px;padding:0 5px;margin-right:4px} .l-pri.A{background:var(--red)} .l-pri.B{background:var(--amb)}
 .l-right{display:flex;gap:6px;align-items:center}
-.l-acts{display:flex;gap:2px;opacity:0;transition:opacity .12s}
+.l-acts{display:flex;gap:2px;opacity:0;transition:opacity .12s;order:-1}   /* antes do XP: o XP fica sempre na ponta */
 .l-task:hover .l-acts,.l-task:focus-within .l-acts{opacity:1}
 .l-ib{border:0;background:none;border-radius:7px;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;color:var(--soft)}
 .l-ib:hover{background:var(--track);color:var(--ink)} .l-ib.del:hover{color:var(--red)}
@@ -1247,7 +1249,7 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 </svg>
 <div class="wrap">
   <header class="head">
-    <div style="display:flex;gap:14px;align-items:center"><span class="plate" style="width:46px;height:46px"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231D2027' stroke='%23CDB384' stroke-width='3'/%3E%3Cpath d='M32 9l6 15 16 1-12 10 4 16-14-9-14 9 4-16-12-10 16-1z' fill='none' stroke='%23CDB384' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial Black,Arial' font-weight='900' font-size='15' fill='%23E2E5EB'%3EH%3C/text%3E%3C/svg%3E" alt="Associação Hunter"></span>
+    <div style="display:flex;gap:14px;align-items:center"><span class="plate" style="width:46px;height:46px"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3 58 18v28L32 61 6 46V18z' fill='%2316181F' stroke='%23E0364F' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M14 22v20M23 22v20M14 32h9M41 22v20M50 22v20M41 32h9' stroke='%23F4F1EA' stroke-width='4.2' fill='none'/%3E%3Cpath d='M28.6 28.6l6.8 6.8M35.4 28.6l-6.8 6.8' stroke='%23E0364F' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E" alt="Ganbatte"></span>
       <div><h1>Ganbatte</h1><p style="margin:2px 0 0">O jogo do seu todo.txt. As regras estão na aba Regras; nome, hábitos e IA, em Configurações.</p></div></div>
     <div class="facts" id="facts"></div>
   </header>
@@ -1362,6 +1364,7 @@ const PXSKINS = {map:[['dia','Dia'],['tarde','Tarde'],['noite','Noite']], p1:[['
 const THEMES = [['simples','Simples'],['painel','Painel'],['leorio','Leorio'],['claro','Claro'],['gon','Gon'],['biscuit','Biscuit'],['kurapika','Kurapika'],['netero','Netero'],['killua','Killua'],['hisoka','Hisoka'],['meruem','Meruem'],['pergaminho','Pergaminho'],['zoldyck','Zoldyck'],['ryodan','Genei Ryodan'],['greed','Greed Island'],['abismo','Continente Negro'],['aurora','Aurora']];
 const avSrc = f => (window.GB_AV && window.GB_AV[f]) || 'a/' + f + '.png';   // no protótipo de arquivo único as fotos vêm embutidas
 const LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231D2027' stroke='%23CDB384' stroke-width='3'/%3E%3Cpath d='M32 9l6 15 16 1-12 10 4 16-14-9-14 9 4-16-12-10 16-1z' fill='none' stroke='%23CDB384' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial Black,Arial' font-weight='900' font-size='15' fill='%23E2E5EB'%3EH%3C/text%3E%3C/svg%3E";   // emblema do template (as fotos de perfil ficam em a/, servidas pelo servidor)
+const MARCA = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3 58 18v28L32 61 6 46V18z' fill='%2316181F' stroke='%23E0364F' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M14 22v20M23 22v20M14 32h9M41 22v20M50 22v20M41 32h9' stroke='%23F4F1EA' stroke-width='4.2' fill='none'/%3E%3Cpath d='M28.6 28.6l6.8 6.8M35.4 28.6l-6.8 6.8' stroke='%23E0364F' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E";   // a marca do jogo (cabeçalho, favicon, assistente); o LOGO acima continua sendo a foto padrão do jogador
 const discOf = t => GBx.discOf(t, CTX);
 const andar = xp => GBx.andar(xp, R.dif), custo = n => GBx.custo(n, R.dif), xpAte = n => GBx.xpAte(n, R.dif);
 const estado = () => { const S = GBx.estado(CTX); if(TESTE) S.jenny = Infinity; return S; };   // modo teste: Jenny infinita
@@ -1430,7 +1433,7 @@ function devolve(){
   EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.6.6-beta2';
+const VERSAO_PAGINA = '0.6.6-beta3';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1472,6 +1475,7 @@ function vista(){
   else { Object.assign(v, it.eq); if(it.fxs) v.fx = UI.fx.concat(it.fxs); }
   return v;
 }
+const visNen = () => document.documentElement.classList.contains('vis-nen');   // visual Nen (padrão) ou clássico: por computador, como efeitos e sons
 const fxVisiveis = () => UI.fxOff && !UI.prova ? [] : vista().fx;   // provando um efeito, ele aparece mesmo com os efeitos desligados
 function aplicaTema(){
   const r = document.documentElement, V = vista(), p = PALS[V.theme] || PALS.simples;
@@ -1924,7 +1928,7 @@ function rTT(){
 /* ---------- Configurações (o seu jogo, IA, servidor, efeitos e backup; guia.js e ia.js põem os cards de cima) ---------- */
 function rCfg(S){
   document.getElementById('cfg-root').innerHTML = `
-    <div class="card"><h2><span class="c">~/</span>configurações deste computador</h2><div class="togg" style="margin:0"><span class="sub">efeitos:</span><button data-fxoff="0" aria-pressed="${!UI.fxOff}">os comprados</button><button data-fxoff="1" aria-pressed="${!!UI.fxOff}">nenhum (calmo)</button></div><div class="togg" style="margin:8px 0 0"><span class="sub">sons:</span><button data-somoff="0" aria-pressed="${!somOff()}">ligados</button><button data-somoff="1" aria-pressed="${somOff()}">mudo</button></div></div>
+    <div class="card"><h2><span class="c">~/</span>configurações deste computador</h2><div class="togg" style="margin:0"><span class="sub">efeitos:</span><button data-fxoff="0" aria-pressed="${!UI.fxOff}">os comprados</button><button data-fxoff="1" aria-pressed="${!!UI.fxOff}">nenhum (calmo)</button></div><div class="togg" style="margin:8px 0 0"><span class="sub">sons:</span><button data-somoff="0" aria-pressed="${!somOff()}">ligados</button><button data-somoff="1" aria-pressed="${somOff()}">mudo</button></div><div class="togg" style="margin:8px 0 0"><span class="sub">visual:</span><button data-visual="nen" aria-pressed="${visNen()}">Nen (novo)</button><button data-visual="classico" aria-pressed="${!visNen()}">clássico</button></div></div>
     <div class="card"><h2><span class="c">~/</span>cofre do mês</h2><p style="margin:0 0 10px;font-size:14px">Para prêmios reais que custam dinheiro: você separa um valor por mês, ele acumula, e o R$ de cada prêmio sai dele. Desligado, o R$ dos prêmios é só um lembrete e não trava o resgate.</p>
       <div class="togg" style="margin:0"><span class="sub">cofre:</span><button data-cofre="1" aria-pressed="${cofreOn()}">ligado</button><button data-cofre="0" aria-pressed="${!cofreOn()}">desligado</button>${cofreOn() ? `<label class="sub" style="margin-left:8px">R$ <input data-cofrev value="${String(GBx.cofreMes(EST)).replace('.', ',')}" inputmode="decimal" style="width:70px" aria-label="valor do cofre por mês, em reais"> por mês</label>` : ''}</div></div>
     <div class="card"><h2><span class="c">~/</span>backup</h2><p style="margin:0 0 10px;font-size:14px">Baixa um ZIP com todos os seus dados: tarefas, notas, plano de avaliação, loja e configurações. Guarde de vez em quando, ou use para levar o jogo para outro computador (é só descompactar na pasta de dados, <span class="mono">${esc((CTX.SRV && CTX.SRV.dados) || '~/.ganbatte')}</span>).</p>${window.GB_DEMO ? '<button class="btn" disabled>no modo demonstração não há dados para baixar</button>' : '<a class="btn v" href="/api/backup" download>baixar meus dados</a>'}</div>
@@ -2531,6 +2535,7 @@ document.addEventListener('click', async e => {
     toast(`${spell(ef).n} usado <small>${msg}</small>`); render(); return; }
   const rl2 = q('[data-relat]'); if(rl2){ baixaRelatorio(rl2.dataset.relat); return; }
   const so = q('[data-somoff]'); if(so){ try { localStorage.setItem('gb-somoff', so.dataset.somoff); } catch(err){} render(); return; }
+  const vi = q('[data-visual]'); if(vi){ const nen = vi.dataset.visual === 'nen'; document.documentElement.classList.toggle('vis-nen', nen); try { localStorage.setItem('gb-visual', nen ? 'nen' : 'classico'); } catch(err){} render(); return; }
   const fo = q('[data-fxoff]'); if(fo){ UI.fxOff = fo.dataset.fxoff === '1'; try { localStorage.setItem('gb-fxoff', UI.fxOff ? '1' : '0'); } catch(err){} render(); return; }
   if(q('[data-inbox]')){ const el = document.getElementById('inbox-txt'), t = el.value.trim(); if(!t){ toast('Escreva a mudança primeiro'); return; }
     try { await post('/api/jogo/ajuste', {texto:t}); await recarrega(); toast('Anotado <small>em ajustes.txt</small>'); render(); } catch(err){ toast('Não enviou: ' + esc(err.message)); } return; }
@@ -2560,10 +2565,13 @@ document.addEventListener('click', async e => {
 document.addEventListener('visibilitychange', () => { if(!document.hidden) recarrega().then(render).catch(() => {}); });
 setInterval(() => { if(!document.hidden && !document.activeElement.matches('input,select,textarea')) recarrega().then(render).catch(() => {}); }, 20000);   // pega o que mudou no todo.txt por fora (terminal, editor)
 if(window.GB_DEMO) document.getElementById('demo-aviso').hidden = false;
-recarrega().then(() => tab((location.hash||'').slice(1))).catch(err => {
+/* espera os scripts de baixo (guia, expedições, novidades…): no modo demonstração os dados chegam antes deles, e a primeira
+   aba saía sem as partes que eles desenham (Projetos vazia). Com o servidor de verdade a ordem já era essa */
+const inicia = () => recarrega().then(() => tab((location.hash||'').slice(1))).catch(err => {
   document.getElementById('v-l').hidden = false;
   document.getElementById('v-l').innerHTML = `<div class="card" style="max-width:620px"><h2><span class="c">~/</span>jogo indisponível</h2><p>Não consegui ler os dados (${esc(err.message)}). Abra pelo servidor do jogo: rode <span class="mono">python3 servidor.py</span> e abra o endereço que ele mostrar.</p></div>`;
 });
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', inicia); else inicia();
 </script>
 <script src="guia.js"></script>
 <script src="chefes.js"></script>
@@ -2574,4 +2582,63 @@ recarrega().then(() => tab((location.hash||'').slice(1))).catch(err => {
 <script src="novidades.js"></script>
 <script src="feedback.js"></script>
 <script src="efeitos.js"></script>
+<!-- ---------- visual Nen (0.6.6-beta3): o padrão. O <html> nasce com .vis-nen; "clássico" em Configurações tira a classe.
+     Fica no fim do <body> para vir depois do CSS que os módulos põem no <head>. :where() não soma especificidade: paleta,
+     moldura, fundo, fonte e efeitos da loja (:root[data-…]) continuam valendo por cima. Peles guardadas para a loja: docs/peles/ ---------- -->
+<style id="gb-visual">
+/* título: o selo 念 em vermelho; a marca do jogo sem a placa clara */
+:where(.vis-nen) .head h1{font:600 28px/1 var(--f-hud);letter-spacing:.03em}
+:where(.vis-nen) .head h1::after{content:"念";display:inline-grid;place-items:center;width:28px;height:28px;margin-left:12px;vertical-align:3px;
+  font:700 18px/1 "Noto Serif JP",serif;color:#fff;background:var(--red);border-radius:4px}
+:where(.vis-nen) .head .plate{background:none;box-shadow:none;border-radius:0}
+:where(.vis-nen) .head .plate img{width:100%}
+:where(.vis-nen) .fact{border-radius:3px;background:none}
+
+/* caixas: o canto de chama só em cima à esquerda, sem sombra */
+:where(.vis-nen) :is(.card,.tower,.col,.l-list,.k,.gnav,.note,.hud,.season,.pano-top,.boss-mini,.b2top,.mission,.cofre,.mock,.x-kcol,.wz,.nv-big > div,.nv-pon > div,.tr-pop,#fb-pop){border-radius:14px 3px 3px 3px;box-shadow:none}
+:where(.vis-nen) :is(.gc,.it7,.lk,.opt,.qq,.nota,.flow > div:first-child,.rg-conta,.nv-it,.nv-seu,.cq-prop,.cq-rec button,.cq-regra,.cq-ok,.ce-obs,.x-kc,.ia-ags label,.wz-card,.wz-tag,.wz-x,.l-ajuda,.toast){border-radius:3px}
+:where(.vis-nen) .col .ch{background:none;border-bottom:1px solid var(--hair)}
+:where(.vis-nen) .nv-ver{background:var(--panel)}
+:where(.vis-nen) .tr-hole{border-radius:14px 3px 3px 3px}
+
+/* cabeçalho de card: hexágono pequeno de contorno no lugar do ~/ */
+:where(.vis-nen) .card h2{font:600 11px var(--f-hud);text-transform:uppercase;letter-spacing:.12em;color:var(--soft)}
+:where(.vis-nen) .card h2 .c{font-size:0;width:9px;height:10px;flex:none;clip-path:var(--hex);background:var(--soft);position:relative}
+:where(.vis-nen) .card h2 .c::after{content:"";position:absolute;inset:1.5px;clip-path:var(--hex);background:var(--panel)}
+:where(.vis-nen) :is(.col .bd h4,.l-k,.cap){font-family:var(--f-hud);letter-spacing:.14em}
+
+/* abas: sem caixa; a atual leva um traço embaixo */
+:where(.vis-nen) .gnav{padding:0 8px;gap:2px}
+:where(.vis-nen) .gnav button{border:0;border-radius:0;padding:12px 12px 10px;font:500 12.5px var(--f-hud);letter-spacing:.03em;border-bottom:1.5px solid transparent}
+:where(.vis-nen) .gnav button:hover{background:none;color:var(--ink)}
+:where(.vis-nen) .gnav button[aria-current="page"]{border:0;background:none;border-bottom:1.5px solid var(--ink);color:var(--ink)}
+:where(.vis-nen) .gnav .px{border:1px dashed color-mix(in srgb,var(--grn) 55%,var(--hair));border-radius:3px;padding:6px 10px}
+
+/* jogador: um anel fino, sem brilho (a moldura da loja, se tiver, vale por cima) */
+:where(.vis-nen) .av.me{box-shadow:0 0 0 3px var(--panel),0 0 0 4px var(--hair)}
+
+/* grupos da Lista */
+:where(.vis-nen) .l-grp h3 .t{font:600 12px var(--f-hud);letter-spacing:.14em}
+:where(.vis-nen) .l-grp h3 .t::before{content:"";display:inline-block;width:7px;height:8px;margin-right:8px;clip-path:var(--hex);background:currentColor}
+
+/* concluir: hexágono de contorno fino */
+:where(.vis-nen) .l-ck{position:relative;border:0;border-radius:0;clip-path:var(--hex);background:var(--c,var(--soft));width:20px;height:22px}
+:where(.vis-nen) .l-ck::before{content:"";position:absolute;inset:1.5px;clip-path:var(--hex);background:var(--panel)}
+:where(.vis-nen) .l-task:hover .l-ck::before{background:var(--panel2)}
+:where(.vis-nen) :is(.l-task.done,.l-hb.ok) .l-ck::before{display:none}
+
+/* peças pequenas: retas e discretas */
+:where(.vis-nen) .l-xp{border-radius:3px;background:none;border:1px solid color-mix(in srgb,var(--grn) 45%,transparent)}
+:where(.vis-nen) :is(.ex,.tab,.chip,.pill,.titulo,.fury,.l-tag,.l-pri,.l-chip,.l-box,.l-more,.l-cacs input,.l-edfull .dt,.btn,.usar,.reset,.l-seg select,.l-seg input[type=date],#l-date,
+  .togg button,.skins button,.themes button,.pn-opts button,.bk .tabs2 button,.shopc .cats button,.x-ics button,.fb-tipos button,.fb-form input,.fb-form textarea,.fb-form select,.x-add input,.x-wz textarea,.cq-novas textarea,.ia-box textarea,.rg-agora span,.rg-ind button,.rg-conta,.nv-v .topo em,.nv-st .pill,.nv-st .grande,.nv-big .grande,.wz input,.wz select){border-radius:3px}
+:where(.vis-nen) .btn{background:none}
+:where(.vis-nen) .btn.v{background:color-mix(in srgb,var(--volt) 8%,transparent)}
+
+/* barras: finas e lisas */
+:where(.vis-nen) :is(.l-bar,.xpbar){height:6px;border-radius:0}
+:where(.vis-nen) :is(.l-bar i,.xpbar > b){border-radius:0;background:var(--ink);box-shadow:none}
+:where(.vis-nen) :is(.l-boss .hp,.hp4,.hp,.attr .bar,.track .rail,.track .fill,.l-hnvb,.prep i,.x-pbar,.x-pbar > i){border-radius:0}
+:where(.vis-nen) :is(.l-boss .hp i,.hp4 > b,.attr .bar b){border-radius:0}
+:where(.vis-nen) :is(.l-hg i,.l-cal span,.dots i){border-radius:2px}
+</style>
 </body></html>

@@ -15,6 +15,13 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.6.6-beta3", "nome": "atualização das expedições", "data": "2026-10-13",
+   "resumo": "Visual novo, mais seco e com a cara do Nen, e a marca do Ganbatte. O visual de antes continua em Configurações.",
+   "itens": [
+     {"ic": "esp", "t": "Visual Nen", "d": "Linhas finas, cantos quase retos, hexágonos nos marcadores e na caixa de concluir, abas com um traço embaixo e o selo 念 ao lado do nome. Sem brilho nem degradê: efeito fica para a loja. A sua paleta, moldura, fundo e fonte continuam valendo. Prefere o de antes? Configurações → configurações deste computador → visual: clássico."},
+     {"ic": "crown", "t": "Marca do Ganbatte", "d": "O hexágono com H×H no cabeçalho, na aba do navegador e no assistente. A sua foto de perfil não muda."},
+     {"ic": "scroll", "t": "XP alinhado na Lista", "d": "O XP de cada tarefa fica sempre na ponta da linha; antes ele andava conforme os botões de prioridade que a tarefa tinha. No modo demonstração, a aba Projetos não abre mais vazia."}
+   ]},
   {"versao": "0.6.6-beta2", "nome": "atualização das expedições", "data": "2026-10-13",
    "resumo": "O jogo agora se chama Ganbatte, e as abas ganharam nomes fixos que não mudam quando o tema da temporada mudar.",
    "itens": [

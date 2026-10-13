@@ -1,0 +1,65 @@
+/* ===== Pele C · Nen =====
+   A ideia: aura. Painéis com cantos assimétricos (como chama), um fio de aura no topo e brilho suave por fora;
+   hexágonos (o gráfico dos seis tipos) no lugar de bolinhas e quadradinhos: marcadores, caixas de concluir, aba atual;
+   o selo 念 ao lado do nome do jogo. Cores: só os tokens do tema (aura = --aura, brilho = --volt). */
+:root{--hex:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);--hexl:polygon(9px 0,calc(100% - 9px) 0,100% 50%,calc(100% - 9px) 100%,9px 100%,0 50%)}
+
+body{background:radial-gradient(1100px 620px at 92% -12%,color-mix(in srgb,var(--aura) 13%,transparent),transparent 62%),
+  radial-gradient(900px 520px at -8% 112%,color-mix(in srgb,var(--volt) 8%,transparent),transparent 60%),var(--bg);background-attachment:fixed}
+
+/* título: aura no letreiro e o selo 念 */
+.head h1{width:max-content;font:700 32px/1 var(--f-hud);letter-spacing:.05em;background:linear-gradient(95deg,var(--ink) 5%,var(--aura) 45%,var(--volt) 85%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.head h1 span{color:transparent}
+.head h1::after{content:"念";display:inline-grid;place-items:center;width:30px;height:30px;margin-left:12px;vertical-align:5px;font:700 19px/1 "Noto Serif JP",serif;
+  color:var(--bg);-webkit-text-fill-color:var(--bg);background:var(--red);border-radius:5px;transform:rotate(-6deg);box-shadow:0 0 18px -4px var(--red)}
+.head .plate{border-radius:50%;box-shadow:0 0 0 2px var(--aura),0 0 22px -2px var(--aura)}
+.facts .fact{border:0;border-radius:0;clip-path:var(--hexl);padding:3px 14px;background:color-mix(in srgb,var(--aura) 11%,var(--panel))}
+
+/* painéis: cantos de chama, fio de aura no topo, brilho por fora */
+.card,.tower,.col,.l-list,.k,.gnav,.note,.hud,.season,.pano-top{
+  border-radius:26px 4px 26px 4px;border-color:color-mix(in srgb,var(--aura) 30%,var(--hair));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--aura) 6%,transparent),0 0 28px -14px var(--aura),0 18px 50px -30px var(--aura);
+  background-image:linear-gradient(90deg,transparent 8%,color-mix(in srgb,var(--aura) 60%,transparent) 40%,color-mix(in srgb,var(--volt) 60%,transparent) 60%,transparent 92%);
+  background-size:100% 2px;background-repeat:no-repeat;background-position:0 0}
+.col .ch{background:radial-gradient(70% 60% at 50% 30%,color-mix(in srgb,var(--red) 16%,transparent),transparent 70%)}
+.col .ch .av{box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 14%,transparent),0 0 26px -4px var(--red)}
+
+/* cabeçalho de card: hexágono de aura */
+.card h2{font:600 11.5px var(--f-hud);text-transform:uppercase;letter-spacing:.14em;color:var(--ink)}
+.card h2 .c{font-size:0;width:11px;height:12px;flex:none;clip-path:var(--hex);background:linear-gradient(160deg,var(--aura),var(--volt));filter:drop-shadow(0 0 4px var(--aura))}
+.col .bd h4,.l-k,.cap{font-family:var(--f-hud);letter-spacing:.16em;color:color-mix(in srgb,var(--aura) 70%,var(--faint))}
+
+/* abas: a atual vira um hexágono alongado, com brilho */
+.gnav{border-radius:999px;padding:6px 10px}
+.gnav button{border:0;border-radius:0;clip-path:var(--hexl);padding:7px 16px;font:600 12.5px var(--f-hud);letter-spacing:.05em}
+.gnav button:hover{background:color-mix(in srgb,var(--aura) 12%,transparent)}
+.gnav button[aria-current="page"]{border:0;color:var(--bg);background:linear-gradient(95deg,var(--aura),var(--volt))}
+.gnav button[aria-current="page"] .ic{color:var(--bg)}
+.gnav .px{clip-path:none;border-radius:12px}
+
+/* ficha do topo: o Ten em volta do jogador */
+.av.me{border-color:var(--aura);box-shadow:0 0 0 4px color-mix(in srgb,var(--aura) 18%,transparent),0 0 0 9px color-mix(in srgb,var(--aura) 7%,transparent),0 0 34px -2px var(--aura)}
+.l-me b.l-nm,.sheet .nm{letter-spacing:.04em}
+.l-me .l-n,.l-v{text-shadow:0 0 18px color-mix(in srgb,var(--volt) 45%,transparent)}
+
+/* grupos da lista */
+.l-grp h3 .t{font:600 12.5px var(--f-hud);letter-spacing:.18em}
+.l-grp h3 .t::before{content:"";display:inline-block;width:9px;height:10px;margin-right:8px;vertical-align:-1px;clip-path:var(--hex);background:currentColor}
+
+/* concluir: hexágono (contorno feito com um hexágono por dentro) */
+.l-ck{position:relative;border:0;border-radius:0;clip-path:var(--hex);background:var(--c,var(--soft));width:22px;height:24px}
+.l-ck::before{content:"";position:absolute;inset:2px;clip-path:var(--hex);background:var(--panel);transition:background .15s}
+.l-task:hover .l-ck::before{background:var(--panel2)}
+.l-ck:hover::before{background:color-mix(in srgb,var(--c,var(--soft)) 22%,var(--panel))}
+.l-task.done .l-ck::before,.l-hb.ok .l-ck::before{display:none}
+
+/* XP e etiquetas: hexágono alongado */
+.l-xp{border-radius:0;clip-path:var(--hexl);padding:2px 11px;box-shadow:none}
+.l-pri{border-radius:0;clip-path:var(--hex);padding:0 6px}
+.l-tag{border-radius:4px}
+.l-chip,.l-box,.l-more,.btn,.l-seg select,#l-date{border-radius:12px 3px 12px 3px}
+
+/* barras: energia, com brilho */
+.l-bar i,.xpbar > b{background:linear-gradient(90deg,var(--aura),var(--volt));box-shadow:0 0 12px -1px var(--volt)}
+.l-boss .hp i,.hp4 > b{box-shadow:0 0 10px -2px var(--red)}
+.l-hg i,.l-cal span{border-radius:50%}
