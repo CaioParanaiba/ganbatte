@@ -1365,7 +1365,7 @@ const andar = xp => HJx.andar(xp, R.dif), custo = n => HJx.custo(n, R.dif), xpAt
 const estado = () => { const S = HJx.estado(CTX); if(TESTE) S.jenny = Infinity; return S; };   // modo teste: Jenny infinita
 const somOff = () => !!(window.HJ_FX && HJ_FX.somOff());   // sons da loja desligados neste computador (efeitos.js)
 const cartas = S => HJx.cartas(CTX, S);
-const cofreOn = () => HJx.cofreMes(EST) > 0;   // cofre do mês opcional (#34): R$ 0 por mês = desligado, sem card e sem limite em R$
+const cofreOn = () => HJx.cofreMes(EST) > 0;   // cofre do mês opcional (#34): liga em Configurações; desligado, sem card e sem limite em R$
 const cofreTotal = () => HJx.cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1);
 function sync(api){
   CTX = HJx.carregar(api); ({D, HOJE, TEMP, BOSSES, AVAL, NOTAS, PARC, INBOX, EST} = CTX); COS = HJx.catalogo(CTX.AVATARES);
@@ -1790,13 +1790,12 @@ function premiosEditor(S){
   const E = HJx.esforco(S.xpDia, HOJE), L = UI.pdraft;
   const row = (x,i) => `<div class="pr-row"><input data-pf="${i}:n" value="${esc(x.n)}" maxlength="80" placeholder="ex.: 1h de videogame" aria-label="nome do prêmio">
     <label><input data-pf="${i}:p" value="${x.p == null || isNaN(x.p) ? '' : x.p}" inputmode="numeric" placeholder="1000" aria-label="preço em Jenny"> J</label>
-    <label>R$ <input data-pf="${i}:rs" value="${x.rs ? String(x.rs).replace('.', ',') : ''}" inputmode="decimal" placeholder="0" aria-label="${UI.pcofre > 0 ? 'quanto sai do cofre, em reais' : 'quanto custa, em reais'}"></label>
+    <label>R$ <input data-pf="${i}:rs" value="${x.rs ? String(x.rs).replace('.', ',') : ''}" inputmode="decimal" placeholder="0" aria-label="${cofreOn() ? 'quanto sai do cofre, em reais' : 'quanto custa, em reais'}"></label>
     <span class="sub">${x.p > 0 ? HJx.esforcoTxt(+x.p, E) : ''}</span><button class="btn" data-pdel="${i}" aria-label="remover">✕</button></div>`;
-  return `<div class="sec7"><h3>Editar meus prêmios</h3><p>Nome, preço em Jenny e, se custar dinheiro, quanto custa (R$). Deixe R$ vazio para prêmios que não custam nada, como tempo livre. Com o cofre do mês ligado, o R$ sai de um valor que você separa por mês e acumula; desligado, o R$ é só um lembrete.</p>
+  return `<div class="sec7"><h3>Editar meus prêmios</h3><p>Nome, preço em Jenny e, se custar dinheiro, quanto custa (R$). Deixe R$ vazio para prêmios que não custam nada, como tempo livre. ${cofreOn() ? `O R$ sai do cofre do mês (R$ ${fmt(HJx.cofreMes(EST))} por mês, acumula; muda em Configurações).` : 'O R$ é só um lembrete; para ele sair de um valor separado por mês, ligue o cofre do mês em Configurações.'}</p>
     <div class="pr-ed">${L.map(row).join('')}</div>
     <p style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px"><button class="btn" data-padd>+ prêmio</button>
-      <label class="sub"><input type="checkbox" data-pcofreon${UI.pcofre > 0 ? ' checked' : ''}> usar o cofre do mês</label>
-      ${UI.pcofre > 0 ? `<label class="sub">cofre por mês: R$ <input data-pcofre value="${String(UI.pcofre).replace('.', ',')}" inputmode="decimal" style="width:70px"></label>` : ''}</p>
+</p>
     <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn v" data-psave>salvar</button><button class="btn" data-pcancel>cancelar</button><button class="btn" data-ppadrao>voltar aos prêmios padrão</button></p></div>` + reguaHTML(E);
 }
 /* lê os campos do editor de prêmios para o rascunho (antes de redesenhar ou salvar); aceita 1.000 e 12,50 */
@@ -1804,7 +1803,6 @@ const numIn = v => { v = String(v).trim().replace(/\s|R\$|J$/gi, ''); if(v.inclu
 function lePremios(){
   document.querySelectorAll('[data-pf]').forEach(el => { const [i,c] = el.dataset.pf.split(':'), x = UI.pdraft[+i]; if(!x) return;
     x[c] = c === 'n' ? el.value.trim() : el.value.trim() === '' ? (c === 'rs' ? 0 : null) : numIn(el.value); });
-  const c = document.querySelector('[data-pcofre]'); if(c) UI.pcofre = c.value.trim() === '' ? 0 : numIn(c.value);
 }
 
 /* ---------- Mapa ---------- */
@@ -1921,6 +1919,8 @@ function rTT(){
 function rCfg(S){
   document.getElementById('cfg-root').innerHTML = `
     <div class="card"><h2><span class="c">~/</span>configurações deste computador</h2><div class="togg" style="margin:0"><span class="sub">efeitos:</span><button data-fxoff="0" aria-pressed="${!UI.fxOff}">os comprados</button><button data-fxoff="1" aria-pressed="${!!UI.fxOff}">nenhum (calmo)</button></div><div class="togg" style="margin:8px 0 0"><span class="sub">sons:</span><button data-somoff="0" aria-pressed="${!somOff()}">ligados</button><button data-somoff="1" aria-pressed="${somOff()}">mudo</button></div></div>
+    <div class="card"><h2><span class="c">~/</span>cofre do mês</h2><p style="margin:0 0 10px;font-size:14px">Para prêmios reais que custam dinheiro: você separa um valor por mês, ele acumula, e o R$ de cada prêmio sai dele. Desligado, o R$ dos prêmios é só um lembrete e não trava o resgate.</p>
+      <div class="togg" style="margin:0"><span class="sub">cofre:</span><button data-cofre="1" aria-pressed="${cofreOn()}">ligado</button><button data-cofre="0" aria-pressed="${!cofreOn()}">desligado</button>${cofreOn() ? `<label class="sub" style="margin-left:8px">R$ <input data-cofrev value="${String(HJx.cofreMes(EST)).replace('.', ',')}" inputmode="decimal" style="width:70px" aria-label="valor do cofre por mês, em reais"> por mês</label>` : ''}</div></div>
     <div class="card"><h2><span class="c">~/</span>backup</h2><p style="margin:0 0 10px;font-size:14px">Baixa um ZIP com todos os seus dados: tarefas, notas, plano de avaliação, loja e configurações. Guarde de vez em quando, ou use para levar o jogo para outro computador (é só descompactar na pasta de dados, <span class="mono">${esc((CTX.SRV && CTX.SRV.dados) || '~/.hunter-todo')}</span>).</p>${window.HJ_DEMO ? '<button class="btn" disabled>no modo demonstração não há dados para baixar</button>' : '<a class="btn v" href="/api/backup" download>baixar meus dados</a>'}</div>
     ${window.HJ_TEMP ? HJ_TEMP.card() : ''}${cardBalanco(S)}`;
 }
@@ -2413,6 +2413,7 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   if(e.target.id === 'l-disc') prevL();
+  if(e.target.matches('[data-cofrev]')){ const v = numIn(e.target.value); if(isNaN(v) || v < 0){ toast('Valor do cofre inválido'); return; } EST.cofreMes = Math.round(v*100)/100; salvaUI(); render(); toast(v > 0 ? `Cofre do mês: R$ ${fmt(EST.cofreMes)} por mês` : 'Cofre do mês desligado'); }
   if(e.target.id === 'l-edcac'){ LE.cac = e.target.value; redesenhaEd(); }
   if(e.target.id === 'l-eddisc'){ LE.disc = e.target.value; if(!LE.disc && LE.tipo === 'fac') LE.tipo = 'vid'; redesenhaEd(); }
   if(e.target.id === 'l-eddate'){ const iso = HJx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(HJx.dataRuim('')); return; }
@@ -2498,8 +2499,8 @@ document.addEventListener('click', async e => {
   const eq = q('[data-equip]'); if(eq){ const it = COS.find(i => i.id === eq.dataset.equip); if(it){ equipa(it); salvaUI(); render(); } return; }
   const rl = q('[data-real]'); if(rl){ const x = meusPremios()[+rl.dataset.real], S = estado(); if(!x || !podeResgatar(S, x)) return;
     SPENT += x.p; compra('premio', 'premio', x.p); COFRE_USADO += x.rs||0; RESG.push(`${x.n} · ${ddmm(HOJE)}`); salvaUI(); toast(`Resgatado: ${esc(x.n)} <small>aproveite</small>`); render(); return; }
-  if(q('[data-pedit]')){ UI.pedit = true; UI.pdraft = meusPremios().map(x => ({...x})); UI.pcofre = HJx.cofreMes(EST); render(); return; }
-  const pco = q('[data-pcofreon]'); if(pco){ lePremios(); UI.pcofre = pco.checked ? HJx.COFRE_MES : 0; render(); return; }
+  if(q('[data-pedit]')){ UI.pedit = true; UI.pdraft = meusPremios().map(x => ({...x})); render(); return; }
+  const cf = q('[data-cofre]'); if(cf){ EST.cofreMes = cf.dataset.cofre === '1' ? (HJx.cofreMes(EST) || COFRE_MES) : 0; salvaUI(); render(); toast(cofreOn() ? `Cofre do mês ligado <small>R$ ${fmt(HJx.cofreMes(EST))} por mês</small>` : 'Cofre do mês desligado'); return; }
   if(q('[data-padd]')){ lePremios(); UI.pdraft.push({n:'', p:null, rs:0}); render(); const r = document.querySelectorAll('[data-pf$=":n"]'); if(r.length) r[r.length-1].focus(); return; }
   const pd = q('[data-pdel]'); if(pd){ lePremios(); UI.pdraft.splice(+pd.dataset.pdel, 1); render(); return; }
   if(q('[data-pcancel]')){ UI.pedit = false; render(); return; }
@@ -2507,8 +2508,7 @@ document.addEventListener('click', async e => {
   if(q('[data-psave]')){ lePremios();
     const L = UI.pdraft.filter(x => x.n || x.p), ruim = L.find(x => !x.n || !(x.p > 0) || isNaN(x.rs) || x.rs < 0);
     if(ruim){ toast(`Confira o prêmio ${esc(ruim.n || 'sem nome')} <small>precisa de nome e preço maior que zero</small>`); return; }
-    if(isNaN(UI.pcofre) || UI.pcofre < 0){ toast('Cofre por mês inválido'); return; }
-    EST.premios = L.map(x => ({n:x.n.slice(0,80), p:Math.round(x.p), rs:x.rs||0, ...(x.ic ? {ic:x.ic} : {})})); EST.cofreMes = UI.pcofre;
+    EST.premios = L.map(x => ({n:x.n.slice(0,80), p:Math.round(x.p), rs:x.rs||0, ...(x.ic ? {ic:x.ic} : {})}));
     UI.pedit = false; salvaUI(); toast(`Prêmios salvos <small>${L.length} na lista</small>`); render(); return; }
   const by = q('[data-buy]'); if(by){ const S = estado(), [kind,k] = by.dataset.buy.split(':'), [ok,why] = buyable(S,kind,k);
     if(!ok){ toast(`Não dá: ${esc(why)}`); return; }

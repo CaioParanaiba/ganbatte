@@ -162,7 +162,9 @@ const REAIS = [
 
 const PREMIOS_PADRAO = REAIS.flatMap(([, p, list]) => list.map(([n, ic, rs]) => ({n, p, rs, ic})));
 const premios = EST => Array.isArray(EST && EST.premios) ? EST.premios.filter(x => x && x.n) : PREMIOS_PADRAO;
-const cofreMes = EST => EST && typeof EST.cofreMes === 'number' && EST.cofreMes >= 0 ? EST.cofreMes : COFRE_MES;
+/* cofre do mês opcional (0.6.6, #34): desligado por padrão, liga em Configurações (cofreMes > 0). Sem cofreMes gravado, quem já
+   tinha gastado do cofre continua com ele, no valor padrão */
+const cofreMes = EST => EST && typeof EST.cofreMes === 'number' ? Math.max(0, EST.cofreMes) : EST && EST.cofreUsado > 0 ? COFRE_MES : 0;
 /* régua de esforço em Jenny, tirada do próprio jogo (últimas 4 semanas): um dia produtivo = a média dos dias com XP;
    uma semana boa = a melhor das últimas 4; um mês = 4 semanas na média das jogadas. Com menos de 5 dias jogados, uma estimativa. */
 function esforco(xpDia, HOJE){
