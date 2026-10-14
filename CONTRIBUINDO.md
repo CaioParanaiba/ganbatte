@@ -121,6 +121,9 @@ que eles descrevem.
   Nunca rode o código em teste com a pasta de dados real.
 - **Navegador automático:** `node ferramentas/navegador.mjs URL roteiro.json` (Firefox headless; detalhes no
   `docs/PENDENCIAS.md`, "Como testar").
+- **Formulário de tarefas:** configure um jogador no servidor de teste e rode
+  `node tests/test_formulario.mjs http://127.0.0.1:8799/`. Confere o atalho N, o fechamento, os envios repetidos e as
+  falhas de gravação. Cria tarefas na pasta de teste.
 - **Balanceamento:** mexeu em XP ou Jenny? Rode `node ferramentas/simulador.mjs` e ponha o antes e o depois no PR.
 - **Mexeu em `web/`?** Rode `python3 ferramentas/standalone.py` (gera o modo demonstração, que não vai para o git) e
   confira se ele abre.

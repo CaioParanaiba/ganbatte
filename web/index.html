@@ -1116,6 +1116,7 @@ a.btn{display:inline-block;text-decoration:none}
 .l-main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
 .l-col{min-width:0}
 .l-add{padding:14px}
+.l-add .l-erro{color:var(--red);font:13px var(--f-ui);margin:10px 0 0}
 .l-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .l-box{flex:1 1 240px;min-width:0;display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--hair);border-radius:10px;padding:0 10px}
 .l-box:focus-within{border-color:var(--volt)}
@@ -1130,6 +1131,9 @@ a.btn{display:inline-block;text-decoration:none}
 .l-nk{font:11px var(--f-mono);color:var(--faint);white-space:nowrap}
 .l-line input::placeholder,.l-cacs input::placeholder{color:var(--faint)}
 .l-go:disabled{opacity:.45;cursor:not-allowed}
+.l-go.salva{opacity:1;color:var(--grn);border-color:var(--grn);animation:l-envio .2s ease-out}
+@keyframes l-envio{50%{transform:translateY(2px)}}
+.toast.l-aviso{z-index:61}
 .l-opts{display:flex;gap:10px 18px;flex-wrap:wrap;margin-top:10px;align-items:center}
 .l-seg{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 .l-seg>span{font:600 10.5px var(--f-mono);color:var(--faint);letter-spacing:.1em;text-transform:uppercase;margin-right:2px}
@@ -1260,11 +1264,12 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
     <div class="l-hud" id="l-hud"></div>
     <div class="l-main">
       <div class="l-col">
+        <div id="l-form">
         <form class="card l-add" id="l-add" autocomplete="off">
           <div class="l-line">
             <label class="l-box"><input type="text" id="l-txt" placeholder="Nova tarefa: ex. Lista 3 de derivadas" aria-label="Nova tarefa"><span class="l-hint" id="l-hint"></span></label>
             <button type="button" class="l-more" id="l-more" aria-expanded="false" aria-controls="l-det">detalhes ▾</button>
-            <button class="btn v l-go" id="l-btn" type="submit" disabled>+ adicionar</button>
+            <button class="btn v l-go" id="l-btn" type="submit" aria-live="polite" disabled>+ adicionar</button>
           </div>
           <div class="l-det" id="l-det" hidden>
             <div class="l-seg l-tipos" id="l-tipo" role="group" aria-label="Tipo"><span>tipo</span></div>
@@ -1277,7 +1282,9 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
             <div class="l-seg l-cacs"><span>caçada</span><select id="l-cac" aria-label="Caçada"><option value="">nenhuma</option></select><input id="l-cacn" placeholder="nome da caçada nova" aria-label="Nome da caçada nova" hidden><select id="l-cacx" aria-label="Expedição da caçada nova" hidden></select></div>
             <div class="l-prev" id="l-prev"></div>
           </div>
+          <p class="l-erro" id="l-erro" role="alert" hidden></p>
         </form>
+        </div>
         <div class="l-groups" id="l-groups"></div>
         <div class="card l-const" id="l-heatc"><h2><span class="c">~/</span>constância<span id="l-heatt"></span></h2><div id="l-heat"></div></div>
       </div>
@@ -2079,7 +2086,7 @@ const LTIPOS = [
   {k:'tre', n:'treino/projeto', c:1, d:'treino e projetos: programação e projetos pessoais fora da matéria', ex:'Contest no Codeforces · Ajudar no desenvolvimento do Ganbatte · Meu site'},
   {k:'hab', n:'hábito', c:4, d:'o que se repete: vale pelo nível do hábito (3 a 12 XP), mas sozinho não acende o Ten (os fixos ficam em Configurações)', ex:'Treino de digitação · 30 min de leitura'},
   {k:'vid', n:'vida', c:3, d:'todo o resto: casa, saúde, família, documentos, trabalho ou estágio (por enquanto)', ex:'Renovar a carteirinha · Consulta no dentista · Pagar o boleto'}];
-const LA = {tipo:'est', due:'', pri:'jogo', auto:true, por:''};   // auto: o tipo segue a sugestão do texto até o jogador escolher um   // rascunho do formulário (pri: 'jogo' = o jogo decide, '' = sem, ou a letra)
+const LA = {tipo:'est', due:'', pri:'jogo', auto:true, por:'', salvando:false, adicionada:false};   // auto: o tipo segue a sugestão do texto até o jogador escolher um   // rascunho do formulário (pri: 'jogo' = o jogo decide, '' = sem, ou a letra)
 const LPRI = [['jogo','o jogo decide'], ['A','A'], ['B','B'], ['C','C'], ['','sem']], PRI_COR = {A:'var(--red)', B:'var(--amb)', C:'var(--soft)'};
 const SEM3 = ['seg','ter','qua','qui','sex','sáb','dom'];
 const tagDe = k => { const T = GBx.TAGS[k]; return !T ? '' : T.ctx[0] ? '@' + T.ctx[0] : T.proj[0] ? '+' + T.proj[0] : ''; };
@@ -2161,7 +2168,10 @@ function prevL(){
   if(LA.auto){ const sg = GBx.sugereTipo(document.getElementById('l-txt').value, !!document.getElementById('l-disc').value);
     if(sg){ if(LA.tipo !== sg.k){ LA.tipo = sg.k; marcaTipo(); } LA.por = `pela palavra "${sg.por}"`; } else LA.por = ''; }
   const S = estado(), linha = rascunho(), t = GBx.parseLinha(HOJE + ' ' + linha, 0), v = valeL(t, S), nen = NEN[nenDe(t)], P = priL(linha, S);
-  document.getElementById('l-btn').disabled = !document.getElementById('l-txt').value.trim();
+  const btn = document.getElementById('l-btn');
+  btn.disabled = LA.salvando || !document.getElementById('l-txt').value.trim();
+  btn.classList.toggle('salva', LA.adicionada && !LA.salvando);
+  btn.textContent = LA.salvando ? 'adicionando…' : LA.adicionada ? '✓ adicionada' : '+ adicionar';
   document.getElementById('l-hint').innerHTML = document.getElementById('l-txt').value.trim() ? `<span style="color:${NC(nenDe(t))}">${esc(nen.n)}</span>${v.ms.length ? `<span class="l-mult">${v.ms.join(' + ')}</span>` : ''}<span class="l-xp">+${v.x}</span>` : `<span class="l-nk" title="aperte N em qualquer aba para abrir este formulário">N</span>`;
   const jb = document.querySelector('[data-lpri="jogo"]'); if(jb) jb.innerHTML = 'o jogo decide' + (P.sug ? ` · <b>${P.sug.pri || 'sem'}</b>` : '');
   const ptx = P.sug ? (P.sug.pri ? `prioridade <b style="color:${PRI_COR[P.sug.pri]}">${P.sug.pri}</b>` : 'sem prioridade') + `<small>${P.sug.por.length ? esc(P.sug.por.join(' · ')) : 'nada urgente'}</small>`
@@ -2222,7 +2232,7 @@ function rL(S){
   document.getElementById('l-groups').innerHTML = (G.length ? G.map(([n,c,l]) => `<section class="l-grp"><h3><span class="t ${c}">${n}</span><small>${l.length}</small><span class="sum">até +${l.reduce((s,t) => s + t.x, 0)} XP</span></h3><ul class="l-list">${l.map(t => t.h).join('')}</ul></section>`).join('')
       : '<div class="card l-empty">Nenhuma tarefa aberta. Escreva a primeira ali em cima: o tipo e o prazo mudam quanto ela vale.</div>')
     + (feitas.length ? `<details class="l-grp"${UI.ldone ? ' open' : ''} id="l-feitas"><summary><h3><span class="t ok">Concluídas hoje</span><small>${feitas.length}</small><span class="sum">+${xpF} XP</span></h3></summary><ul class="l-list">${feitas.map(t => rowL(t, S, xpDe2.get(t.raw) || 0)).join('')}</ul></details>` : '');
-  const ed = document.getElementById('l-ed'); if(ed){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
+  const ed = document.getElementById('l-ed'); if(ed && !document.getElementById('xn')){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
   document.getElementById('l-golpes').innerHTML = S.golpes.slice(0,3).map(g => `<div class="l-g"><b>${esc(g.t.txt)}</b><small>${[discOf(g.t), g.t.due ? dueTxt(g.t.due) : '', g.fury ? 'fúria ×1,5' : '', g.bonus ? 'missão ×1,5' : ''].filter(Boolean).join(' · ')}</small><span class="l-xp">+${g.x}</span></div>`).join('') || '<p class="sub" style="margin:0">Nada aberto.</p>';
   document.getElementById('l-bosses').innerHTML = S.bs.map(b => `<button class="l-boss${b.dead ? ' dead' : ''}" data-go="b2" data-bsel="${b.d}"><span class="sig">${esc(b.d)}</span><span class="hp"><i style="width:${pct(b.rest,b.tot)}%"></i></span><span class="st${b.fury ? ' fury' : ''}">${b.dead ? 'DERROTADO' : b.fury ? 'FÚRIA' : Math.round(pct(b.rest,b.tot)) + '%'}</span><span class="nm">${esc(b.n)}${b.need != null && !b.dead ? ` · precisa de ${nf(Math.max(0,b.need))} no resto` : ''}</span></button>`).join('') || '<p class="sub" style="margin:0">Nenhuma disciplina cadastrada. Cadastre na aba Chefões.</p>';
   document.getElementById('l-exps').innerHTML = window.GB_EXP ? GB_EXP.lateral(S) : '';
@@ -2363,7 +2373,7 @@ async function cfMao(menos){
     document.body.appendChild(to); setTimeout(() => to.remove(), 6000); }
   catch(err){ toast('Não marcou: ' + esc(err.message)); }
 }
-function toastUndo(html){ document.querySelectorAll('.toast').forEach(t => t.remove()); const to = document.createElement('div'); to.className = 'toast'; to.innerHTML = html + '<button class="l-undo" data-lundo>desfazer</button>'; document.body.appendChild(to); setTimeout(() => to.remove(), 6000); }
+function toastUndo(html){ document.querySelectorAll('.toast').forEach(t => t.remove()); const to = document.createElement('div'); to.className = 'toast' + (document.getElementById('xn') ? ' l-aviso' : ''); to.innerHTML = html + '<button class="l-undo" data-lundo>desfazer</button>'; document.body.appendChild(to); setTimeout(() => to.remove(), 6000); }
 async function acaoL(fn, msg){ try { await fn(); await recarrega(); render(); if(msg) toastUndo(msg); } catch(err){ toast('Não deu: ' + esc(err.message)); } }
 document.addEventListener('click', async e => {
   const q = s => e.target.closest(s);
@@ -2416,7 +2426,7 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape'){ UI.ledit = null; render(); }
 });
 document.addEventListener('input', e => {
-  if(e.target.id === 'l-txt') prevL();
+  if(e.target.id === 'l-txt'){ LA.adicionada = false; prevL(); }
   /* campos de data: dd/mm/aaaa, com as barras entrando sozinhas */
   if(e.target.classList.contains('dt') && e.inputType && !e.inputType.startsWith('delete')){
     const n = e.target.value.replace(/\D/g, '').slice(0, 8); e.target.value = n.length > 4 ? `${n.slice(0,2)}/${n.slice(2,4)}/${n.slice(4)}` : n.length > 2 ? `${n.slice(0,2)}/${n.slice(2)}` : n; }
@@ -2432,12 +2442,22 @@ document.addEventListener('change', e => {
     LA.due = iso; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', false)); prevL(); }
 });
 document.getElementById('l-add').addEventListener('submit', async e => {
-  e.preventDefault(); if(!document.getElementById('l-txt').value.trim()) return;
+  e.preventDefault(); if(LA.salvando || !document.getElementById('l-txt').value.trim()) return;
   const S = estado(), linha = rascunho(), v = valeL(GBx.parseLinha(HOJE + ' ' + linha, 0), S), P = priL(linha, S);
-  try { if(window.GB_EXP) await GB_EXP.antesDeAdicionar(); await post('/api/add', {text:(P.pri ? `(${P.pri}) ` : '') + linha}); } catch(err){ toast('Não adicionou: ' + esc(err.message)); return; }
-  if(window.GB_EXP) GB_EXP.depoisDeAdicionar();
-  document.getElementById('l-txt').value = ''; LA.pri = 'jogo'; LA.auto = true; LA.por = ''; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lpri === 'jogo'));   // a letra escolhida vale só para esta tarefa
-  await recarrega(); render(); toastUndo(`Adicionada${P.pri ? ` com prioridade ${P.pri}` : ''} <small>vale +${v.x} XP</small>`);
+  const f = e.currentTarget, campo = document.getElementById('l-txt'), erro = document.getElementById('l-erro');
+  LA.salvando = true; LA.adicionada = false; f.setAttribute('aria-busy', 'true'); campo.readOnly = true; erro.hidden = true; prevL();
+  try {
+    try { if(window.GB_EXP) await GB_EXP.antesDeAdicionar(); await post('/api/add', {text:(P.pri ? `(${P.pri}) ` : '') + linha}); }
+    catch(err){ erro.textContent = 'Não adicionou: ' + err.message; erro.hidden = false; return; }
+    campo.value = ''; LA.adicionada = true; LA.pri = 'jogo'; LA.auto = true; LA.por = ''; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lpri === 'jogo'));   // a letra escolhida vale só para esta tarefa
+    if(window.GB_EXP) GB_EXP.depoisDeAdicionar();
+    try { await recarrega(); render(); }
+    catch(err){ erro.textContent = 'Tarefa adicionada. Não deu para atualizar a Lista; recarregue a página.'; erro.hidden = false; return; }
+    toastUndo(`Adicionada${P.pri ? ` com prioridade ${P.pri}` : ''} <small>vale +${v.x} XP</small>`);
+  } finally {
+    LA.salvando = false; campo.readOnly = false; f.removeAttribute('aria-busy'); prevL();
+    if(LA.adicionada && (document.getElementById('xn') || cur === 'l')) campo.focus({preventScroll:true});
+  }
 });
 
 /* ---------- abas e interação (página real) ---------- */

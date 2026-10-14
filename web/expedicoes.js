@@ -261,23 +261,25 @@ async function antesDeAdicionar(){
 }
 function depoisDeAdicionar(){
   if(X.criou){ UI.lcac = X.criou; X.criou = ''; const cn = document.getElementById('l-cacn'); if(cn) cn.value = ''; }
-  if(document.getElementById('xn')) fechaN();
+  formL();
 }
 
 /* ---------- tecla N: o mesmo formulário da Lista, com os detalhes abertos, numa janela ---------- */
 const N = {};
 function abreN(cac){
   if(!CTX || document.getElementById('xn')) return;
-  const f = document.getElementById('l-add'); N.casa = f.parentNode; N.prox = f.nextSibling; N.det = UI.ldet; UI.ldet = true;
+  const f = document.getElementById('l-add'); N.foco = document.activeElement; N.det = UI.ldet; UI.ldet = true;
   if(cac !== undefined) UI.lcac = cac;
   const bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = 'xn';
-  bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa<small>Enter adiciona · Esc fecha · C cria uma caçada inteira</small></h3><div id="xn-slot"></div></div></div>`;
+  bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa<small>Enter adiciona · vazio, Enter fecha · Esc fecha</small></h3><div id="xn-slot"></div></div><div class="wz-foot"><button type="button" class="btn" data-nfecha>fechar</button></div></div>`;
   document.body.appendChild(bg); document.getElementById('xn-slot').appendChild(f); formL();
   document.getElementById('l-txt').focus();
 }
 function fechaN(){
   const bg = document.getElementById('xn'); if(!bg) return;
-  const f = document.getElementById('l-add'); N.casa.insertBefore(f, N.prox); UI.ldet = N.det; bg.remove(); formL();
+  // O painel da IA e os irmãos do formulário podem mudar enquanto a janela está aberta.
+  document.getElementById('l-form').appendChild(document.getElementById('l-add')); UI.ldet = N.det; bg.remove(); formL();
+  if(N.foco && N.foco.isConnected) N.foco.focus({preventScroll:true}); N.foco = null;
 }
 
 /* ---------- janelas: caçada nova (C), editar caçada, expedição nova ou editada ---------- */
@@ -505,7 +507,7 @@ document.addEventListener('click', async ev => {
   if((b = q('[data-xic]'))){ X.xic = b.dataset.xic; document.querySelectorAll('[data-xic]').forEach(x => x.setAttribute('aria-pressed', x === b)); return; }
   if(q('[data-xfecha]')){ fechaJanela(); return; }
   if(q('[data-xok]')){ if(document.getElementById('xc')) criaC(); else if(document.getElementById('xe')) salvaEditC(); else if(document.getElementById('xx')) salvaX(); return; }
-  if(ev.target.id === 'xn'){ fechaN(); return; }
+  if(q('[data-nfecha]') || ev.target.id === 'xn'){ fechaN(); return; }
   if(['xc','xe','xx'].includes(ev.target.id)){ fechaJanela(); return; }
 });
 document.addEventListener('change', ev => { if(ev.target.id === 'l-cac'){ UI.lcac = ev.target.value; formCacadas(); prevL(); if(UI.lcac === '+nova') document.getElementById('l-cacn').focus(); } });
@@ -519,6 +521,11 @@ document.addEventListener('submit', async ev => {
 });
 document.addEventListener('keydown', ev => {
   if(ev.key === 'Escape'){ if(document.getElementById('xn')){ fechaN(); return; } if(document.querySelector('#xc,#xe,#xx')){ fechaJanela(); return; } }
+  if(ev.key === 'Enter' && ev.target.id === 'l-txt' && document.getElementById('xn') && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.isComposing){
+    ev.preventDefault(); if(LA.salvando || ev.repeat) return;
+    if(!ev.target.value.trim()) fechaN(); else document.getElementById('l-add').requestSubmit();
+    return;
+  }
   if(ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey) && document.getElementById('xc')){ ev.preventDefault(); criaC(); return; }
   if(ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
   const a = document.activeElement; if(a && (a.matches('input,textarea,select') || a.isContentEditable)) return;
