@@ -146,15 +146,19 @@ const avNome = f => f.replace(/[-_]+/g,' ').replace(/\b\w/g, c => c.toUpperCase(
 const AV_ANTIGO = {'gon':'gon-1', 'gon-olhaputo':'gon-2', 'killua':'killua-1', 'killua-png':'killua-2', 'kulluaface':'killua-3',
   '702-7023783_transparent-killua-png-png-d':'killua-4', 'kurapika':'kurapika-1', 'leorio':'leorio-1', 'leorio2':'leorio-2',
   'leorio-png':'leorio-3', 'leorio-png-leorio':'leorio-4', 'hunter-x-hunter-logo-png-image':'hunter-x-hunter'};
-/* retratos dos chefões (#33): web/chefoes/SLUG.png. O ícone de cada chefão (o do avaliacoes.txt) é o padrão e é sempre do
-   jogador; o retrato comprado vai para a coleção, e em Loja → Comprados ele escolhe qual chefão usa cada um. Na compra, o
-   retrato vai sozinho para o chefão de mesmo nome (alvo), se houver. [slug, nome, alvo] */
+/* fotos marcadas como chefão (#33): web/chefoes/SLUG.png. Quem desenvolve decide quais fotos entram nesta lista. Cada uma é
+   vendida como retrato de chefão (ch-SLUG): o ícone do avaliacoes.txt é o padrão e é sempre do jogador; o retrato comprado vai
+   para a coleção, e em Loja → Comprados ele escolhe o chefão (um dono por retrato). Na compra, vai sozinho para o chefão de
+   mesmo nome (alvo), se houver. A versão de perfil (av-ch-SLUG) não se compra: vem de graça quando o chefão que está com o
+   retrato é derrotado, e a imagem desse chefão fica travada (travas no estado.json), mesmo se ele voltar à vida.
+   [slug, nome, alvo] */
 const RETRATOS = [['chrollo','Chrollo Lucilfer','Chrollo'],['feitan','Feitan Portor','Feitan'],['machi','Machi Komacine','Machi'],['uvogin','Uvogin','Uvogin'],
   ['nobunaga','Nobunaga Hazama','Nobunaga'],['shalnark','Shalnark','Shalnark'],['phinks','Phinks Magcub','Phinks'],['pakunoda','Pakunoda','Pakunoda'],
   ['hisoka','Hisoka Morow','Hisoka'],['illumi','Illumi Zoldyck','Illumi'],['genthru','Genthru','Genthru'],['neferpitou','Neferpitou','Neferpitou'],
   ['shaiapouf','Shaiapouf','Shaiapouf'],['youpi','Menthuthuyoupi','Youpi'],['meruem','Meruem','Meruem']];
 const RETRATO_PRECO = 1500;
-COS.push(...RETRATOS.map(([s, n, alvo]) => ({id:'ch-'+s, cat:'chefe', n, d:'Retrato para o card de um chefão, no lugar do ícone.', p:RETRATO_PRECO, img:'chefoes/'+s+'.png', alvo})));
+COS.push(...RETRATOS.map(([s, n, alvo]) => ({id:'ch-'+s, cat:'chefe', n, d:'Retrato para o card de um chefão. Derrote esse chefão e ele vira foto de perfil.', p:RETRATO_PRECO, img:'chefoes/'+s+'.png', alvo})),
+  ...RETRATOS.map(([s, n]) => ({id:'av-ch-'+s, cat:'avatar', n, d:'Foto de perfil liberada ao derrotar o chefão que estava com este retrato.', p:0, eq:{avatar:'ch-'+s}, img:'chefoes/'+s+'.png', chefao:'ch-'+s})));
 /* tema completo = pacote: comprar o tema dá cada peça (paleta, textura, efeitos) para usar e misturar separado */
 function expandeOwn(own){ for(const it of COS) if(it.parts && own.has(it.id)) it.parts.forEach(p => own.add(p)); return own; }
 /* a loja: os itens do jogo, as fotos de web/a/ e o que está na coleção permanente do jogador (colecao/ dos dados, #33) mas
@@ -166,10 +170,14 @@ function catalogo(avatares, colecao){
   return cat;
 }
 /* item que vem com o jogo: grátis e sem trava (a Simples, as fotos grátis). Fica sempre em Comprados, nunca na vitrine */
-const padrao = it => !it.p && !it.excl && !it.lend && !it.fora;
-/* a cópia do item que vai para a coleção permanente: só os campos que bastam para mostrar e equipar sem a loja */
-const CAMPOS_COLECAO = ['id','cat','n','d','p','img','eq','fx','fxs','parts','skin','ev','sw'];
-const itemColecao = (it, quando, origem) => Object.assign(Object.fromEntries(CAMPOS_COLECAO.filter(k => it[k] != null).map(k => [k, it[k]])), {quando, origem: origem || 'masadora'});
+const padrao = it => !it.p && !it.excl && !it.lend && !it.fora && !it.chefao;
+/* a cópia do item que vai para a coleção permanente: só os campos que bastam para mostrar e equipar sem a loja, e de onde
+   ele veio (como: compra | chefao | migracao; origem: masadora | grupo; temporada). O servidor dá a cada item um uid e
+   começa o histórico dele (hist), para um dia dar para trocar ou vender itens pelo grupo */
+const CAMPOS_COLECAO = ['id','cat','n','d','p','img','eq','fx','fxs','parts','skin','ev','sw','chefao'];
+const itemColecao = (it, quando, extra) => Object.assign(Object.fromEntries(CAMPOS_COLECAO.filter(k => it[k] != null).map(k => [k, it[k]])), {quando, origem:'masadora', como:'compra'}, extra || {});
+/* chave da trava de um chefão derrotado: temporada + sigla (a sigla pode voltar em outra temporada) */
+const travaChave = (T, d) => nomeTemporada(T) + ':' + d;
 /* imagem de um item: a cópia da coleção (pasta de dados) quando já está lá; senão a do jogo (web/) */
 const imgDe = (it, colecao) => { const c = colecao && colecao.itens && colecao.itens[it.id]; return c && c.arquivo ? 'colecao/' + c.arquivo : it.img || ''; };
 /* prêmios reais padrão, por faixa [faixa, preço em J, [[nome, ícone, R$ do cofre]]]. Cada jogador troca os seus na Masadora
@@ -1058,7 +1066,7 @@ function resumoGrupo(C, S){
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 
-window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
