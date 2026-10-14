@@ -174,8 +174,8 @@ Com um segundo dev, a recompensa de bug/ideia separa **quem relata** de **quem f
   de PR para a `beta` não fecha a issue; por isso o label. Antes pagava só na ida para a `main` e juntava um "canhão".
 - **Quem fez a própria issue** (autor também responsável) não ganha a recompensa: o trabalho é pago pela tarefa de dev.
   As issues do Caio continuam fora da recompensa por relatar (ele decide o que fecha como resolvido).
-- **Tarefa de dev** (`dev_tarefas()` no servidor): issue com o jogador como responsável vira `Issue #N: título +ganbatte
-  gh:N esf:…` no todo.txt, concluída sozinha quando entra no beta. Vale pelo label de esforço (`ESF_XP` no motor: rápido 10,
+- **Tarefa de dev** (`dev_tarefas()` no servidor): issue com o jogador como responsável vira `Issue #N: título +exp.SLUG
+  gh:N esf:…` no todo.txt (na expedição aberta chamada Ganbatte, `projeto_dev()`; sem ela, `+ganbatte`), concluída sozinha quando entra no beta. Vale pelo label de esforço (`ESF_XP` no motor: rápido 10,
   médio 15, demorado 25 XP, as faixas de vida, estudo e entrega); o servidor guarda o último esforço visto em
   `contrib.json` → `dev` (vale mesmo se o label sair) e sem nenhum visto conta médio. Apagada pelo jogador não volta;
   responsável trocado ou issue recusada antes do beta tira a tarefa aberta.

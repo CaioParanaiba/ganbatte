@@ -23,7 +23,7 @@ O dono do repositório é o **Caio** (`CaioParanaiba`). Ele revisa e junta os PR
    configurações dela.
 4. Python 3.8+ (o servidor e os testes) e Node (o simulador e o navegador de teste, só se precisar).
 5. **Seu usuário do GitHub em Configurações** (no jogo em que você joga). A issue em que você é o responsável vira uma
-   tarefa na sua Lista (projeto `+ganbatte`) e se conclui sozinha quando entra no beta: é assim que o trabalho de dev
+   tarefa na sua Lista (na expedição Ganbatte, se você tiver uma aberta; senão no projeto `+ganbatte`) e se conclui sozinha quando entra no beta: é assim que o trabalho de dev
    rende XP. Não crie tarefa à mão para issue, senão conta duas vezes. A recompensa de bug/ideia é de quem relatou: issue
    que você abriu e você mesmo fez paga só pela tarefa.
 

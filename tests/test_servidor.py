@@ -299,6 +299,14 @@ class TarefasDev(Base):
         self.rodar([issue(100, resp=["amigo"], labels=["no beta"])])
         self.assertEqual(self.dev(), [])   # a 102 saiu do jogador; a 100 apagada não volta concluída
 
+    def test_entra_na_expedicao_ganbatte_aberta(self):
+        s.gravar_json("estado.json", {"expedicoes": {"velha": {"n": "Ganbatte", "fim": "2026-10-01"}, "todo-engine": {"n": "Ganbatte", "fim": None}}})
+        self.rodar([issue(100, resp=["amigo"])])
+        self.assertEqual(self.dev(), ["Issue #100: Título +exp.todo-engine gh:100"])
+        s.gravar_json("estado.json", {"expedicoes": {"tcc": {"n": "TCC"}}})
+        self.rodar([issue(101, resp=["amigo"])])
+        self.assertIn("Issue #101: Título +ganbatte gh:101", self.dev())
+
     def test_legado_nao_vira_tarefa(self):
         self.rodar([issue(58, resp=["amigo"]), issue(41, resp=["amigo"], labels=["no beta"])])
         self.assertEqual(self.dev(), [])

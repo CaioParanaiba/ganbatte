@@ -905,8 +905,9 @@ def duo_leitura(j):
 # dúvida ou com o label "sem recompensa" não conta: reportar qualquer coisa não rende nada. Quem fez a própria issue
 # (autor também responsável) não ganha a recompensa: o trabalho já é pago pela tarefa de dev. As issues do dono ficam de fora
 # da recompensa (ele decide o que fecha como resolvido), mas as tarefas de dev valem para ele também.
-# Tarefa de dev: issue com o jogador como responsável vira uma tarefa no todo.txt (gh:N, esforço do label em esf:), concluída
-# sozinha quando a issue entra no beta. A conta (quanto vale cada tipo e cada esforço) fica no motor.
+# Tarefa de dev: issue com o jogador como responsável vira uma tarefa no todo.txt (gh:N, esforço do label em esf:), na
+# expedição Ganbatte se houver uma aberta (senão +ganbatte), concluída sozinha quando a issue entra no beta. A conta (quanto
+# vale cada tipo e cada esforço) fica no motor.
 contrib_vivo = {"t": 0.0, "rodando": False}
 DONO = "CaioParanaiba"   # quem desenvolve: as issues dele são anotações do desenvolvimento
 CONTRIB_SEG = 3600       # confere o GitHub no máximo a cada 1 h (a busca sem login aceita 10 por minuto); o botão confere na hora
@@ -968,10 +969,21 @@ def dev_issues(usuario):
     return out, completa
 
 
-def linha_dev(n, titulo, esf):
+def projeto_dev():
+    """Onde a tarefa de dev entra: a expedição aberta chamada Ganbatte (estado.json → expedicoes, pelo nome ou pelo slug),
+    como tarefa solta dela; sem nenhuma, o projeto +ganbatte."""
+    exps = ler_json("estado.json", {}).get("expedicoes")
+    for slug, e in (exps.items() if isinstance(exps, dict) else []):
+        if isinstance(e, dict) and not e.get("fim") and re.fullmatch(r"[a-z0-9-]{1,40}", slug) \
+                and "ganbatte" in (str(e.get("n", "")).lower().split() + [slug]):
+            return f"+exp.{slug}"
+    return "+ganbatte"
+
+
+def linha_dev(n, titulo, esf, proj="+ganbatte"):
     t = re.sub(r"(^|\s)[+@]+", r"\1", " ".join(str(titulo).split()))   # o título não vira projeto, contexto nem chave:valor
     t = re.sub(r"(?<=\w):(?=\S)", ": ", t)
-    return f"Issue #{n}: {t} +ganbatte gh:{n}" + (f" esf:{esf}" if esf else "")
+    return f"Issue #{n}: {t} {proj} gh:{n}" + (f" esf:{esf}" if esf else "")
 
 
 def com_esf(linha, esf):
@@ -983,7 +995,7 @@ def com_esf(linha, esf):
 def dev_tarefas(dev, achadas, completa):
     """Cria, acompanha e conclui as tarefas de dev no todo.txt. dev (contrib.json → dev) guarda, por issue, o último esforço
     visto e os dias em que a tarefa foi criada e concluída: apagada pelo jogador, não volta. Chamar com o lock."""
-    linhas, d, mudou = ler(), hoje().isoformat(), False
+    linhas, d, mudou, proj = ler(), hoje().isoformat(), False, projeto_dev()
     aberta = lambda n: next((i for i, l in enumerate(linhas) if f"gh:{n}" in l.split() and not DONE_RE.match(l)), None)
     for n, i in achadas.items():
         e = dev.get(n)
@@ -997,7 +1009,7 @@ def dev_tarefas(dev, achadas, completa):
             dev.pop(n, None)
         elif i["estado"] == "aberta":
             if e is None:
-                inserir(linhas, linha_dev(n, i["titulo"], esf))
+                inserir(linhas, linha_dev(n, i["titulo"], esf, proj))
                 dev[n] = {"criada": d}
                 mudou = True
                 log(f"dev: issue #{n} com você, tarefa criada")
@@ -1008,7 +1020,7 @@ def dev_tarefas(dev, achadas, completa):
             if k is not None:
                 linhas[k] = transformar(com_esf(linhas[k], esf), "done")
             elif e is None:   # entrou antes de o jogo ver: a tarefa já entra concluída
-                inserir(linhas, f"x {d} {linha_dev(n, i['titulo'], esf)}")
+                inserir(linhas, f"x {d} {linha_dev(n, i['titulo'], esf, proj)}")
             if k is not None or e is None:
                 mudou = True
                 log(f"dev: issue #{n} no beta, tarefa concluída")
