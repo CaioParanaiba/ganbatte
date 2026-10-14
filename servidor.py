@@ -46,7 +46,8 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/grupo/sair {chave}            sai do grupo
   POST /api/grupo/sincronizar {resumo}    manda os dias que mudaram (motor.js → resumoGrupo) e traz o placar
   POST /api/grupo/vinculo {chave, habito, pessoal} liga um hábito pessoal a um hábito do catálogo do grupo ("" desliga)
-  POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config (repassado ao servidor do grupo)
+  POST /api/grupo/frase {chave, texto}    a frase do líder da semana (#76), repassada ao servidor do grupo
+  POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config | habito | calibracao | placar | frase
   POST /api/grupo/host {acao, ...}        estado | servidor | funnel | criar {nome, endereco}: este computador como servidor do grupo
   GET  /api/grupo/copia                   cópia do banco do servidor do grupo desta máquina (só o dono)
 
@@ -1843,11 +1844,12 @@ def api_grupo_vinculo(d):
 
 
 ADMIN_ACOES = {"convite": "admin/convite", "cancelar": "admin/cancelar", "membro": "admin/membro", "config": "admin/config",
-               "habito": "admin/habito"}
+               "habito": "admin/habito", "calibracao": "admin/calibracao", "placar": "admin/placar", "frase": "admin/frase"}
 
 
 def api_grupo_admin(d):
-    """{chave, acao: ver | convite | cancelar | membro | config, ...}: a aba Administrar, repassada ao servidor do grupo."""
+    """{chave, acao: ver | convite | cancelar | membro | config | habito | calibracao | placar | frase, ...}: a aba Administrar,
+    repassada ao servidor do grupo."""
     g = grupo_da(d.get("chave"))
     acao = d.get("acao")
     if acao == "ver":
@@ -1859,6 +1861,12 @@ def api_grupo_admin(d):
     if acao == "convite":
         r["link"] = (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}#{r['codigo']}"
     return r
+
+
+def api_grupo_frase(d):
+    """{chave, texto}: a frase do líder da semana (#76). O servidor do grupo confere se é o líder e se ainda não escreveu."""
+    g = grupo_da(d.get("chave"))
+    return grupo_pede(g["url"], "POST", f"/g/{g['id']}/frase", {"texto": str(d.get("texto") or "")}, g["token"])
 
 
 # ---------- host: o servidor do grupo nesta máquina e o Tailscale Funnel (decidido em 13/10: modo misto) ----------
@@ -2145,7 +2153,8 @@ ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/
          "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada,
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
-         "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo}
+         "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
+         "/api/grupo/frase": api_grupo_frase}
 LIMITE = {"/api/temporada": 3_000_000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),

@@ -269,6 +269,17 @@ O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
   `pes` (o sim/não de cada hábito pessoal e do Duolingo, pelo id) só até o `servidor.py`: `envio_do_grupo()` troca pelo
   catálogo de cada grupo com os `vinculos` do `grupo.json` (`/api/grupo/vinculo`, o seletor em Configurações → grupo; vai para dentro da aba do grupo com o layout do #67, ver `COLETIVO.md` B).
   Mudar um vínculo muda a assinatura dos dias, e a temporada vai de novo. O Duolingo deixou de ser hábito do grupo.
+- **Torre Trick** (14/10/2026, #42; regras no `docs/COLETIVO.md`): `grupo/torre.py`, funções puras sobre o retrato do grupo
+  (`retrato()` no servidor: membros, todos os `dias`, catálogo, `fechados`, calibração). 1 andar = 1 teto; o teto do mês é
+  a mediana do mês anterior congelada no fechamento (`numeros()` agora guarda também a `mediana_ativos`, a dos dias com XP,
+  que vale quando a mediana dá 0); no 1º mês, a do próprio mês, provisória. A superação (`razao()`: base = maior entre a
+  média dos últimos 3 meses ou 4 semanas e a da temporada, com a projeção do período em curso) só entra nos andares com o
+  período fechado; antes, vai em `projecao`. `calcula()` devolve `teto`, `geral`, `placares` (gerados pelo catálogo com
+  `specs()`; só os ligados e com 2+ participantes), `titulos` e `evolucao` (a posição no fim de cada uma das últimas 6
+  semanas, recalculada dos dias). O `placar()` leva tudo em `torre`, junto com a `frase` (#76: tabela `frases`, o líder é
+  quem mais desceu na última semana fechada, `andares_semana()`; uma vez só; fica até a semana seguinte fechar). Calibração
+  e placares por grupo nas colunas `calib` e `placares` de `grupos` (JSON; migração no `abre_banco`), editados em
+  `admin/calibracao` e `admin/placar`; `admin/frase` apaga. No jogo, `/api/grupo/frase` e as ações novas do `/api/grupo/admin`.
 
 **Cápsula da temporada** (0.6.4-beta1, 13/10/2026, issue #7): `HJ.capsula(api)` no motor calcula a temporada como o
 jogo mostrava no último dia (`fimTemporada`: véspera da volta; antes disso, uma foto até hoje): roda `carregar` com `hoje`

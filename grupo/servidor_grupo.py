@@ -12,7 +12,8 @@ própria (padrão ~/.ganbatte-grupo/, ou a variável GANBATTE_GRUPO_DADOS), porq
   copias/       uma cópia do banco por dia (as últimas COPIAS)
 
 Os tokens (jogador, admin, convite) vão no cabeçalho Authorization: Bearer e o banco guarda só o hash deles.
-O jogo manda fatos (o resumo do dia do motor, protocolo 1), nunca pontos: o placar da 0.9.0 mostra só fatos (#42).
+O jogo manda fatos (o resumo do dia do motor, protocolo 1), nunca pontos: os andares da Torre Trick (#42), os placares
+específicos, os títulos e a evolução (#67) são calculados aqui, em grupo/torre.py, a partir dos fatos guardados.
 Hábitos do grupo (#41): um catálogo por grupo, que os admins editam. O Codeforces é o único automático (o jogo mede sozinho)
 e já vem no grupo novo; os outros são de vínculo, sim/não por dia: cada jogador liga um hábito pessoal a ele no jogo, e só a
 chave do grupo chega aqui. O envio guarda só as chaves do catálogo, a partir do "desde" de cada uma. Remover só arquiva.
@@ -29,6 +30,7 @@ Rotas (JSON):
   POST /g/<id>/envio {protocolo, dias}        fatos dos dias novos ou que mudaram (sobrescreve por jogador e dia)
   GET  /g/<id>/placar                         o placar (só fatos) e quais dias já fecharam
   POST /g/<id>/sair {}                        sai do grupo (o histórico fica)
+  POST /g/<id>/frase {texto}                  a frase do líder da última semana fechada (#76): uma vez só
   admin do grupo
   GET  /g/<id>/admin                          membros, convites abertos e a configuração
   POST /g/<id>/admin/convite {admin?, membro?} convite novo (membro = reconvite: liga ao mesmo perfil) → {codigo}
@@ -36,6 +38,9 @@ Rotas (JSON):
   POST /g/<id>/admin/membro {membro, admin?, remover?}
   POST /g/<id>/admin/config {nome?, fuso?, ini?, fim?}
   POST /g/<id>/admin/habito {nome} | {id, remover} cria um hábito de vínculo, arquiva (remover: true) ou traz de volta (false)
+  POST /g/<id>/admin/calibracao {valores}     muda os números da Torre Trick (multiplicadores, base mínima, limite da frase)
+  POST /g/<id>/admin/placar {id, on?, per?}   liga, desliga ou muda o período de um placar específico
+  POST /g/<id>/admin/frase {semana}           apaga a frase de uma semana (o líder não escreve outra)
 """
 import argparse
 import hashlib
@@ -56,6 +61,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 import servidor as jogo  # noqa: E402  (versão, início automático e o log, os mesmos do jogo)
+import torre  # noqa: E402  (as contas da Torre Trick e dos placares)
 
 APP = "ganbatte-grupo"
 PORTA = 8643
@@ -90,6 +96,8 @@ CREATE TABLE IF NOT EXISTS fechados (grupo TEXT NOT NULL, periodo TEXT NOT NULL,
 CREATE TABLE IF NOT EXISTS ligado (id INTEGER PRIMARY KEY, ini REAL NOT NULL, fim REAL NOT NULL);
 CREATE TABLE IF NOT EXISTS habitos (grupo TEXT NOT NULL, id TEXT NOT NULL, nome TEXT NOT NULL, fonte TEXT NOT NULL, desde TEXT NOT NULL,
   criado REAL NOT NULL, removido REAL, PRIMARY KEY (grupo, id));
+CREATE TABLE IF NOT EXISTS frases (grupo TEXT NOT NULL, semana TEXT NOT NULL, membro INTEGER NOT NULL, texto TEXT NOT NULL, criado REAL NOT NULL,
+  apagada REAL, PRIMARY KEY (grupo, semana));
 """
 
 
@@ -117,6 +125,10 @@ def abre_banco():
     CON.row_factory = sqlite3.Row
     CON.execute("PRAGMA journal_mode=WAL")
     CON.executescript(ESQUEMA)
+    cols = {r["name"] for r in CON.execute("PRAGMA table_info(grupos)").fetchall()}
+    for col in ("calib", "placares"):   # 0.9.0-beta1: grupos sem a calibração e a configuração dos placares (#42, #67)
+        if col not in cols:
+            CON.execute(f"ALTER TABLE grupos ADD COLUMN {col} TEXT NOT NULL DEFAULT '{{}}'")
     # grupos de antes do catálogo (0.9.0-beta1): começam com o Codeforces, como um grupo novo
     for g in CON.execute("SELECT id FROM grupos WHERE id NOT IN (SELECT DISTINCT grupo FROM habitos)").fetchall():
         poe_cf(CON, g["id"])
@@ -250,7 +262,8 @@ def numeros(grupo, ini, fim):
     for r in linhas:
         for k, v in json.loads(r["hab"]).items():
             hab[k] = hab.get(k, 0) + v
-    return {"membros": len(membros), "dias": n, "dias_com_xp": sum(1 for x in todos if x > 0), "mediana_xp": mediana(todos), "hab": hab}
+    return {"membros": len(membros), "dias": n, "dias_com_xp": sum(1 for x in todos if x > 0), "mediana_xp": mediana(todos),
+            "mediana_ativos": mediana([x for x in todos if x > 0]), "hab": hab}
 
 
 def fecha_periodos(t=None):
@@ -461,9 +474,57 @@ def sequencia(ativos, hoje):
     return n
 
 
+def retrato(g):
+    """O grupo como a torre.py o lê: os membros, todos os dias guardados, o catálogo, os períodos fechados e a calibração."""
+    ms = [{"id": m["id"], "nome": m["nome"]} for m in q("SELECT id, nome FROM membros WHERE grupo = ? AND saiu IS NULL ORDER BY entrou", (g["id"],))]
+    dias = {}
+    for r in q("SELECT membro, dia, xp, hab, ferias FROM dias WHERE grupo = ?", (g["id"],)):
+        dias.setdefault(r["membro"], {})[r["dia"]] = {"xp": r["xp"], "hab": json.loads(r["hab"]), "f": bool(r["ferias"])}
+    fech = {r["periodo"]: json.loads(r["dados"]) for r in q("SELECT periodo, dados FROM fechados WHERE grupo = ?", (g["id"],))}
+    return torre.Grupo(ms, dias, catalogo(g["id"]), fech, hoje_no(g["fuso"]), g["ini"] or "", g["fim"] or "",
+                       json.loads(g["calib"] or "{}"), json.loads(g["placares"] or "{}"))
+
+
+def frase_da_semana(g, G, eu=None):
+    """A frase do líder da última semana fechada (#76): quem mais desceu naquela semana escreve uma vez, e ela fica até a
+    semana seguinte fechar."""
+    r = q1("SELECT MAX(periodo) AS p FROM fechados WHERE grupo = ? AND periodo LIKE 'semana:%'", (g["id"],))
+    if not r or not r["p"]:
+        return {"semana": "", "lider": None}
+    sem = r["p"]
+    a = torre._inicio(sem)
+    andares = {m: G.andares_semana(m, a, a + timedelta(days=6)) for m in G.ids}
+    lider = max(G.ids, key=lambda m: (andares[m], -G.ids.index(m))) if andares and max(andares.values()) > 0 else None
+    f = q1("SELECT * FROM frases WHERE grupo = ? AND semana = ?", (g["id"], sem))
+    out = {"semana": sem[7:], "lider": lider, "andares": andares.get(lider), "limite": int(G.calib["frase_max"]),
+           "texto": f["texto"] if f and not f["apagada"] else "", "escrita": f["criado"] if f else None, "apagada": bool(f and f["apagada"])}
+    out["pode_escrever"] = bool(eu and lider == eu and not f)
+    return out
+
+
+def frase(gid, token, d):
+    g = grupo_ou_404(gid)
+    eu = membro_do(gid, token)
+    G = retrato(g)
+    f = frase_da_semana(g, G, eu["id"])
+    if f["lider"] != eu["id"]:
+        raise Erro("só o líder da última semana fechada escreve a frase", 403)
+    if not f["pode_escrever"]:
+        raise Erro("você já escreveu a frase desta semana (dá uma vez só)", 409)
+    texto = " ".join(str(d.get("texto") or "").split())
+    if not 1 <= len(texto) <= f["limite"]:
+        raise Erro(f"a frase precisa de 1 a {f['limite']} letras")
+    with transacao() as c:
+        if c.execute("SELECT 1 FROM frases WHERE grupo = ? AND semana = ?", (gid, "semana:" + f["semana"])).fetchone():
+            raise Erro("você já escreveu a frase desta semana (dá uma vez só)", 409)
+        c.execute("INSERT INTO frases (grupo, semana, membro, texto, criado) VALUES (?, ?, ?, ?, ?)", (gid, "semana:" + f["semana"], eu["id"], texto, agora()))
+    return {"ok": True, "frase": frase_da_semana(g, retrato(g), eu["id"])}
+
+
 def placar(gid, token):
-    """Só fatos (#42 decide os pontos): quem está no grupo, quando sincronizou e, por dia, se teve XP, o Codeforces e os
-    hábitos do grupo. O XP de cada um não aparece: o placar público nunca compara XP de tarefa entre pessoas."""
+    """Os fatos (quem está no grupo, quando sincronizou e, por dia, se teve XP, o Codeforces e os hábitos do grupo) e a
+    Torre Trick calculada a partir deles (torre.calcula). O XP de cada um não aparece: o placar público nunca compara XP
+    de tarefa entre pessoas, só os andares (o XP com teto, em tetos)."""
     g = grupo_ou_404(gid)
     eu = membro_do(gid, token)
     hoje = hoje_no(g["fuso"])
@@ -486,9 +547,13 @@ def placar(gid, token):
         membros.append({"id": m["id"], "nome": m["nome"], "avatar": m["avatar"], "admin": bool(m["admin"]), "envio": m["envio"],
                         "sequencia": sequencia(ativos, hoje), "dias_com_xp": com_xp, "dias": dias})
     fechado = q1("SELECT MAX(periodo) AS p FROM fechados WHERE grupo = ? AND periodo LIKE 'dia:%'", (gid,))["p"]
+    G = retrato(g)
+    t = torre.calcula(G)
+    t.pop("config")
+    t["frase"] = frase_da_semana(g, G, eu["id"])
     return {"ok": True, "grupo": {"id": gid, "nome": g["nome"], "fuso": fuso_txt(g["fuso"]), "ini": g["ini"] or "", "fim": g["fim"] or ""},
             "hoje": hoje.isoformat(), "janela": ini.isoformat(), "fechado_ate": fechado[4:] if fechado else "",
-            "voce": {"membro": eu["id"], "admin": bool(eu["admin"])}, "habitos": cat, "membros": membros, "protocolo": PROTOCOLO}
+            "voce": {"membro": eu["id"], "admin": bool(eu["admin"])}, "habitos": cat, "membros": membros, "torre": t, "protocolo": PROTOCOLO}
 
 
 def sair(gid, token):
@@ -508,8 +573,14 @@ def admin_ver(gid, token):
           for m in q("SELECT * FROM membros WHERE grupo = ? ORDER BY entrou", (gid,))]
     cs = [{"id": c["id"], "admin": bool(c["admin"]), "membro": c["membro"], "criado": c["criado"], "vence": c["vence"]}
           for c in q("SELECT * FROM convites WHERE grupo = ? AND usado IS NULL AND cancelado = 0 AND vence > ? ORDER BY criado", (gid, agora()))]
+    G = retrato(g)
+    nomes = {m["id"]: m["nome"] for m in ms}
+    fr = [{"semana": f["semana"][7:], "membro": f["membro"], "nome": nomes.get(f["membro"], "?"), "texto": f["texto"], "apagada": bool(f["apagada"])}
+          for f in q("SELECT * FROM frases WHERE grupo = ? ORDER BY semana DESC LIMIT 10", (gid,))]
     return {"ok": True, "grupo": {"id": gid, "nome": g["nome"], "fuso": fuso_txt(g["fuso"]), "ini": g["ini"] or "", "fim": g["fim"] or ""},
-            "membros": ms, "convites": cs, "habitos": catalogo(gid, arquivados=True)}
+            "membros": ms, "convites": cs, "habitos": catalogo(gid, arquivados=True),
+            "calibracao": {"valores": G.calib, "padrao": torre.CALIB, "limites": torre.CALIB_LIMITES},
+            "placares": [{k: s[k] for k in ("id", "nome", "on", "per", "pers")} for s in G.specs()], "frases": fr}
 
 
 def admin_convite(gid, token, d):
@@ -567,6 +638,60 @@ def admin_config(gid, token, d):
     with transacao() as c:
         for k, v in mud.items():
             c.execute(f"UPDATE grupos SET {k} = ? WHERE id = ?", (v, gid))
+    return admin_ver(gid, token)
+
+
+def admin_calibracao(gid, token, d):
+    """{valores: {chave: número}}: os números da Torre Trick (#42). Mudar recalcula o que está aberto; o teto e os períodos
+    fechados ficam como estavam (#40)."""
+    g = grupo_ou_404(gid)
+    eu = membro_do(gid, token, admin=True)
+    v = d.get("valores")
+    if not isinstance(v, dict) or not v:
+        raise Erro("nada para mudar")
+    atual = json.loads(g["calib"] or "{}")
+    for k, x in v.items():
+        if k not in torre.CALIB_LIMITES:
+            raise Erro(f"número desconhecido: {k}")
+        lo, hi = torre.CALIB_LIMITES[k]
+        if not isinstance(x, (int, float)) or isinstance(x, bool) or not lo <= x <= hi:
+            raise Erro(f"{k} precisa ficar entre {torre.num(lo, 2)} e {torre.num(hi, 2)}")
+        atual[k] = int(x) if k == "frase_max" else float(x)
+    with transacao() as c:
+        c.execute("UPDATE grupos SET calib = ? WHERE id = ?", (json.dumps(atual, sort_keys=True), gid))
+    log("admin", eu["id"], "mudou a calibração do grupo", gid)
+    return admin_ver(gid, token)
+
+
+def admin_placar(gid, token, d):
+    """{id, on?, per?}: liga, desliga ou muda o período de um placar específico (#67), sem lançar versão."""
+    g = grupo_ou_404(gid)
+    membro_do(gid, token, admin=True)
+    s = next((x for x in retrato(g).specs() if x["id"] == d.get("id")), None)
+    if not s:
+        raise Erro("placar não encontrado")
+    cfg = json.loads(g["placares"] or "{}")
+    c_ = cfg.setdefault(s["id"], {})
+    if "on" in d:
+        c_["on"] = bool(d["on"])
+    if "per" in d:
+        if d["per"] not in s["pers"]:
+            raise Erro("período inválido para este placar")
+        c_["per"] = d["per"]
+    with transacao() as c:
+        c.execute("UPDATE grupos SET placares = ? WHERE id = ?", (json.dumps(cfg, sort_keys=True), gid))
+    return admin_ver(gid, token)
+
+
+def admin_frase(gid, token, d):
+    """{semana}: apaga a frase de uma semana (#76). Ela some do placar e o líder não escreve outra."""
+    grupo_ou_404(gid)
+    eu = membro_do(gid, token, admin=True)
+    with transacao() as c:
+        n = c.execute("UPDATE frases SET apagada = ? WHERE grupo = ? AND semana = ? AND apagada IS NULL", (agora(), gid, "semana:" + str(d.get("semana", "")))).rowcount
+    if not n:
+        raise Erro("frase não encontrada")
+    log("admin", eu["id"], "apagou a frase da semana", d.get("semana"), "no grupo", gid)
     return admin_ver(gid, token)
 
 
@@ -703,10 +828,11 @@ class H(BaseHTTPRequestHandler):
                 fn = {"placar": lambda: placar(gid, tk), "admin": lambda: admin_ver(gid, tk)}.get(resto)
             else:
                 d = self._corpo()
-                fn = {"entrar": lambda: entrar(gid, d), "envio": lambda: envio(gid, tk, d), "sair": lambda: sair(gid, tk),
+                fn = {"entrar": lambda: entrar(gid, d), "envio": lambda: envio(gid, tk, d), "sair": lambda: sair(gid, tk), "frase": lambda: frase(gid, tk, d),
                       "admin/convite": lambda: admin_convite(gid, tk, d), "admin/cancelar": lambda: admin_cancelar(gid, tk, d),
                       "admin/membro": lambda: admin_membro(gid, tk, d), "admin/config": lambda: admin_config(gid, tk, d),
-                      "admin/habito": lambda: admin_habito(gid, tk, d)}.get(resto)
+                      "admin/habito": lambda: admin_habito(gid, tk, d), "admin/calibracao": lambda: admin_calibracao(gid, tk, d),
+                      "admin/placar": lambda: admin_placar(gid, tk, d), "admin/frase": lambda: admin_frase(gid, tk, d)}.get(resto)
             if fn:
                 return self._json(200, fn())
         raise Erro("não encontrado", 404)
