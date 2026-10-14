@@ -17,7 +17,8 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   planos/                   planos de ensino (PDF, HTML...) que a IA lê
   cf.json                   cache do Codeforces (problemas aceitos por dia e os marcados à mão)
   duo.json                  cache do Duolingo (a última ofensiva lida, os dias já creditados e desde quando está ligado)
-  contrib.json              issues do jogador no GitHub fechadas como resolvidas (bug corrigido, ideia feita) e o dia em que o jogo as viu
+  contrib.json              issues do jogador no GitHub que entraram no beta (bug corrigido, ideia feita) e o dia em que o jogo as viu;
+                            em dev, as issues em que ele é o responsável (a tarefa gh:N do todo.txt, #97)
   grupo.json, enviado.json  modo em grupo: os grupos (com o token) e o que já foi enviado a cada um; grupo/ guarda o último placar
 
 Rotas (as mesmas que web/demo.js simula no modo demonstração):
@@ -36,6 +37,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/jogo/nota {disc, aval, nota, parcial?} · /api/jogo/ajuste {texto} ou {quando, texto, aplicado} · /api/jogo/estado {estado}
   POST /api/colecao {itens}               guarda na coleção permanente os itens comprados que ainda não estão nela (#33)
   POST /api/cf/mao {menos?}               +1 problema do Codeforces hoje, marcado à mão (ITMO, grupo privado); menos = desfaz
+  POST /api/contrib {}                    confere na hora as contribuições e as tarefas de dev no GitHub (senão, a cada 1 h)
   GET  /api/ia                            agentes de terminal achados, a escolha do jogador e os planos de ensino da pasta planos/
   POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini | agy) ou volta ao copiar e colar (chat)
   POST /api/ia/rodar {pedido, anexo?, leve?} roda o agente com o pedido da página → {id}; GET /api/ia/rodar?id= até ficar pronto
@@ -896,66 +898,196 @@ def duo_leitura(j):
     return {"usuario": duo["usuario"], "ofensiva": cache.get("ofensiva"), "desde": cache.get("desde"), "ini": (cache.get("ult") or {}).get("ini")}
 
 
-# ---------- contribuições (#23) ----------
-# Quem informa o usuário do GitHub em Configurações ganha XP e Jenny por bug ou ideia que abriu no repositório, mas só
-# quando a issue é fechada como resolvida (state_reason "completed"). Repetida, recusada ("not planned"), dúvida ou com o
-# label "sem recompensa" não conta: reportar qualquer coisa não rende nada. A conta (quanto vale cada tipo) fica no motor.
+# ---------- contribuições (#23, #96) e tarefas de dev (#97) ----------
+# Quem informa o usuário do GitHub em Configurações ganha XP e Jenny por bug ou ideia que abriu no repositório quando ela
+# entra no beta: label "no beta" ou fechada como resolvida (state_reason "completed"), o que vier primeiro. A branch padrão
+# é a main, então o "Fecha #N" de um PR para a beta não fecha a issue: daí o label. Repetida, recusada ("not planned"),
+# dúvida ou com o label "sem recompensa" não conta: reportar qualquer coisa não rende nada. Quem fez a própria issue
+# (autor também responsável) não ganha a recompensa: o trabalho já é pago pela tarefa de dev. As issues do dono ficam de fora
+# da recompensa (ele decide o que fecha como resolvido), mas as tarefas de dev valem para ele também.
+# Tarefa de dev: issue com o jogador como responsável vira uma tarefa no todo.txt (gh:N, esforço do label em esf:), concluída
+# sozinha quando a issue entra no beta. A conta (quanto vale cada tipo e cada esforço) fica no motor.
 contrib_vivo = {"t": 0.0, "rodando": False}
 DONO = "CaioParanaiba"   # quem desenvolve: as issues dele são anotações do desenvolvimento
+CONTRIB_SEG = 3600       # confere o GitHub no máximo a cada 1 h (a busca sem login aceita 10 por minuto); o botão confere na hora
+CONTRIB_BOTAO = 60       # o botão "conferir agora" espera 1 minuto entre uma conferida e outra
+# issues que já estavam no beta ou fechadas como resolvidas quando a regra de quem relata x quem faz entrou (#96): seguem a
+# regra antiga (o autor ganha mesmo tendo feito) e não viram tarefa de dev
+CONTRIB_LEGADO = frozenset({1, 2, 6, 7, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 31, 32, 33, 34, 35, 36, 37,
+                            38, 39, 40, 41, 42, 46, 47, 49, 50, 51, 54, 57, 58, 59, 60, 67, 75, 76})
+ESFORCO = {"esforço: rápido": "rapido", "esforço: médio": "medio", "esforço: demorado": "demorado"}
+
+
+def gh_busca(q):
+    """Busca de issues no GitHub (sem login), as atualizadas por último primeiro. Devolve (itens, completa)."""
+    url = "https://api.github.com/search/issues?" + urllib.parse.urlencode({"q": q, "per_page": 100, "sort": "updated", "order": "desc"})
+    req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}", "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        j = json.load(r)
+    itens = j.get("items") or []
+    return itens, len(itens) >= int(j.get("total_count") or 0)
+
+
+def gh_resumo(it):
+    labels = {str(l.get("name", "")).lower() for l in it.get("labels") or []}
+    resolvida = it.get("state") == "closed" and it.get("state_reason") == "completed"
+    fora = it.get("state") == "closed" and not resolvida
+    return {"n": int(it["number"]), "labels": labels, "autor": str((it.get("user") or {}).get("login", "")).lower(),
+            "resp": {str(a.get("login", "")).lower() for a in it.get("assignees") or []},
+            "entrou": not fora and (resolvida or "no beta" in labels), "beta": not fora and not resolvida and "no beta" in labels,
+            "fora": fora, "titulo": str(it.get("title", ""))[:120]}
 
 
 def contrib_issues(usuario):
-    q = f"repo:{DONO}/ganbatte is:issue author:{usuario} reason:completed"
-    url = "https://api.github.com/search/issues?" + urllib.parse.urlencode({"q": q, "per_page": 100})
-    req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}", "Accept": "application/vnd.github+json"})
-    with urllib.request.urlopen(req, timeout=10) as r:
-        itens = json.load(r).get("items") or []
+    """Bugs e ideias do jogador que já entraram no beta e rendem a recompensa de quem relatou."""
+    if usuario.lower() == DONO.lower():
+        return {}
     out = {}
-    for it in itens:
-        if str((it.get("user") or {}).get("login", "")).lower() != usuario.lower() or it.get("state_reason") != "completed":
+    for it in gh_busca(f"repo:{DONO}/ganbatte is:issue author:{usuario}")[0]:
+        r = gh_resumo(it)
+        if r["autor"] != usuario.lower() or not r["entrou"] or "sem recompensa" in r["labels"]:
             continue
-        labels = {str(l.get("name", "")).lower() for l in it.get("labels") or []}
-        tipo = "bug" if "bug" in labels else "ideia" if "enhancement" in labels else None
-        if tipo and "sem recompensa" not in labels:
-            out[str(it["number"])] = {"tipo": tipo, "titulo": str(it.get("title", ""))[:120]}
+        if r["n"] not in CONTRIB_LEGADO and usuario.lower() in r["resp"]:
+            continue   # fez a própria issue: ganha pela tarefa de dev (#97)
+        tipo = "bug" if "bug" in r["labels"] else "ideia" if "enhancement" in r["labels"] else None
+        if tipo:
+            out[str(r["n"])] = {"tipo": tipo, "titulo": r["titulo"], **({"beta": True} if r["beta"] else {})}
     return out
 
 
+def dev_issues(usuario):
+    """Issues com o jogador como responsável (fora as do legado): estado e esforço de cada uma. Devolve (issues, completa)."""
+    itens, completa = gh_busca(f"repo:{DONO}/ganbatte is:issue assignee:{usuario}")
+    out = {}
+    for it in itens:
+        r = gh_resumo(it)
+        if r["n"] in CONTRIB_LEGADO or usuario.lower() not in r["resp"]:
+            continue
+        esf = next((v for k, v in ESFORCO.items() if k in r["labels"]), None)
+        out[str(r["n"])] = {"titulo": r["titulo"], "esf": esf, "estado": "fora" if r["fora"] else "entrou" if r["entrou"] else "aberta"}
+    return out, completa
+
+
+def linha_dev(n, titulo, esf):
+    t = re.sub(r"(^|\s)[+@]+", r"\1", " ".join(str(titulo).split()))   # o título não vira projeto, contexto nem chave:valor
+    t = re.sub(r"(?<=\w):(?=\S)", ": ", t)
+    return f"Issue #{n}: {t} +ganbatte gh:{n}" + (f" esf:{esf}" if esf else "")
+
+
+def com_esf(linha, esf):
+    if not esf:
+        return linha
+    return re.sub(r"(?<=\s)esf:\S+", f"esf:{esf}", linha) if re.search(r"(?<=\s)esf:\S+", linha) else f"{linha} esf:{esf}"
+
+
+def dev_tarefas(dev, achadas, completa):
+    """Cria, acompanha e conclui as tarefas de dev no todo.txt. dev (contrib.json → dev) guarda, por issue, o último esforço
+    visto e os dias em que a tarefa foi criada e concluída: apagada pelo jogador, não volta. Chamar com o lock."""
+    linhas, d, mudou = ler(), hoje().isoformat(), False
+    aberta = lambda n: next((i for i, l in enumerate(linhas) if f"gh:{n}" in l.split() and not DONE_RE.match(l)), None)
+    for n, i in achadas.items():
+        e = dev.get(n)
+        esf = i["esf"] or (e or {}).get("esf")
+        k = aberta(n)
+        if i["estado"] == "fora":   # recusada ou repetida antes de entrar no beta: a tarefa aberta sai
+            if k is not None:
+                linhas.pop(k)
+                mudou = True
+                log(f"dev: issue #{n} fechada sem entrar, tarefa tirada")
+            dev.pop(n, None)
+        elif i["estado"] == "aberta":
+            if e is None:
+                inserir(linhas, linha_dev(n, i["titulo"], esf))
+                dev[n] = {"criada": d}
+                mudou = True
+                log(f"dev: issue #{n} com você, tarefa criada")
+            elif k is not None and com_esf(linhas[k], esf) != linhas[k]:
+                linhas[k] = com_esf(linhas[k], esf)
+                mudou = True
+        elif not (e or {}).get("feita"):   # entrou no beta
+            if k is not None:
+                linhas[k] = transformar(com_esf(linhas[k], esf), "done")
+            elif e is None:   # entrou antes de o jogo ver: a tarefa já entra concluída
+                inserir(linhas, f"x {d} {linha_dev(n, i['titulo'], esf)}")
+            if k is not None or e is None:
+                mudou = True
+                log(f"dev: issue #{n} no beta, tarefa concluída")
+            dev[n] = {**(e or {"criada": d}), "feita": d}
+        if esf and n in dev:
+            dev[n]["esf"] = esf
+    if completa:   # tirou o jogador de responsável: a tarefa aberta sai (só com a busca inteira, para não tirar por paginação)
+        for n in [n for n, e in dev.items() if n not in achadas and not e.get("feita")]:
+            k = aberta(n)
+            if k is not None:
+                linhas.pop(k)
+                mudou = True
+                log(f"dev: issue #{n} saiu de você, tarefa tirada")
+            dev.pop(n)
+    if mudou:
+        gravar(linhas)
+
+
 def contrib_atualiza(usuario):
-    """Confere as issues resolvidas (no máximo a cada 6 h). Cada uma ganha o dia em que o jogo a viu fechada pela primeira vez:
-    o XP entra nesse dia, sem mexer nos dias passados. Roda numa thread."""
+    """Confere as contribuições e as tarefas de dev. Cada contribuição ganha o dia em que o jogo a viu no beta pela primeira
+    vez: o XP entra nesse dia, sem mexer nos dias passados. Roda numa thread (ou na hora, pelo botão). Devolve o erro ou ""."""
     try:
         achadas = contrib_issues(usuario)
+        dev, completa = dev_issues(usuario)
         with lock:
             cache = ler_json("contrib.json", {})
             if cache.get("usuario") != usuario:
-                cache = {"usuario": usuario, "issues": {}}
+                cache = {"usuario": usuario, "issues": {}, "dev": {}}
             iss = cache.get("issues") or {}
             for n, i in achadas.items():
                 if n not in iss:
                     iss[n] = {**i, "dia": hoje().isoformat()}
-                    log(f"contribuição: issue #{n} resolvida ({i['tipo']}), recompensa creditada")
+                    log(f"contribuição: issue #{n} no beta ({i['tipo']}), recompensa creditada")
             cache["issues"] = iss
+            cache["dev"] = cache.get("dev") or {}
+            dev_tarefas(cache["dev"], dev, completa)
             gravar_json("contrib.json", cache)
+        return ""
     except Exception as e:   # sem internet ou limite da API do GitHub: fica o que estava
         log("contribuições:", e)
+        return str(e)
     finally:
         contrib_vivo["t"] = time.time()
         contrib_vivo["rodando"] = False
 
 
-def contrib_leitura(j):
+def gh_usuario(j):
     gh = j.get("github")
     usuario = str(gh.get("usuario", "")) if isinstance(gh, dict) else ""
-    if not HANDLE.match(usuario) or usuario.lower() == DONO.lower():
+    return usuario if HANDLE.match(usuario) else ""
+
+
+def contrib_leitura(j):
+    usuario = gh_usuario(j)
+    if not usuario:
         return None
-    if time.time() - contrib_vivo["t"] > 6 * 3600 and not contrib_vivo["rodando"]:
+    if time.time() - contrib_vivo["t"] > CONTRIB_SEG and not contrib_vivo["rodando"]:
         contrib_vivo["rodando"] = True
         threading.Thread(target=contrib_atualiza, args=(usuario,), daemon=True).start()
     cache = ler_json("contrib.json", {})
     if cache.get("usuario") != usuario:
         return {"usuario": usuario, "issues": []}
     return {"usuario": usuario, "issues": [{"n": int(n), **i} for n, i in sorted((cache.get("issues") or {}).items(), key=lambda x: int(x[0]))]}
+
+
+def api_contrib(d):
+    """Botão "conferir agora" (Configurações): confere o GitHub na hora, no máximo uma vez por minuto."""
+    usuario = gh_usuario(jogador())
+    if not usuario:
+        raise Erro("ponha o seu usuário do GitHub em Configurações")
+    if contrib_vivo["rodando"]:
+        raise Erro("já estou conferindo, espere um pouco")
+    if time.time() - contrib_vivo["t"] < CONTRIB_BOTAO:
+        return {"ok": True, "cedo": True}
+    contrib_vivo["rodando"] = True
+    erro = contrib_atualiza(usuario)
+    if erro:
+        raise Erro("não consegui falar com o GitHub (sem internet ou limite de consultas); tente daqui a pouco", 502)
+    return {"ok": True}
 
 
 # ---------- jogo: leitura e as três gravações ----------
@@ -2440,7 +2572,7 @@ def api_autostart(d):
 
 ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/reabre": api_reabre, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
-         "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
+         "/api/cf/mao": api_cf_mao, "/api/contrib": api_contrib, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada, "/api/colecao": api_colecao,
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
          "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
