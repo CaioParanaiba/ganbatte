@@ -1,8 +1,12 @@
-# Hunter.todo coletivo: desenho (v3, 08/10/2026)
+# Ganbatte em grupo: desenho (v4, 13/10/2026)
 
-Versão em grupo do Hunter.todo, ideia do Caio e de um amigo. **Ainda não implementado.** Foco atual: deixar o placar
+Modo em grupo do Ganbatte (0.9, branch `grupo`, índice na issue #16), ideia do Caio e de um amigo. Foco: deixar o placar
 **público e balanceado**. `⏳` = pendente; toda pontuação está **a calibrar** com 2–3 semanas de dados reais
 (os números que aparecem aqui só ilustram as contas).
+
+**Ordem:** a 0.9.0 traz a estrutura (servidor #38, convite #39, sincronização #40) com um placar **só de fatos, sem
+pontos**: membros, última sincronização, dias com XP, Codeforces e hábitos. O servidor junta esses fatos e eles calibram a
+pontuação da Torre Trick (#41, #42), que só entra depois, já com números de uso real.
 
 ## Princípios
 
@@ -28,14 +32,32 @@ Tema: **HxH para todos** nesta temporada.
 
 ## Arquitetura
 
-- Cada jogador roda o **template individual**: só o jogo (sem o painel do Caio, sem aulas/transcrição),
-  com `jogador.conf` (nome, disciplinas, **mapa de tags** → categorias do motor, handle do CF, exposição de notas).
+- Cada jogador roda o próprio Ganbatte, com o `jogador.json` (nome, disciplinas, **mapa de tags** → categorias do motor,
+  handle do CF; a exposição de notas entra com a #45).
 - **Associação Hunter**: qualquer jogador pode ser host (botão **Criar grupo**, serviço `ganbatte-grupo` separado do jogo).
   Um servidor atende vários grupos e um jogador pode estar em vários. Exposto de preferência por **Tailscale Funnel**
   (grátis, só o host instala, endereço fixo com qualquer IP); o servidor não depende dele. Convite = link com endereço e
   código. Direto no servidor, sem passar pelo GitHub (o GitHub serve só para distribuir o código do template).
 - O jogo local manda um **resumo por POST** e guarda numa fila quando estiver offline. O jogo nunca depende do servidor para funcionar.
 - A Associação calcula a Torre Trick e serve a página do placar, o catálogo da loja pública e as imagens.
+
+## Servidor da Associação (decidido em 13/10/2026, #38–#40)
+
+- Código em `grupo/` no mesmo repositório, só a biblioteca padrão do Python; dados em **SQLite**, numa pasta própria
+  (`~/.ganbatte-grupo/`), separada da do jogo: o servidor pode rodar numa máquina sem jogador.
+- **Porta 8643** (a do jogo é a 8642), trocável com `--porta`. Só escuta em `localhost`; quem expõe é o host.
+- **Tailscale Funnel, modo misto:** o botão *Criar grupo* tenta ligar o Funnel sozinho; se travar na autorização da
+  primeira vez ou no `sudo` do Linux, mostra o link ou o comando e *tentar de novo*. Sem Tailscale, o host cola o endereço
+  (outro túnel, VPS, rede local).
+- **Dono do servidor por token no disco** (`dono.token` na pasta do servidor), nunca por "veio de localhost": o Funnel
+  entrega os pedidos da internet como se viessem da própria máquina. O jogo do host lê o arquivo e manda o token.
+- **Tokens no cabeçalho** (`Authorization: Bearer`), e o servidor guarda **só o hash** (de jogadores, admins e
+  convites). Token perdido = reconvite.
+- **Fechamento dos períodos pelo fuso do grupo**, guardado como deslocamento fixo (ex.: `-03:00`, o Python 3.8 não tem
+  `zoneinfo`); o padrão é o do host ao criar. Dia às 6h do dia seguinte, semana +3 dias, mês +7 dias, **e só depois de o
+  servidor somar 12h ligado depois do prazo** (constante ajustável): o host pode ser um notebook que desliga.
+- **Backup:** cópia diária automática do banco (`copias/`, as últimas 14, pela função de backup do `sqlite3`) e o botão
+  *baixar cópia do servidor* para o dono.
 
 ## Pontos da Torre Trick
 
@@ -74,7 +96,7 @@ Tema: **HxH para todos** nesta temporada.
 
 ### E. Notas, pela evolução (nunca pela nota em si)
 - `pontos = k × max(0, nota − referência)`. Referência = CR do semestre anterior, ou a média das avaliações já feitas na temporada.
-- Exposição no `jogador.conf`: `notas = publico` (mostra nota e ganha pontos) · `evolucao` (só os pontos) · `privado` (sem pontos de nota).
+- Exposição em Configurações → Grupo: `notas = publico` (mostra nota e ganha pontos) · `evolucao` (só os pontos) · `privado` (sem pontos de nota).
 - ⏳ k · ⏳ referência de quem está no 1º semestre.
 
 ### F. Cooperativo
@@ -102,13 +124,6 @@ Tema: **HxH para todos** nesta temporada.
   cartas narradas). Sem IA, o plano de ensino se cadastra pelo formulário da aba Chefões.
 - **Do servidor (host):** uma IA na Associação para narrar o **cenário público geral** (crônicas da temporada, da semana do grupo)
   e outras decisões ⏳.
-
-## Template individual (próxima etapa)
-
-- Baseado no jogo do Caio, **sem o painel**: a página do jogo vira a tela principal, com **adicionar, concluir, remover e editar
-  tarefas** e **ver quanto cada tarefa vale de XP**.
-- **Código separado dos dados:** atualizar o template (git pull) nunca mexe em `todo.txt`, `done.txt`, notas, estado e configurações.
-- Distribuído pelo GitHub para os outros jogadores testarem. O design da aba do jogador provavelmente muda.
 
 ## Baú de ideias (futuro)
 
