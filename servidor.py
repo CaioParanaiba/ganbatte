@@ -1241,6 +1241,17 @@ CONQ_REGRAS = {"contagem", "sequencia", "nota", "constancia", "semana"}
 CONQ_VAGAS = {"D": 4, "C": 3, "B": 2, "A": 1}   # abertas (não resgatadas) por rank: fácil, média, difícil, lendária (o mesmo do motor.js)
 CONQ_MAX = sum(CONQ_VAGAS.values())
 CONQ_RANKS = {"D", "C", "B", "A"}
+CONQ_METAS = {"D": (7, 14, 2, 2, 8), "C": (14, 35, 4, 4, 9), "B": (30, 90, 6, 8, 9.5), "A": (60, 180, 8, 12, 10)}
+
+
+def conq_alvo(c):
+    if c.get("regra") == "contagem":
+        return ("contagem", c.get("palavra", ""), c.get("disc", ""), c.get("tipo", ""), bool(c.get("prazo")))
+    if c.get("regra") == "sequencia":
+        return ("sequencia", c.get("hab"))
+    if c.get("regra") == "nota":
+        return ("nota", c.get("disc"))
+    return (c.get("regra"),)
 
 
 def conq_item(p):
@@ -1270,6 +1281,29 @@ def conq_item(p):
         raise Erro("a conquista precisa de nome (até 60 letras) e texto de até 400")
     if p.get("rk") not in CONQ_RANKS:
         raise Erro("rank inválido")
+    if "versao" in p:
+        if type(p["versao"]) is not int or p["versao"] != 2:
+            raise Erro("versão de conquista inválida")
+        dias, tarefas, semanas, semanas_hab, nota = CONQ_METAS[p["rk"]]
+        if c["regra"] == "contagem":
+            if type(p.get("diasMin")) is not int or p["diasMin"] != dias or c.get("n", 0) < tarefas:
+                raise Erro("meta de tarefas insuficiente para esse rank")
+            c["diasMin"] = dias
+            if not any(c.get(k) for k in ("palavra", "disc", "tipo", "prazo")):
+                raise Erro("escolha pelo menos um filtro de tarefas")
+        if c["regra"] in ("sequencia", "constancia"):
+            habitos = ler_json("jogador.json", {}).get("habitos", [])
+            semanal = c["regra"] == "sequencia" and any(h.get("id") == c.get("hab") and h.get("semana") for h in habitos)
+            if type(c.get("n")) is not int or c["n"] < (semanas_hab if semanal else dias):
+                raise Erro("sequência insuficiente para esse rank")
+        if c["regra"] == "nota" and (c.get("nota") or c.get("media") or 0) < nota:
+            raise Erro("nota insuficiente para esse rank")
+        if c["regra"] == "semana":
+            if type(p.get("semanas")) is not int or not semanas <= p["semanas"] <= 20:
+                raise Erro("meta de semanas insuficiente para esse rank")
+            c["semanas"] = p["semanas"]
+        c["versao"] = 2
+        c["inicio"] = (hoje() if c["regra"] == "nota" else hoje() + timedelta(days=1)).isoformat()
     return {**c, "nome": nome, "texto": texto, "ic": p.get("ic") if p.get("ic") in ICONES else "card", "rk": p["rk"],
             "temporada": str(p.get("temporada", ""))[:40]}
 
@@ -1292,7 +1326,10 @@ def api_conquistas(d):
             prox = max([int(x["no"]) for x in lista if str(x.get("no", "")).isdigit()] + [199]) + 1
             novas = []
             for i, p in enumerate(itens):
-                novas.append({"no": str(prox + i), **conq_item(p), "criada": hoje().isoformat()})
+                c = conq_item(p)
+                if c.get("versao") == 2 and any(conq_alvo(x) == conq_alvo(c) for x in abertas + novas):
+                    raise Erro("já existe uma conquista aberta para esse alvo")
+                novas.append({"no": str(prox + i), **c, "criada": hoje().isoformat()})
             gravar_json("conquistas.json", lista + novas)
             return {"ok": True, "nos": [c["no"] for c in novas]}
         c = next((x for x in lista if x.get("no") == str(d.get("no", ""))), None)

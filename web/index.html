@@ -2150,6 +2150,7 @@ function rSys(S){
     <div class="two">
       <div class="card rg-txt"><p><b>Missão da semana:</b> o atributo (tipo de Nen) mais fraco antes da segunda vira a missão. Tarefa dele vale ${x15}; 3 dias com ele na semana dão <b>1 feitiço à escolha</b>.</p>
         <p><b>Book:</b> conquistas com regra fixa (gerais, Ten, hábitos, chefões), os desafios da IA (10 vagas: 4 fáceis, 3 médias, 2 difíceis, 1 lendária) e as cartas narradas.</p>
+        <p><b>Novos desafios da IA:</b> o rank exige volume e dias de atividade, sequências, semanas completas de XP ou nota com peso mínimo na disciplina. Histórico curto não aumenta a recompensa. A regra de cada carta mostra os critérios; cartas antigas mantêm os seus.</p>
         <p><b>Plano de ensino:</b> em Chefões → editar avaliações e notas, à mão ou com a IA (Configurações → IA).</p></div>
       <div class="card">${tab(['feitiço', 'faz', 'loja'], SPELLS.filter(x => !x.noshop).map(x => linha(`${ic(x.ic)} ${esc(x.n)}`, esc(x.e), `${n(x.p)} J`)))}
         <p class="sub" style="margin:10px 0 0">Um feitiço de cada por semana na loja. Expiram na volta às aulas (${ddmm(TEMP.volta)}).</p></div>

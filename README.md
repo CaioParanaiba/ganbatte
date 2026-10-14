@@ -157,7 +157,10 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   e consulta o Codeforces e o Duolingo. Só aceita conexões do próprio computador.
 - `web/index.html`: a página do jogo. `web/motor.js`: todas as regras e contas. `web/guia.js`: assistente e tutorial.
   `web/chefes.js`: editor de avaliações e notas. `web/ia.js`: pedidos para a IA e a IA ligada. `web/conquistas.js`:
-  conquistas criadas pela IA (as regras ficam no motor). `web/novidades.js`: aba Novidades, com a lista de versões que o
+  conquistas criadas pela IA (as regras ficam no motor). Novas cartas exigem mínimos de volume e dias de atividade,
+  sequências, semanas completas de XP e nota com peso mínimo, sem promover o rank pela falta de histórico (#75).
+  `node tests/test_conquistas.mjs` confere as regras; `node ferramentas/simulador-conquistas.mjs --antes REF`
+  simula os resgates dia a dia e compara com uma revisão anterior. Cartas antigas conservam suas regras. `web/novidades.js`: aba Novidades, com a lista de versões que o
   servidor lê do GitHub para avisar de versão nova (ao lançar uma, ponha-a no topo). `web/feedback.js`: bug, ideia ou
   dúvida vira uma issue preenchida pelos formulários de `.github/ISSUE_TEMPLATE/`. `web/temporadas.js`: guarda a temporada que acabou em `temporadas/NOME/` (a cápsula é `GB.capsula` no motor; `TEMA` no motor
   tem os nomes temáticos das funções). `web/efeitos.js`: o que os itens
