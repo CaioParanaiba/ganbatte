@@ -338,7 +338,7 @@ async function addTarefas(){
 /* ---------- encaixe nas abas ---------- */
 const rBK0 = RENDER.bk, rL0 = RENDER.l, rSys0 = RENDER.cfg;
 RENDER.bk = S => { rBK0(S); const v = document.getElementById('ia-carta'); if(v) v.remove(); if(UI.bk === 'claude') document.getElementById('bk-det').insertAdjacentHTML('beforeend', cartaHTML()); };
-RENDER.l = S => { rL0(S); const v = document.getElementById('ia-lote'); if(v) v.remove(); document.getElementById('l-add').insertAdjacentHTML('afterend', loteHTML()); };
+RENDER.l = S => { rL0(S); const v = document.getElementById('ia-lote'); if(v) v.remove(); document.getElementById('l-form').insertAdjacentHTML('afterend', loteHTML()); };
 const rB2i = RENDER.b2;
 RENDER.b2 = S => { rB2i(S); const v = document.getElementById('ia-planos'); if(v) v.remove(); const a = document.getElementById('b2-inbox'); if(a) a.insertAdjacentHTML('beforebegin', loteHTML2()); };
 RENDER.cfg = S => { rSys0(S); const v = document.getElementById('cfg-ia'); if(v) v.remove(); const a = document.getElementById('cfg');
