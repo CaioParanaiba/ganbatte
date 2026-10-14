@@ -36,7 +36,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/colecao {itens}               guarda na coleção permanente os itens comprados que ainda não estão nela (#33)
   POST /api/cf/mao {menos?}               +1 problema do Codeforces hoje, marcado à mão (ITMO, grupo privado); menos = desfaz
   GET  /api/ia                            agentes de terminal achados, a escolha do jogador e os planos de ensino da pasta planos/
-  POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini) ou volta ao copiar e colar (chat)
+  POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini | agy) ou volta ao copiar e colar (chat)
   POST /api/ia/rodar {pedido, anexo?, leve?} roda o agente com o pedido da página → {id}; GET /api/ia/rodar?id= até ficar pronto
   POST /api/ia/plano {nome, base64}       guarda um plano de ensino em planos/
   POST /api/conquistas {acao, ...}        conquistas da IA: criar {itens} | resgatar {no, como, j|k} | descartar {no}
