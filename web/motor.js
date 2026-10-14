@@ -510,29 +510,42 @@ const bonusExp = e => EXP_SEMANA * Math.min(e.semAtivas, 20);
 function grupos(C, feitas, abertas){
   const MC = C.EST.cacadas || {}, ME = C.EST.expedicoes || {}, cac = {}, exp = {};
   const nc = s => { if(cac[s]) return cac[s]; const m = MC[s] || {};
-    return cac[s] = {slug:s, n:m.n || nomeDeSlug(s), exp:m.exp || null, criada:m.criada || '', fim:m.fim || null, bonus:+m.bonus || 0, prazo:m.prazo || null, etapas:[]}; };
+    return cac[s] = {slug:s, n:m.n || nomeDeSlug(s), exp:m.exp || null, criada:m.criada || '', fim:m.fim || null, bonus:+m.bonus || 0, prazo:m.prazo || null, pai:null, filhas:[], etapas:[]}; };
   const ne = s => { if(exp[s]) return exp[s]; const m = ME[s] || {};
     return exp[s] = {slug:s, n:m.n || nomeDeSlug(s), ic:m.ic || 'island', sub:m.sub || '', ini:m.ini || '', fim:m.fim || null, bonus:+m.bonus || 0, marcos:[], soltas:[]}; };
   for(const s in MC) nc(s);
   for(const s in ME) ne(s);
   for(const t of feitas.concat(abertas)){ const c = cacDe(t), e = expDe(t); if(c) nc(c).etapas.push(t); else if(e) ne(e).soltas.push(t); }
+  /* caçada dentro de caçada (#92): só dois níveis. A de dentro aponta para a de cima (cacadas[NOME].pai), fica na expedição
+     dela e não é marco: aparece dentro da de cima. Cada uma fecha com o bônus das próprias etapas; a de cima só fecha
+     depois das de dentro. Pai que não existe, que é ela mesma ou que já está dentro de outra é ignorado. */
+  for(const c of Object.values(cac)){ const p = (MC[c.slug] || {}).pai;
+    if(p && p !== c.slug && cac[p] && !(MC[p] || {}).pai){ c.pai = p; cac[p].filhas.push(c); } }
   for(const c of Object.values(cac)){
+    if(c.pai) c.exp = cac[c.pai].exp;
     c.abertas = c.etapas.filter(t => !t.done); c.feitas = c.etapas.length - c.abertas.length;
     if(!c.criada) c.criada = c.etapas.map(t => t.cri || t.done).filter(Boolean).sort()[0] || C.HOJE;
     // prazo da caçada (0.6.6, #54): só organiza (Lista, cronograma, aviso); o XP continua pelo prazo de cada etapa
     c.due = c.abertas.map(t => t.due).concat(c.fim ? [] : [c.prazo]).filter(Boolean).sort()[0] || null;
     c.depois = c.prazo && !c.fim ? c.abertas.filter(t => t.due && t.due > c.prazo).length : 0;   // etapas com prazo depois do da caçada
-    if(c.exp) ne(c.exp).marcos.push(c);
+    if(c.exp && !c.pai) ne(c.exp).marcos.push(c);
+  }
+  for(const c of Object.values(cac)){
+    c.filhas.sort((p, q) => p.criada.localeCompare(q.criada) || p.slug.localeCompare(q.slug));
+    c.tudo = c.etapas.concat(c.filhas.flatMap(f => f.etapas));   // as etapas dela e as das de dentro: só para mostrar o progresso
+    c.tudoFeitas = c.tudo.filter(t => t.done).length;
+    c.filhasAbertas = c.filhas.filter(f => !f.fim || f.abertas.length).length;
+    if(c.filhas.length) c.due = [c.due].concat(c.filhas.filter(f => !f.fim).map(f => f.due)).filter(Boolean).sort()[0] || null;
   }
   const seg = addD(C.HOJE, -dow(C.HOJE));
   for(const e of Object.values(exp)){
     e.marcos.sort((p, q) => p.criada.localeCompare(q.criada) || p.slug.localeCompare(q.slug));
-    const ts = e.marcos.flatMap(c => c.etapas).concat(e.soltas), ds = ts.filter(t => t.done).map(t => t.done);
+    const ts = e.marcos.flatMap(c => c.tudo).concat(e.soltas), ds = ts.filter(t => t.done).map(t => t.done);
     if(!e.ini) e.ini = ts.map(t => t.cri || t.done).filter(Boolean).sort()[0] || C.HOJE;
     e.semAtivas = new Set(ds.map(d => addD(d, -dow(d)))).size;   // semanas (seg a dom) com pelo menos uma tarefa feita
     e.semanas = Array.from({length:12}, (_, i) => { const w = addD(seg, -7*(11 - i)); return ds.filter(d => d >= w && d <= addD(w, 6)).length; });
     e.ok = e.marcos.filter(c => c.fim).length; e.atual = e.marcos.find(c => !c.fim) || null;
-    e.ganho = e.marcos.filter(c => c.fim).reduce((s, c) => s + c.bonus, 0);
+    e.ganho = e.marcos.flatMap(c => [c].concat(c.filhas)).filter(c => c.fim).reduce((s, c) => s + c.bonus, 0);
     e.tarefas = ts;
   }
   return {cac, exp};

@@ -412,6 +412,11 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
 - **Registrar:** campo limpo (o resto em "detalhes"), tecla N (o mesmo `#l-add` numa janela), tecla C (caçada com uma
   etapa por linha). Topo da Lista num bloco só, com a missão da semana no canto.
 - Tutorial da aba Expedições na 0.5.9-beta2 (#26, `TOURS.x` em `web/guia.js`). Editar o ícone de uma caçada não existe (é sempre o alvo, de propósito).
+- **Caçada dentro de caçada** (#92): `estado.json` → `cacadas[NOME].pai`, **só dois níveis** (o pai não pode ter pai).
+  A de dentro fica na expedição da de cima e não é marco: aparece dentro dela (Lista, marco, quadro, cronograma).
+  **Bônus:** cada uma fecha com o `bonusMarco` das próprias etapas (a de cima não soma o das de dentro, para nenhuma
+  etapa contar duas vezes). **A de cima só fecha depois das de dentro.** Progresso (vida, barra) conta as etapas de todas
+  (`tudo`, `tudoFeitas`). Expedição dentro de expedição ficou só como ideia (#93).
 
 ## Ideias para depois (sem versão definida)
 

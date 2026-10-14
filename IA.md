@@ -173,6 +173,8 @@ aceita `hoje`, `amanha` e `+3`; já `15/10` é lido no formato do jogador e pode
   `estado` → `expedicoes`); fechar o marco dá bônus, mas quem fecha é o jogador, na página. A caçada pode ter um
   **prazo geral** (`prazo`, data `AAAA-MM-DD`, em `estado` → `cacadas`): só organiza (Lista e cronograma), não muda o XP,
   e quem define é o jogador, ao criar ou editar a caçada. Ao sugerir etapas, não passe desse prazo.
+  Uma caçada pode ficar **dentro de outra** (`pai` em `estado` → `cacadas`, só dois níveis): a tarefa leva o NOME da
+  caçada de dentro, e quem escolhe onde ela fica é o jogador, na página.
 - `+exp.NOME` (opcional): tarefa solta de uma expedição, que não é de nenhum marco.
 - **não crie nem edite** linhas com `rec:` (hábitos, Codeforces e Duolingo: o servidor cria todo dia).
 - texto curto, começando por verbo (Revisar, Fazer, Ler, Entregar).
