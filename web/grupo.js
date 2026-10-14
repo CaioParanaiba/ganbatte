@@ -8,7 +8,7 @@
    No modo demonstração não há servidor: a aba continua só explicando o que vem. */
 (() => {
 if(window.GB_DEMO) return;
-const G = {lista:null, res:{}, sel:'', aba:'placar', adm:null, admErr:'', convite:'', link:'', host:null, hostAberto:false, funnel:null, nome:'', endereco:'', ocupado:false, ultima:0};
+const G = {lista:null, res:{}, sel:'', aba:'placar', adm:null, admErr:'', convite:'', link:'', host:null, hostAberto:false, funnel:null, nome:'', endereco:'', ocupado:false, ultima:0, entrarAberto:false};
 const SINC_MIN = 10;   // minutos entre sincronizações com a página aberta
 
 const quando = ts => {
@@ -316,15 +316,16 @@ function torreAdminHTML(A){
 
 function rTT2(S){
   const g = grupoSel();
-  if(!g){ RENDER0.tt(S); document.getElementById('tt-root').insertAdjacentHTML('afterbegin', `<div class="card"><h2><span class="c">~/</span>entrar num grupo</h2><p style="margin:0;font-size:14px">Recebeu um convite de um amigo? Cole o link em <b>Configurações → grupo</b>. Quer criar um grupo e ser o servidor? Também é por lá.</p><p style="margin:10px 0 0"><button type="button" class="btn v" data-go="cfg">abrir Configurações</button></p></div>`); return; }
+  if(!g){ RENDER0.tt(S); document.getElementById('tt-root').insertAdjacentHTML('afterbegin', `<div class="card"><h2><span class="c">~/</span>entrar num grupo</h2><p style="margin:0 0 4px;font-size:14px">Recebeu um convite de um amigo? Cole o link aqui.</p>${entrarHTML()}<p class="sub" style="margin:10px 0 0">Quer criar um grupo e ser o servidor? É em <a href="#" data-go="cfg">Configurações → grupo</a>.</p></div>`); return; }
   const P = placarDe(g), adm = P ? P.voce.admin : g.admin;
   if(!adm && G.aba === 'admin') G.aba = 'placar';
-  const sel = G.lista.length > 1 ? `<div class="togg">${G.lista.map(x => `<button data-gpsel="${esc(x.chave)}" aria-pressed="${x.chave === g.chave}">${esc(x.nome)}</button>`).join('')}</div>` : '';
+  const sel = `<div class="togg">${G.lista.length > 1 ? G.lista.map(x => `<button data-gpsel="${esc(x.chave)}" aria-pressed="${x.chave === g.chave}">${esc(x.nome)}</button>`).join('') : ''}<button data-gpoutro aria-pressed="${G.entrarAberto}">+ entrar em outro grupo</button></div>`;
+  const outro = G.entrarAberto ? `<div class="card"><h2><span class="c">~/</span>entrar em outro grupo</h2><p style="margin:0 0 4px;font-size:14px">Cole o link do convite que o admin do outro grupo mandou. Você continua neste também.</p>${entrarHTML()}</div>` : '';
   const ab = (id, t) => `<button type="button" data-ttsub="${id}"${G.aba === 'placar' && TT.sub === id ? ' aria-current="page"' : ''}>${t}</button>`;
   const fim = P && P.grupo.fim ? GBx.dias(P.hoje, P.grupo.fim) : null;
   const cab = P ? `<div class="tt-gh"><div><h3>${esc(P.grupo.nome)}</h3><div class="meta"><span><b>${temporadaDe(P)}</b>${fim != null && fim >= 0 ? ` · faltam ${fim} dias` : ''}</span><span>${P.membros.length} ${P.membros.length === 1 ? 'membro' : 'membros'}</span><span><i class="dot"></i>sincronizou ${esc(G.ultima ? quando(G.ultima / 1000) : quando(P.recebido))}</span></div></div>${sel}</div>` : sel;
   const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('placar', 'placar')}${ab('placares', 'placares')}${ab('jogadores', 'jogadores')}<button type="button" disabled>loja<small>em breve</small></button><button type="button" disabled>desafios<small>depois da 1.0</small></button>${adm ? `<button type="button" class="adm" data-gpaba="admin"${G.aba === 'admin' ? ' aria-current="page"' : ''}>administrar</button>` : ''}</nav>`;
-  document.getElementById('tt-root').innerHTML = cab + nav + (G.aba === 'admin' ? adminHTML(g) : torreHTML(g));
+  document.getElementById('tt-root').innerHTML = cab + outro + nav + (G.aba === 'admin' ? adminHTML(g) : torreHTML(g));
 }
 const RENDER0 = {tt: RENDER.tt, cfg: RENDER.cfg};
 RENDER.tt = rTT2;
@@ -357,12 +358,14 @@ function vinculosHTML(g){
   return `<div class="gp-vinc">${hs.map(h => `<label><span>${esc(h.nome)}</span><select data-gpvinc="${esc(h.id)}" data-chave="${esc(g.chave)}">
       <option value="">não ligado</option>${ps.map(p => `<option value="${esc(p.id)}"${v[h.id] === p.id ? ' selected' : ''}>${esc(p.n)}</option>`).join('')}</select></label>`).join('')}</div>`;
 }
+/* entrar num grupo (#84): o mesmo campo na aba Torre Trick e em Configurações → grupo */
+const entrarHTML = () => `<div class="gp-entra"><p class="sub" style="margin:10px 0 4px">Link do convite (o amigo que é admin do grupo manda)</p>
+  <div style="display:flex;gap:8px"><input class="mono" data-gpconvite aria-label="Link do convite" value="${esc(G.convite)}" placeholder="https://.../g/grupo#CODIGO" style="flex:1;min-width:0"><button type="button" class="btn v" data-gpentra>entrar</button></div></div>`;
 function cardGrupo(){
   const l = G.lista || [];
   return `<div class="card" id="cfg-grupo"><h2><span class="c">~/</span>grupo</h2>
     ${l.length ? l.map(g => `<div class="gp-lin"><span><b>${esc(g.nome)}</b>${g.admin ? ' <small class="sub">admin</small>' : ''} <span class="sub mono">${esc(g.convite)}</span></span><button type="button" class="btn" data-gpsai="${esc(g.chave)}" data-n="${esc(g.nome)}">sair</button></div>${vinculosHTML(g)}`).join('') : '<p style="margin:0 0 10px;font-size:14px">Você não está em nenhum grupo.</p>'}
-    <label class="sub" for="gp-convite" style="display:block;margin:10px 0 4px">Link do convite (o amigo que é admin do grupo manda)</label>
-    <div style="display:flex;gap:8px"><input id="gp-convite" class="mono" value="${esc(G.convite)}" placeholder="https://.../g/grupo#CODIGO" style="flex:1;min-width:0"><button type="button" class="btn v" data-gpentra>entrar</button></div>
+    ${entrarHTML()}
     <p class="sub" style="margin:8px 0 0">Vão para o grupo só o seu nickname, a foto de perfil e, por dia, o XP (para as contas; ninguém vê o número), o Codeforces e, dos hábitos do grupo, só se você cumpriu no dia o hábito pessoal que ligou a cada um. Suas tarefas, os nomes dos seus hábitos e os que você não ligou ficam aqui.</p>
     ${hostHTML()}</div>`;
 }
@@ -371,8 +374,8 @@ RENDER.cfg = S => { RENDER0.cfg(S); const a = document.getElementById('cfg-srv')
 async function admin(acao, corpo){ return post('/api/grupo/admin', Object.assign({chave: grupoSel().chave, acao}, corpo || {})); }
 async function abreAdmin(){ G.adm = null; G.admErr = ''; render(); try { G.adm = await admin('ver'); } catch(e){ G.admErr = e.message; } render(); }
 async function hostEstado(){ try { G.hostEstado = await post('/api/grupo/host', {acao:'estado'}); } catch(e){ G.hostEstado = {}; toast('Não deu: ' + esc(e.message)); } render(); }
-const guarda = () => { const n = document.getElementById('gp-h-nome'), e = document.getElementById('gp-h-end'), c = document.getElementById('gp-convite');
-  if(n) G.nome = n.value; if(e) G.endereco = e.value; if(c) G.convite = c.value; };
+const guarda = () => { const n = document.getElementById('gp-h-nome'), e = document.getElementById('gp-h-end');
+  if(n) G.nome = n.value; if(e) G.endereco = e.value; };
 
 const vaiPara = mudar => { Object.assign(TT, mudar); G.aba = 'placar'; render(); const r = document.getElementById('tt-root'); if(r && r.getBoundingClientRect().top < 0) r.scrollIntoView({behavior:'smooth', block:'start'}); };
 document.addEventListener('click', async e => {
@@ -383,6 +386,7 @@ document.addEventListener('click', async e => {
   if((b = q('[data-ttjog]'))){ vaiPara({sub:'jogadores', jog: +b.dataset.ttjog}); return; }
   if((b = q('[data-ttesp]'))){ TT.esp = b.dataset.ttesp; try { localStorage.setItem('gb-tt-esp', TT.esp); } catch(err){} render(); return; }
   if((b = q('[data-ttvirar]'))){ b.classList.toggle('virada'); return; }
+  if(q('[data-gpoutro]')){ G.entrarAberto = !G.entrarAberto; render(); if(G.entrarAberto){ const i = document.querySelector('#tt-root [data-gpconvite]'); if(i) i.focus(); } return; }
   if((b = q('[data-gpsel]'))){ G.sel = b.dataset.gpsel; G.adm = null; G.link = ''; if(G.aba === 'admin') abreAdmin(); else render(); return; }
   if((b = q('[data-gpaba]'))){ G.aba = b.dataset.gpaba; G.link = ''; if(G.aba === 'admin') abreAdmin(); else render(); return; }
   if(q('[data-gpsinc]')){ await sincroniza(); toast(G.res[grupoSel().chave] && G.res[grupoSel().chave].offline ? 'O servidor do grupo está fora do ar' : 'Sincronizado'); return; }
@@ -408,8 +412,9 @@ document.addEventListener('click', async e => {
       G.adm = await admin('frase', {semana: b.dataset.ttfraseapaga}); render(); sincroniza(); return; }
     if(q('[data-gpcfg]')){ const v = id => document.getElementById(id).value.trim();
       G.adm = await admin('config', {nome: v('gp-c-nome'), fuso: v('gp-c-fuso'), ini: v('gp-c-ini'), fim: v('gp-c-fim')}); await carrega(); await sincroniza(); toast('Grupo salvo'); return; }
-    if(q('[data-gpentra]')){ guarda(); const r = await post('/api/grupo/entrar', {link: G.convite, avatar: avatar()}); G.convite = ''; G.sel = r.chave;
-      await carrega(); render(); toast(`Você entrou em ${esc(r.nome)} <small>o placar fica na aba ${esc(ABA.tt.n)}</small>`); sincroniza(); return; }
+    if((b = q('[data-gpentra]'))){ guarda(); G.convite = b.closest('.gp-entra').querySelector('[data-gpconvite]').value.trim();
+      const r = await post('/api/grupo/entrar', {link: G.convite, avatar: avatar()}); G.convite = ''; G.sel = r.chave; G.entrarAberto = false; G.aba = 'placar';
+      await carrega(); render(); toast(`Você entrou em ${esc(r.nome)}${cur === 'tt' ? '' : ` <small>o placar fica na aba ${esc(ABA.tt.n)}</small>`}`); sincroniza(); return; }
     if((b = q('[data-gpsai]'))){ if(!confirm(`Sair de ${b.dataset.n}? Para voltar, só com um convite novo.`)) return;
       await post('/api/grupo/sair', {chave: b.dataset.gpsai}); await carrega(); render(); toast('Você saiu do grupo'); return; }
     if(q('[data-gphost]')){ G.hostAberto = true; render(); hostEstado(); return; }
@@ -433,11 +438,12 @@ document.addEventListener('change', async e => {
 });
 
 document.addEventListener('input', e => {
+  if(e.target.matches('[data-gpconvite]')){ G.convite = e.target.value; return; }
   if(e.target.id !== 'tt-frase-txt') return;
   document.getElementById('tt-frase-n').textContent = `${e.target.value.length}/${e.target.maxLength}`;
   document.querySelector('[data-ttfrase]').disabled = !e.target.value.trim();
 });
-document.addEventListener('keydown', e => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches('figure[data-ttjog]')){ e.preventDefault(); e.target.click(); } });
+document.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.matches('[data-gpconvite]')){ e.preventDefault(); e.target.closest('.gp-entra').querySelector('[data-gpentra]').click(); return; } if((e.key === 'Enter' || e.key === ' ') && e.target.matches('figure[data-ttjog]')){ e.preventDefault(); e.target.click(); } });
 
 document.head.insertAdjacentHTML('beforeend', `<style>
 .gp-heat{display:inline-flex;gap:2px;vertical-align:middle}
