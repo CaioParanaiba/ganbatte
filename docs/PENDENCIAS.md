@@ -355,6 +355,11 @@ zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
   mesmo se uma nota corrigida trouxer o chefão de volta. Os guardas da torre continuam com o ícone.
 - Falta: o equilíbrio de preços da loja inteira (issue própria).
 
+**0.9 · atualização da Torre Trick** (14/10/2026): lançada na `main`, juntando a 0.7.1-beta1 e a 0.9.0-beta1 a beta4
+(issues #33, #38, #39, #40, #41, #42, #57, #58, #59, #60, #67, #75, #76, #84, #91, #92, #96, #97): modo em grupo com a Torre
+Trick, licença hunter e placares, caçadas dentro de caçadas, retratos dos chefões e coleção permanente, contribuição paga no
+beta e tarefa de dev. A janela épica tem a marca `0.9-final`, a mesma da beta3 e da beta4: quem viu na beta não vê de novo.
+
 **0.7 · atualização do Ganbatte** (13/10/2026): lançada na `main`, juntando a 0.6.6-beta1 a beta3 (issues #15, #34, #35,
 #54): nome Ganbatte com repositório e Pages novos, visual Nen (clássico em Configurações), nomes base das abas, prazo da
 caçada, tarefa vira caçada e cofre opcional. A janela grande escolhe o visual na hora e agradece a quem contribuiu.
