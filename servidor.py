@@ -79,8 +79,8 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.7"
-VERSAO_NOME = "atualização do Ganbatte"   # nome da série 0.7 (aparece em Configurações → servidor)
+VERSAO = "0.9.0-beta1"
+VERSAO_NOME = "atualização do grupo"   # nome da série 0.9 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
 DADOS = Path()   # definido em main()
