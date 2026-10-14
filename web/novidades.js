@@ -17,6 +17,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.7.1-beta1", "nome": "atualização do Ganbatte", "data": "2026-10-14",
+   "resumo": "Retratos para os chefões, uma aba Comprados na loja e tudo o que você compra guardado para sempre, numa pasta só sua.",
+   "itens": [
+     {"ic": "spider", "t": "Retratos dos chefões", "d": "15 retratos na Loja, em Aparência, para pôr no lugar do ícone de cada chefão. O retrato vai sozinho para o chefão de mesmo nome, e em Comprados dá para trocar. O card de chefões da Lista também ganhou o ícone. Ideia de #33."},
+     {"ic": "crown", "t": "Derrotou, ganhou", "d": "Derrote o chefão que está com um retrato e ele vira foto de perfil, de graça. Depois da derrota, a imagem desse chefão fica para sempre, mesmo que uma nota corrigida o traga de volta. Cada retrato fica em um chefão por vez."},
+     {"ic": "bag", "t": "Aba Comprados", "d": "O que é seu sai da vitrine e fica numa aba própria da Loja, junto com o que vem com o jogo (o emblema, a paleta Simples e as fotos grátis)."},
+     {"ic": "scroll", "t": "Coleção permanente", "d": "Tudo o que você compra fica guardado na pasta colecao/ dos seus dados, separado da loja: trocar de temporada ou atualizar o jogo não tira nada. O que você já tinha vai para lá sozinho na primeira vez que abrir esta versão."}
+   ]},
   {"versao": "0.7", "nome": "atualização do Ganbatte", "data": "2026-10-13", "visual": true,
    "cap": "nova série · o Hunter.todo agora é Ganbatte",
    "resumo": "Ganbatte: força, vai lá, você consegue. O jogo ganhou nome próprio, um visual novo com a cara do Nen e abas que não mudam quando o tema mudar. As suas tarefas, o seu XP, a sua Jenny e tudo o que você comprou continuam exatamente iguais.",
