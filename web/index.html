@@ -1161,6 +1161,9 @@ a.btn{display:inline-block;text-decoration:none}
 .l-prev{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:10px;border-top:1px dashed var(--hair);font:600 12.5px var(--f-mono)}
 .l-prev code{font:12px var(--f-mono);color:var(--soft);background:var(--panel2);border-radius:6px;padding:3px 8px;overflow-wrap:anywhere;min-width:0}
 .l-xp{min-width:38px;text-align:center;font:700 12px var(--f-mono);border-radius:7px;padding:2px 7px;background:color-mix(in srgb,var(--grn) 16%,transparent);color:var(--grn);white-space:nowrap;font-variant-numeric:tabular-nums}
+.l-rewards{display:inline-flex;gap:6px;align-items:center;flex:none}
+.l-money{display:inline-flex;gap:4px;align-items:center;border-radius:7px;padding:2px 7px;background:color-mix(in srgb,var(--amb) 14%,transparent);color:var(--amb);font:700 12px var(--f-mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.l-money .ic{width:13px;height:13px}
 .l-mult{font:600 11px var(--f-mono);color:var(--amb);white-space:nowrap}
 .l-groups{display:flex;flex-direction:column;gap:14px;margin-top:16px}
 .l-denovo{padding:3px 9px;font-size:11.5px;white-space:nowrap}
@@ -1224,7 +1227,8 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .l-vale .x td{color:var(--soft)} .l-vale .x td:last-child{color:var(--amb)}
 .toast .l-undo{background:none;border:1px solid var(--hair);border-radius:8px;padding:3px 10px;cursor:pointer;font:600 12px var(--f-mono);color:var(--ink)}
 @media (max-width:1080px){ .l-hud{grid-template-columns:repeat(3,minmax(0,1fr))} .l-hud .l-me{grid-column:1/-1} .l-main{grid-template-columns:minmax(0,1fr)} .l-side{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))} }
-@media (max-width:560px){ .l-hud{grid-template-columns:1fr 1fr} .l-acts{opacity:1} .l-task{grid-template-columns:auto minmax(0,1fr)} .l-task .l-right{grid-column:2;flex-wrap:wrap} }
+@media (max-width:560px){ .l-hud{grid-template-columns:1fr 1fr} .l-acts{opacity:1} .l-task{grid-template-columns:auto minmax(0,1fr)} .l-task .l-right{grid-column:2;flex-wrap:wrap}
+  .l-hint{flex-wrap:wrap;justify-content:flex-end;max-width:65%;white-space:normal} .l-hint .l-mult{white-space:normal;text-align:right} }
 </style>
 </head>
 <body>
@@ -2178,12 +2182,11 @@ const SEM3 = ['seg','ter','qua','qui','sex','sáb','dom'];
 const tagDe = k => { const T = GBx.TAGS[k]; return !T ? '' : T.ctx[0] ? '@' + T.ctx[0] : T.proj[0] ? '+' + T.proj[0] : ''; };
 const dueTxt = d => { const k = dias(HOJE, d); return k < 0 ? `atrasada ${-k}d` : k === 0 ? 'hoje' : k === 1 ? 'amanhã' : k < 7 ? SEM3[dow(d)] + ' ' + ddmm(d) : ddmm(d); };
 function valeL(t, S){
-  const base = xpDe({...t, due:null, done:HOJE}), ms = []; let x = base;
-  if(t.due && t.due >= HOJE && !(t.rec||'').startsWith('cf')){ x *= 1.5; ms.push('prazo'); }
-  if(!S.pausa && nenDe(t) === S.fraco){ x *= 1.5; ms.push('missão'); }
-  const b = S.bs.find(b => b.d === discOf(t)); if(!S.pausa && b && b.fury){ x *= 1.5; ms.push('fúria'); }
-  return {x: Math.round(x), base, ms};
+  if(t.done){ const o = S.xs.find(o => o.t === t || o.t.raw === t.raw), x = o ? o.x : 0; return {x, j:x*10, ms:[]}; }
+  return S.valeTarefa(t);
 }
+const jennyL = (x, feita = false) => `<span class="l-money" title="${feita ? 'Jenny ganha' : 'Jenny ao concluir hoje'} · XP ×10" aria-label="+${fmt(x*10)} Jenny">${ic('coin')}+${fmt(x*10)} J</span>`;
+const multL = m => `${m} ×${m === 'feitiço' || m === 'acima da meta' ? '2' : '1,5'}`;
 const PRI_TXT = /^\(([A-Za-z])\)\s+/;   // "(A) " digitado no começo do texto vale mais que os botões
 function rascunho(){
   const txt = document.getElementById('l-txt').value.trim().replace(PRI_TXT, ''), disc = document.getElementById('l-disc').value;
@@ -2229,7 +2232,7 @@ function edHTML(S){
       <div class="l-seg" role="group" aria-label="Prioridade"><span>prioridade</span>${['A','B','C',''].map(k => chip('pri:' + k, k === LE.pri, k || 'sem', k ? ' l-pc' : '')).join('')}</div>
       ${window.GB_EXP ? `<div class="l-seg"><span>caçada</span><select id="l-edcac" aria-label="Caçada">${GB_EXP.opcoesCac(LE.cac, '+ nova caçada com esta tarefa…')}</select>${LE.cac === '+nova' ? `<input id="l-edcacn" maxlength="80" value="${esc(LE.cacn)}" placeholder="nome da caçada" title="vazio: o texto da tarefa" aria-label="Nome da caçada nova (vazio: o texto da tarefa)">` : ''}</div>` : ''}
     </div>
-    <div class="l-prev"><span>vale <span class="l-xp">+${v.x} XP</span></span><span class="l-mult">${v.base} XP${v.ms.map(m => ' · ' + m + ' ×1,5').join('')}</span><span style="color:${NC(LTIPOS.find(x => x.k === LE.tipo).c)}">${esc(NEN[LTIPOS.find(x => x.k === LE.tipo).c].n)}</span></div>
+    <div class="l-prev"><span>vale <span class="l-rewards"><span class="l-xp">+${v.x} XP</span>${jennyL(v.x)}</span></span><span class="l-mult">${v.base} XP${v.ms.map(m => ' · ' + multL(m)).join('')}</span><span style="color:${NC(LTIPOS.find(x => x.k === LE.tipo).c)}">${esc(NEN[LTIPOS.find(x => x.k === LE.tipo).c].n)}</span></div>
   </div>`;
 }
 /* chips e campos do editor: redesenha só a caixa, sem perder o que foi digitado no texto */
@@ -2260,11 +2263,11 @@ function prevL(){
   btn.disabled = LA.salvando || !document.getElementById('l-txt').value.trim();
   btn.classList.toggle('salva', LA.adicionada && !LA.salvando);
   btn.textContent = LA.salvando ? 'adicionando…' : LA.adicionada ? '✓ adicionada' : '+ adicionar';
-  document.getElementById('l-hint').innerHTML = document.getElementById('l-txt').value.trim() ? `<span style="color:${NC(nenDe(t))}">${esc(nen.n)}</span>${v.ms.length ? `<span class="l-mult">${v.ms.join(' + ')}</span>` : ''}<span class="l-xp">+${v.x}</span>` : `<span class="l-nk" title="aperte N em qualquer aba para abrir este formulário">N</span>`;
+  document.getElementById('l-hint').innerHTML = document.getElementById('l-txt').value.trim() ? `<span style="color:${NC(nenDe(t))}">${esc(nen.n)}</span>${v.ms.length ? `<span class="l-mult">${v.ms.join(' + ')}</span>` : ''}<span class="l-rewards"><span class="l-xp">+${v.x}</span>${jennyL(v.x)}</span>` : `<span class="l-nk" title="aperte N em qualquer aba para abrir este formulário">N</span>`;
   const jb = document.querySelector('[data-lpri="jogo"]'); if(jb) jb.innerHTML = 'o jogo decide' + (P.sug ? ` · <b>${P.sug.pri || 'sem'}</b>` : '');
   const ptx = P.sug ? (P.sug.pri ? `prioridade <b style="color:${PRI_COR[P.sug.pri]}">${P.sug.pri}</b>` : 'sem prioridade') + `<small>${P.sug.por.length ? esc(P.sug.por.join(' · ')) : 'nada urgente'}</small>`
     : P.como ? `prioridade <b style="color:${PRI_COR[P.pri] || 'var(--soft)'}">${P.pri}</b><small>${P.como}</small>` : '';
-  document.getElementById('l-prev').innerHTML = `<span>vale <span class="l-xp">+${v.x} XP</span></span><span class="l-mult">${v.base} XP${v.ms.map(m => ' · ' + m + ' ×1,5').join('')}</span><span style="color:${NC(nenDe(t))}">${esc(nen.n)}${LA.por ? `<small class="l-tsug"> · ${esc((LTIPOS.find(x => x.k === LA.tipo) || {}).n || '')} ${esc(LA.por)}</small>` : ''}</span>${ptx ? `<span class="l-psug" title="o jogo olha a avaliação chegando, o prazo, a fúria do chefão, as atrasadas da disciplina e se é entrega">${ptx}</span>` : ''}<code title="como fica no todo.txt (no arquivo, as datas ficam como AAAA-MM-DD)">${esc(GBx.brDatas((P.pri ? `(${P.pri}) ` : '') + HOJE + ' ' + linha))}</code>`;
+  document.getElementById('l-prev').innerHTML = `<span>vale <span class="l-rewards"><span class="l-xp">+${v.x} XP</span>${jennyL(v.x)}</span></span><span class="l-mult">${v.base} XP${v.ms.map(m => ' · ' + multL(m)).join('')}</span><span style="color:${NC(nenDe(t))}">${esc(nen.n)}${LA.por ? `<small class="l-tsug"> · ${esc((LTIPOS.find(x => x.k === LA.tipo) || {}).n || '')} ${esc(LA.por)}</small>` : ''}</span>${ptx ? `<span class="l-psug" title="o jogo olha a avaliação chegando, o prazo, a fúria do chefão, as atrasadas da disciplina e se é entrega">${ptx}</span>` : ''}<code title="como fica no todo.txt (no arquivo, as datas ficam como AAAA-MM-DD)">${esc(GBx.brDatas((P.pri ? `(${P.pri}) ` : '') + HOJE + ' ' + linha))}</code>`;
 }
 function formL(){
   const tp = document.getElementById('l-tipo');
@@ -2292,7 +2295,7 @@ function rowL(t, S, x){
     <div class="l-body">${UI.ledit === edKey(t) ? edHTML(S)
       : `<span class="l-txt">${t.pri && !feita ? `<span class="l-pri ${t.pri}">${t.pri}</span>` : ''}${esc(t.txt)}</span>`}
       <span class="l-tags"><span class="l-tag nen">${esc(NEN[nen].n)}</span>${d ? `<span class="l-tag">${esc(d)}</span>` : ''}${t.due ? `<span class="l-tag${dc}">${dueTxt(t.due)}</span>` : ''}${isRec(t) ? '<span class="l-tag">rotina</span>' : ''}${window.GB_EXP ? GB_EXP.etiquetas(t, S) : ''}</span></div>
-    <div class="l-right">${v.ms.length ? `<span class="l-mult" title="${v.base} XP · ${v.ms.map(m => m + ' ×1,5').join(' · ')}">${v.ms.join(' + ')}</span>` : ''}<span class="l-xp" title="${v.base != null ? v.base + ' XP de base' : 'XP ganho'}">+${v.x}</span>
+    <div class="l-right">${v.ms.length ? `<span class="l-mult" title="${v.base} XP · ${v.ms.map(multL).join(' · ')}">${v.ms.join(' + ')}</span>` : ''}<span class="l-rewards"><span class="l-xp" title="${v.base != null ? v.base + ' XP de base' : 'XP ganho'}">+${v.x}</span>${jennyL(v.x, feita)}</span>
       ${feita ? '' : `<span class="l-acts"><button class="l-ib" data-l="d1" title="adiar 1 dia" aria-label="adiar 1 dia">${ic('moon')}</button>${t.pri !== 'A' ? '<button class="l-ib" data-l="up" title="subir prioridade" aria-label="subir prioridade">▲</button>' : ''}${'ABC'.includes(t.pri || 'Z') ? '<button class="l-ib" data-l="down" title="descer prioridade" aria-label="descer prioridade">▼</button>' : ''}<button class="l-ib" data-l="edit" title="editar" aria-label="editar">✎</button><button class="l-ib del" data-l="delete" title="remover" aria-label="remover">✕</button></span>`}</div></li>`;
 }
 function rL(S){
