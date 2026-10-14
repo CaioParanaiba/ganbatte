@@ -1,4 +1,4 @@
-# Ganbatte em grupo: desenho (v5, 14/10/2026)
+# Ganbatte em grupo: desenho (v6, 14/10/2026)
 
 Modo em grupo do Ganbatte (0.9, branch `grupo`, índice na issue #16), ideia do Caio e de um amigo. Foco: deixar o placar
 **público e balanceado**. `⏳` = pendente; toda pontuação está **a calibrar** com 2–3 semanas de dados reais
@@ -114,13 +114,35 @@ Tema: **HxH para todos** nesta temporada.
 
 ## A aba Torre Trick e os placares (decidido em 14/10/2026, #67)
 
-**Sub-abas:** uma aba só no topo do jogo, com `placar · hunters · loja · desafios · administrar` dentro. O que é do jogador
-fica nas abas do topo; o que é do grupo, dentro da Torre Trick. **administrar** só aparece para admins; **hunters** (os
-avatares de todos, #70), **loja** (a loja pública) e **desafios** (#71) ficam com o espaço reservado. Sempre o placar atual,
-sem filtro de período nem histórico (#68).
+**Sub-abas:** uma aba só no topo do jogo, com `placar · placares · jogadores · loja · desafios · administrar` dentro. O que
+é do jogador fica nas abas do topo; o que é do grupo, dentro da Torre Trick. **administrar** só aparece para admins; **loja**
+(a loja pública) e **desafios** (#71) ficam com o espaço reservado. Sempre o placar atual, sem filtro de período nem
+histórico (#68). Visual Nen do jogo. Desenho aprovado no protótipo do #67.
 
-**Placar geral (principal):** ordena pelos andares descidos. Os **3 primeiros em destaque** (pódio com avatar), o resto numa
-lista compacta, e a linha do jogador sempre destacada. A sequência (dias seguidos jogando) é só uma coluna do geral.
+**Navegação:** clicar num **nome** abre a sub-aba jogadores com aquele jogador em foco; clicar no **nome de um placar** abre a
+sub-aba placares com ele em foco.
+
+**Sub-aba placar**, de cima para baixo:
+1. À esquerda, a **licença hunter** do jogador (frente; clicar vira a carta), quanto falta para passar quem está à frente
+   (com barra) e os botões *meu perfil* e *minha evolução*. À direita, o **pódio herói** (o 1º com a vantagem sobre o 2º;
+   o 2º e o 3º menores ao lado) e, embaixo dele, a **frase do líder da semana** (#76), terminando na altura dos botões.
+2. **Do 4º em diante**, na largura toda: posição, ícone, barra teto/hábitos/superação, sequência, últimos dias e andares,
+   com a linha do jogador sempre destacada. A sequência (dias seguidos jogando) é só uma coluna, não um placar.
+3. Os **placares específicos**, que **o jogador escolhe** ver como **campeões** (o 1º de cada placar, numa faixa) ou **quem
+   lidera** (por pessoa, com os títulos).
+
+**Sub-aba placares:** à esquerda, todos os placares com o mini-pódio e a posição do jogador; à direita, o placar em foco
+(como é calculado, pódio, lista completa) e a **evolução**: posição de 6 semanas atrás até agora, melhor posição, quanto
+subiu ou caiu, o gráfico da posição de cada um por semana (o jogador destacado, o líder em dourado) e a tabela.
+
+**Sub-aba jogadores:** o perfil é a **licença hunter horizontal**, frente e verso, no formato da licença do mangá. Frente: o
+principal (foto grande, nome, nº da licença, grupo e temporada, posição no geral, andares, sequência, títulos). Verso: o
+resto (medalhas, posição em cada placar, conquistas, registro), com a tarja magnética e o número em quadradinhos. Cores
+básicas (preto, branco e azul-claro); **personalizar a licença** (cor, holográfico, brilho, borda) é item da loja pública.
+Avatar (#70), armas e habilidades entram depois. A sub-aba substitui a antiga ideia de "hunters".
+
+**Ícone** (no lugar do avatar, até o #70): a foto com **moldura** e **animação** compradas na loja pública, e o nickname
+embaixo.
 
 **Placares específicos, gerados pelo catálogo (#41):** cada hábito diz o seu tipo, e o tipo gera os placares; hábito novo
 (digitação...) ganha placares sem código novo. Quem não ligou o hábito não aparece nos placares dele (nem com zero), e um
