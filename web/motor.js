@@ -605,8 +605,8 @@ function estado(C){
   const rec = recibos(C, bs), naFuria = (d, dia) => (rec.furias[d] || []).some(([i, f]) => dia >= i && (!f || dia <= f));
   // hábito: XP pelo nível (a partir de HAB_DESDE); Duolingo de antes de ligar: nada
   const duoDe = duoDesde(C), NV = niveisHab(C, feitas, fer, F.salvoHab);
-  const xpBase = t => { if(duoAntes(t, duoDe)) return 0; if(NV.xp.has(t) && t.done >= HAB_DESDE) return NV.xp.get(t);
-    const k = F.ken.get(norm(t.txt)) || 0; return xpDe(k && t.due ? {...t, due: addD(t.due, k)} : t); };
+  const xpBase = (t, nv = NV, ef = F, prazo = true) => { if(duoAntes(t, duoDe)) return 0; if(nv.xp.has(t) && t.done >= HAB_DESDE) return nv.xp.get(t);
+    const k = ef.ken.get(norm(t.txt)) || 0; return xpDe(!prazo ? {...t, due:null} : k && t.due ? {...t, due: addD(t.due, k)} : t); };
   // missão da semana: o atributo mais fraco ANTES da semana começar (fixo durante a semana; Gyo escolhe outro)
   const fracoDa = ws => { if(F.gyo[semanaISO(ws)] !== undefined) return F.gyo[semanaISO(ws)];
     const at = [0,0,0,0,0,0]; for(const t of feitas) if(t.done < ws) at[nenDe(t)] += xpBase(t); return at.indexOf(Math.min(...at)); };
@@ -614,21 +614,37 @@ function estado(C){
   const porDia = {}, xpDia = {}, attr = [0,0,0,0,0,0], xs = [];
   /* hábito semanal acima da meta ("fiz de novo"): da (meta+1)ª vez na semana em diante, pelo dia do hábito, vale ×2 */
   const metaSem = Object.fromEntries(((C.JOG && C.JOG.habitos) || []).filter(h => h.semana).map(h => [h.id, +h.semana]));
-  const extraHab = new Set(), contaSem = {};
-  feitas.map((t, i) => [String(t.rec || '').split(':'), i]).filter(([r]) => metaSem[r[0]] && r[1]).sort((a, b) => a[0][1].localeCompare(b[0][1]))
-    .forEach(([[id, dia], i]) => { const k = id + '@' + addD(dia, -dow(dia)); contaSem[k] = (contaSem[k] || 0) + 1; if(contaSem[k] > metaSem[id]) extraHab.add(i); });
+  const extrasHab = ts => { const extra = new Set(), contaSem = {};
+    ts.map((t, i) => [String(t.rec || '').split(':'), i]).filter(([r]) => metaSem[r[0]] && r[1]).sort((a, b) => a[0][1].localeCompare(b[0][1]))
+      .forEach(([[id, dia], i]) => { const k = id + '@' + addD(dia, -dow(dia)); contaSem[k] = (contaSem[k] || 0) + 1; if(contaSem[k] > metaSem[id]) extra.add(i); });
+    return extra; };
+  const extraHab = extrasHab(feitas);
+  /* A prévia e a conclusão usam esta mesma conta: prazo arredondado no xpDe(), depois os multiplicadores,
+     arredondamento final e Jenny = XP ×10. Nenhum recibo ou saldo é alterado pela prévia. */
+  const valorFeita = (t, i, nv = NV, ef = F, extra = extraHab.has(i)) => {
+    const base = xpBase(t, nv, ef, false), ms = []; let x = xpBase(t, nv, ef);
+    if(x !== base) ms.push('prazo');
+    if(extra){ x *= HAB_EXTRA; ms.push('acima da meta'); }
+    if(!fer(t.done) && nenDe(t) === fracoSem(t.done)){ x *= 1.5; ms.push('missão'); }
+    const d = discOf(t,C); if(d && t.done && !fer(t.done) && naFuria(d, t.done)){ x *= 1.5; ms.push('fúria'); }
+    if(ef.mult.has(i)){ x *= ef.mult.get(i); ms.push('feitiço'); }
+    x = Math.round(x); return {x, j:x*10, base, ms};
+  };
+  const previas = new Map(), valeTarefa = t => {
+    if(previas.has(t)) return previas.get(t);
+    const feita = {...t, done:HOJE}, ts = D.feitas.concat(feita), ef = efeitos(C, ts);
+    const todas = feitas.concat(feita), nv = isRec(t) ? niveisHab(C, todas, fer, ef.salvoHab) : NV;
+    const v = valorFeita(feita, ts.length - 1, nv, ef, isRec(t) && extrasHab(todas).has(todas.length - 1));
+    previas.set(t, v); return v;
+  };
   let total = 0; const duoAntesXP = {};   // o que o Duolingo de antes de ligar dava pela regra antiga (acerto da 0.6.4)
   // XP de cada dia por origem, para o relatório de balanceamento (relatorio): o XP base de cada tipo e, à parte, o que os
   // multiplicadores somaram (missão, fúria, Ko/Acompanhar, hábito acima da meta)
   const fonteDia = {}, somaF = (d, k, x) => { if(!d || !x) return; const f = fonteDia[d] = fonteDia[d] || {}; f[k] = (f[k]||0) + x; };
   feitas.forEach((t,i) => {
     if(duoAntes(t, duoDe)){ let x = xpDe(t); if(!fer(t.done) && nenDe(t) === fracoSem(t.done)) x *= 1.5; duoAntesXP[t.done] = (duoAntesXP[t.done]||0) + Math.round(x); return; }
-    let x = xpBase(t); const base = x;
-    if(extraHab.has(i)) x *= HAB_EXTRA;                                 // hábito semanal acima da meta
-    if(!fer(t.done) && nenDe(t) === fracoSem(t.done)) x *= 1.5;       // missão da semana (pausada nas férias)
-    const d = discOf(t,C); if(d && t.done && !fer(t.done) && naFuria(d, t.done)) x *= 1.5;   // fúria (pelos períodos gravados; pausada nas férias)
-    if(F.mult.has(i)) x *= F.mult.get(i);                              // Ko / Acompanhar
-    x = Math.round(x); total += x; xs.push({t,x});
+    const {x} = valorFeita(t, i), base = xpBase(t);
+    total += x; xs.push({t,x});
     somaF(t.done, (t.rec||'').startsWith('cf') ? 'cf' : isRec(t) ? 'hab' : tipoDe(t), base); somaF(t.done, 'bonus', x - base);
     porDia[t.done] = (porDia[t.done]||0)+1; xpDia[t.done] = (xpDia[t.done]||0)+x; attr[nenDe(t)] += x;
   });
@@ -717,7 +733,7 @@ function estado(C){
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
   return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:T, nv:NV.hoje, duoDe, hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
     proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto)), rec, jenny: ganho - (EST.spent||0),
-    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, grupos: G, gXP, fonteDia, missaoDias, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
+    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, valeTarefa, grupos: G, gXP, fonteDia, missaoDias, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
 }
 /* devolução (#51): quem teve a carteira zerada pelo acerto da 0.6.4 (acertos[MIGRA] > 0) gastou, no dia do rebalanceamento, a

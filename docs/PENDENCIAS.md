@@ -5,6 +5,11 @@ tem as pendências dele em [`COLETIVO.md`](COLETIVO.md).
 
 ## Onde estamos
 
+**Issue #57 — Jenny por tarefa:** a Lista mostra o dinheiro ao lado do XP, inclusive na criação e na edição.
+`valeL()` usa `estado().valeTarefa()`, com a mesma conta da conclusão (prazo, missão, fúria, férias, nível dos hábitos e
+feitiços), e converte o XP final em Jenny ×10. As regras de ganho e os recibos permanecem iguais.
+Teste da prévia contra o ganho real: `node tests/test_jenny.mjs`.
+
 **v0.3** publicada em 09/10/2026 (tag `v0.3`, testada no Linux pelos amigos com foco em usabilidade). Entraram nela:
 ligação tarefa → avaliação pelo prazo e com várias palavras-chave (`liga()`/`ligaCom()` em `web/motor.js`, com o
 `→ P2` e o motivo nos Chefões), aba Torre Trick explicando o modo em grupo, backup em ZIP (`GET /api/backup`, aba Regras),
