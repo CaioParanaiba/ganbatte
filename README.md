@@ -87,6 +87,7 @@ Tudo o que é seu fica numa pasta separada do código:
 | `conquistas.json` | conquistas criadas pela IA (Book, 200 em diante) e o que você resgatou |
 | `estado.json` | loja, Jenny gasta (com o registro de compras, desde a 0.6.3-beta2) e o que está equipado |
 | `cf.json`, `duo.json`, `contrib.json` | o que o jogo leu do Codeforces, do Duolingo e das suas issues no GitHub |
+| `colecao/` | coleção permanente (#33): `colecao.json` com uma cópia de cada item comprado (nome, categoria, como equipar, origem e dia) e `arquivos/` com a imagem dele. Só cresce; a temporada nova e as versões novas do jogo não mexem nela |
 | `temporadas/` | cada temporada que acabou (`2026-2/`...): `resumo.json` com os números finais congelados e uma cópia dos arquivos daquele momento |
 | `servidor.log` | o que o servidor anotou quando roda em segundo plano |
 
@@ -165,6 +166,10 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   letras, números, `-`, `_` ou `.`) vira um item da Masadora por 1.000 J (os grátis ficam no `AV_GRATIS` do motor). O
   jogador não envia fotos: quem desenvolve põe aqui, e só imagens que podem ser distribuídas. Não renomeie uma foto que já
   saiu: o nome é o id do item comprado e equipado.
+  `web/chefoes/`: as fotos marcadas como chefão (#33), 256×256 (`RETRATOS` no motor). Cada uma é vendida como retrato de
+  chefão; o ícone do `avaliacoes.txt` continua o padrão, e o retrato escolhido fica em `estado.json` → `equip.chefes`
+  (sigla → item, um chefão por retrato). A versão de perfil só vem ao derrotar o chefão que está com ela, e a imagem dele
+  trava (`travas`). A origem de cada imagem fica no [`CREDITOS.md`](CREDITOS.md).
 - **Testes:** `python3 -m unittest discover tests` (pasta de dados temporária e a internet simulada; ver `tests/test_servidor.py`).
 - **Balanceamento:** `node ferramentas/simulador.mjs` joga uma temporada com três jogadores inventados pelo `web/motor.js` e
   mostra XP, andar, Jenny e quanto da loja cada um compra; `--comparar relatorio.json` põe ao lado o relatório de um
@@ -178,6 +183,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.7.1-beta1 | atualização do Ganbatte | Retratos dos chefões e coleção permanente (#33): fotos marcadas como chefão (`RETRATOS` no motor, `web/chefoes/`, créditos no `CREDITOS.md`) vendidas como retrato (`ch-SLUG`, 1.500 J, um dono por retrato, `equip.chefes`); o chefão derrotado trava a imagem (`travas`) e libera a foto de perfil (`av-ch-SLUG`). Loja → Comprados: o que é do jogador sai da vitrine. `colecao/` nos dados (`POST /api/colecao`): cópia de cada item comprado e da imagem, com `uid` e `hist`, só cresce |
 | **0.7** | **atualização do Ganbatte** | **Junta a 0.6.6-beta1 a beta3** (as linhas abaixo): o nome Ganbatte com os links novos (repositório `CaioParanaiba/ganbatte`, Pages em `caioparanaiba.github.io/ganbatte`; o GitHub redireciona o git, o ZIP e o raw do nome antigo, então as cópias instaladas continuam atualizando), o visual Nen, os nomes base das abas, prazo da caçada, tarefa vira caçada e cofre opcional. Janela grande com `"cap"`, a escolha do visual (`"visual"`, Nen ou clássico na hora) e o agradecimento a quem contribuiu (`"obrigado"`) |
 | 0.6.6-beta3 | atualização das expedições | Visual Nen como padrão (bloco `gb-visual` com `:where(.vis-nen)`, clássico em Configurações → configurações deste computador, `localStorage` → `gb-visual`), marca do jogo (`MARCA`) no cabeçalho, no favicon e no assistente, XP sempre na ponta da linha da Lista e o modo demonstração esperando os scripts de baixo |
 | 0.6.6-beta2 | atualização das expedições | **Nome Ganbatte** (#15): pasta de dados `~/.ganbatte` (`migra_pasta()` move a `~/.hunter-todo` na primeira vez e deixa um atalho; outra pasta escolhida fica onde está), variáveis `GANBATTE_*` (as `HUNTER_*` valem por um tempo, `env()`), início automático `ganbatte` (`migra_servico()` grava o novo e apaga o `hunter-todo`; o servidor que está rodando continua até o próximo login), `/api/ping` com `"app": "ganbatte"` (o `ping()` aceita os dois), instalador em `~/ganbatte` (quem tem `~/todo-engine` continua nela), prefixos `GB`/`GB_`/`GBx` e `gb-` no código (o `localStorage` copia os `hj-`). Nomes base das abas (`NOMES` no motor, `ABA` na página): o menu usa Progresso, Projetos, Calendário, Conquistas, Loja e Grupo, e o nome do `TEMA` fica no `title`. O repositório ainda é `todo-engine` |

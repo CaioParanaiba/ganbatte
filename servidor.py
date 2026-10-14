@@ -10,6 +10,8 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   jogador.json              nome, tags, hábitos, disciplinas e Codeforces (o assistente da primeira entrada grava)
   avaliacoes.txt, notas.txt plano de avaliação das disciplinas e notas lançadas
   estado.json               loja, carteira, o que está equipado e os prêmios reais do jogador
+  colecao/                  coleção permanente (#33): o que o jogador comprou, com uma cópia de cada item e da imagem dele;
+                            só cresce, e nem a temporada nova nem uma versão nova do jogo mexem nela
   ajustes.txt, narradas.json caixa de entrada e cartas narradas (opcionais)
   conquistas.json           conquistas criadas pela IA (200 em diante) e o que foi resgatado
   planos/                   planos de ensino (PDF, HTML...) que a IA lê
@@ -31,6 +33,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/jogo/narrada {carta}         carta narrada colada da IA (aba Book) em narradas.json
   POST /api/jogo/planos {avaliacoes, notas} editor do chefão: grava os dois arquivos (o anterior fica em .bak)
   POST /api/jogo/nota {disc, aval, nota, parcial?} · /api/jogo/ajuste {texto} ou {quando, texto, aplicado} · /api/jogo/estado {estado}
+  POST /api/colecao {itens}               guarda na coleção permanente os itens comprados que ainda não estão nela (#33)
   POST /api/cf/mao {menos?}               +1 problema do Codeforces hoje, marcado à mão (ITMO, grupo privado); menos = desfaz
   GET  /api/ia                            agentes de terminal achados, a escolha do jogador e os planos de ensino da pasta planos/
   POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini) ou volta ao copiar e colar (chat)
@@ -69,7 +72,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.7"
+VERSAO = "0.7.1-beta1"
 VERSAO_NOME = "atualização do Ganbatte"   # nome da série 0.7 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -963,7 +966,7 @@ def api_jogo_get():
     return {"ok": True, "hoje": hoje().isoformat(), "todo": todo, "done": done, "avaliacoes": ler_txt("avaliacoes.txt"),
             "notas": ler_txt("notas.txt"), "ajustes": ler_txt("ajustes.txt"), "estado": estado if isinstance(estado, dict) else {},
             "cf": cf, "duo": duo, "contrib": contrib, "avatares": avatares(), "narradas": narradas if isinstance(narradas, list) else [], "jogador": j,
-            "conquistas": conquistas if isinstance(conquistas, list) else [], "temporadas": temporadas(),
+            "conquistas": conquistas if isinstance(conquistas, list) else [], "temporadas": temporadas(), "colecao": colecao(),
             "servidor": {"versao": VERSAO, "nome": VERSAO_NOME, "sistema": sistema(), "auto": auto_ligado(), "fundo": EXEC["fundo"], "dados": str(DADOS),
                          "canal": canal(), "metodo": metodo_atualizar()}}
 
@@ -1070,7 +1073,7 @@ def devolve_filtra(e):
         e["bought"][sem] = [k for k in e["bought"][sem] if k not in fe]
 
 
-RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas e expedições (web/motor.js)
+RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes", "travas")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas, expedições e a imagem travada dos chefões derrotados (#33)
 
 
 def api_jogo_estado(d):
@@ -1080,7 +1083,7 @@ def api_jogo_estado(d):
     ok = {"spent": (int, float), "cofreUsado": (int, float), "own": list, "resg": list, "bought": dict, "usados": dict, "usos": list,
           "equip": dict, "tour": dict, "premios": list, "cofreMes": (int, float), "visto": str,
           "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict, "cacadas": dict, "expedicoes": dict, "compras": list,
-          "migra": dict, "tenRec": (int, float), "devolve": dict}   # acerto da 0.6.4 (web/motor.js: rec.migra, rec.tenRec) e a devolução (#51)
+          "migra": dict, "tenRec": (int, float), "devolve": dict, "travas": dict}   # acerto da 0.6.4 (web/motor.js: rec.migra, rec.tenRec) e a devolução (#51)
     for k, v in e.items():
         if k not in ok or not isinstance(v, ok[k]):
             raise Erro(f"campo inválido no estado: {k}")
@@ -1090,6 +1093,8 @@ def api_jogo_estado(d):
             raise Erro("prêmio inválido: precisa de nome (até 80 letras) e preço")
     if len(e.get("premios", [])) > 60 or e.get("cofreMes", 0) < 0:
         raise Erro("prêmios demais (máx. 60) ou cofre negativo")
+    if not all(isinstance(v, str) and len(k) <= 60 and len(v) <= 60 for k, v in e.get("travas", {}).items()):   # "TEMPORADA:SIGLA": id do retrato ou "" (o ícone padrão)
+        raise Erro("trava de chefão inválida")
     for c in e.get("compras", []):   # registro de compras (relatório de balanceamento): {d, h, tipo, id, j}
         if not (isinstance(c, dict) and re.fullmatch(r"\d{4}-\d\d-\d\d", str(c.get("d", ""))) and isinstance(c.get("h", ""), str)
                 and c.get("tipo") in ("cos", "feitico", "premio") and isinstance(c.get("id"), str) and len(c["id"]) <= 60
@@ -1099,7 +1104,7 @@ def api_jogo_estado(d):
         antigo = ler_json("estado.json", {})
         for k in RECIBOS:   # recibos da carteira: uma aba antiga aberta não apaga o que outra já gravou
             if isinstance(antigo, dict) and isinstance(antigo.get(k), dict):
-                e[k] = {**antigo[k], **e.get(k, {})}
+                e[k] = {**e.get(k, {}), **antigo[k]} if k == "travas" else {**antigo[k], **e.get(k, {})}   # trava de chefão: vale a primeira
                 if k == "xpDias":   # XP de um dia fechado só sobe
                     e[k] = {d: max(v, antigo[k][d]) if isinstance(v, (int, float)) and isinstance(antigo[k].get(d), (int, float)) else v
                             for d, v in e[k].items()}
@@ -1158,6 +1163,78 @@ def api_temporada(d):
         gravar_json(f"temporadas/{nome}/resumo.json", r)
     log(f"temporada {nome} guardada (números até {ate})")
     return {"ok": True, "guardada": True}
+
+
+# ---------- coleção permanente (#33) ----------
+# O que o jogador compra fica em colecao/ da pasta de dados, separado da loja: colecao.json com uma cópia de cada item (nome,
+# categoria, como equipar, de onde veio e quando) e colecao/arquivos/ com a imagem dele (foto de perfil, retrato de chefão).
+# Só acrescenta: nada aqui é apagado ou trocado. Assim, trocar de temporada, tirar um item da loja numa versão nova ou comprar
+# na loja do grupo (origem "grupo", #43; a loja pública segue a mesma regra) não mexe no que já é do jogador. O estado.json
+# continua com o own (compatibilidade). Rastreio: cada item tem um uid e um histórico (hist) que só cresce, com como ele chegou
+# (compra, chefao = foto liberada ao derrotar um chefão, migracao = já era do jogador antes da coleção), de onde, a temporada e
+# a Jenny. Ainda não há troca nem venda; o hist está pronto para receber esses eventos (ex.: trocado pelo grupo).
+COLECAO_CATS = {"avatar", "pal", "tex", "fx", "frame", "title", "font", "som", "full", "px", "chefe"}
+COLECAO_ORIGENS = {"masadora", "grupo"}
+COLECAO_COMO = {"compra", "chefao", "migracao"}
+COLECAO_CAMPOS = {"id": str, "cat": str, "n": str, "d": str, "p": (int, float), "origem": str, "quando": str, "img": str,
+                  "eq": dict, "fx": str, "fxs": list, "parts": list, "skin": list, "ev": (bool, int), "sw": list,
+                  "chefao": str, "como": str, "temporada": str}
+COLECAO_MAX = 2000
+ID_ITEM = re.compile(r"^[A-Za-z0-9_.-]{1,60}$")
+IMG_ITEM = re.compile(r"^(a|chefoes)/([A-Za-z0-9_-][A-Za-z0-9_.-]{0,79})\.png$")
+
+
+def colecao():
+    c = ler_json("colecao/colecao.json", {})
+    itens = c.get("itens") if isinstance(c, dict) else None
+    return {"itens": itens if isinstance(itens, dict) else {}}
+
+
+def colecao_item(x):
+    """Confere um item mandado pela página e devolve só os campos conhecidos."""
+    if not isinstance(x, dict) or not ID_ITEM.match(str(x.get("id", ""))) or x.get("cat") not in COLECAO_CATS:
+        raise Erro("item inválido na coleção")
+    it = {k: v for k, v in x.items() if k in COLECAO_CAMPOS and isinstance(v, COLECAO_CAMPOS[k])}
+    if not 0 < len(it.get("n", "")) <= 80 or len(it.get("d", "")) > 300 or it.get("origem", "masadora") not in COLECAO_ORIGENS:
+        raise Erro("item inválido na coleção: nome, descrição ou origem")
+    if "quando" in it and not DIA.match(it["quando"]):
+        raise Erro("item inválido na coleção: data")
+    if it.get("como", "compra") not in COLECAO_COMO or len(it.get("temporada", "")) > 40:
+        raise Erro("item inválido na coleção: como ou temporada")
+    if "img" in it and not IMG_ITEM.match(it["img"]):
+        del it["img"]
+    if len(json.dumps(it, ensure_ascii=False)) > 3000:
+        raise Erro("item grande demais na coleção")
+    return it
+
+
+def api_colecao(d):
+    """Guarda na coleção os itens que ainda não estão nela, com a imagem copiada de web/. Quem já está fica como está."""
+    itens = d.get("itens")
+    if not isinstance(itens, list) or len(itens) > 400:
+        raise Erro("lista de itens inválida")
+    novos = [colecao_item(x) for x in itens]
+    with lock:
+        c = colecao()
+        for it in novos:
+            if it["id"] in c["itens"] or len(c["itens"]) >= COLECAO_MAX:
+                continue
+            it.setdefault("origem", "masadora")
+            it.setdefault("quando", hoje().isoformat())
+            it.setdefault("como", "compra")
+            it["uid"] = os.urandom(6).hex()
+            it["hist"] = [{k: it[k] for k in ("quando", "como", "origem", "temporada", "p") if k in it}]
+            m = IMG_ITEM.match(it.get("img", ""))
+            if m and (WEB / it["img"]).is_file():
+                arq = f"{m.group(1)}-{m.group(2)}.png"
+                (DADOS / "colecao" / "arquivos").mkdir(parents=True, exist_ok=True)
+                if not (DADOS / "colecao" / "arquivos" / arq).is_file():
+                    shutil.copyfile(WEB / it["img"], DADOS / "colecao" / "arquivos" / arq)
+                it["arquivo"] = arq
+            c["itens"][it["id"]] = it
+        (DADOS / "colecao").mkdir(parents=True, exist_ok=True)
+        gravar_json("colecao/colecao.json", c)
+    return {"ok": True, "colecao": c}
 
 
 CONQ_REGRAS = {"contagem", "sequencia", "nota", "constancia", "semana"}
@@ -1763,8 +1840,8 @@ def api_autostart(d):
 ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/reabre": api_reabre, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
          "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
-         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada}
-LIMITE = {"/api/temporada": 3_000_000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000}
+         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada, "/api/colecao": api_colecao}
+LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),
@@ -1816,6 +1893,12 @@ class H(BaseHTTPRequestHandler):
             if (WEB / "a" / caminho[3:]).is_file():
                 return self._arquivo(WEB / "a" / caminho[3:], "image/png", "max-age=3600")
             return self._json(404, {"ok": False, "error": "foto não encontrada"})
+        m = re.match(r"^/(chefoes|colecao)/([A-Za-z0-9_-][A-Za-z0-9_.-]{0,99})\.png$", caminho)
+        if m:   # retratos dos chefões (web/chefoes/) e as imagens da coleção permanente (colecao/arquivos/ da pasta de dados)
+            pasta = WEB / "chefoes" if m.group(1) == "chefoes" else DADOS / "colecao" / "arquivos"
+            if (pasta / (m.group(2) + ".png")).is_file():
+                return self._arquivo(pasta / (m.group(2) + ".png"), "image/png", "max-age=3600")
+            return self._json(404, {"ok": False, "error": "imagem não encontrada"})
         if caminho == "/api/ping":
             return self._json(200, {"ok": True, "app": APP, "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
         if caminho == "/api/backup":

@@ -474,6 +474,7 @@ ul{list-style:none;margin:0;padding:0}
 .av.bs{--c:var(--red);border-width:2px}
 .av.bs.dead{--c:var(--grn)}
 .av.bs.hurt{--c:var(--amb)}
+.av.bs.ret{overflow:hidden} .av.bs.ret img{width:100%;height:100%;object-fit:cover;display:block}
 .ring{--p:50;--s:38px;width:var(--s);height:var(--s);border-radius:50%;display:grid;place-items:center;flex:none;
   background:conic-gradient(var(--red) calc(var(--p)*1%),var(--track) 0)}
 .ring > span{width:calc(var(--s) - 7px);height:calc(var(--s) - 7px);border-radius:50%;background:var(--panel);display:grid;place-items:center;color:var(--red);font-size:calc(var(--s)*.42)}
@@ -987,6 +988,12 @@ a.btn{display:inline-block;text-decoration:none}
 .it7 .info b{font-size:14px} .it7 .info p{margin:0;font-size:12.5px;color:var(--soft)}
 .it7 .buy7{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto}
 .it7 .pr{font:700 13px var(--f-mono);color:var(--amb)} .it7 .pr.free{color:var(--grn)}
+.ch7s{display:grid;gap:8px}
+.ch7{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:12px;align-items:center;background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:10px 12px}
+.ch7-nm{display:flex;gap:10px;align-items:center;min-width:0} .ch7-nm b{display:block;font-size:14px} .ch7-nm small{font:600 11.5px var(--f-mono);color:var(--soft)}
+.ch7-op{display:flex;gap:6px;flex-wrap:wrap}
+.ret7{all:unset;cursor:pointer;border-radius:50%;padding:3px;border:2px solid transparent} .ret7:disabled{opacity:.35;cursor:not-allowed} .ret7.on{border-color:var(--volt)} .ret7:focus-visible{outline:2px solid var(--prompt)}
+@media (max-width:620px){ .ch7{grid-template-columns:1fr} }
 .it7 .tagc{font:600 10px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
 /* preview: um pedaço do painel no tema do item */
 .pv{position:relative;height:96px;background:var(--bg);color:var(--ink);display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--hair);overflow:hidden}
@@ -1199,8 +1206,8 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .l-g:first-child{border-top:0;padding-top:0}
 .l-g b{font-weight:500;font-size:13.5px;overflow-wrap:anywhere} .l-g small{grid-column:1;font:11.5px var(--f-mono);color:var(--soft)}
 .l-g .l-xp{grid-row:1/3;grid-column:2;align-self:center}
-.l-boss{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;cursor:pointer;border:0;background:none;width:100%;text-align:left}
-.l-boss .sig{font:700 11px var(--f-mono);color:var(--soft)}
+.l-boss{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;cursor:pointer;border:0;background:none;width:100%;text-align:left}
+.l-boss .sig{font:700 11px var(--f-mono);color:var(--soft);display:flex;align-items:center;gap:6px;min-width:0} .l-boss .sig .av{--s:20px}
 .l-boss .hp{height:7px;border-radius:99px;background:var(--track);overflow:hidden} .l-boss .hp i{display:block;height:100%;background:var(--red)}
 .l-boss.dead .hp i{background:var(--grn)}
 .l-boss .st{font:600 11px var(--f-mono);color:var(--soft);white-space:nowrap} .l-boss .st.fury{color:var(--red)} .l-boss.dead .st{color:var(--grn)}
@@ -1364,12 +1371,17 @@ let OWN = new Set(), SPENT = 0, BOUGHT = {}, RESG = [], COFRE_USADO = 0;
 let TESTE = null;   // modo teste da Masadora (só nos canais beta e grupo): {own, eq} só na memória desta página; ver entraTeste()
 const R = {dif:'normal'};
 const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
-  avatar:'logo', lic:'l2', hud:'logo', anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
+  avatar:'logo', lic:'l2', hud:'logo', chefes:{}, anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
 try { UI.fxOff = localStorage.getItem('gb-fxoff') === '1'; } catch(e){}
 try { UI.cfold = JSON.parse(localStorage.getItem('gb-cfold') || '{}') || {}; } catch(e){ UI.cfold = {}; }   // caçadas recolhidas na Lista, por navegador
 const PXSKINS = {map:[['dia','Dia'],['tarde','Tarde'],['noite','Noite']], p1:[['lilas','Lilás'],['gameboy','Game Boy'],['noite','Noite']], p3:[['couro','Couro'],['joy','Joystation'],['noite','Noite']], p3b:[['madeira','Madeira'],['neon','Neon'],['papel','Papel']]};
 const THEMES = [['simples','Simples'],['painel','Painel'],['leorio','Leorio'],['claro','Claro'],['gon','Gon'],['biscuit','Biscuit'],['kurapika','Kurapika'],['netero','Netero'],['killua','Killua'],['hisoka','Hisoka'],['meruem','Meruem'],['pergaminho','Pergaminho'],['zoldyck','Zoldyck'],['ryodan','Genei Ryodan'],['greed','Greed Island'],['abismo','Continente Negro'],['aurora','Aurora']];
-const avSrc = f => (window.GB_AV && window.GB_AV[f]) || 'a/' + f + '.png';   // no protótipo de arquivo único as fotos vêm embutidas
+/* imagem guardada na coleção permanente (colecao/arquivos/ dos dados, #33): continua aparecendo mesmo se sair do jogo */
+const colArq = id => { const c = CTX && CTX.COLECAO.itens[id]; return c && c.arquivo ? 'colecao/' + c.arquivo : ''; };
+const avSrc = f => f.startsWith('ch-') ? (window.GB_CH && window.GB_CH[f]) || colArq('av-' + f) || 'chefoes/' + f.slice(3) + '.png'   // foto liberada por um chefão (#33)
+  : (window.GB_AV && window.GB_AV[f]) || colArq('av-' + f) || 'a/' + f + '.png';   // no protótipo de arquivo único as fotos vêm embutidas
+const temFoto = f => f !== 'logo' && (f.startsWith('ch-') ? OWN.has('av-' + f) : CTX.AVATARES.includes(f) || !!colArq('av-' + f));
+const retSrc = it => (window.GB_CH && window.GB_CH[it.id]) || GBx.imgDe(it, CTX.COLECAO);   // retrato de chefão (#33)
 const LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231D2027' stroke='%23CDB384' stroke-width='3'/%3E%3Cpath d='M32 9l6 15 16 1-12 10 4 16-14-9-14 9 4-16-12-10 16-1z' fill='none' stroke='%23CDB384' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial Black,Arial' font-weight='900' font-size='15' fill='%23E2E5EB'%3EH%3C/text%3E%3C/svg%3E";   // emblema do template (as fotos de perfil ficam em a/, servidas pelo servidor)
 const MARCA = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3 58 18v28L32 61 6 46V18z' fill='%2316181F' stroke='%23E0364F' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M14 22v20M23 22v20M14 32h9M41 22v20M50 22v20M41 32h9' stroke='%23F4F1EA' stroke-width='4.2' fill='none'/%3E%3Cpath d='M28.6 28.6l6.8 6.8M35.4 28.6l-6.8 6.8' stroke='%23E0364F' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E";   // a marca do jogo (cabeçalho, favicon, assistente); o LOGO acima continua sendo a foto padrão do jogador
 const discOf = t => GBx.discOf(t, CTX);
@@ -1379,21 +1391,22 @@ const somOff = () => !!(window.GB_FX && GB_FX.somOff());   // sons da loja desli
 const cartas = S => GBx.cartas(CTX, S);
 const cofreOn = () => GBx.cofreMes(EST) > 0;   // cofre do mês opcional (#34): liga em Configurações; desligado, sem card e sem limite em R$
 const cofreTotal = () => GBx.cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1);
+/* OWN: o own do estado.json mais a coleção permanente (#33), que é do jogador mesmo se o estado.json perder algo */
 function sync(api){
-  CTX = GBx.carregar(api); ({D, HOJE, TEMP, BOSSES, AVAL, NOTAS, PARC, INBOX, EST} = CTX); COS = GBx.catalogo(CTX.AVATARES);
-  OWN = GBx.expandeOwn(new Set(EST.own)); SPENT = EST.spent||0; COFRE_USADO = EST.cofreUsado||0; RESG = EST.resg||[];
+  CTX = GBx.carregar(api); ({D, HOJE, TEMP, BOSSES, AVAL, NOTAS, PARC, INBOX, EST} = CTX); COS = GBx.catalogo(CTX.AVATARES, CTX.COLECAO);
+  OWN = GBx.expandeOwn(new Set(EST.own.concat(Object.keys(CTX.COLECAO.itens)))); SPENT = EST.spent||0; COFRE_USADO = EST.cofreUsado||0; RESG = EST.resg||[];
   BOUGHT = Object.fromEntries((EST.bought[GBx.semanaISO(HOJE)]||[]).map(k => [k,1]));
-  const e = EST.equip; Object.assign(UI, {theme:e.theme, fx:e.fx||[], bg:e.bg||'', frame:e.frame||'', title:e.title||'', font:e.font||'', som:e.som||'', avatar:e.avatar||'logo', lic:e.lic||'l2', hud:e.hud||'logo'}); Object.assign(UI.skin, e.skin||{});
+  const e = EST.equip; Object.assign(UI, {theme:e.theme, fx:e.fx||[], bg:e.bg||'', frame:e.frame||'', title:e.title||'', font:e.font||'', som:e.som||'', avatar:e.avatar||'logo', lic:e.lic||'l2', hud:e.hud||'logo', chefes:{...(e.chefes||{})}}); Object.assign(UI.skin, e.skin||{});
   if(!BOSSES.some(b => b.d === UI.bsel)) UI.bsel = BOSSES[0] ? BOSSES[0].d : '';
   if(!BOSSES.some(b => b.d === UI.mapsel)) UI.mapsel = UI.bsel;
   if(TESTE){ if(!podeTeste()) TESTE = null; else { OWN = TESTE.own; Object.assign(UI, structuredClone(TESTE.eq)); } }   // recarregou no meio do teste: continua nele
-  avisoVersao(); guardaRecibos(); devolve(); if(window.GB_TEMP) GB_TEMP.confere();   // temporada acabou: guarda a cápsula (temporadas.js)
+  avisoVersao(); guardaRecibos(); devolve(); travaChefoes(); guardaColecao(); if(window.GB_TEMP) GB_TEMP.confere();   // temporada acabou: guarda a cápsula (temporadas.js)
 }
 /* modo teste da Masadora, só para quem está nos canais beta e grupo: Jenny infinita para experimentar qualquer item. É temporário de
    propósito: as compras e o que for equipado ficam só na memória desta página. Sair, recarregar a página ou voltar para
    a versão normal devolve a loja e a carteira de verdade, sem nada a mais. Feitiços e prêmios reais ficam fora (mexem no jogo). */
 const podeTeste = () => !!(CTX && CTX.SRV && ['beta', 'grupo'].includes(CTX.SRV.canal));
-const equipAgora = () => structuredClone({theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, title:UI.title, font:UI.font, som:UI.som, avatar:UI.avatar, lic:UI.lic, hud:UI.hud, skin:UI.skin});
+const equipAgora = () => structuredClone({theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, title:UI.title, font:UI.font, som:UI.som, avatar:UI.avatar, lic:UI.lic, hud:UI.hud, chefes:UI.chefes, skin:UI.skin});
 function entraTeste(){
   if(!podeTeste()) return;
   TESTE = {own:new Set(OWN), eq:equipAgora()}; render();
@@ -1440,7 +1453,7 @@ function devolve(){
   EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.7';
+const VERSAO_PAGINA = '0.7.1-beta1';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1460,20 +1473,49 @@ async function recarrega(){ const r = await fetch('/api/jogo', {cache:'no-store'
 /* registro de compras (0.6.3-beta2): cada gasto de Jenny com o dia, para o relatório de balanceamento (Configurações).
    O prêmio real entra só com o preço, sem o nome. No modo teste não grava nada. */
 const compra = (tipo, id, j) => { if(!TESTE && j > 0) EST.compras = (EST.compras || []).concat({d:HOJE, h:new Date().toTimeString().slice(0,8), tipo, id, j}); };
+/* coleção permanente (#33): o que é do jogador e ainda não está em colecao/ dos dados vai para lá, com a cópia do item e da
+   imagem (o servidor só acrescenta). Na primeira vez entra tudo o que já tinha sido comprado, com o dia do registro de compras
+   quando houver. Os itens que vêm com o jogo (GB.padrao) não precisam ir. No modo teste não grava nada. */
+let colecaoGravando = false, colecaoErro = false;
+const COMO = {};   // id → como chegou (compra | chefao); o que não está aqui já era do jogador antes da coleção (migracao)
+function guardaColecao(){
+  if(TESTE || colecaoGravando) return;
+  const dia = id => ((EST.compras || []).find(c => c && c.id === id && c.d) || {}).d || HOJE;
+  const falta = [...OWN].filter(id => !CTX.COLECAO.itens[id]).map(id => COS.find(i => i.id === id)).filter(it => it && !GBx.padrao(it));
+  if(!falta.length) return;
+  colecaoGravando = true;
+  post('/api/colecao', {itens:falta.map(it => GBx.itemColecao(it, dia(it.id), {como:COMO[it.id] || 'migracao', temporada:GBx.nomeTemporada(TEMP).slice(0, 40)}))})
+    .then(j => { if(j.colecao) CTX.COLECAO = j.colecao; colecaoErro = false; })
+    .catch(e => { if(!colecaoErro) toast('Não guardou na coleção: ' + esc(e.message)); colecaoErro = true; })
+    .finally(() => { colecaoGravando = false; });
+}
+/* chefão derrotado (#33): a imagem dele trava (estado.json → travas, por temporada e sigla; vale mesmo se uma nota corrigida
+   o trouxer de volta) e o retrato que estava nele vira foto de perfil, de graça (av-ch-SLUG, na coleção como "chefao") */
+function travaChefoes(){
+  if(TESTE || !CTX) return;
+  const S = estado(); let mudou = false;
+  for(const b of S.bs.filter(b => b.dead)){
+    const k = GBx.travaChave(TEMP, b.d); if(EST.travas && k in EST.travas) continue;
+    const r = retratoDe(b); EST.travas = {...(EST.travas || {}), [k]: r ? r.id : ''}; mudou = true;
+    if(r && !OWN.has('av-' + r.id)){ OWN.add('av-' + r.id); COMO['av-' + r.id] = 'chefao';
+      toast(`${esc(b.n)} derrotado <small>o retrato ${esc(r.n)} virou foto de perfil · está em Loja → Comprados</small>`); }
+  }
+  if(mudou) salvaUI();
+}
 /* grava a loja e o que está equipado em jogo/estado.json */
 function salvaUI(){
   if(TESTE) Object.assign(TESTE, {own:OWN, eq:equipAgora()});   // modo teste: a loja fica só na memória; o resto (tour, visto) grava
   else {
     EST.own = [...OWN]; EST.spent = SPENT; EST.cofreUsado = COFRE_USADO; EST.resg = RESG;
     EST.bought[GBx.semanaISO(HOJE)] = Object.keys(BOUGHT);
-    EST.equip = {theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, title:UI.title, font:UI.font, som:UI.som, avatar:UI.avatar, lic:UI.lic, hud:UI.hud, skin:UI.skin};
+    EST.equip = {theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, title:UI.title, font:UI.font, som:UI.som, avatar:UI.avatar, lic:UI.lic, hud:UI.hud, chefes:UI.chefes, skin:UI.skin};
   }
   post('/api/jogo/estado', {estado:EST}).catch(e => toast('Não salvou a loja: ' + esc(e.message)));
 }
 /* provar na loja (#29): paleta, tema, fundo, efeito contínuo, moldura ou fonte. UI.prova é o id do item; não grava
    nada, some ao recarregar e, enquanto dura, o jogo fica travado (travaProva) para ninguém jogar com o item emprestado */
 const PROVAVEL = ['pal','full','tex','fx','frame','font'];
-const provavel = it => !OWN.has(it.id) && !it.lend && !it.ev && PROVAVEL.includes(it.cat);
+const provavel = it => !OWN.has(it.id) && !GBx.padrao(it) && !it.lend && !it.ev && PROVAVEL.includes(it.cat);
 function vista(){
   const it = UI.prova && COS.find(i => i.id === UI.prova);
   if(!it) return UI;
@@ -1511,11 +1553,23 @@ const ligTxt = (b,t) => { const l = b.lig && b.lig.get(t); return l ? `<small cl
 const edKey = t => t.n + '\n' + t.raw;
 /* mundo pixel: o rosto e o nome do jogador (o boneco do mapa continua o Killua, que é sprite) */
 const NEN_QUEM = ['Intensificador','Transmutador','Conjurador','Especialista','Manipulador','Emissor'];
-const pxFoto = () => (UI.avatar === 'logo' || !CTX.AVATARES.includes(UI.avatar)) ? LOGO.replace(/'/g, '%27') : avSrc(UI.avatar);   // sem aspas: vai num url() sem aspas
+const pxFoto = () => !temFoto(UI.avatar) ? LOGO.replace(/'/g, '%27') : avSrc(UI.avatar);   // sem aspas: vai num url() sem aspas
 const pxNome = up => { const n = (CTX.JOG && CTX.JOG.nome) || 'Hunter'; return esc(up ? n.toUpperCase() : n); };
-const avMe = s => (UI.avatar === 'logo' || !CTX.AVATARES.includes(UI.avatar)) ? `<span class="av me logo"${s?` style="--s:${s}px"`:''}><img src="${LOGO}" alt=""></span>` : `<span class="av me pic" style="background-image:url(${avSrc(UI.avatar)})${s?';--s:'+s+'px':''}"></span>`;
+const avMe = s => !temFoto(UI.avatar) ? `<span class="av me logo"${s?` style="--s:${s}px"`:''}><img src="${LOGO}" alt=""></span>` : `<span class="av me pic" style="background-image:url(${avSrc(UI.avatar)})${s?';--s:'+s+'px':''}"></span>`;
 const plate = () => `<span class="plate"><img src="${LOGO}" alt="Associação Hunter"></span>`;
-const avB = (b,s) => `<span class="av bs${b.st==='dead'?' dead':b.st==='hurt'?' hurt':''}"${s?` style="--s:${s}px"`:''} title="${b.n} · ${b.d}">${ic(b.ic)}</span>`;
+/* ícone do chefão: o retrato escolhido em Loja → Comprados (#33) ou o ícone padrão do avaliacoes.txt */
+const travaDe = d => EST.travas ? EST.travas[GBx.travaChave(TEMP, d)] : undefined;   // derrotado: id do retrato ou '' (ícone padrão); vivo: undefined
+const retratoDe = b => { const t = travaDe(b.d), id = t !== undefined ? t : UI.chefes[b.d]; return id && OWN.has(id) ? COS.find(i => i.id === id && i.cat === 'chefe') || null : null; };
+/* cada retrato tem um dono: o chefão derrotado com ele (nesta temporada) ou o último escolhido */
+const presoEm = id => BOSSES.find(b => travaDe(b.d) === id) || null;
+function poeRetrato(d, id){
+  if(travaDe(d) !== undefined || (id && presoEm(id))) return false;
+  const c = {}; for(const [k, v] of Object.entries(UI.chefes)) if(v !== id) c[k] = v;
+  if(id) c[d] = id; else delete c[d];
+  UI.chefes = c; return true;
+}
+const avB = (b,s) => { const r = retratoDe(b);
+  return `<span class="av bs${b.st==='dead'?' dead':b.st==='hurt'?' hurt':''}${r?' ret':''}"${s?` style="--s:${s}px"`:''} title="${b.n} · ${b.d}">${r ? `<img src="${retSrc(r)}" alt="">` : ic(b.ic)}</span>`; };
 const avG = (g,s) => `<span class="av guard"${s?` style="--s:${s}px"`:''} title="${g.n}: ${g.r}">${ic(g.ic)}</span>`;
 const tenTxt = T => `${T.cur} ${T.cur===1?'dia':'dias'}`;
 const semana = () => ({n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)});
@@ -1717,6 +1771,7 @@ function equipado(it){
   if(it.cat === 'title') return UI.title === it.eq.title;
   if(it.cat === 'font') return UI.font === it.eq.font;
   if(it.cat === 'som') return UI.som === it.eq.som;
+  if(it.cat === 'chefe') return BOSSES.some(b => (retratoDe(b) || {}).id === it.id);
   if(it.cat === 'full') return !it.lend && Object.keys(it.eq).every(k => UI[k] === it.eq[k]) && it.fxs.every(f => UI.fx.includes(f));
   if(it.skin) return UI.skin[it.skin[0]] === it.skin[1];
   return false;
@@ -1731,11 +1786,13 @@ function equipa(it){
   else if(it.cat === 'title') UI.title = on ? '' : it.eq.title;
   else if(it.cat === 'font') UI.font = on ? '' : it.eq.font;
   else if(it.cat === 'som') UI.som = on ? '' : it.eq.som;
+  else if(it.cat === 'chefe'){ const b = BOSSES.find(b => it.alvo && GBx.norm(b.n).includes(GBx.norm(it.alvo)) && travaDe(b.d) === undefined); if(b) poeRetrato(b.d, it.id); }   // vai para o chefão de mesmo nome, se houver e estiver vivo
   else if(it.cat === 'full'){ Object.assign(UI, it.eq); UI.fx = [...new Set(UI.fx.concat(it.fxs))]; }
   else if(it.skin) UI.skin[it.skin[0]] = on ? PXSKINS[it.skin[0]][0][0] : it.skin[1];
   UI.anim = 'calma';
 }
 function pvHTML(it){
+  if(it.cat === 'chefe') return `<div class="pv av8" style="${palStyle(UI.theme)}"><span class="av bs ret" style="--s:76px"><img src="${retSrc(it)}" alt=""></span></div>`;
   if(it.cat === 'avatar') return `<div class="pv av8" style="${palStyle(UI.theme)}"><span class="plate" style="width:76px;height:76px;background:${it.eq.avatar === 'logo' ? '#F6F3EC' : 'transparent'};box-shadow:none"><img src="${it.eq.avatar === 'logo' ? LOGO : avSrc(it.eq.avatar)}" alt="" style="width:100%"></span></div>`;
   if(it.sw) return `<div class="pv sw">${it.sw.map(c => `<i style="background:${c}"></i>`).join('')}</div>`;
   if(it.lend) return `<div class="pv leg">?</div>`;
@@ -1745,9 +1802,11 @@ function pvHTML(it){
   return `<div class="${cls}" style="${palStyle(pal)}">${avMe(40)}<div class="mini"><b>Andar 97</b>${it.eq?.title?`<span class="titulo">${esc(it.eq.title)}</span>`:''}<div class="xpbar"><b style="width:62%"></b></div></div><span class="ring fury" style="--p:70"><span>${ic('antenna')}</span></span>${fx.includes('zap')?'<span class="flash"></span>':''}${it.ev ? `<span class="gb-tag">${['confete','fogos'].includes(it.fx) ? 'no andar novo' : 'ao concluir'} · ▶</span>` : ''}</div>`;
 }
 function itemHTML(S, it){
-  const own = OWN.has(it.id), eq = own && equipado(it), lk = it.lock && it.lock(S), need = it.need && !OWN.has(it.need);
+  const own = OWN.has(it.id) || GBx.padrao(it), eq = own && equipado(it), lk = it.lock && it.lock(S), need = it.need && !OWN.has(it.need);
   let btn;
   if(it.lend) btn = `<button class="btn" disabled>${S.jenny >= it.p ? 'sob encomenda' : `faltam ${fmt(it.p - S.jenny)} J`}</button>`;
+  else if(own && it.cat === 'chefe') btn = `<span class="sub">${eq ? 'em uso' : 'escolha o chefão acima'}</span>`;
+  else if(!own && it.chefao) btn = '<span class="sub">derrote um chefão com este retrato</span>';
   else if(own) btn = it.cat === 'px' && !it.skin ? '<span class="sub">desbloqueado</span>' : `<button class="btn v" data-equip="${it.id}">${eq ? (['pal','full','avatar'].includes(it.cat) ? 'equipado' : 'tirar') : 'equipar'}</button>`;
   else if(it.excl) btn = `<button class="btn" disabled>só no ${esc(COS.find(i => i.id === it.excl).n.replace('Tema ','tema '))}</button>`;
   else if(lk) btn = `<button class="btn" disabled>${it.why}</button>`;
@@ -1756,20 +1815,47 @@ function itemHTML(S, it){
   const prova = UI.prova === it.id;
   const ver = provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
     : it.ev || it.cat === 'som' ? `<button class="btn gb-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
-  return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need?' lock':''}">${pvHTML(it)}<div class="info"><b>${esc(it.n)}</b><p>${esc(it.d)}</p><div class="buy7"><span class="pr${it.p?'':' free'}">${it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis'}${own?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
+  return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need?' lock':''}">${pvHTML(it)}<div class="info"><b>${esc(it.n)}</b><p>${esc(it.d)}</p><div class="buy7"><span class="pr${it.p?'':' free'}">${it.chefao ? 'chefão derrotado' : it.fora ? 'da sua coleção' : GBx.padrao(it) ? 'vem com o jogo' : it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis'}${own && !GBx.padrao(it) && !it.fora && !it.chefao ?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
 }
 const SECS = {
-  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez.'],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações.'],['full','Temas completos','Paleta, fundo e efeitos juntos, mais barato que comprar separado.']],
+  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['chefe','Ícones dos chefões','Retratos para os cards dos chefões, no lugar do ícone. Na compra, o retrato vai para o chefão de mesmo nome; em Comprados você troca. Derrote o chefão que está com ele e o retrato vira foto de perfil, de graça.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez.'],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações.'],['full','Temas completos','Paleta, fundo e efeitos juntos, mais barato que comprar separado.']],
   pixel:[['px','Mundo pixel','Primeiro desbloqueie o mundo; depois as peles.']],
 };
+/* itens de uma prateleira (c = categoria; fxev = os efeitos da hora da conquista) */
+const daSec = (l, c) => l.filter(i => c === 'fxev' ? i.cat === 'fx' && i.ev : i.cat === c && !(c === 'fx' && i.ev));
+/* o que é do jogador (#33): comprado (estado.json ou a coleção permanente) ou que vem com o jogo. Sai da vitrine e fica em Comprados */
+const meu = it => OWN.has(it.id) || GBx.padrao(it);
+/* Comprados: escolher o ícone de cada chefão (o padrão ou um retrato da coleção) */
+function chefesHTML(S){
+  const rets = COS.filter(i => i.cat === 'chefe' && OWN.has(i.id));
+  const img = r => r ? `<span class="av bs ret" style="--s:38px"><img src="${retSrc(r)}" alt=""></span>` : '';
+  const op = (b, id, dentro, nome) => { const on = (retratoDe(b) || {id:''}).id === id, preso = id && presoEm(id), dono = !on && id && BOSSES.find(x => x.d !== b.d && (retratoDe(x) || {}).id === id);
+    return `<button type="button" class="ret7${on ? ' on' : ''}" data-chefe="${b.d}:${id}" aria-pressed="${on}"${preso ? ' disabled' : ''} title="${esc(nome)}${preso ? ` · preso no ${esc(preso.n)}, derrotado` : dono ? ` · sai do ${esc(dono.n)}` : ''}">${dentro}</button>`; };
+  const linhas = S.bs.map(b => { const t = travaDe(b.d);
+    return `<div class="ch7"><span class="ch7-nm">${avB(b,44)}<span><b>${esc(b.n)}</b><small>${esc(b.d)}</small></span></span><div class="ch7-op">${t !== undefined
+      ? `<span class="sub">Derrotado: a imagem fica assim${t ? ', e o retrato virou foto de perfil' : ''}.</span>`
+      : op(b, '', `<span class="av bs" style="--s:38px">${ic(b.ic)}</span>`, 'ícone padrão') + rets.map(r => op(b, r.id, img(r), r.n)).join('')}</div></div>`; }).join('');
+  return `<div class="sec7"><h3>Ícones dos chefões</h3><p>O ícone padrão de cada chefão vem com o jogo. ${rets.length ? 'Cada retrato fica em um chefão por vez. Derrote o chefão que está com ele e o retrato vira foto de perfil; depois disso a imagem desse chefão não muda mais.' : 'Os retratos estão na vitrine, em Aparência.'}</p>
+    ${linhas ? `<div class="ch7s">${linhas}</div>` : '<p class="sub">Nenhum chefão cadastrado ainda. Os retratos ficam guardados para quando houver.</p>'}</div>`;
+}
+function compradosHTML(S){
+  const meus = COS.filter(meu), secs = SECS.aparencia.filter(([c]) => c !== 'chefe').concat(SECS.pixel);
+  const rets = daSec(meus, 'chefe');
+  return `<div class="sec7"><p>Tudo o que é seu: o que você comprou e o que vem com o jogo. Fica guardado na pasta <span class="mono">colecao/</span> dos seus dados, separado da loja: trocar de temporada ou atualizar o jogo não tira nada daqui.</p></div>`
+    + chefesHTML(S) + (rets.length ? `<div class="sec7"><h3>Retratos</h3><div class="items">${rets.map(i => itemHTML(S,i)).join('')}</div></div>` : '')
+    + secs.map(([c,t]) => { const l = daSec(meus, c); return l.length ? `<div class="sec7"><h3>${t}</h3><div class="items">${l.map(i => itemHTML(S,i)).join('')}</div></div>` : ''; }).join('');
+}
 function rMS(S){
-  const cats = [['aparencia','Aparência'],['pixel','Mundo pixel'],['premios','Prêmios reais'],['feiticos','Feitiços']];
+  const nMeus = COS.filter(i => OWN.has(i.id) && !GBx.padrao(i)).length;
+  const cats = [['aparencia','Aparência'],['pixel','Mundo pixel'],['premios','Prêmios reais'],['feiticos','Feitiços'],['comprados',`Comprados${nMeus ? ' · ' + nMeus : ''}`]];
   let main = '';
-  if(SECS[UI.cat]) main = SECS[UI.cat].map(([c,t,d]) => `<div class="sec7"><h3>${t}</h3>${d?`<p>${d}</p>`:''}<div class="items">${COS.filter(i => c === 'fxev' ? i.cat === 'fx' && i.ev : i.cat === c && !(c === 'fx' && i.ev)).map(i => itemHTML(S,i)).join('')}</div></div>`).join('') + (UI.cat==='aparencia' ? '<div class="sec7"><h3>Na próxima temporada</h3><p>Em 2027-1 chegam os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p></div>' : '');
+  if(UI.cat === 'comprados') main = compradosHTML(S);
+  else if(SECS[UI.cat]) main = SECS[UI.cat].map(([c,t,d]) => { const l = daSec(COS, c), vit = l.filter(i => !meu(i) && !i.fora && !i.chefao);
+      return `<div class="sec7"><h3>${t}</h3>${d?`<p>${d}</p>`:''}${vit.length ? `<div class="items">${vit.map(i => itemHTML(S,i)).join('')}</div>` : '<p class="sub">Tudo desta prateleira já é seu: está em <button class="go" data-cat="comprados">Comprados</button>.</p>'}</div>`; }).join('') + (UI.cat==='aparencia' ? '<div class="sec7"><h3>Na próxima temporada</h3><p>Em 2027-1 chegam os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p></div>' : '');
   else if(UI.cat === 'premios') main = UI.pedit ? premiosEditor(S) : premiosHTML(S);
   else main = `<div class="sec7"><h3>Feitiços</h3><p>Também vêm da preparação completa e da missão da semana. Limite de 1 de cada por semana na loja. Expiram em ${ddmm(TEMP.volta)}.</p><div class="items">${SPELLS.filter(s => !s.noshop).map(s => { const [ok,why] = buyable(S,'s',s.k);
       return `<div class="it7"><div class="pv real" style="${palStyle(UI.theme)}"><span class="av" style="--c:var(--aura)">${ic(s.ic)}</span><span>na bolsa: ${S.inv[s.k]||0}</span></div><div class="info"><b>${s.n}</b><p>${s.e}</p><div class="buy7"><span class="pr">${fmt(s.p)} J</span><button class="btn" data-buy="s:${s.k}" ${ok?'':'disabled'}>${ok?'comprar':why}</button></div></div></div>`; }).join('')}</div></div>`;
-  const eqs = [['Paleta', (THEMES.find(t => t[0]===UI.theme)||[0,UI.theme])[1]], ['Foto', GBx.catalogo([UI.avatar]).slice(-1)[0].n], ['Fundo', UI.bg || '—'], ['Efeitos', UI.fxOff ? 'desligados' : (UI.fx.join(', ') || 'nenhum')], ['Moldura', UI.frame || '—'], ['Título', UI.title || '—'], ['Fonte', UI.font || 'padrão'], ['Som', !UI.som ? 'nenhum' : somOff() ? UI.som + ' (desligado)' : UI.som]];
+  const eqs = [['Paleta', (THEMES.find(t => t[0]===UI.theme)||[0,UI.theme])[1]], ['Foto', (COS.find(i => i.id === 'av-' + UI.avatar) || GBx.catalogo([UI.avatar]).slice(-1)[0]).n], ['Fundo', UI.bg || '—'], ['Efeitos', UI.fxOff ? 'desligados' : (UI.fx.join(', ') || 'nenhum')], ['Moldura', UI.frame || '—'], ['Título', UI.title || '—'], ['Fonte', UI.font || 'padrão'], ['Som', !UI.som ? 'nenhum' : somOff() ? UI.som + ' (desligado)' : UI.som], ['Chefões', (n => n ? `${n} com retrato` : 'ícones padrão')(S.bs.filter(retratoDe).length)]];
   document.getElementById('ms-root').innerHTML = `
     <div class="cats">${cats.map(([k,n]) => `<button data-cat="${k}" aria-pressed="${UI.cat===k}">${n}</button>`).join('')}</div>
     <div class="lay7"><div>${main}</div>
@@ -2236,7 +2322,7 @@ function rL(S){
     + (feitas.length ? `<details class="l-grp"${UI.ldone ? ' open' : ''} id="l-feitas"><summary><h3><span class="t ok">Concluídas hoje</span><small>${feitas.length}</small><span class="sum">+${xpF} XP</span></h3></summary><ul class="l-list">${feitas.map(t => rowL(t, S, xpDe2.get(t.raw) || 0)).join('')}</ul></details>` : '');
   const ed = document.getElementById('l-ed'); if(ed && !document.querySelector('#xn,#xc')){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
   document.getElementById('l-golpes').innerHTML = S.golpes.slice(0,3).map(g => `<div class="l-g"><b>${esc(g.t.txt)}</b><small>${[discOf(g.t), g.t.due ? dueTxt(g.t.due) : '', g.fury ? 'fúria ×1,5' : '', g.bonus ? 'missão ×1,5' : ''].filter(Boolean).join(' · ')}</small><span class="l-xp">+${g.x}</span></div>`).join('') || '<p class="sub" style="margin:0">Nada aberto.</p>';
-  document.getElementById('l-bosses').innerHTML = S.bs.map(b => `<button class="l-boss${b.dead ? ' dead' : ''}" data-go="b2" data-bsel="${b.d}"><span class="sig">${esc(b.d)}</span><span class="hp"><i style="width:${pct(b.rest,b.tot)}%"></i></span><span class="st${b.fury ? ' fury' : ''}">${b.dead ? 'DERROTADO' : b.fury ? 'FÚRIA' : Math.round(pct(b.rest,b.tot)) + '%'}</span><span class="nm">${esc(b.n)}${b.need != null && !b.dead ? ` · precisa de ${nf(Math.max(0,b.need))} no resto` : ''}</span></button>`).join('') || '<p class="sub" style="margin:0">Nenhuma disciplina cadastrada. Cadastre na aba Chefões.</p>';
+  document.getElementById('l-bosses').innerHTML = S.bs.map(b => `<button class="l-boss${b.dead ? ' dead' : ''}" data-go="b2" data-bsel="${b.d}"><span class="sig">${avB(b)}${esc(b.d)}</span><span class="hp"><i style="width:${pct(b.rest,b.tot)}%"></i></span><span class="st${b.fury ? ' fury' : ''}">${b.dead ? 'DERROTADO' : b.fury ? 'FÚRIA' : Math.round(pct(b.rest,b.tot)) + '%'}</span><span class="nm">${esc(b.n)}${b.need != null && !b.dead ? ` · precisa de ${nf(Math.max(0,b.need))} no resto` : ''}</span></button>`).join('') || '<p class="sub" style="margin:0">Nenhuma disciplina cadastrada. Cadastre na aba Chefões.</p>';
   document.getElementById('l-exps').innerHTML = window.GB_EXP ? GB_EXP.lateral(S) : '';
   habitosL(S);
   document.getElementById('l-vale').innerHTML = [['ent',5,25],['est',0,15],['fac',2,15],['tre',1,10],['vid',3,10],['hab',4,'3–12']].map(([k,c,x]) => `<tr><td><span class="d" style="--c:${NC(c)}"></span>${LTIPOS.find(t => t.k === k).n} <span style="color:var(--faint)">${k === 'fac' ? '+fac.SIGLA' : k === 'vid' ? 'sem tag' : esc(tagDe(k))}</span></td><td>${x}</td></tr>`).join('')
@@ -2491,9 +2577,14 @@ function confete(forcado){
 }
 /* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
-const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-teste],summary';
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-teste],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
-function avisoProva(){ toast(`Você está provando um item <small>o jogo fica travado até você clicar em "voltar ao que é meu"</small>`); }
+let avisoProvaAtual = null;
+function avisoProva(){
+  // A tecla segurada e os cliques repetidos só avisam de novo depois que o aviso anterior saiu da tela (#58).
+  if(avisoProvaAtual && avisoProvaAtual.isConnected) return;
+  avisoProvaAtual = toast(`Você está provando um item <small>o jogo fica travado até você clicar em "voltar ao que é meu"</small>`);
+}
 function travaProva(e){
   if(!UI.prova || !e.target.closest) return;
   if(e.type === 'submit' || (e.type === 'beforeinput' && e.target.closest('input,textarea,[contenteditable]'))){ e.preventDefault(); e.stopImmediatePropagation(); avisoProva(); return; }
@@ -2528,7 +2619,10 @@ document.addEventListener('click', async e => {
   const pr = q('[data-prova]'); if(pr){ UI.prova = pr.dataset.prova; render(); return; }
   const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(); if(!it || S.jenny < it.p) return;
-    SPENT += it.p; compra('cos', it.id, it.p); OWN.add(it.id); GBx.expandeOwn(OWN); UI.prova = ''; equipa(it); salvaUI(); toast(`${esc(it.n)} é seu <small>−${fmt(it.p)} J · já equipado${it.parts ? ' · as peças ficam separadas também' : ''}</small>`); render(); return; }
+    SPENT += it.p; compra('cos', it.id, it.p); OWN.add(it.id); GBx.expandeOwn(OWN); [it.id, ...(it.parts || [])].forEach(k => { COMO[k] = 'compra'; }); UI.prova = ''; equipa(it); salvaUI(); guardaColecao();
+    const ch = it.cat === 'chefe' && BOSSES.find(b => UI.chefes[b.d] === it.id);
+    toast(`${esc(it.n)} é seu <small>−${fmt(it.p)} J · ${it.cat === 'chefe' ? (ch ? 'já no ' + esc(ch.n) : 'escolha o chefão em Comprados') : 'já equipado'}${it.parts ? ' · as peças ficam separadas também' : ''} · guardado em Comprados</small>`); render(); return; }
+  const chf = q('[data-chefe]'); if(chf){ const [d, id] = chf.dataset.chefe.split(':'); if(poeRetrato(d, id)){ salvaUI(); render(); } return; }
   const eq = q('[data-equip]'); if(eq){ const it = COS.find(i => i.id === eq.dataset.equip); if(it){ equipa(it); salvaUI(); render(); } return; }
   const rl = q('[data-real]'); if(rl){ const x = meusPremios()[+rl.dataset.real], S = estado(); if(!x || !podeResgatar(S, x)) return;
     SPENT += x.p; compra('premio', 'premio', x.p); COFRE_USADO += x.rs||0; RESG.push(`${x.n} · ${ddmm(HOJE)}`); salvaUI(); toast(`Resgatado: ${esc(x.n)} <small>aproveite</small>`); render(); return; }
