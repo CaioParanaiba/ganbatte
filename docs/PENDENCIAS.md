@@ -282,7 +282,7 @@ O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
   administrar (`admin/habito`). O envio guarda só as chaves do catálogo, do `desde` em diante (`le_dia`), e o placar mostra
   só as ativas (`habitos` na resposta; as colunas do `web/grupo.js` saem dele). No jogo, o `resumoGrupo(C, S, true)` leva
   `pes` (o sim/não de cada hábito pessoal e do Duolingo, pelo id) só até o `servidor.py`: `envio_do_grupo()` troca pelo
-  catálogo de cada grupo com os `vinculos` do `grupo.json` (`/api/grupo/vinculo`, o seletor em Configurações → grupo).
+  catálogo de cada grupo com os `vinculos` do `grupo.json` (`/api/grupo/vinculo`, o seletor em Configurações → grupo; vai para dentro da aba do grupo com o layout do #67, ver `COLETIVO.md` B).
   Mudar um vínculo muda a assinatura dos dias, e a temporada vai de novo. O Duolingo deixou de ser hábito do grupo.
 - **Torre Trick** (14/10/2026, #42; regras no `docs/COLETIVO.md`): `grupo/torre.py`, funções puras sobre o retrato do grupo
   (`retrato()` no servidor: membros, todos os `dias`, catálogo, `fechados`, calibração). 1 andar = 1 teto; o teto do mês é

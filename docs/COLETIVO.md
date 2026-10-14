@@ -1,4 +1,4 @@
-# Ganbatte em grupo: desenho (v5, 14/10/2026)
+# Ganbatte em grupo: desenho (v6, 14/10/2026)
 
 Modo em grupo do Ganbatte (0.9, branch `grupo`, índice na issue #16), ideia do Caio e de um amigo. Foco: deixar o placar
 **público e balanceado**. `⏳` = pendente; toda pontuação está **a calibrar** com 2–3 semanas de dados reais
@@ -64,19 +64,32 @@ Tema: **HxH para todos** nesta temporada.
 ### A. XP do dia com teto
 - Por dia conta `min(XP do dia, teto)`. Ex.: com teto 75: 100 → 75, 50 → 50, 300 → 75.
 - **Teto = mediana do XP diário de todos os jogadores no mês anterior, contando todos os dias** (inclusive os dias com 0).
-- 1º mês (sem histórico): teto provisório ⏳.
+- **1º mês** (sem histórico): o teto é a mediana dos dias que já chegaram **no próprio mês**, recalculada até o mês fechar;
+  os andares do 1º mês aparecem como **provisórios**. Quando o mês fecha, a regra normal assume sozinha (decidido em 14/10, #42).
+
+### Calibração automática (decidido em 14/10, #42)
+- Tudo que não é o XP do dia é medido em **dias de teto** (os multiplicadores abaixo). Como o teto acompanha o XP do grupo,
+  a escala se ajusta sozinha: não precisa esperar dados para lançar, e os números da 0.9 já são os de verdade.
+- Os **multiplicadores** (e o +50% e a base mínima do CF) ficam em **Grupo → administrar → calibração**, com os valores daqui
+  como padrão: o admin ajusta sem lançar versão. Mudar um número recalcula os períodos abertos; os fechados ficam como estão (#40).
 
 ### B. Hábitos coletivos
 - **Codeforces:** verificado pela API do CF. O placar mostra o **heatmap do Codeforces** de cada jogador.
 - **Catálogo por grupo** (#41, decidido em 14/10): os admins editam em Grupo → administrar. O **Codeforces** é o único
   automático (o jogo mede sozinho) e já vem no grupo novo; o host pode tirá-lo. Os outros são de **vínculo**: o jogador liga
-  um hábito pessoal ao do grupo em Configurações → grupo (o Duolingo entra assim, como hábito pessoal). O público recebe só
+  um hábito pessoal ao do grupo (o Duolingo entra assim, como hábito pessoal). O público recebe só
   **fez / não fez** por dia, e o nome do hábito pessoal nunca sai da máquina. Hábito novo conta a partir do dia em que foi
   criado; remover arquiva.
-- ⏳ pontos por hábito (#42).
+- **Os admins decidem o catálogo** (14/10): o grupo nasce só com o Codeforces; o admin acrescenta o que quiser (Duolingo,
+  digitação...) e pode tirar qualquer um, inclusive o Codeforces.
+- **Vínculo dentro do grupo** (decidido em 14/10): cada jogador liga os seus hábitos aos do grupo numa **configuração do
+  jogador dentro da própria aba do grupo** (ex.: "meus hábitos no grupo"), por grupo, com cada hábito do grupo e o seletor
+  do hábito pessoal ao lado. Assim, ao ver um hábito novo no placar, ele liga ali mesmo, sem ir a Configurações. Por
+  enquanto o seletor continua em Configurações → grupo: a aba do #67 (PR #82) ainda não traz esse lugar.
+- **Pontos por hábito:** cada dia cumprido de um hábito do grupo vale **0,2× o teto** (decidido em 14/10, #42).
 
 ### C. Missão da semana
-- Cumprir a missão (3 dias no atributo mais fraco) dá pontos ⏳.
+- Cumprir a missão (3 dias no atributo mais fraco) dá pontos. **Fica para depois da 0.9** (decidido em 14/10, #42).
 
 ### D. Superação
 - `base` = o maior valor entre a média dos períodos anteriores e a média da temporada.
@@ -85,16 +98,18 @@ Tema: **HxH para todos** nesta temporada.
 - **S = o prêmio máximo.** Cada 1% acima da própria média vale 2% do S, e +50% leva o S inteiro.
   "Contínuo" quer dizer sem degraus, não quer dizer pouco.
   Ex. com S = 1000: +10% → 200 · +25% → 500 · +50% ou mais → 1000.
-- O S **não precisa ser enorme**. O XP com teto continua sendo o principal. ⏳ valor.
-- Dimensões (cada uma com o próprio S ⏳):
+- O S **não precisa ser enorme**. O XP com teto continua sendo o principal.
+- Dimensões, cada uma com o próprio S em dias de teto (decidido em 14/10, #42):
 
-| Dimensão | Período | Base |
-|---|---|---|
-| XP (sem teto, contra si mesmo) | **mês**: projeção visível durante o mês e bônus creditado no dia 1º como "descida especial" | últimos 3 meses / temporada |
-| Codeforces (problemas distintos) | **semana**, para ver o resultado logo | últimas 4 semanas / temporada |
-| Hábitos (dias cumpridos) | mês ⏳ | últimos 3 meses / temporada |
+| Dimensão | Período | Base | S |
+|---|---|---|---|
+| XP (**sem teto**, contra si mesmo) | **mês**: projeção visível durante o mês e bônus creditado no dia 1º como "descida especial" | últimos 3 meses / temporada | **5× o teto** |
+| Codeforces (problemas distintos) | **semana**, para ver o resultado logo | últimas 4 semanas / temporada, com **base mínima de 3** | **1× o teto** |
+| Hábitos (dias cumpridos) | **mês** (na semana, um hábito vai de 0 a 7 e um dia a mais já daria o bônus inteiro) | últimos 3 meses / temporada | **3× o teto** |
 
 - Primeiro período do jogador: sem bônus (ele vira a base).
+- **Hábito mantido em 100%** conta como superação máxima, como a nota 10 mantida: quem já faz todo dia não tem como passar da
+  própria média e não pode ficar sem o bônus por isso.
 - ⏳ Risco: inflar o XP de um mês para pegar o bônus. As proteções já previstas são a base pela média da temporada e o r limitado a 1,5. Se não bastar, a dimensão XP passa a usar o XP com teto.
 
 ### E. Notas, pela evolução (nunca pela nota em si)
@@ -114,13 +129,35 @@ Tema: **HxH para todos** nesta temporada.
 
 ## A aba Torre Trick e os placares (decidido em 14/10/2026, #67)
 
-**Sub-abas:** uma aba só no topo do jogo, com `placar · hunters · loja · desafios · administrar` dentro. O que é do jogador
-fica nas abas do topo; o que é do grupo, dentro da Torre Trick. **administrar** só aparece para admins; **hunters** (os
-avatares de todos, #70), **loja** (a loja pública) e **desafios** (#71) ficam com o espaço reservado. Sempre o placar atual,
-sem filtro de período nem histórico (#68).
+**Sub-abas:** uma aba só no topo do jogo, com `placar · placares · jogadores · loja · desafios · administrar` dentro. O que
+é do jogador fica nas abas do topo; o que é do grupo, dentro da Torre Trick. **administrar** só aparece para admins; **loja**
+(a loja pública) e **desafios** (#71) ficam com o espaço reservado. Sempre o placar atual, sem filtro de período nem
+histórico (#68). Visual Nen do jogo. Desenho aprovado no protótipo do #67.
 
-**Placar geral (principal):** ordena pelos andares descidos. Os **3 primeiros em destaque** (pódio com avatar), o resto numa
-lista compacta, e a linha do jogador sempre destacada. A sequência (dias seguidos jogando) é só uma coluna do geral.
+**Navegação:** clicar num **nome** abre a sub-aba jogadores com aquele jogador em foco; clicar no **nome de um placar** abre a
+sub-aba placares com ele em foco.
+
+**Sub-aba placar**, de cima para baixo:
+1. À esquerda, a **licença hunter** do jogador (frente; clicar vira a carta), quanto falta para passar quem está à frente
+   (com barra) e os botões *meu perfil* e *minha evolução*. À direita, o **pódio herói** (o 1º com a vantagem sobre o 2º;
+   o 2º e o 3º menores ao lado) e, embaixo dele, a **frase do líder da semana** (#76), terminando na altura dos botões.
+2. **Do 4º em diante**, na largura toda: posição, ícone, barra teto/hábitos/superação, sequência, últimos dias e andares,
+   com a linha do jogador sempre destacada. A sequência (dias seguidos jogando) é só uma coluna, não um placar.
+3. Os **placares específicos**, que **o jogador escolhe** ver como **campeões** (o 1º de cada placar, numa faixa) ou **quem
+   lidera** (por pessoa, com os títulos).
+
+**Sub-aba placares:** à esquerda, todos os placares com o mini-pódio e a posição do jogador; à direita, o placar em foco
+(como é calculado, pódio, lista completa) e a **evolução**: posição de 6 semanas atrás até agora, melhor posição, quanto
+subiu ou caiu, o gráfico da posição de cada um por semana (o jogador destacado, o líder em dourado) e a tabela.
+
+**Sub-aba jogadores:** o perfil é a **licença hunter horizontal**, frente e verso, no formato da licença do mangá. Frente: o
+principal (foto grande, nome, nº da licença, grupo e temporada, posição no geral, andares, sequência, títulos). Verso: o
+resto (medalhas, posição em cada placar, conquistas, registro), com a tarja magnética e o número em quadradinhos. Cores
+básicas (preto, branco e azul-claro); **personalizar a licença** (cor, holográfico, brilho, borda) é item da loja pública.
+Avatar (#70), armas e habilidades entram depois. A sub-aba substitui a antiga ideia de "hunters".
+
+**Ícone** (no lugar do avatar, até o #70): a foto com **moldura** e **animação** compradas na loja pública, e o nickname
+embaixo.
 
 **Placares específicos, gerados pelo catálogo (#41):** cada hábito diz o seu tipo, e o tipo gera os placares; hábito novo
 (digitação...) ganha placares sem código novo. Quem não ligou o hábito não aparece nos placares dele (nem com zero), e um
@@ -140,8 +177,20 @@ placar só aparece com 2 ou mais participantes.
 | **Superação de notas** | o ganho de E. Respeita a exposição: `privado` não entra, `evolucao` mostra só a porcentagem |
 | **Superação total** | a média das superações de cada dimensão de que a pessoa participa (XP, cada hábito, notas), todas em 0–100%: quem não tem CF não perde por isso |
 
+**Configuração do jogador no grupo:** a aba tem um lugar do próprio jogador (todos veem, não só admin) para ligar os
+hábitos pessoais aos do grupo (seção B, "Vínculo dentro do grupo"). Hábito do grupo sem vínculo aparece ali como pendente.
+
+**Período de cada placar** (padrão): volume na semana; constância na sequência atual; superação na semana no CF e no mês nos
+outros; constância de hábito, hábitos, notas e superação total na temporada. O admin **liga, desliga e muda o período** de
+cada placar em Grupo → administrar, sem lançar versão.
+
 **Recompensas:** as posições dão **medalhas e títulos**, nunca andares (andar por posição, estilo F1, amplificaria quem já
-domina). Trick Coin por posição, períodos e como os títulos aparecem: #69.
+domina). **Na 0.9 só os títulos** (quem lidera agora); medalhas, conquistas e Trick Coin por posição ficam para depois (#69).
+
+**Frase do líder da semana** (#76, decidido em 14/10): o 1º do geral na **última semana fechada** escreve **uma frase**, **uma
+vez só** (não dá para mudar), até **80 caracteres**; fica embaixo do pódio até o fim da semana. Sem frase, o card mostra "o
+líder da semana ainda não escreveu". O admin pode apagar uma frase. O servidor guarda as frases antigas desde já; mostrar o
+histórico fica com o #68.
 
 ## Lojas
 
@@ -179,13 +228,10 @@ domina). Trick Coin por posição, períodos e como os títulos aparecem: #69.
 
 ## Pendências (⏳)
 
-1. Teto do 1º mês
-2. Pontos por hábito (a lista virou o catálogo do #41)
-3. Pontos da missão
-4. S de cada dimensão da superação · XP com ou sem teto na superação · período dos hábitos
-5. k das notas · referência do 1º semestre
-6. Metas e recompensas do chefão do grupo
-7. Itens únicos
-8. O que mais a IA do servidor decide
-9. Todas as pontuações: calibrar com dados reais
-10. Base mínima da superação nos placares · recompensas dos placares (#69)
+1. Pontos da missão (depois da 0.9)
+2. k das notas · referência do 1º semestre
+3. Metas e recompensas do chefão do grupo
+4. Itens únicos
+5. O que mais a IA do servidor decide
+6. Conferir os multiplicadores com o uso real (ajuste no administrar, sem versão nova)
+7. Recompensas dos placares: medalhas, conquistas e Trick Coin por posição (#69)
