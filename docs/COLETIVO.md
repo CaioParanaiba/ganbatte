@@ -1,4 +1,4 @@
-# Ganbatte em grupo: desenho (v4, 13/10/2026)
+# Ganbatte em grupo: desenho (v5, 14/10/2026)
 
 Modo em grupo do Ganbatte (0.9, branch `grupo`, índice na issue #16), ideia do Caio e de um amigo. Foco: deixar o placar
 **público e balanceado**. `⏳` = pendente; toda pontuação está **a calibrar** com 2–3 semanas de dados reais
@@ -98,7 +98,12 @@ Tema: **HxH para todos** nesta temporada.
 - ⏳ Risco: inflar o XP de um mês para pegar o bônus. As proteções já previstas são a base pela média da temporada e o r limitado a 1,5. Se não bastar, a dimensão XP passa a usar o XP com teto.
 
 ### E. Notas, pela evolução (nunca pela nota em si)
-- `pontos = k × max(0, nota − referência)`. Referência = CR do semestre anterior, ou a média das avaliações já feitas na temporada.
+- **Ganho = a fração do caminho até o 10 que a pessoa percorreu** (decidido em 14/10, #67):
+  `ganho = (nota − referência) ÷ (10 − referência)`. Quem já está no 10 e mantém conta 100%; queda conta 0.
+  Ex.: 6 → 8 = 50% · 7,9 → 8,4 = 24% · 7,5 → 8 = 20% · 10 → 10 = 100% (9 → 9,5 também dá 50%: subir perto do 10 é mais difícil).
+- As matérias se juntam pela **média do ganho ponderada pela carga horária**: não há placar por matéria, e ninguém precisa
+  ter as mesmas matérias. `pontos = k × ganho`.
+- Referência = CR do semestre anterior, ou a média das avaliações já feitas na temporada.
 - Exposição em Configurações → Grupo: `notas = publico` (mostra nota e ganha pontos) · `evolucao` (só os pontos) · `privado` (sem pontos de nota).
 - ⏳ k · ⏳ referência de quem está no 1º semestre.
 
@@ -106,6 +111,37 @@ Tema: **HxH para todos** nesta temporada.
 - **Chefão do grupo mensal:** vida = meta somada do grupo. Se o grupo derrubar, todos ganham a mesma recompensa.
 - **Ten do grupo:** dias seguidos com todos ativos, com 1 Zetsu coletivo por semana.
 - ⏳ metas e recompensas.
+
+## A aba Torre Trick e os placares (decidido em 14/10/2026, #67)
+
+**Sub-abas:** uma aba só no topo do jogo, com `placar · hunters · loja · desafios · administrar` dentro. O que é do jogador
+fica nas abas do topo; o que é do grupo, dentro da Torre Trick. **administrar** só aparece para admins; **hunters** (os
+avatares de todos, #70), **loja** (a loja pública) e **desafios** (#71) ficam com o espaço reservado. Sempre o placar atual,
+sem filtro de período nem histórico (#68).
+
+**Placar geral (principal):** ordena pelos andares descidos. Os **3 primeiros em destaque** (pódio com avatar), o resto numa
+lista compacta, e a linha do jogador sempre destacada. A sequência (dias seguidos jogando) é só uma coluna do geral.
+
+**Placares específicos, gerados pelo catálogo (#41):** cada hábito diz o seu tipo, e o tipo gera os placares; hábito novo
+(digitação...) ganha placares sem código novo. Quem não ligou o hábito não aparece nos placares dele (nem com zero), e um
+placar só aparece com 2 ou mais participantes.
+
+| Tipo de hábito | Exemplos | Placares |
+|---|---|---|
+| quantidade (um número por dia) | Codeforces, minutos de digitação | volume · constância · superação |
+| fez / não fez | Duolingo | constância · superação |
+
+| Placar | Ordena por |
+|---|---|
+| **Volume** (ex.: CF, mais questões) | a soma no período (no CF, problemas distintos) |
+| **Constância** (ex.: CF, constância + questões) | a soma dentro da sequência atual; um dia sem fazer zera, com **1 folga por semana** (como o Zetsu do Ten), e as férias não quebram |
+| **Superação** de um hábito | a razão contra a própria base (D), com **base mínima** ⏳ (ex.: 3 problemas por semana) para a razão não explodir. Ex.: 21 → 25 < 21 → 30 < 1 → 20. O placar **ordena sem teto**; os andares mantêm o teto de +50% |
+| **Hábitos** (todos juntos) | a **soma da constância de cada hábito**: 3 hábitos a 70% = 2,1 > 1 a 100% = 1,0 > 3 a 20% = 0,6 |
+| **Superação de notas** | o ganho de E. Respeita a exposição: `privado` não entra, `evolucao` mostra só a porcentagem |
+| **Superação total** | a média das superações de cada dimensão de que a pessoa participa (XP, cada hábito, notas), todas em 0–100%: quem não tem CF não perde por isso |
+
+**Recompensas:** as posições dão **medalhas e títulos**, nunca andares (andar por posição, estilo F1, amplificaria quem já
+domina). Trick Coin por posição, períodos e como os títulos aparecem: #69.
 
 ## Lojas
 
@@ -116,7 +152,8 @@ Tema: **HxH para todos** nesta temporada.
 | Onde | máquina do jogador | catálogo e imagens no servidor |
 
 - Duas moedas porque o XP pessoal é subjetivo: o visual público só pode vir de pontos balanceados.
-- **Avatares vão para a loja pública.** O jogo local usa o avatar comprado lá.
+- **Avatares vão para a loja pública.** O avatar é **do jogador**, em camadas (corpo, roupa, arma): o mesmo em todos os
+  grupos e também no jogo pessoal, customizado só pela loja pública (#70).
 - Avatares novos são decididos **antes de cada temporada**. Nesta primeira, o **host (Caio)** adiciona durante a temporada.
 - **IDs de item independentes do tema** (`av.killua`, `pal.simples`). Tema e temporada são atributos, para as compras continuarem valendo quando o tema mudar, como no Fortnite.
 - **Itens únicos:** só 1 no grupo, com o dono registrado no servidor. ⏳ como se conquistam.
@@ -132,8 +169,8 @@ Tema: **HxH para todos** nesta temporada.
 
 - Temas por temporada (Naruto, Pokémon...), com as compras continuando a valer.
 - **Trocas, compra e venda de itens entre jogadores.**
-- Problemas do CF sugeridos ao grupo (dificuldades variadas em torno da média), com bônus para quem resolver primeiro. Precisa do handle de cada um para filtrar o que a pessoa já resolveu.
-- **Batalha 1×1 com problemas do Codeforces.**
+- Problemas do CF sugeridos ao grupo (dificuldades variadas em torno da média), com bônus para quem resolver primeiro. Precisa do handle de cada um para filtrar o que a pessoa já resolveu (#71, sub-aba desafios).
+- **Batalha 1×1 com problemas do Codeforces** (#71).
 - Exame Hunter (fim de temporada): campeão e cartas como "maior superação" e "maior Ten".
 
 ## Pendências (⏳)
@@ -147,3 +184,4 @@ Tema: **HxH para todos** nesta temporada.
 7. Itens únicos
 8. O que mais a IA do servidor decide
 9. Todas as pontuações: calibrar com dados reais
+10. Base mínima da superação nos placares · recompensas dos placares (#69)
