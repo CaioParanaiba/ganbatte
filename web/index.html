@@ -2456,7 +2456,7 @@ function tab(t){
   try { history.replaceState(null,'','#'+t); } catch(e){}
   render(); try { window.scrollTo({top:0}); } catch(e){}
 }
-function toast(html){ const to = document.createElement('div'); to.className = 'toast'; to.innerHTML = html; document.body.appendChild(to); setTimeout(() => to.remove(), 2600); }
+function toast(html){ const to = document.createElement('div'); to.className = 'toast'; to.innerHTML = html; document.body.appendChild(to); setTimeout(() => to.remove(), 2600); return to; }
 function floatAt(r, txt){ const f = document.createElement('div'); f.className = 'float'; f.textContent = txt; f.style.left = (r.left + r.width/2)+'px'; f.style.top = (r.top - 6)+'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 1200); }
 function confete(forcado){
   if(!forcado && window.GB_FX) GB_FX.festa();
@@ -2470,7 +2470,12 @@ function confete(forcado){
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
 const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-teste],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
-function avisoProva(){ toast(`Você está provando um item <small>o jogo fica travado até você clicar em "voltar ao que é meu"</small>`); }
+let avisoProvaAtual = null;
+function avisoProva(){
+  // A tecla segurada e os cliques repetidos só avisam de novo depois que o aviso anterior saiu da tela (#58).
+  if(avisoProvaAtual && avisoProvaAtual.isConnected) return;
+  avisoProvaAtual = toast(`Você está provando um item <small>o jogo fica travado até você clicar em "voltar ao que é meu"</small>`);
+}
 function travaProva(e){
   if(!UI.prova || !e.target.closest) return;
   if(e.type === 'submit' || (e.type === 'beforeinput' && e.target.closest('input,textarea,[contenteditable]'))){ e.preventDefault(); e.stopImmediatePropagation(); avisoProva(); return; }
