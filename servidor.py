@@ -1073,7 +1073,7 @@ def devolve_filtra(e):
         e["bought"][sem] = [k for k in e["bought"][sem] if k not in fe]
 
 
-RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas e expedições (web/motor.js)
+RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes", "travas")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas, expedições e a imagem travada dos chefões derrotados (#33)
 
 
 def api_jogo_estado(d):
@@ -1083,7 +1083,7 @@ def api_jogo_estado(d):
     ok = {"spent": (int, float), "cofreUsado": (int, float), "own": list, "resg": list, "bought": dict, "usados": dict, "usos": list,
           "equip": dict, "tour": dict, "premios": list, "cofreMes": (int, float), "visto": str,
           "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict, "cacadas": dict, "expedicoes": dict, "compras": list,
-          "migra": dict, "tenRec": (int, float), "devolve": dict}   # acerto da 0.6.4 (web/motor.js: rec.migra, rec.tenRec) e a devolução (#51)
+          "migra": dict, "tenRec": (int, float), "devolve": dict, "travas": dict}   # acerto da 0.6.4 (web/motor.js: rec.migra, rec.tenRec) e a devolução (#51)
     for k, v in e.items():
         if k not in ok or not isinstance(v, ok[k]):
             raise Erro(f"campo inválido no estado: {k}")
@@ -1093,6 +1093,8 @@ def api_jogo_estado(d):
             raise Erro("prêmio inválido: precisa de nome (até 80 letras) e preço")
     if len(e.get("premios", [])) > 60 or e.get("cofreMes", 0) < 0:
         raise Erro("prêmios demais (máx. 60) ou cofre negativo")
+    if not all(isinstance(v, str) and len(k) <= 60 and len(v) <= 60 for k, v in e.get("travas", {}).items()):   # "TEMPORADA:SIGLA": id do retrato ou "" (o ícone padrão)
+        raise Erro("trava de chefão inválida")
     for c in e.get("compras", []):   # registro de compras (relatório de balanceamento): {d, h, tipo, id, j}
         if not (isinstance(c, dict) and re.fullmatch(r"\d{4}-\d\d-\d\d", str(c.get("d", ""))) and isinstance(c.get("h", ""), str)
                 and c.get("tipo") in ("cos", "feitico", "premio") and isinstance(c.get("id"), str) and len(c["id"]) <= 60
@@ -1102,7 +1104,7 @@ def api_jogo_estado(d):
         antigo = ler_json("estado.json", {})
         for k in RECIBOS:   # recibos da carteira: uma aba antiga aberta não apaga o que outra já gravou
             if isinstance(antigo, dict) and isinstance(antigo.get(k), dict):
-                e[k] = {**antigo[k], **e.get(k, {})}
+                e[k] = {**e.get(k, {}), **antigo[k]} if k == "travas" else {**antigo[k], **e.get(k, {})}   # trava de chefão: vale a primeira
                 if k == "xpDias":   # XP de um dia fechado só sobe
                     e[k] = {d: max(v, antigo[k][d]) if isinstance(v, (int, float)) and isinstance(antigo[k].get(d), (int, float)) else v
                             for d, v in e[k].items()}
@@ -1167,11 +1169,16 @@ def api_temporada(d):
 # O que o jogador compra fica em colecao/ da pasta de dados, separado da loja: colecao.json com uma cópia de cada item (nome,
 # categoria, como equipar, de onde veio e quando) e colecao/arquivos/ com a imagem dele (foto de perfil, retrato de chefão).
 # Só acrescenta: nada aqui é apagado ou trocado. Assim, trocar de temporada, tirar um item da loja numa versão nova ou comprar
-# na loja do grupo (origem "grupo", #43) não mexe no que já é do jogador. O estado.json continua com o own (compatibilidade).
+# na loja do grupo (origem "grupo", #43; a loja pública segue a mesma regra) não mexe no que já é do jogador. O estado.json
+# continua com o own (compatibilidade). Rastreio: cada item tem um uid e um histórico (hist) que só cresce, com como ele chegou
+# (compra, chefao = foto liberada ao derrotar um chefão, migracao = já era do jogador antes da coleção), de onde, a temporada e
+# a Jenny. Ainda não há troca nem venda; o hist está pronto para receber esses eventos (ex.: trocado pelo grupo).
 COLECAO_CATS = {"avatar", "pal", "tex", "fx", "frame", "title", "font", "som", "full", "px", "chefe"}
 COLECAO_ORIGENS = {"masadora", "grupo"}
+COLECAO_COMO = {"compra", "chefao", "migracao"}
 COLECAO_CAMPOS = {"id": str, "cat": str, "n": str, "d": str, "p": (int, float), "origem": str, "quando": str, "img": str,
-                  "eq": dict, "fx": str, "fxs": list, "parts": list, "skin": list, "ev": (bool, int), "sw": list}
+                  "eq": dict, "fx": str, "fxs": list, "parts": list, "skin": list, "ev": (bool, int), "sw": list,
+                  "chefao": str, "como": str, "temporada": str}
 COLECAO_MAX = 2000
 ID_ITEM = re.compile(r"^[A-Za-z0-9_.-]{1,60}$")
 IMG_ITEM = re.compile(r"^(a|chefoes)/([A-Za-z0-9_-][A-Za-z0-9_.-]{0,79})\.png$")
@@ -1192,6 +1199,8 @@ def colecao_item(x):
         raise Erro("item inválido na coleção: nome, descrição ou origem")
     if "quando" in it and not DIA.match(it["quando"]):
         raise Erro("item inválido na coleção: data")
+    if it.get("como", "compra") not in COLECAO_COMO or len(it.get("temporada", "")) > 40:
+        raise Erro("item inválido na coleção: como ou temporada")
     if "img" in it and not IMG_ITEM.match(it["img"]):
         del it["img"]
     if len(json.dumps(it, ensure_ascii=False)) > 3000:
@@ -1212,6 +1221,9 @@ def api_colecao(d):
                 continue
             it.setdefault("origem", "masadora")
             it.setdefault("quando", hoje().isoformat())
+            it.setdefault("como", "compra")
+            it["uid"] = os.urandom(6).hex()
+            it["hist"] = [{k: it[k] for k in ("quando", "como", "origem", "temporada", "p") if k in it}]
             m = IMG_ITEM.match(it.get("img", ""))
             if m and (WEB / it["img"]).is_file():
                 arq = f"{m.group(1)}-{m.group(2)}.png"

@@ -347,6 +347,16 @@ class Colecao(Base):
         self.assertEqual(c["ch-uvogin"]["n"], "Uvogin")   # quem já está não é trocado
         self.assertEqual(c["pal-gon"]["quando"], HOJE.isoformat())
         self.assertIn("colecao", s.api_jogo_get())
+        self.assertEqual(len(c["ch-uvogin"]["uid"]), 12)   # rastreio: uid e o começo do histórico
+        self.assertEqual(c["ch-uvogin"]["hist"], [{"quando": "2026-10-10", "como": "compra", "origem": "masadora", "p": 1500}])
+
+    def test_foto_liberada_por_chefao(self):
+        r = s.api_colecao({"itens": [{"id": "av-ch-uvogin", "cat": "avatar", "n": "Uvogin", "p": 0, "img": "chefoes/uvogin.png",
+                                      "chefao": "ch-uvogin", "como": "chefao", "temporada": "2026-2"}]})
+        h = r["colecao"]["itens"]["av-ch-uvogin"]["hist"][0]
+        self.assertEqual((h["como"], h["temporada"]), ("chefao", "2026-2"))
+        with self.assertRaises(s.Erro):
+            s.api_colecao({"itens": [{"id": "x", "cat": "pal", "n": "X", "como": "roubado"}]})
 
     def test_recusa_item_estranho(self):
         for x in ({"id": "../x", "cat": "pal", "n": "a"}, {"id": "a", "cat": "feitico", "n": "a"}, {"id": "a", "cat": "pal", "n": ""},
@@ -355,6 +365,17 @@ class Colecao(Base):
                 s.api_colecao({"itens": [x]})
         r = s.api_colecao({"itens": [{"id": "av-x", "cat": "avatar", "n": "X", "img": "../servidor.png"}]})
         self.assertNotIn("arquivo", r["colecao"]["itens"]["av-x"])
+
+
+class Travas(Base):
+    def test_trava_de_chefao_vale_a_primeira(self):
+        """Chefão derrotado (#33): a imagem travada não muda, nem por outra aba nem se ele voltar à vida."""
+        s.api_jogo_estado({"estado": {"travas": {"2026-2:CALC2": "ch-uvogin"}}})
+        s.api_jogo_estado({"estado": {"travas": {"2026-2:CALC2": "ch-meruem", "2026-2:BD": ""}}})
+        s.api_jogo_estado({"estado": {}})
+        self.assertEqual(s.ler_json("estado.json", {})["travas"], {"2026-2:CALC2": "ch-uvogin", "2026-2:BD": ""})
+        with self.assertRaises(s.Erro):
+            s.api_jogo_estado({"estado": {"travas": {"2026-2:ED1": 3}}})
 
 
 class Devolucao(Base):
