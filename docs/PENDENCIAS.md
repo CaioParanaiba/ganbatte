@@ -212,13 +212,21 @@ coisas que o jogo deveria decidir. Cada computador ficaria de um jeito. Decisão
 que o jogador já tem; a IA só devolve texto, e o jogo confere e grava.**
 
 O que entrou:
-- **Configurações → IA** (`iaHTML()` em `web/ia.js`): o servidor acha `claude`, `codex` e `gemini` (PATH + pastas comuns, porque
+- **Configurações → IA** (`iaHTML()` em `web/ia.js`): o servidor acha `claude`, `codex`, `gemini` e `agy` (PATH + pastas comuns, porque
   o serviço do início automático roda com PATH curto), o jogador escolhe e clica em *testar*. Fica em `jogador.json` →
   `"ia": {"agente", "desde", "cartas"}` (`POST /api/ia/config`; o `/api/config` do assistente preserva o campo).
 - **Rota única** `POST /api/ia/rodar {pedido, anexo?}` → `{id}`; a página consulta `GET /api/ia/rodar?id=`. Um pedido por
   vez, 10 min de limite, pasta temporária só com o anexo, pedido pela entrada padrão. Comandos em `comando_agente()`:
   `claude -p --tools Read --permission-mode dontAsk` (testado de verdade), `codex exec --sandbox read-only` e
   `gemini -p` (**não testados**: conferir num computador com eles). Erro de login vira "rode `X` no terminal".
+  **#60 (14/10/2026):** o Gemini CLI 0.64 recusa pasta não confiável no modo sem perguntas (a temporária é nova a cada
+  pedido); o servidor passa `GEMINI_CLI_TRUST_WORKSPACE=true` (a `--skip-trust` não existe em versão velha). Mas o Google
+  parou de aceitar o Gemini CLI com conta pessoal gratuita (`IneligibleTierError`, "migrate to the Antigravity"): o erro
+  vira um aviso em português. No lugar entrou o **Antigravity CLI** (`agy`, testado de verdade na 1.3.5): ele não lê a
+  entrada padrão (responde vazio), então o pedido vai no arquivo `.pedido.txt` da pasta temporária; sem `--mode plan` ele
+  grava arquivos, com ele não. Termina com código 0 e saída vazia quando nega uma ferramenta (vira erro). Pedido leve
+  usa o modelo de sempre (os nomes, tipo `gemini-3.8-flash-low`, mudam a cada versão). Cada pedido fica nas conversas
+  do agy (`~/.gemini/antigravity-cli/conversations`): não há flag para não guardar.
 - **Plano de ensino:** pasta `~/.hunter-todo/planos/` (`POST /api/ia/plano` para *enviar arquivo*). No editor do chefão,
   *ler plano com IA* (o arquivo com a sigla ou o nome da disciplina vem escolhido). As linhas `#` da resposta aparecem
   como "Observações da IA" e ficam no bloco como `# (IA) ...` (trocadas a cada nova resposta).

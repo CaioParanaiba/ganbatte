@@ -136,7 +136,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 - **Aviso amarelo "o servidor do jogo ainda está na versão...":** o servidor antigo continua ligado. Rode o instalador de
   novo ou reinicie o computador (Linux: `systemctl --user restart ganbatte`) e recarregue a página.
 - **A IA não aparece em Configurações → IA:** instale e entre na conta da IA pelo terminal (`codex login`, `claude`,
-  `gemini`) e clique em **procurar de novo**. O jogo procura no PATH do seu terminal e nas pastas comuns (npm, nvm, ~/.local/bin).
+  `agy`, `gemini`) e clique em **procurar de novo**. O jogo procura no PATH do seu terminal e nas pastas comuns (npm, nvm, ~/.local/bin).
 - **Esqueci de marcar um hábito ontem:** no card "hábitos de hoje", clique em **esqueci de marcar ontem**. Ele conta
   para ontem (XP, nível do hábito e heatmap). Só vale para o dia anterior.
 - **Codeforces não conta:** confira o handle na aba Configurações. A contagem atualiza a cada 10 minutos e precisa de internet.
@@ -174,7 +174,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 - **Balanceamento:** `node ferramentas/simulador.mjs` joga uma temporada com três jogadores inventados pelo `web/motor.js` e
   mostra XP, andar, Jenny e quanto da loja cada um compra; `--comparar relatorio.json` põe ao lado o relatório de um
   jogador de verdade (Configurações → balanceamento). Os perfis ficam no topo do arquivo.
-- **IA opcional.** O jogo funciona sem IA. Com uma IA de terminal instalada (Claude Code, Codex ou Gemini CLI), ligue-a
+- **IA opcional.** O jogo funciona sem IA. Com uma IA de terminal instalada (Claude Code, Codex, Antigravity CLI ou Gemini CLI), ligue-a
   em **Configurações → IA**: o jogo passa a ler os planos de ensino (pasta `~/.ganbatte/planos/`), aplicar a caixa de entrada
   e escrever as cartas do Book sozinho, e propõe conquistas feitas para você (no Book); você confere antes de salvar. Sem ela, o jogo monta os pedidos e você cola
   numa IA de chat. Veja [`IA.md`](IA.md).

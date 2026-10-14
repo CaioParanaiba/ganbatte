@@ -361,7 +361,7 @@ const TOURS = {
       ['#ms-root .lay7 > div:first-child','Feitiços','Cartas de efeito (cada uma explicada no Book). Na loja dá para comprar 1 de cada por semana; o comprado vai para a bolsa e se usa pelo <b>Book → Feitiços</b>.', 0, vai({cat:'feiticos'})],
       ['#ms-root .side7','Carteira','Quanto você tem e de onde veio, o cofre do mês, o que está usando agora e os prêmios já resgatados.']],
   cfg:[['#cfg','Seu jogo','Mude o básico sem refazer nada: nome, nickname, <b>hábitos</b> (adicionar ou remover), o <b>Codeforces</b>, o <b>Duolingo</b> e o nome das tags. Clique em salvar.'],
-       ['#cfg-ia','IA (opcional)','Se você tem uma IA de terminal (Claude Code, Codex, Gemini CLI), ligue aqui: o jogo passa a usá-la sozinho. Depois de ligar, o botão <b>tutorial da IA</b> mostra tudo o que ela faz.'],
+       ['#cfg-ia','IA (opcional)','Se você tem uma IA de terminal (Claude Code, Codex, Antigravity CLI), ligue aqui: o jogo passa a usá-la sozinho. Depois de ligar, o botão <b>tutorial da IA</b> mostra tudo o que ela faz.'],
        ['#cfg-srv','Servidor','O programa que guarda as suas tarefas. Ligado com o computador, você só abre o endereço do jogo.'],
        ['#cfg-root > .card:last-child','Backup','Um ZIP com todos os seus dados, para guardar ou levar para outro computador.']],
   nv:[['#nv-hero','Sua versão','O número da versão instalada e, ao lado, se saiu uma mais nova. O jogo confere no GitHub sozinho, no máximo a cada 6 horas. Quando sai versão nova, o botão <b>atualizar agora</b> baixa e reinicia o jogo, sem mexer nos seus dados.'],

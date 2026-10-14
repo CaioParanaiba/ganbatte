@@ -8,7 +8,7 @@ Há três jeitos de usar:
 
 | Jeito | Exemplos | Como funciona |
 |---|---|---|
-| **IA ligada no jogo** (recomendado) | Codex, Claude Code, Gemini CLI instalados no computador | Aba **Configurações → IA**: o jogo acha a IA instalada e você liga com um clique. Os botões do jogo chamam a IA sozinhos. |
+| **IA ligada no jogo** (recomendado) | Codex, Claude Code, Antigravity CLI (`agy`), Gemini CLI instalados no computador | Aba **Configurações → IA**: o jogo acha a IA instalada e você liga com um clique. Os botões do jogo chamam a IA sozinhos. |
 | **IA de chat** (só conversa) | ChatGPT, Claude, Gemini no navegador | O jogo monta o pedido, você cola na IA e cola a resposta de volta. |
 | **Conversar com a IA de terminal** | os mesmos da primeira linha | Abra-a na pasta do jogo e peça coisas soltas: *"adie a lista para sexta"*, *"tirei 4 de 5 na P1 de CALC2"*. |
 

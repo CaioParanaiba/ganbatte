@@ -439,6 +439,45 @@ class Religa(Base):
                                        "x 2026-10-10 2026-10-10 Leitura +rotina rec:leit:2026-10-10"]), ["h-leitura"])
 
 
+class Agentes(Base):
+    """#60: o Gemini CLI roda na pasta temporária sem perguntar; o agy recebe o pedido num arquivo e roda só lendo."""
+
+    def roda(self, ag, saida="ok", erro="", rc=0):
+        visto = {}
+
+        def falso(cmd, input=None, cwd=None, env=None, **kw):
+            visto.update(cmd=cmd, input=input, env=env, arquivos={f.name: f.read_text(encoding="utf-8") for f in Path(cwd).iterdir()})
+            return mock.Mock(returncode=rc, stdout=saida, stderr=erro)
+        s.ia_tarefas["t"] = {"estado": "rodando", "texto": "", "erro": "", "ini": time.time(), "seg": 0}
+        s.ia_lock.acquire()
+        with mock.patch.object(s.subprocess, "run", falso), mock.patch.object(s, "path_agentes", lambda: ""):
+            s.ia_executa("t", ag, "/bin/" + ag, "PEDIDO", [], False)
+        return visto, s.ia_tarefas["t"]
+
+    def test_gemini_confia_na_pasta(self):
+        visto, t = self.roda("gemini")
+        self.assertEqual(visto["env"]["GEMINI_CLI_TRUST_WORKSPACE"], "true")
+        self.assertEqual((visto["input"], t["estado"], t["texto"]), ("PEDIDO", "pronto", "ok"))
+
+    def test_agy_le_o_pedido_do_arquivo_e_so_le(self):
+        visto, t = self.roda("agy")
+        self.assertEqual(visto["arquivos"][s.PEDIDO_ARQ], "PEDIDO")
+        self.assertEqual(visto["input"], "")
+        self.assertEqual(visto["cmd"][1:3], ["--mode", "plan"])
+        self.assertEqual(t["estado"], "pronto")
+
+    def test_agy_sem_resposta_vira_erro(self):
+        _, t = self.roda("agy", saida="", erro='jetski: no output produced — a tool required the "command" permission that headless mode cannot prompt for')
+        self.assertEqual(t["estado"], "erro")
+        self.assertIn("sem permissão", t["erro"])
+
+    def test_gemini_sem_conta_gratuita_sugere_o_agy(self):
+        _, t = self.roda("gemini", saida="", rc=1, erro="Error authenticating: IneligibleTierError: This client is no longer supported "
+                         "for Gemini Code Assist for individuals. To continue using Gemini, please migrate to the Antigravity suite"
+                         + " at chunk.js:311997:11" * 40)   # o rastro empurra o motivo para antes dos últimos 400 caracteres
+        self.assertIn("Antigravity CLI (agy)", t["erro"])
+
+
 class Renomear(unittest.TestCase):
     """#15: a pasta ~/.hunter-todo vira ~/.ganbatte (com atalho no lugar), e outra pasta fica onde está."""
 
