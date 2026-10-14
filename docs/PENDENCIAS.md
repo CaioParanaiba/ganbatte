@@ -280,6 +280,13 @@ O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
   quem mais desceu na última semana fechada, `andares_semana()`; uma vez só; fica até a semana seguinte fechar). Calibração
   e placares por grupo nas colunas `calib` e `placares` de `grupos` (JSON; migração no `abre_banco`), editados em
   `admin/calibracao` e `admin/placar`; `admin/frase` apaga. No jogo, `/api/grupo/frase` e as ações novas do `/api/grupo/admin`.
+- **Aba Torre Trick** (14/10/2026, #67, desenho aprovado no protótipo do #67): `web/grupo.js`, classes com o prefixo `tt-`
+  (o jogo já usa `.lic`, `.shaft`, `.row`, `.k`...). Sub-abas `placar` (licença horizontal que vira com um clique, pódio
+  herói, frase do líder, o 4º em diante, específicos como campeões ou quem lidera, a escolha fica no `localStorage`
+  `gb-tt-esp`), `placares` (o placar em foco e o gráfico da evolução, com a tabela) e `jogadores` (a licença aberta, frente
+  e verso). `data-ttjog` abre a licença de alguém, `data-ttplac` abre um placar. A licença tem cores próprias (é um
+  objeto), iguais nos dois temas e visuais. Administrar ganhou os números (`torreAdminHTML`), os placares e as frases.
+  Placar guardado sem `torre` (servidor do grupo antigo): a tabela de fatos de antes (`placarHTML`).
 
 **Cápsula da temporada** (0.6.4-beta1, 13/10/2026, issue #7): `HJ.capsula(api)` no motor calcula a temporada como o
 jogo mostrava no último dia (`fimTemporada`: véspera da volta; antes disso, uma foto até hoje): roda `carregar` com `hoje`
