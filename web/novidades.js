@@ -19,11 +19,12 @@
  * primeiro dos "itens" é o principal, os outros "itens" os destaques, depois "mais", os pontos e os "ajustes", cada vez menores.
  * "marca" (0.9.0-beta3): a marca do tour, quando não é a "chave" (que é o número mostrado na janela). A beta3 traz a janela
  * definitiva da 0.9 com a marca "0.9-final": quem viu a da beta2 vê de novo, e a main usa a mesma marca, então não repete.
+ * A janela abre só na entrada da versão instalada: a beta4 a herdou (mesma marca), para quem pulou a beta3 não perder.
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
-  {"versao": "0.9.0-beta3", "nome": "atualização da Torre Trick", "data": "2026-10-14",
+  {"versao": "0.9.0-beta4", "nome": "atualização da Torre Trick", "data": "2026-10-14",
    "resumo": "A 0.9 como vai chegar na versão normal: o modo em grupo com a Torre Trick, caçadas dentro de caçadas, retratos dos chefões, uma coleção que nunca se perde e, para quem contribui, a recompensa assim que a correção entra no beta.",
    "itens": [
      {"ic": "tower", "t": "A Torre Trick", "d": "O modo em grupo chegou. Um amigo vira o servidor, manda um convite, e a aba Torre Trick vira o placar de vocês: cada dia vale até 1 andar descido (o seu XP até o teto do grupo, que é a mediana do mês anterior), cada hábito do grupo cumprido vale 0,2, e superar a sua própria média rende andares extras quando o período fecha. Ninguém vê o XP nem as tarefas de ninguém: do seu computador só saem os andares e se você jogou no dia (#38, #42, #67)."},
@@ -56,6 +57,7 @@ window.GB_NOVIDADES = /*NOVIDADES*/[
      {"t": "Um aviso por vez", "d": "ao provar um item da Loja, segurar uma tecla mostra só um aviso de bloqueio, não uma pilha deles (#58)."},
      {"t": "Gemini CLI", "d": "roda numa pasta temporária sem pedir confiança, e os erros dele aparecem em português (#60)."},
      {"t": "GitHub a cada hora", "d": "as suas contribuições são conferidas a cada 1 h, não mais a cada 6 h (#96)."},
+     {"t": "Tarefa de dev no projeto certo", "d": "para quem desenvolve: a tarefa da issue entra na sua expedição Ganbatte, se você tiver uma aberta, em vez de num projeto solto."},
      {"t": "Versão Grupo agora é a Beta", "d": "em Configurações → servidor ficam só Estável e Beta. Quem estava na Grupo passa para a Beta sozinho no próximo atualizar."}
     ],
     "ir": {"aba": "tt", "t": "descer a Torre Trick"}},
@@ -66,6 +68,14 @@ window.GB_NOVIDADES = /*NOVIDADES*/[
       {"n": "Caduyz", "o": "achou o erro do Gemini CLI que trouxe o Antigravity para o jogo"},
       {"n": "", "o": "quem testou a primeira versão do grupo e opinou sobre os placares, a licença e a frase do líder"}
     ]}},
+  {"versao": "0.9.0-beta3", "nome": "atualização da Torre Trick", "data": "2026-10-14",
+   "resumo": "Caçadas dentro de caçadas, o convite colado na própria aba Torre Trick, o servidor do grupo que muda de computador e a contribuição paga assim que entra no beta.",
+   "itens": [
+     {"ic": "alvo", "t": "Caçadas dentro de caçadas", "d": "Uma caçada grande pode ter outras dentro: escolha em \"dentro da caçada\" ao criar ou no ✎, ou use \"+ caçada dentro\". Cada uma fecha com o bônus das próprias etapas, e a de cima só fecha depois das de dentro (#92)."},
+     {"ic": "tower", "t": "Entrar pela Torre Trick", "d": "O convite agora se cola na própria aba Torre Trick, tanto no primeiro grupo quanto em outro depois, pelo + entrar em outro grupo (#84)."},
+     {"ic": "antenna", "t": "Mudar o grupo de computador", "d": "Quem é o servidor do grupo pode levá-lo para outra máquina: baixe a cópia, restaure no computador novo e avise os membros. O jogo de cada um troca de endereço sozinho, sem perder nenhum dia (#91)."},
+     {"ic": "bug", "t": "Contribuição paga no beta", "d": "Bug corrigido ou ideia feita rende assim que entra no beta. Para quem desenvolve, a issue em que é o responsável vira tarefa e se conclui sozinha, valendo pelo esforço (#96, #97)."}
+   ]},
   {"versao": "0.9.0-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-14",
    "resumo": "A maior atualização do Ganbatte: o modo em grupo chega para todos da beta, com a Torre Trick, a licença hunter e os placares. E também retratos para os chefões, uma coleção que nunca se perde e a Jenny de cada tarefa à vista.",
    "itens": [
