@@ -449,10 +449,26 @@ function rascunhoCfg(){
   return CF2 || (CF2 = {nome:j.nome || '', nick:j.nick || '', habs:(j.habitos || []).map(h => h.n), hf:(j.habitos || []).map(h => h.semana || 0), hid:(j.habitos || []).map(h => h.id), datas:j.datas === 'mdy' ? 'mdy' : 'dmy', cfOn:!!(j.cf && j.cf.handle), cfH:(j.cf && j.cf.handle) || '', cfM:(j.cf && j.cf.meta) || 3, duoOn:!!(j.duo && j.duo.usuario), duoU:(j.duo && j.duo.usuario) || '', gh:(j.github && j.github.usuario) || '',
     tags:Object.fromEntries(TIPOS.filter(t => !t.fixo).map(t => [t.k, (j.tags && j.tags[t.k]) || tagPadrao(t.k)])), err:'', novo:''});
 }
-/* contribuições recompensadas (#23): o servidor confere no GitHub as issues do jogador fechadas como resolvidas */
+/* contribuições recompensadas (#23): o servidor confere no GitHub, a cada 1 h ou pelo botão, as issues do jogador que entraram no
+   beta (#96) e as tarefas de dev (#97) */
 function contribHTML(){
-  const c = D.contrib; if(!c || !c.issues.length) return '';
-  return `<p class="sub" style="margin:-4px 0 0">${c.issues.length} contribuição${c.issues.length === 1 ? '' : 'ões'} recompensada${c.issues.length === 1 ? '' : 's'}: ${c.issues.map(i => `<a href="https://github.com/CaioParanaiba/ganbatte/issues/${i.n}" target="_blank" rel="noopener">#${i.n}</a> ${i.tipo}`).join(' · ')}</p>`;
+  const c = D.contrib; if(!c) return '';
+  return `<p class="sub" style="margin:-4px 0 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${!c.issues.length ? 'Nenhuma contribuição recompensada ainda.' : `${c.issues.length} contribuição${c.issues.length === 1 ? '' : 'ões'} recompensada${c.issues.length === 1 ? '' : 's'}: ${c.issues.map(i => `<a href="https://github.com/CaioParanaiba/ganbatte/issues/${i.n}" target="_blank" rel="noopener">#${i.n}</a> ${i.tipo}`).join(' · ')}`}</span>
+    <button type="button" class="btn" data-contribagora${CONTRIB_IND ? ' disabled' : ''}>${CONTRIB_IND ? 'conferindo…' : 'conferir agora'}</button></p>`;
+}
+let CONTRIB_IND = false;   // o botão "conferir agora" está esperando o GitHub
+/* aviso, uma vez por issue, da recompensa que acabou de entrar; quem joga na versão normal fica sabendo que a correção ou a ideia
+   já está no beta e chega na próxima versão (a recompensa sai no beta, #96). As antigas (mais de 3 dias) só ficam marcadas */
+function avisaContrib(){
+  const c = D.contrib; if(!c || !c.issues.length) return;
+  const vistas = EST.tour || {}, novas = c.issues.filter(i => !vistas['contrib:' + i.n]); if(!novas.length) return;
+  EST.tour = Object.assign({}, EST.tour, Object.fromEntries(novas.map(i => ['contrib:' + i.n, 1]))); salvaUI();
+  const recentes = novas.filter(i => i.dia >= GB.addD(HOJE, -3)); if(!recentes.length) return;
+  const main = ((CTX.SRV && CTX.SRV.canal) || 'main') === 'main';
+  const frase = i => { const R = GB.CONTRIB[i.tipo] || {xp:0, j:0}, link = `<a href="https://github.com/CaioParanaiba/ganbatte/issues/${i.n}" target="_blank" rel="noopener">#${i.n}</a>`;
+    return (i.tipo === 'bug' ? `Seu bug ${link} ${i.beta && main ? 'já foi corrigido no beta e chega na próxima versão' : 'foi corrigido'}` : `Sua ideia ${link} ${i.beta && main ? 'já está no beta e chega na próxima versão' : 'entrou no jogo'}`)
+      + `: <b>+${R.xp} XP e +${R.j.toLocaleString('pt-BR')} J</b>`; };
+  toast(recentes.map(frase).join('<br>'), 9000);
 }
 function cfgHTML(){
   const c = rascunhoCfg();
@@ -470,7 +486,7 @@ function cfgHTML(){
       <div class="wz-f" style="grid-template-columns:auto minmax(0,1fr);align-items:end">
         <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink);padding-bottom:9px"><input type="checkbox" data-cfg="duoOn"${c.duoOn ? ' checked' : ''}> Duolingo</label>
         <label>Usuário (sem senha: o jogo lê a ofensiva do perfil e marca sozinho o dia com lição)<input data-cfg="duoU" value="${esc(c.duoU)}" maxlength="40"${c.duoOn ? '' : ' disabled'}></label></div>
-      <label>Usuário do GitHub (opcional: bug que você reportou e foi corrigido vale +${GB.CONTRIB.bug.xp} XP e +${GB.CONTRIB.bug.j.toLocaleString('pt-BR')} J; ideia que entrou no jogo, +${GB.CONTRIB.ideia.xp} XP e +${GB.CONTRIB.ideia.j.toLocaleString('pt-BR')} J)<input data-cfg="gh" value="${esc(c.gh)}" maxlength="39" placeholder="deixe vazio se não usa"></label>
+      <label>Usuário do GitHub (opcional: bug que você reportou vale +${GB.CONTRIB.bug.xp} XP e +${GB.CONTRIB.bug.j.toLocaleString('pt-BR')} J quando a correção entra no beta; ideia, +${GB.CONTRIB.ideia.xp} XP e +${GB.CONTRIB.ideia.j.toLocaleString('pt-BR')} J. Quem desenvolve: a issue em que você é o responsável vira tarefa na Lista e se conclui sozinha quando entra no beta)<input data-cfg="gh" value="${esc(c.gh)}" maxlength="39" placeholder="deixe vazio se não usa"></label>
       ${contribHTML()}
       <label>Tags (o nome muda; o significado de cada tipo continua o mesmo)</label>
       <div class="wz-f" style="grid-template-columns:repeat(4,minmax(0,1fr))">${TIPOS.filter(t => !t.fixo).map(t => `<label style="color:${NC(t.c)}">${t.n}<input data-cfgt="${t.k}" value="${esc(c.tags[t.k])}" maxlength="24"></label>`).join('')}</div>
@@ -555,6 +571,10 @@ document.addEventListener('click', async e => {
   if(q('[data-cfghadd]')){ const c = rascunhoCfg(), n = c.novo.trim(); if(n){ c.habs.push(n); c.hf.push(0); c.hid.push(''); c.novo = ''; } render(); const i = document.getElementById('cfg-novo'); if(i) i.focus(); return; }
   const hd = q('[data-cfghdel]'); if(hd){ const c = rascunhoCfg(); c.habs.splice(+hd.dataset.cfghdel, 1); c.hf.splice(+hd.dataset.cfghdel, 1); c.hid.splice(+hd.dataset.cfghdel, 1); render(); return; }
   if(q('[data-wzdiscabre]')){ abreDisciplinas(); return; }
+  if(q('[data-contribagora]')){ if(CONTRIB_IND) return; CONTRIB_IND = true; render();
+    try { const r = await post('/api/contrib', {}); await recarrega(); toast(r.cedo ? 'Acabei de conferir: tente de novo daqui a um minuto' : 'Conferido no GitHub'); }
+    catch(err){ toast('Não conferiu: ' + esc(err.message)); }
+    CONTRIB_IND = false; render(); return; }
   if(q('[data-cfgreset]')){ CF2 = null; render(); return; }
   if(!q('[data-cfgsave]')) return;
   const c = rascunhoCfg(), habs = c.habs.map(h => h.trim()).filter(Boolean), tags = {};
@@ -574,6 +594,6 @@ document.addEventListener('click', async e => {
 
 const rB2_0 = RENDER.b2;
 RENDER.b2 = S => { rB2_0(S); const h = document.querySelector('#b2-inbox h2'); if(h) h.insertAdjacentHTML('afterend', '<p style="margin:0 0 10px"><button type="button" class="btn v" data-wzdiscabre>editar disciplinas e datas</button></p>'); };
-window.GB_GUIA = {abreW, abreDisciplinas, tutorial};
-if(CTX) tab(cur);   // os dados podem ter chegado antes deste script (no modo demonstração chegam): reaplica a aba com o guia
+window.GB_GUIA = {abreW, abreDisciplinas, tutorial, avisaContrib};
+if(CTX){ tab(cur); avisaContrib(); }   // os dados podem ter chegado antes deste script (no modo demonstração chegam): reaplica a aba com o guia
 })();

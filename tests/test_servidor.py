@@ -233,10 +233,85 @@ class Contribuicoes(Base):
         self.assertEqual(c["7"]["dia"], "2026-10-12")
         self.assertEqual(c["9"]["dia"], "2026-10-15")
 
-    def test_so_com_usuario_valido_e_que_nao_e_o_dono(self):
+    def test_so_com_usuario_valido(self):
         self.assertIsNone(s.contrib_leitura({}))
-        self.assertIsNone(s.contrib_leitura({"github": {"usuario": s.DONO}}))
+        self.assertIsNone(s.contrib_leitura({"github": {"usuario": "nome com espaço"}}))
         self.assertEqual(s.contrib_leitura({"github": {"usuario": "amigo"}}), {"usuario": "amigo", "issues": []})
+        self.assertEqual(s.contrib_leitura({"github": {"usuario": s.DONO}}), {"usuario": s.DONO, "issues": []})   # tarefas de dev (#97)
+
+
+def issue(n, autor="amigo", resp=(), labels=(), estado="open", motivo=None, titulo="Título"):
+    return {"number": n, "title": titulo, "state": estado, "state_reason": motivo, "user": {"login": autor},
+            "assignees": [{"login": r} for r in resp], "labels": [{"name": l} for l in labels]}
+
+
+class ContribRegras(Base):
+    """#96: a recompensa sai quando a issue entra no beta, e quem fez a própria issue não ganha por ela."""
+
+    def achadas(self, itens, usuario="amigo"):
+        with mock.patch.object(s, "gh_busca", return_value=(itens, True)):
+            return s.contrib_issues(usuario)
+
+    def test_paga_no_beta_ou_resolvida(self):
+        r = self.achadas([issue(100, labels=["bug", "no beta"]), issue(101, labels=["enhancement"], estado="closed", motivo="completed"),
+                          issue(102, labels=["bug"]), issue(103, labels=["bug", "no beta"], estado="closed", motivo="not_planned"),
+                          issue(104, labels=["bug", "no beta", "sem recompensa"]), issue(105, labels=["question", "no beta"])])
+        self.assertEqual(r, {"100": {"tipo": "bug", "titulo": "Título", "beta": True}, "101": {"tipo": "ideia", "titulo": "Título"}})
+
+    def test_quem_fez_a_propria_issue_nao_ganha_fora_do_legado(self):
+        r = self.achadas([issue(100, resp=["amigo"], labels=["bug", "no beta"]), issue(101, resp=["CaioParanaiba"], labels=["bug", "no beta"]),
+                          issue(58, resp=["amigo"], labels=["bug", "no beta"])])
+        self.assertEqual(sorted(r), ["101", "58"])
+
+    def test_dono_nao_ganha_por_relatar(self):
+        self.assertEqual(self.achadas([issue(100, autor=s.DONO, labels=["bug", "no beta"])], s.DONO), {})
+
+
+class TarefasDev(Base):
+    """#97: issue com o jogador como responsável vira tarefa gh:N, concluída sozinha quando entra no beta."""
+
+    def rodar(self, itens, completa=True, dia=HOJE):
+        with mock.patch.object(s, "hoje", lambda: dia), mock.patch.object(s, "gh_busca", return_value=(itens, completa)):
+            self.assertEqual(s.contrib_atualiza("amigo"), "")
+
+    def dev(self):
+        return [l for l in s.ler() + s.ler("done.txt") if "gh:" in l]
+
+    def test_cria_acompanha_o_esforco_e_conclui(self):
+        self.rodar([issue(100, resp=["amigo"], titulo="Botão +novo em @lista due:amanhã")])
+        self.assertEqual(self.dev(), ["Issue #100: Botão novo em lista due: amanhã +ganbatte gh:100"])
+        self.rodar([issue(100, resp=["amigo"], labels=["esforço: demorado"], titulo="Outro título")])
+        self.assertEqual(self.dev(), ["Issue #100: Botão novo em lista due: amanhã +ganbatte gh:100 esf:demorado"])
+        self.rodar([issue(100, resp=["amigo"], labels=["no beta"])], dia=HOJE + timedelta(days=2))   # o label de esforço sai no beta
+        self.assertEqual(self.dev(), ["x 2026-10-14 Issue #100: Botão novo em lista due: amanhã +ganbatte gh:100 esf:demorado"])
+        self.rodar([issue(100, resp=["amigo"], estado="closed", motivo="completed")], dia=HOJE + timedelta(days=9))
+        self.assertEqual(len(self.dev()), 1)   # ir para a main não paga de novo
+
+    def test_entrou_antes_de_o_jogo_ver_ja_entra_concluida(self):
+        self.rodar([issue(100, resp=["amigo"], labels=["esforço: rápido", "no beta"])])
+        self.assertEqual(self.dev(), ["x 2026-10-12 Issue #100: Título +ganbatte gh:100 esf:rapido"])
+
+    def test_apagada_nao_volta_e_recusada_ou_trocada_sai(self):
+        self.rodar([issue(100, resp=["amigo"]), issue(101, resp=["amigo"]), issue(102, resp=["amigo"])])
+        s.gravar([l for l in s.ler() if "gh:100" not in l])   # o jogador apagou
+        self.rodar([issue(100, resp=["amigo"]), issue(101, resp=["amigo"], estado="closed", motivo="not_planned"), issue(102, resp=["amigo"])], completa=False)
+        self.assertEqual(self.dev(), ["Issue #102: Título +ganbatte gh:102"])   # busca incompleta: a 102 fica mesmo sem vir
+        self.rodar([issue(100, resp=["amigo"], labels=["no beta"])])
+        self.assertEqual(self.dev(), [])   # a 102 saiu do jogador; a 100 apagada não volta concluída
+
+    def test_legado_nao_vira_tarefa(self):
+        self.rodar([issue(58, resp=["amigo"]), issue(41, resp=["amigo"], labels=["no beta"])])
+        self.assertEqual(self.dev(), [])
+
+    def test_botao_espera_um_minuto(self):
+        self.jogador({"github": {"usuario": "amigo"}})
+        self.assertTrue(s.api_contrib({}).get("cedo"))   # o setUp marca uma conferida agora
+        s.contrib_vivo["t"] = 0
+        with mock.patch.object(s, "gh_busca", side_effect=OSError("sem rede")), self.assertRaises(s.Erro):
+            s.api_contrib({})
+        s.contrib_vivo["t"] = 0
+        with mock.patch.object(s, "gh_busca", return_value=([], True)):
+            self.assertEqual(s.api_contrib({}), {"ok": True})
 
 
 class ConquistasIA(Base):

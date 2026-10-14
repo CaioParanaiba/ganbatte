@@ -1404,7 +1404,7 @@ function sync(api){
   if(!BOSSES.some(b => b.d === UI.bsel)) UI.bsel = BOSSES[0] ? BOSSES[0].d : '';
   if(!BOSSES.some(b => b.d === UI.mapsel)) UI.mapsel = UI.bsel;
   if(TESTE){ if(!podeTeste()) TESTE = null; else { OWN = TESTE.own; Object.assign(UI, structuredClone(TESTE.eq)); } }   // recarregou no meio do teste: continua nele
-  avisoVersao(); guardaRecibos(); devolve(); travaChefoes(); guardaColecao(); if(window.GB_TEMP) GB_TEMP.confere();   // temporada acabou: guarda a cápsula (temporadas.js)
+  avisoVersao(); guardaRecibos(); devolve(); travaChefoes(); guardaColecao(); if(window.GB_GUIA) GB_GUIA.avisaContrib(); if(window.GB_TEMP) GB_TEMP.confere();   // recompensa nova (guia.js); temporada acabou: guarda a cápsula (temporadas.js)
 }
 /* modo teste da Masadora, só para quem está nos canais beta e grupo: Jenny infinita para experimentar qualquer item. É temporário de
    propósito: as compras e o que for equipado ficam só na memória desta página. Sair, recarregar a página ou voltar para

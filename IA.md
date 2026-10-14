@@ -177,6 +177,7 @@ aceita `hoje`, `amanha` e `+3`; já `15/10` é lido no formato do jogador e pode
   caçada de dentro, e quem escolhe onde ela fica é o jogador, na página.
 - `+exp.NOME` (opcional): tarefa solta de uma expedição, que não é de nenhum marco.
 - **não crie nem edite** linhas com `rec:` (hábitos, Codeforces e Duolingo: o servidor cria todo dia).
+- **não crie nem edite** linhas com `gh:` (tarefas de dev do GitHub: o servidor cria e conclui sozinho).
 - texto curto, começando por verbo (Revisar, Fazer, Ler, Entregar).
 
 **Plano de avaliação (`avaliacoes.txt`):**

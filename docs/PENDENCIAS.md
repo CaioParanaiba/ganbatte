@@ -166,6 +166,28 @@ peso atual, caiu de 2502 para 1212 J. O gasto (`spent`) fica gravado; o ganho er
   junte-os numa tabela de eras (decidido em 13/10/2026 não fazer antes de precisar). Mexeu em pontos já ganhos: aviso grande
   na Novidades (ver a seção abaixo).
 
+## Contribuições com mais de um dev (#96, #97; decidido em 14/10/2026)
+
+Com um segundo dev, a recompensa de bug/ideia separa **quem relata** de **quem faz**:
+- **Recompensa de quem relatou** (`CONTRIB`, 15 XP + 150 J o bug, 10 XP + 50 J a ideia) sai quando a issue **entra no
+  beta**: label `no beta` ou fechada como resolvida, o que vier primeiro. A branch padrão é a `main`, então o `Fecha #N`
+  de PR para a `beta` não fecha a issue; por isso o label. Antes pagava só na ida para a `main` e juntava um "canhão".
+- **Quem fez a própria issue** (autor também responsável) não ganha a recompensa: o trabalho é pago pela tarefa de dev.
+  As issues do Caio continuam fora da recompensa por relatar (ele decide o que fecha como resolvido).
+- **Tarefa de dev** (`dev_tarefas()` no servidor): issue com o jogador como responsável vira `Issue #N: título +ganbatte
+  gh:N esf:…` no todo.txt, concluída sozinha quando entra no beta. Vale pelo label de esforço (`ESF_XP` no motor: rápido 10,
+  médio 15, demorado 25 XP, as faixas de vida, estudo e entrega); o servidor guarda o último esforço visto em
+  `contrib.json` → `dev`, porque o label sai na ida para o beta, e sem nenhum visto conta médio. Apagada pelo jogador não
+  volta; responsável trocado ou issue recusada antes do beta tira a tarefa aberta.
+- **Esforço sempre no label:** a IA que avalia ou pega uma issue põe o label e troca se a issue complicar
+  (`CONTRIBUINDO.md`).
+- **Só daqui para a frente:** `CONTRIB_LEGADO` lista as issues que já estavam no beta ou resolvidas em 14/10/2026: o autor
+  ganha mesmo tendo feito (regra antiga) e elas não viram tarefa. As abertas na época (inclusive #84, #91 e #92, já
+  juntadas na beta mas sem `no beta`) seguem a regra nova. Os responsáveis das antigas foram preenchidos pelos PRs, só para
+  organizar (antes do PR #61 o Caio era o único dev).
+- O jogo confere o GitHub a cada 1 h (`CONTRIB_SEG`) e pelo botão "conferir agora" em Configurações (`POST /api/contrib`,
+  um por minuto). Quem joga na `main` vê um aviso de que a correção ou a ideia já está no beta e chega na próxima versão.
+
 ## Balanceamento (análise de 13/10/2026, relatórios do Caio e de um amigo)
 
 O que se viu: a Jenny do amigo (15.262) veio 37% de contribuições (5 issues antigas creditadas de uma vez no dia em que ele

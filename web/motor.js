@@ -276,7 +276,7 @@ function parseLinha(raw, n){
   else { if((m = s.match(/^\(([A-Z])\) (.*)$/))){ t.pri = m[1]; s = m[2]; } if((m = s.match(/^(\d{4}-\d\d-\d\d) (.*)$/))){ t.cri = m[1]; s = m[2]; } }
   t.proj = (s.match(/(?:^|\s)\+(\S+)/g)||[]).map(x => x.trim().slice(1).toLowerCase());
   t.ctx = (s.match(/(?:^|\s)@(\S+)/g)||[]).map(x => x.trim().slice(1).toLowerCase());
-  for(const k of ['est','due','prova','rec','aula','av']){ const r = s.match(new RegExp('(?:^|\\s)'+k+':(\\S+)')); if(r) t[k] = r[1]; }
+  for(const k of ['est','due','prova','rec','aula','av','gh','esf']){ const r = s.match(new RegExp('(?:^|\\s)'+k+':(\\S+)')); if(r) t[k] = r[1]; }
   t.txt = s.replace(/\s(?:\+|@|\w+:)\S+/g,'').replace(/^\(([A-Z])\) /,'').trim();
   return t;
 }
@@ -329,10 +329,13 @@ function carregar(api){
 }
 
 /* ---------- regras ---------- */
-/* recompensa por contribuição (#23): só quando a issue do jogador é fechada como resolvida (bug corrigido, ideia feita);
-   repetida, recusada ou dúvida não conta. Além da Jenny do próprio XP (×10) */
+/* recompensa por contribuição (#23): só quando a issue do jogador entra no beta (bug corrigido, ideia feita; #96); repetida,
+   recusada ou dúvida não conta, nem a issue que o próprio autor fez (essa paga a tarefa de dev). Além da Jenny do próprio XP (×10) */
 const CONTRIB = {bug:{xp:15, j:150}, ideia:{xp:10, j:50}};
 const CONTRIB_ANTES = {bug:{xp:50, j:1000}, ideia:{xp:30, j:600}};   // até a 0.6.4-beta1: o acerto da 0.6.4 tira a diferença dos dias fechados
+/* tarefa de dev (#97): a issue do GitHub em que o jogador é o responsável (gh:N, criada e concluída pelo servidor) vale pelo
+   label de esforço (esf:), nas mesmas faixas das tarefas (vida, estudo, entrega); sem esforço visto, médio */
+const ESF_XP = {rapido:10, medio:15, demorado:25};
 /* Duolingo (0.6.4): os dias da ofensiva de antes de ligar entram no heatmap e nas conquistas do Duolingo, mas sem XP, sem Jenny,
    sem Ten (o nível sobe, #51). duo.json → desde é o dia em que o usuário foi ligado; quem ligou antes da 0.6.4 não tem: vale o dia em
    que o Duolingo automático saiu */
@@ -347,7 +350,7 @@ const HAB_DESDE = '2026-10-13', HAB_NV_MAX = 10;
 const habPede = (nv, sem) => (nv < 6 ? 1 : nv - 4) * (sem ? 1 : 7);
 const habXP = nv => nv + 2;
 const HAB_EXTRA = 2;   // hábito semanal feito acima da meta da semana: XP ×2 (a calibrar)
-function xpDe(t){ if((t.rec||'').startsWith('cf') && !(t.done && t.done < CF_DESDE)) return CF_BONUS; let x = isRec(t) ? 10 : isEnt(t) ? 25 : isEst(t) ? 15 : isFac(t) ? 15 : 10; if(isRec(t)) x *= .5; if(t.due && t.done && t.done <= t.due) x *= 1.5; return Math.round(x); }
+function xpDe(t){ if((t.rec||'').startsWith('cf') && !(t.done && t.done < CF_DESDE)) return CF_BONUS; let x = t.gh ? ESF_XP[t.esf] || ESF_XP.medio : isRec(t) ? 10 : isEnt(t) ? 25 : isEst(t) ? 15 : isFac(t) ? 15 : 10; if(isRec(t)) x *= .5; if(t.due && t.done && t.done <= t.due) x *= 1.5; return Math.round(x); }
 /* tipo de Nen: treino → Transmutação; hábito → Manipulação; entrega → Emissão; estudo → Intensificação (com ou sem disciplina);
    outra da faculdade → Conjuração; o resto → Especialização (vida) */
 function nenDe(t){ const r = t.rec || ''; if(r.startsWith('cf') || r.startsWith('atc') || isTre(t) || /codeforces|atcoder/i.test(t.txt)) return 1; if(isRec(t)) return 4; if(isEnt(t)) return 5; if(isEst(t)) return 0; if(isFac(t)) return 2; return 3; }
@@ -1162,6 +1165,6 @@ window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_AN
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_METAS, metasConq, alvoConq, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
-  MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, feriasDe,
+  MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, ESF_XP, feriasDe,
   FONTES, lojaTotal, relatorio, relatorioCSV, TEMA, NOMES, nomeTemporada, fimTemporada, capsula, HAB_GRUPO, resumoGrupo};
 })();

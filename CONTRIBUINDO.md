@@ -22,6 +22,10 @@ O dono do repositório é o **Caio** (`CaioParanaiba`). Ele revisa e junta os PR
 3. **Internet para a IA.** O `git push` e o `gh` saem para a internet; aprove quando a IA pedir, ou libere a rede nas
    configurações dela.
 4. Python 3.8+ (o servidor e os testes) e Node (o simulador e o navegador de teste, só se precisar).
+5. **Seu usuário do GitHub em Configurações** (no jogo em que você joga). A issue em que você é o responsável vira uma
+   tarefa na sua Lista (projeto `+ganbatte`) e se conclui sozinha quando entra no beta: é assim que o trabalho de dev
+   rende XP. Não crie tarefa à mão para issue, senão conta duas vezes. A recompensa de bug/ideia é de quem relatou: issue
+   que você abriu e você mesmo fez paga só pela tarefa.
 
 ## Para a IA: como trabalhar uma issue
 
@@ -37,7 +41,9 @@ O pedido normal é **"pega a issue N"**. Siga as duas fases, nesta ordem.
    - como o código está hoje nesse ponto (arquivos e funções);
    - como você faria, em poucos passos;
    - dúvidas e pontos em aberto (o que a issue não diz, o que pode quebrar, o que mexe em pontos);
-   - o tamanho: rápido, médio ou demorado.
+   - o tamanho: rápido, médio ou demorado. **Ponha o label de esforço na issue** (`esforço: rápido`, `esforço: médio` ou
+     `esforço: demorado`), trocando o que estiver lá se a sua avaliação for outra: é ele que decide quanto XP a tarefa de
+     dev vale (10, 15 ou 25). Ex.: `gh issue edit N --remove-label "esforço: rápido" --add-label "esforço: médio"`.
 4. Pergunte se ele quer um **levantamento mais fundo** de algum ponto (por exemplo: onde mais isso aparece no jogo, o
    impacto no balanceamento, outras formas de fazer) e se quer **mudar ou acrescentar ideias**.
 5. **Pare e espere.** Não crie branch nem escreva código até ele pedir ("pode fazer", "faz assim", "começa").
@@ -54,6 +60,7 @@ decisão final de desenho é do Caio (veja "Quando parar e perguntar").
    git switch -c issue-N origin/beta
    ```
 3. Faça o código, seguindo as regras abaixo. Commits pequenos, mensagem em português dizendo o que mudou.
+   Se a issue complicar (ou simplificar) bem além do esforço do label, troque o label e diga no PR por quê.
 4. Teste (seção "Testar"). Se não deu para testar algo, diga no PR.
 5. Envie e abra o PR para a mesma base:
    ```
@@ -92,7 +99,7 @@ Só o Caio mexe nisto, ao lançar a versão (assim duas pessoas nunca criam a me
 - `VERSAO_PAGINA` no `web/index.html`;
 - as entradas de versão no `web/novidades.js` (o rascunho vai no texto do PR);
 - a tabela "Versões" do `README.md`;
-- labels das issues, merge, tags e qualquer push na `beta` ou na `main`.
+- labels das issues (fora o de esforço, que a IA põe e acerta), merge, tags e qualquer push na `beta` ou na `main`.
 
 Fora isso, pode atualizar o README (a parte "Como funciona por dentro") e o `docs/PENDENCIAS.md` quando o PR muda o
 que eles descrevem.
