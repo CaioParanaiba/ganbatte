@@ -146,11 +146,32 @@ const avNome = f => f.replace(/[-_]+/g,' ').replace(/\b\w/g, c => c.toUpperCase(
 const AV_ANTIGO = {'gon':'gon-1', 'gon-olhaputo':'gon-2', 'killua':'killua-1', 'killua-png':'killua-2', 'kulluaface':'killua-3',
   '702-7023783_transparent-killua-png-png-d':'killua-4', 'kurapika':'kurapika-1', 'leorio':'leorio-1', 'leorio2':'leorio-2',
   'leorio-png':'leorio-3', 'leorio-png-leorio':'leorio-4', 'hunter-x-hunter-logo-png-image':'hunter-x-hunter'};
+/* retratos dos chefões (#33): web/chefoes/SLUG.png. O ícone de cada chefão (o do avaliacoes.txt) é o padrão e é sempre do
+   jogador; o retrato comprado vai para a coleção, e em Loja → Comprados ele escolhe qual chefão usa cada um. Na compra, o
+   retrato vai sozinho para o chefão de mesmo nome (alvo), se houver. [slug, nome, alvo] */
+const RETRATOS = [['chrollo','Chrollo Lucilfer','Chrollo'],['feitan','Feitan Portor','Feitan'],['machi','Machi Komacine','Machi'],['uvogin','Uvogin','Uvogin'],
+  ['nobunaga','Nobunaga Hazama','Nobunaga'],['shalnark','Shalnark','Shalnark'],['phinks','Phinks Magcub','Phinks'],['pakunoda','Pakunoda','Pakunoda'],
+  ['hisoka','Hisoka Morow','Hisoka'],['illumi','Illumi Zoldyck','Illumi'],['genthru','Genthru','Genthru'],['neferpitou','Neferpitou','Neferpitou'],
+  ['shaiapouf','Shaiapouf','Shaiapouf'],['youpi','Menthuthuyoupi','Youpi'],['meruem','Meruem','Meruem']];
+const RETRATO_PRECO = 1500;
+COS.push(...RETRATOS.map(([s, n, alvo]) => ({id:'ch-'+s, cat:'chefe', n, d:'Retrato para o card de um chefão, no lugar do ícone.', p:RETRATO_PRECO, img:'chefoes/'+s+'.png', alvo})));
 /* tema completo = pacote: comprar o tema dá cada peça (paleta, textura, efeitos) para usar e misturar separado */
 function expandeOwn(own){ for(const it of COS) if(it.parts && own.has(it.id)) it.parts.forEach(p => own.add(p)); return own; }
-function catalogo(avatares){
-  return COS.concat((avatares||[]).map(f => ({id:'av-'+f, cat:'avatar', n:avNome(f), d:'Foto de perfil das páginas do jogo.', p: AV_GRATIS.includes(f) ? 0 : 1000, eq:{avatar:f}})));
+/* a loja: os itens do jogo, as fotos de web/a/ e o que está na coleção permanente do jogador (colecao/ dos dados, #33) mas
+   não está mais na loja desta versão (fora: continua dele, mesmo que a loja mude de temporada) */
+function catalogo(avatares, colecao){
+  const cat = COS.concat(['logo'].concat((avatares||[]).filter(f => f !== 'logo')).map(f => ({id:'av-'+f, cat:'avatar', n:avNome(f), d:'Foto de perfil das páginas do jogo.', p: AV_GRATIS.includes(f) ? 0 : 1000, eq:{avatar:f}, ...(f === 'logo' ? {} : {img:'a/'+f+'.png'})})));
+  const ja = new Set(cat.map(i => i.id));
+  for(const it of Object.values((colecao && colecao.itens) || {})) if(it && typeof it.id === 'string' && !ja.has(it.id)) cat.push({...it, fora:1});
+  return cat;
 }
+/* item que vem com o jogo: grátis e sem trava (a Simples, as fotos grátis). Fica sempre em Comprados, nunca na vitrine */
+const padrao = it => !it.p && !it.excl && !it.lend && !it.fora;
+/* a cópia do item que vai para a coleção permanente: só os campos que bastam para mostrar e equipar sem a loja */
+const CAMPOS_COLECAO = ['id','cat','n','d','p','img','eq','fx','fxs','parts','skin','ev','sw'];
+const itemColecao = (it, quando, origem) => Object.assign(Object.fromEntries(CAMPOS_COLECAO.filter(k => it[k] != null).map(k => [k, it[k]])), {quando, origem: origem || 'masadora'});
+/* imagem de um item: a cópia da coleção (pasta de dados) quando já está lá; senão a do jogo (web/) */
+const imgDe = (it, colecao) => { const c = colecao && colecao.itens && colecao.itens[it.id]; return c && c.arquivo ? 'colecao/' + c.arquivo : it.img || ''; };
 /* prêmios reais padrão, por faixa [faixa, preço em J, [[nome, ícone, R$ do cofre]]]. Cada jogador troca os seus na Masadora
    (editar meus prêmios), que grava a lista em estado.json (premios: [{n, p, rs, ic}]) e o cofre por mês (cofreMes). */
 const REAIS = [
@@ -292,10 +313,10 @@ function carregar(api){
   const est = Object.assign({spent:0, cofreUsado:0, own:[], resg:[], bought:{}, equip:{}}, api.estado||{});
   est.own = [...new Set((est.own||[]).map(k => k.startsWith('av-') && AV_ANTIGO[k.slice(3)] ? 'av-' + AV_ANTIGO[k.slice(3)] : k))];
   if(est.equip && AV_ANTIGO[est.equip.avatar]) est.equip = Object.assign({}, est.equip, {avatar: AV_ANTIGO[est.equip.avatar]});
-  est.equip = Object.assign({theme:'simples', fx:[], bg:'', frame:'', title:'', avatar:'logo', lic:'l2', hud:'logo', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}}, est.equip||{});
+  est.equip = Object.assign({theme:'simples', fx:[], bg:'', frame:'', title:'', avatar:'logo', lic:'l2', hud:'logo', chefes:{}, skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}}, est.equip||{});
   const hoje = api.hoje || new Date().toISOString().slice(0,10);
   return {D:{feitas, abertas, cf:api.cf||null, duo:api.duo||null, contrib:api.contrib||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
-    BOSSES: av.bosses, AVAL: av.aval, NOTAS: nt.NOTAS, PARC: nt.PARC, NDATA: nt.NDATA, INBOX: parseAjustes(api.ajustes), EST: est, AVATARES: api.avatares||[],
+    BOSSES: av.bosses, AVAL: av.aval, COLECAO: api.colecao && api.colecao.itens && typeof api.colecao.itens === 'object' ? api.colecao : {itens:{}}, NOTAS: nt.NOTAS, PARC: nt.PARC, NDATA: nt.NDATA, INBOX: parseAjustes(api.ajustes), EST: est, AVATARES: api.avatares||[],
     NARRADAS: Array.isArray(api.narradas) ? api.narradas : [], TEMPORADAS: Array.isArray(api.temporadas) ? api.temporadas : [], CONQ: Array.isArray(api.conquistas) ? api.conquistas : [], JOG: Object.assign({nome:'Hunter'}, api.jogador||{}), SRV: api.servidor||null, AV_TXT: String(api.avaliacoes||''), NT_TXT: String(api.notas||''), dif:'normal'};
 }
 
@@ -1037,7 +1058,7 @@ function resumoGrupo(C, S){
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 
-window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
