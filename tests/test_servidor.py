@@ -332,6 +332,52 @@ class Estado(Base):
         self.assertEqual((e["own"], e["tenRec"], e["acertos"]["0.6.4"]), (["fr-hunter"], 3, 500))
 
 
+class Colecao(Base):
+    """Coleção permanente (#33): o comprado fica em colecao/, com a imagem copiada, e nada sai de lá."""
+
+    def test_guarda_com_imagem_e_so_acrescenta(self):
+        r = s.api_colecao({"itens": [{"id": "ch-uvogin", "cat": "chefe", "n": "Uvogin", "p": 1500, "img": "chefoes/uvogin.png",
+                                      "quando": "2026-10-10", "lixo": "x"}]})
+        it = r["colecao"]["itens"]["ch-uvogin"]
+        self.assertEqual((it["origem"], it["quando"], it["arquivo"]), ("masadora", "2026-10-10", "chefoes-uvogin.png"))
+        self.assertNotIn("lixo", it)
+        self.assertTrue((s.DADOS / "colecao" / "arquivos" / "chefoes-uvogin.png").is_file())
+        s.api_colecao({"itens": [{"id": "ch-uvogin", "cat": "chefe", "n": "Outro nome"}, {"id": "pal-gon", "cat": "pal", "n": "Gon"}]})
+        c = s.colecao()["itens"]
+        self.assertEqual(c["ch-uvogin"]["n"], "Uvogin")   # quem já está não é trocado
+        self.assertEqual(c["pal-gon"]["quando"], HOJE.isoformat())
+        self.assertIn("colecao", s.api_jogo_get())
+        self.assertEqual(len(c["ch-uvogin"]["uid"]), 12)   # rastreio: uid e o começo do histórico
+        self.assertEqual(c["ch-uvogin"]["hist"], [{"quando": "2026-10-10", "como": "compra", "origem": "masadora", "p": 1500}])
+
+    def test_foto_liberada_por_chefao(self):
+        r = s.api_colecao({"itens": [{"id": "av-ch-uvogin", "cat": "avatar", "n": "Uvogin", "p": 0, "img": "chefoes/uvogin.png",
+                                      "chefao": "ch-uvogin", "como": "chefao", "temporada": "2026-2"}]})
+        h = r["colecao"]["itens"]["av-ch-uvogin"]["hist"][0]
+        self.assertEqual((h["como"], h["temporada"]), ("chefao", "2026-2"))
+        with self.assertRaises(s.Erro):
+            s.api_colecao({"itens": [{"id": "x", "cat": "pal", "n": "X", "como": "roubado"}]})
+
+    def test_recusa_item_estranho(self):
+        for x in ({"id": "../x", "cat": "pal", "n": "a"}, {"id": "a", "cat": "feitico", "n": "a"}, {"id": "a", "cat": "pal", "n": ""},
+                  {"id": "a", "cat": "pal", "n": "a", "origem": "outra"}):
+            with self.assertRaises(s.Erro):
+                s.api_colecao({"itens": [x]})
+        r = s.api_colecao({"itens": [{"id": "av-x", "cat": "avatar", "n": "X", "img": "../servidor.png"}]})
+        self.assertNotIn("arquivo", r["colecao"]["itens"]["av-x"])
+
+
+class Travas(Base):
+    def test_trava_de_chefao_vale_a_primeira(self):
+        """Chefão derrotado (#33): a imagem travada não muda, nem por outra aba nem se ele voltar à vida."""
+        s.api_jogo_estado({"estado": {"travas": {"2026-2:CALC2": "ch-uvogin"}}})
+        s.api_jogo_estado({"estado": {"travas": {"2026-2:CALC2": "ch-meruem", "2026-2:BD": ""}}})
+        s.api_jogo_estado({"estado": {}})
+        self.assertEqual(s.ler_json("estado.json", {})["travas"], {"2026-2:CALC2": "ch-uvogin", "2026-2:BD": ""})
+        with self.assertRaises(s.Erro):
+            s.api_jogo_estado({"estado": {"travas": {"2026-2:ED1": 3}}})
+
+
 class Devolucao(Base):
     """#51: o que voltou para a loja na devolução não volta pela gravação de uma aba antiga; comprado de novo depois, fica."""
     DV = {"v": "2026-10-13", "em": "2026-10-13", "h": "12:00:00", "own": ["th-killua", "pal-killua"], "feiticos": ["ko"], "semana": "2026-W42", "j": 0}
