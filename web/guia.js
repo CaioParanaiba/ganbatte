@@ -1,4 +1,4 @@
-/* Hunter.todo · guia: o assistente da primeira entrada (nome, nickname, tags, disciplinas) e o tutorial de cada aba.
+/* Ganbatte · guia: o assistente da primeira entrada (nome, nickname, tags, disciplinas) e o tutorial de cada aba.
  * Carregado depois do script da página: usa CTX, EST, NEN, HOJE, tab, render, post, recarrega, esc, ic, NC, salvaUI.
  * O assistente grava por POST /api/config {jogador, avaliacoes}; o tutorial lembra as abas já vistas em estado.json (tour).
  */
@@ -61,7 +61,7 @@ const TIPOS = [
   {k:'ent', n:'Entrega',   c:5, pre:'@', ess:'algo que você <b>entrega para alguém</b>: lista, trabalho, atividade no sistema da faculdade. Tem prazo e alguém confere.', ex:'Lista 3 de derivadas +fac.CALC2 {tag} due:sexta', xp:25},
   {k:'est', n:'Estudo',    c:0, pre:'@', ess:'tempo de <b>aprender</b>: revisar, ler, resumir, refazer exercícios. Ninguém cobra, mas é o que prepara a prova.', ex:'Revisar integrais por partes +fac.CALC2 {tag}', xp:15},
   {k:'fac', n:'Faculdade', c:2, pre:'+', ess:'<b>outras coisas da faculdade</b> que não são entrega nem estudo: organizar o projeto, montar o grupo, falar com o professor. Basta a disciplina.', ex:'Montar o grupo do projeto +fac.POO', xp:15, fixo:'+fac.SIGLA'},
-  {k:'tre', n:'Treino e projetos', c:1, pre:'+', ess:'<b>programação e projetos pessoais fora da matéria</b>: Codeforces, contest, o seu app ou site, ajudar num projeto (como o próprio Hunter.todo).', ex:'Virtual contest no Codeforces {tag}', xp:10},
+  {k:'tre', n:'Treino e projetos', c:1, pre:'+', ess:'<b>programação e projetos pessoais fora da matéria</b>: Codeforces, contest, o seu app ou site, ajudar num projeto (como o próprio Ganbatte).', ex:'Virtual contest no Codeforces {tag}', xp:10},
   {k:'hab', n:'Hábito',    c:4, pre:'+', ess:'o que se <b>repete todo dia</b>: digitação, leitura, exercício. Vale metade, mas mantém o Ten.', ex:'Treino de digitação {tag}', xp:5},
   {k:'vid', n:'Vida',      c:3, pre:'',  ess:'<b>todo o resto</b>: casa, família, saúde, documentos. Sem tag nenhuma.', ex:'Renovar a carteirinha do RU', xp:10, fixo:'sem tag'},
 ];
@@ -98,7 +98,7 @@ function blocos(txt){
   }
   fecha(); return out;
 }
-const tagPadrao = k => { const T = HJx.TAGS[k]; return !T ? '' : T.ctx[0] ? '@' + T.ctx[0] : T.proj[0] ? '+' + T.proj[0] : ''; };
+const tagPadrao = k => { const T = GBx.TAGS[k]; return !T ? '' : T.ctx[0] ? '@' + T.ctx[0] : T.proj[0] ? '+' + T.proj[0] : ''; };
 const limpaTag = (k, v) => { const pre = TIPOS.find(t => t.k === k).pre; v = String(v||'').trim().toLowerCase().replace(/\s+/g, ''); if(!v) return ''; if(v[0] !== '@' && v[0] !== '+') v = pre + v; return v.length > 1 ? v : ''; };
 const iso = d => d.toISOString().slice(0,10);
 function semestrePadrao(){
@@ -123,13 +123,13 @@ let PASSOS = PASSOS_1;
 function passoHTML(){
   const p = W.editar ? 4 : W.passo;
   if(p === 0) return `<h3>Bem-vindo à Associação Hunter</h3>
-    <p>O Hunter.todo transforma a sua lista de tarefas num jogo. Você continua anotando e concluindo tarefas; o jogo calcula o resto: andares, chefões, sequência de dias e moedas para a loja.</p>
+    <p>O Ganbatte transforma a sua lista de tarefas num jogo. Você continua anotando e concluindo tarefas; o jogo calcula o resto: andares, chefões, sequência de dias e moedas para a loja.</p>
     <div class="wz-f">
       <label>Nome<input id="wz-nome" value="${esc(W.nome)}" placeholder="ex.: Gon Freecss" maxlength="40"><small class="h">Aparece na sua ficha.</small></label>
       <label>Nickname<input id="wz-nick" value="${esc(W.nick)}" placeholder="ex.: gon" maxlength="20"><small class="h">Letras, números e _. É como os outros te veem no placar do grupo (Torre Trick).</small></label>
     </div>
     <label>Foto de perfil</label>
-    <div class="wz-av">${['logo'].concat((CTX.AVATARES||[]).filter(a => HJx.catalogo([a]).slice(-1)[0].p === 0)).map(a => `<button type="button" data-wzav="${a}" aria-pressed="${W.av === a}" style="background-image:url('${(a === 'logo' ? LOGO : avSrc(a)).replace(/'/g, '%27')}')" title="${a === 'logo' ? 'Emblema' : esc(HJx.catalogo([a]).slice(-1)[0].n)}"></button>`).join('')}</div>
+    <div class="wz-av">${['logo'].concat((CTX.AVATARES||[]).filter(a => GBx.catalogo([a]).slice(-1)[0].p === 0)).map(a => `<button type="button" data-wzav="${a}" aria-pressed="${W.av === a}" style="background-image:url('${(a === 'logo' ? LOGO : avSrc(a)).replace(/'/g, '%27')}')" title="${a === 'logo' ? 'Emblema' : esc(GBx.catalogo([a]).slice(-1)[0].n)}"></button>`).join('')}</div>
     <p style="font-size:13px">As outras fotos estão na Masadora, a loja do jogo.</p>`;
   if(p === 1) return `<h3>Como o jogo funciona</h3>
     <p>Seis peças. Nenhuma delas pune: XP não se perde, e nota baixa vira bônus.</p>
@@ -169,8 +169,8 @@ function passoHTML(){
   if(p === 4) return `<h3>Disciplinas do semestre</h3>
     <p>Cada disciplina vira um chefão do Genei Ryodan. Por enquanto, toda matéria tem duas avaliações: <b>N1</b> e <b>N2</b>. Depois você pode detalhar (provas, listas, trabalhos) no arquivo <span class="mono">avaliacoes.txt</span>.</p>
     <div class="wz-f" style="grid-template-columns:repeat(4,minmax(0,1fr))">
-      <label>Início do semestre<input class="dt" inputmode="numeric" maxlength="10" placeholder="${HJ.fmtTxt()}" id="wz-ini" value="${HJ.brData(W.ini)}"></label>
-      <label>Fim do semestre<input class="dt" inputmode="numeric" maxlength="10" placeholder="${HJ.fmtTxt()}" id="wz-fim" value="${HJ.brData(W.fim)}"></label>
+      <label>Início do semestre<input class="dt" inputmode="numeric" maxlength="10" placeholder="${GB.fmtTxt()}" id="wz-ini" value="${GB.brData(W.ini)}"></label>
+      <label>Fim do semestre<input class="dt" inputmode="numeric" maxlength="10" placeholder="${GB.fmtTxt()}" id="wz-fim" value="${GB.brData(W.fim)}"></label>
       <label>Peso da N1<input id="wz-p1" inputmode="numeric" value="${W.p1}"></label>
       <label>Peso da N2<input id="wz-p2" inputmode="numeric" value="${W.p2}"></label>
     </div>
@@ -178,8 +178,8 @@ function passoHTML(){
       <label>Sigla<input id="wz-d-${i}" value="${esc(d.d)}" placeholder="CALC2" maxlength="8"${d.det ? ' readonly title="disciplina com plano detalhado: a sigla fica"' : ''}></label>
       <label>Nome<input id="wz-n-${i}" value="${esc(d.n)}" placeholder="Cálculo II" maxlength="50"></label>
       ${d.det ? `<span class="sub" style="grid-column:span 2;align-self:center">plano detalhado (${d.det} avaliações): datas e pesos ficam no <span class="mono">avaliacoes.txt</span></span>`
-        : `<label>Data da N1<input class="dt" inputmode="numeric" maxlength="10" placeholder="${HJ.fmtTxt()}" id="wz-n1-${i}" value="${HJ.brData(d.n1)}"></label>
-      <label>Data da N2<input class="dt" inputmode="numeric" maxlength="10" placeholder="${HJ.fmtTxt()}" id="wz-n2-${i}" value="${HJ.brData(d.n2)}"></label>`}
+        : `<label>Data da N1<input class="dt" inputmode="numeric" maxlength="10" placeholder="${GB.fmtTxt()}" id="wz-n1-${i}" value="${GB.brData(d.n1)}"></label>
+      <label>Data da N2<input class="dt" inputmode="numeric" maxlength="10" placeholder="${GB.fmtTxt()}" id="wz-n2-${i}" value="${GB.brData(d.n2)}"></label>`}
       <button type="button" class="wz-x" data-wzdel="${i}" title="remover" aria-label="remover disciplina">✕</button>
       <span class="boss">chefão: ${r[0]} · ${esc(r[2])}${d.notas ? ` · <b style="color:var(--amb)">${d.notas} nota(s) registrada(s)</b>` : ''}</span></div>`; }).join('')}</div>
     <div><button type="button" class="btn" data-wzadd>+ disciplina</button></div>
@@ -199,7 +199,7 @@ function coleta(){
     const duo = document.getElementById('wz-duo'); W.duoOn = !!(duo && duo.checked); W.duoU = (v('wz-duou') || '').trim().replace(/^@/, '');
   }
   if(W.passo === 4 || W.editar){
-    const dt = (id, antes) => { const x = v(id); if(x == null) return antes; const r = HJ.isoData(x, HOJE); if(!r) W.dtRuim = x; return r || antes; };
+    const dt = (id, antes) => { const x = v(id); if(x == null) return antes; const r = GB.isoData(x, HOJE); if(!r) W.dtRuim = x; return r || antes; };
     W.dtRuim = '';
     W.ini = dt('wz-ini', W.ini); W.fim = dt('wz-fim', W.fim); W.p1 = +v('wz-p1') || 0; W.p2 = +v('wz-p2') || 0;
     W.disc = W.disc.map((d,i) => ({...d, d:(v('wz-d-'+i)||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,''), n:(v('wz-n-'+i)||'').trim(), n1:dt('wz-n1-'+i, d.n1), n2:dt('wz-n2-'+i, d.n2)}));
@@ -225,7 +225,7 @@ function valida(){
   }
   if(W.passo === 4 || W.editar){
     const ds = W.disc.filter(d => d.d);
-    if(W.dtRuim) return HJ.dataRuim(W.dtRuim);
+    if(W.dtRuim) return GB.dataRuim(W.dtRuim);
     if(!ds.length) return 'Cadastre pelo menos uma disciplina (a sigla basta).';
     if(new Set(ds.map(d => d.d)).size !== ds.length) return 'Há duas disciplinas com a mesma sigla.';
     if(!(W.ini < W.fim)) return 'O fim do semestre precisa ser depois do início.';
@@ -236,7 +236,7 @@ function valida(){
 }
 function avaliacoesTxt(){
   const volta = new Date(W.fim + 'T12:00:00Z'); volta.setUTCDate(volta.getUTCDate() + 50);
-  const L = ['# Plano de avaliação de cada disciplina (Hunter.todo). Gerado pelo assistente da primeira entrada; pode editar à mão.',
+  const L = ['# Plano de avaliação de cada disciplina (Ganbatte). Gerado pelo assistente da primeira entrada; pode editar à mão.',
     '# temporada | nome | início | fim do semestre | volta às aulas',
     '# [SIGLA] chefão | ícone | por que esse chefão',
     '# chave | nome da avaliação | peso | data | palavra-chave (opcional) | contínua (opcional)',
@@ -251,7 +251,7 @@ function desenhaW(){
   let bg = document.getElementById('wz'); if(!bg){ bg = document.createElement('div'); bg.id = 'wz'; bg.className = 'wz-bg'; document.body.appendChild(bg); }
   const ult = W.passo === PASSOS.length - 1 && !W.editar;
   bg.innerHTML = `<div class="wz" role="dialog" aria-modal="true" aria-labelledby="wz-t">
-    <div class="wz-top"><img src="${LOGO}" alt=""><div><h2 id="wz-t">Licença Hunter</h2><p>Passo ${W.passo + 1} de ${PASSOS.length} · ${PASSOS[W.passo]}</p></div>
+    <div class="wz-top"><img src="${MARCA}" alt=""><div><h2 id="wz-t">Licença Hunter</h2><p>Passo ${W.passo + 1} de ${PASSOS.length} · ${PASSOS[W.passo]}</p></div>
       <div class="wz-steps" aria-hidden="true">${PASSOS.map((_,i) => `<i class="${i <= W.passo ? 'on' : ''}"></i>`).join('')}</div></div>
     <div class="wz-body">${W.editar ? passoHTML().replace(/<p>Cada disciplina vira um chefão do Genei Ryodan\..*?<\/p>/s, '<p>Adicione, renomeie ou remova disciplinas e ajuste as datas da N1 e da N2. As notas já registradas continuam valendo enquanto a sigla for a mesma; disciplinas com plano detalhado ficam como estão no arquivo.</p>') : passoHTML()}</div>
     <div class="wz-foot"><button type="button" class="btn" data-wznav="-1"${W.passo ? '' : ' hidden'}>← voltar</button><span class="err" role="alert">${esc(W.err)}</span>
@@ -276,7 +276,7 @@ function abreDisciplinas(nova){   // nova = {d, n}: disciplina sugerida (ex.: um
 async function salvaW(tour){
   const jogador = {configurado:true, nome:W.nome, nick:W.nick, tags:W.tags, semestre:{ini:W.ini, fim:W.fim},
     disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n, n1:d.n1, n2:d.n2})), habitos:habsJSON(W.habs, W.hf, W.hid), cf: W.cfOn ? {handle:W.cfH, meta:W.cfM} : null, duo: W.duoOn ? {usuario:W.duoU} : null};
-  if(window.HJ_TEMP && !(await HJ_TEMP.antesDeTrocar(avaliacoesTxt()))){ W.err = 'Não salvou: a temporada atual precisa ser guardada antes de trocar.'; desenhaW(); return; }
+  if(window.GB_TEMP && !(await GB_TEMP.antesDeTrocar(avaliacoesTxt()))){ W.err = 'Não salvou: a temporada atual precisa ser guardada antes de trocar.'; desenhaW(); return; }
   try { await post('/api/config', {jogador, avaliacoes: avaliacoesTxt()}); await recarrega(); }
   catch(e){ W.err = 'Não salvou: ' + e.message; desenhaW(); return; }
   UI.avatar = W.av; EST.tour = tour ? {} : Object.fromEntries(['l','b','b2','d2','bk','ms','sys','cfg','nv','x'].map(k => [k,1])); salvaUI();
@@ -301,7 +301,7 @@ document.addEventListener('click', e => {
     if(perdidas.length && !W.confirma){ W.confirma = 1; W.err = `${perdidas.map(b => b.d).join(', ')} tem nota registrada e vai sair do jogo. Clique em salvar de novo para confirmar.`; desenhaW(); return; }
     W.confirma = 0;
     const jogador = {...CTX.JOG, semestre:{ini:W.ini, fim:W.fim}, disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n}))};
-    (window.HJ_TEMP ? HJ_TEMP.antesDeTrocar(avaliacoesTxt()) : Promise.resolve(true))
+    (window.GB_TEMP ? GB_TEMP.antesDeTrocar(avaliacoesTxt()) : Promise.resolve(true))
       .then(ok => { if(!ok) throw new Error('a temporada atual precisa ser guardada antes de trocar'); return post('/api/config', {jogador, avaliacoes: avaliacoesTxt()}); }).then(recarrega).then(() => { document.getElementById('wz').remove(); W.editar = false; render(); toast('Disciplinas salvas'); })
       .catch(err => { W.err = 'Não salvou: ' + err.message; desenhaW(); });
     return; }
@@ -370,10 +370,10 @@ const TOURS = {
   x:[['#x-root .x-head','Expedições','Projetos que duram semanas ou meses e não são de uma disciplina: o TCC, um app seu, a iniciação científica, o estágio. As tarefas deles também aparecem na <b>Lista</b>, com a etiqueta da expedição.'],
      ['#x-root .x-vis','Formas de ver','A mesma expedição desenhada de cinco jeitos; troque quando quiser, nada muda nos dados. <b>Cards</b>: todas lado a lado. <b>Trilha</b>: os marcos como paradas de um caminho. <b>Quadro</b>: uma coluna por marco, com as etapas em cartões. <b>Foco</b>: só o próximo passo de cada uma. <b>Cronograma</b>: os marcos no calendário. A escolha fica guardada neste navegador.'],
      ['#x-root [data-xnova]','Nova expedição','Dê um nome, um ícone e, se quiser, uma frase do que é. Depois acrescente os marcos.'],
-     ['#x-root [data-xmarconovo]','Marcos','Cada marco é uma <b>caçada</b>: uma parte do projeto com as suas etapas ("Versão 1.0", "Capítulo 2"). Cada etapa vale o XP normal, e fechar o marco dá mais ' + HJ.MARCO_ETAPA + ' XP por etapa (até 12) e ' + HJ.MARCO_DIA + ' XP por dia diferente em que você fez etapa dele (até 10). A tecla <b>C</b> cria um marco inteiro, uma etapa por linha.'],
+     ['#x-root [data-xmarconovo]','Marcos','Cada marco é uma <b>caçada</b>: uma parte do projeto com as suas etapas ("Versão 1.0", "Capítulo 2"). Cada etapa vale o XP normal, e fechar o marco dá mais ' + GB.MARCO_ETAPA + ' XP por etapa (até 12) e ' + GB.MARCO_DIA + ' XP por dia diferente em que você fez etapa dele (até 10). A tecla <b>C</b> cria um marco inteiro, uma etapa por linha.'],
      ['#x-root [data-xadd^="exp:"]','Tarefas soltas','O que é da expedição mas não cabe num marco. Vale o XP normal e conta como semana ativa.', 1],
      ['#x-root .x-sem','Semanas ativas','Cada quadrado é uma semana: aceso quando você fez pelo menos uma tarefa da expedição. É isso que paga o fim, então trabalhar um pouco toda semana rende mais que tudo de uma vez.'],
-     ['#x-root [data-xfim]','Concluir','Projeto entregue? Concluir dá <b>+' + HJ.EXP_SEMANA + ' XP por semana ativa</b> (até 20) e pede pelo menos um marco fechado. A expedição vai para as concluídas, de onde dá para reabrir.', 1]],
+     ['#x-root [data-xfim]','Concluir','Projeto entregue? Concluir dá <b>+' + GB.EXP_SEMANA + ' XP por semana ativa</b> (até 20) e pede pelo menos um marco fechado. A expedição vai para as concluídas, de onde dá para reabrir.', 1]],
   sys:[['#sys-root > .card:first-child','Regras','Tudo o que o jogo considera: XP, Ten, torre, chefões, Jenny. A fonte de verdade é o motor.js. Nome, hábitos, IA e backup ficam em <b>Configurações</b>.']],
   /* tutorial da IA: aparece ao ligar uma IA (ou pelo botão "tutorial da IA" em Configurações); troca de aba a cada passo */
   ia:[['#cfg-ia','IA ligada','A partir de agora o jogo chama a IA sozinho. Ela <b>só devolve texto</b>: quem confere e grava é o jogo, e planos e lembretes você revisa antes de salvar.', 0, () => tab('cfg')],
@@ -452,7 +452,7 @@ function rascunhoCfg(){
 /* contribuições recompensadas (#23): o servidor confere no GitHub as issues do jogador fechadas como resolvidas */
 function contribHTML(){
   const c = D.contrib; if(!c || !c.issues.length) return '';
-  return `<p class="sub" style="margin:-4px 0 0">${c.issues.length} contribuição${c.issues.length === 1 ? '' : 'ões'} recompensada${c.issues.length === 1 ? '' : 's'}: ${c.issues.map(i => `<a href="https://github.com/CaioParanaiba/todo-engine/issues/${i.n}" target="_blank" rel="noopener">#${i.n}</a> ${i.tipo}`).join(' · ')}</p>`;
+  return `<p class="sub" style="margin:-4px 0 0">${c.issues.length} contribuição${c.issues.length === 1 ? '' : 'ões'} recompensada${c.issues.length === 1 ? '' : 's'}: ${c.issues.map(i => `<a href="https://github.com/CaioParanaiba/ganbatte/issues/${i.n}" target="_blank" rel="noopener">#${i.n}</a> ${i.tipo}`).join(' · ')}</p>`;
 }
 function cfgHTML(){
   const c = rascunhoCfg();
@@ -470,7 +470,7 @@ function cfgHTML(){
       <div class="wz-f" style="grid-template-columns:auto minmax(0,1fr);align-items:end">
         <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink);padding-bottom:9px"><input type="checkbox" data-cfg="duoOn"${c.duoOn ? ' checked' : ''}> Duolingo</label>
         <label>Usuário (sem senha: o jogo lê a ofensiva do perfil e marca sozinho o dia com lição)<input data-cfg="duoU" value="${esc(c.duoU)}" maxlength="40"${c.duoOn ? '' : ' disabled'}></label></div>
-      <label>Usuário do GitHub (opcional: bug que você reportou e foi corrigido vale +${HJ.CONTRIB.bug.xp} XP e +${HJ.CONTRIB.bug.j.toLocaleString('pt-BR')} J; ideia que entrou no jogo, +${HJ.CONTRIB.ideia.xp} XP e +${HJ.CONTRIB.ideia.j.toLocaleString('pt-BR')} J)<input data-cfg="gh" value="${esc(c.gh)}" maxlength="39" placeholder="deixe vazio se não usa"></label>
+      <label>Usuário do GitHub (opcional: bug que você reportou e foi corrigido vale +${GB.CONTRIB.bug.xp} XP e +${GB.CONTRIB.bug.j.toLocaleString('pt-BR')} J; ideia que entrou no jogo, +${GB.CONTRIB.ideia.xp} XP e +${GB.CONTRIB.ideia.j.toLocaleString('pt-BR')} J)<input data-cfg="gh" value="${esc(c.gh)}" maxlength="39" placeholder="deixe vazio se não usa"></label>
       ${contribHTML()}
       <label>Tags (o nome muda; o significado de cada tipo continua o mesmo)</label>
       <div class="wz-f" style="grid-template-columns:repeat(4,minmax(0,1fr))">${TIPOS.filter(t => !t.fixo).map(t => `<label style="color:${NC(t.c)}">${t.n}<input data-cfgt="${t.k}" value="${esc(c.tags[t.k])}" maxlength="24"></label>`).join('')}</div>
@@ -575,6 +575,6 @@ document.addEventListener('click', async e => {
 
 const rB2_0 = RENDER.b2;
 RENDER.b2 = S => { rB2_0(S); const h = document.querySelector('#b2-inbox h2'); if(h) h.insertAdjacentHTML('afterend', '<p style="margin:0 0 10px"><button type="button" class="btn v" data-wzdiscabre>editar disciplinas e datas</button></p>'); };
-window.HJ_GUIA = {abreW, abreDisciplinas, tutorial};
+window.GB_GUIA = {abreW, abreDisciplinas, tutorial};
 if(CTX) tab(cur);   // os dados podem ter chegado antes deste script (no modo demonstração chegam): reaplica a aba com o guia
 })();

@@ -1,0 +1,60 @@
+/* ===== Pele A · Licença Hunter =====
+   A ideia: tudo parece a carteirinha da Associação. Cantos quase retos com marcas douradas em dois cantos opostos
+   (como um cartão de identidade), títulos em caixa alta espaçada com um losango, abas como divisórias de fichário,
+   barras segmentadas como a tarja magnética. Cores: só os tokens do tema (o dourado é o --amb). */
+:root{--lic:var(--amb)}
+
+body{background-image:repeating-linear-gradient(45deg,color-mix(in srgb,var(--lic) 3.5%,transparent) 0 1px,transparent 1px 13px)}
+
+/* título: carimbo da Associação */
+.head h1{font:700 28px/1 var(--f-hud);text-transform:uppercase;letter-spacing:.16em}
+.head h1 span{color:var(--lic)}
+.head h1::after{content:"ASSOCIAÇÃO HUNTER · LICENÇA";display:block;width:max-content;font:600 9.5px var(--f-mono);letter-spacing:.34em;color:var(--faint);margin-top:7px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--lic) 50%,transparent)}
+.head .plate{border-radius:4px;box-shadow:0 0 0 1px var(--lic),0 0 0 4px var(--bg),0 0 0 5px color-mix(in srgb,var(--lic) 40%,transparent)}
+.fact{border-radius:2px;border-color:color-mix(in srgb,var(--lic) 25%,var(--hair))}
+
+/* painéis: cartão com marcas douradas no canto de cima à esquerda e no de baixo à direita */
+.card,.tower,.col,.l-list,.k,.gnav,.note,.hud,.season,.pano-top{
+  border-radius:3px;border-color:color-mix(in srgb,var(--lic) 18%,var(--hair));
+  background-image:linear-gradient(var(--lic),var(--lic)),linear-gradient(var(--lic),var(--lic)),linear-gradient(var(--lic),var(--lic)),linear-gradient(var(--lic),var(--lic));
+  background-size:16px 2px,2px 16px,16px 2px,2px 16px;background-position:0 0,0 0,100% 100%,100% 100%;background-repeat:no-repeat;background-origin:border-box}
+.col .ch{background:linear-gradient(180deg,color-mix(in srgb,var(--red) 8%,transparent),transparent);border-bottom:1px dashed color-mix(in srgb,var(--lic) 25%,var(--hair))}
+
+/* cabeçalho de card: losango dourado, caixa alta espaçada, linha fina embaixo */
+.card h2{font:700 11px var(--f-hud);text-transform:uppercase;letter-spacing:.13em;color:var(--soft);padding-bottom:8px;border-bottom:1px solid var(--hair);
+  background:linear-gradient(var(--lic),var(--lic)) left bottom/26px 1px no-repeat}
+.card h2 .c{font-size:0;width:7px;height:7px;flex:none;background:var(--lic);transform:rotate(45deg)}
+.card.l-tg:not([open]) h2{border-bottom:0;padding-bottom:0;background:none}
+.go{font-family:var(--f-hud);text-transform:uppercase;letter-spacing:.08em;color:var(--lic)}
+.col .bd h4,.l-k,.cap{font-family:var(--f-hud);letter-spacing:.18em}
+
+/* abas: divisórias de fichário, a atual com a tarja dourada */
+.gnav{padding:0;gap:0;overflow:hidden}
+.gnav button{border:0;border-radius:0;padding:13px 15px 11px;font:600 11.5px var(--f-hud);text-transform:uppercase;letter-spacing:.12em;border-bottom:2px solid transparent;box-shadow:inset -1px 0 0 var(--hair)}
+.gnav button:hover{background:color-mix(in srgb,var(--lic) 6%,transparent)}
+.gnav button[aria-current="page"]{border:0;border-bottom:2px solid var(--lic);background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--lic) 12%,transparent));color:var(--ink)}
+.gnav button[aria-current="page"] .ic{color:var(--lic)}
+.gnav .tr-q,.gnav .px{box-shadow:none}
+
+/* ficha do topo: marca d'água "HUNTER" e foto 3×4 */
+.l-me{position:relative;overflow:hidden}
+.l-me::after{content:"HUNTER";position:absolute;right:-6px;bottom:-22px;font:700 104px/1 var(--f-hud);letter-spacing:.06em;color:var(--lic);opacity:.05;pointer-events:none}
+.av.me{border-radius:5px;border-color:var(--lic);box-shadow:0 0 0 3px var(--panel),0 0 0 4px color-mix(in srgb,var(--lic) 45%,transparent)}
+.l-me b.l-nm,.sheet .nm{text-transform:uppercase;letter-spacing:.1em}
+
+/* grupos da lista */
+.l-grp h3 .t{font:700 12px var(--f-hud);letter-spacing:.2em}
+.l-grp h3 .t::before{content:"";display:inline-block;width:6px;height:6px;background:currentColor;transform:rotate(45deg);margin-right:9px;vertical-align:2px}
+
+/* peças pequenas: tudo de canto reto */
+.l-ck{border-radius:2px;box-shadow:0 0 0 2px var(--panel),0 0 0 3px color-mix(in srgb,var(--c,var(--soft)) 35%,transparent)}
+.l-tag,.l-xp,.l-pri,.l-chip,.l-box,.l-more,.btn,.reset,.l-seg select,#l-date,.tab,.l-ajuda,.l-prev code{border-radius:2px}
+.btn,.l-more{text-transform:uppercase;letter-spacing:.08em;font-size:11px}
+.l-xp{border:1px solid color-mix(in srgb,var(--grn) 40%,transparent)}
+
+/* barras: tarja segmentada, sem ponta arredondada */
+.l-bar,.xpbar,.hp,.hp4,.l-boss .hp,.l-hnvb,.attr .bar{border-radius:0}
+.l-bar i,.xpbar > b,.l-boss .hp i,.hp4 > b,.attr .bar b{border-radius:0;
+  background-image:repeating-linear-gradient(90deg,transparent 0 9px,color-mix(in srgb,var(--panel) 75%,transparent) 9px 11px)}
+.l-bar i{background-color:var(--lic)} .xpbar > b{background-color:var(--volt)}
+.l-hg i,.l-cal span{border-radius:1px}

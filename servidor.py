@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Hunter.todo · servidor local do jogo. Só a biblioteca padrão do Python 3.8+ (Linux, Windows e Mac).
+"""Ganbatte · servidor local do jogo. Só a biblioteca padrão do Python 3.8+ (Linux, Windows e Mac).
 
 Uso:  python3 servidor.py [--porta 8642] [--dados PASTA] [--sem-navegador] [--instalar | --desinstalar]
 
 Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jogador numa pasta separada do código
-(padrão ~/.hunter-todo/, ou a variável HUNTER_DADOS). Atualizar o código (git pull ou ZIP novo) nunca mexe nela:
+(padrão ~/.ganbatte/, ou a variável GANBATTE_DADOS). Atualizar o código (git pull ou ZIP novo) nunca mexe nela:
   todo.txt, done.txt        tarefas no formato todo.txt (as concluídas de dias anteriores vão para o done.txt);
-                            quem já tem um todo.txt em outra pasta usa --todo PASTA (ou HUNTER_TODO) e o jogo lê e grava lá
+                            quem já tem um todo.txt em outra pasta usa --todo PASTA (ou GANBATTE_TODO) e o jogo lê e grava lá
   jogador.json              nome, tags, hábitos, disciplinas e Codeforces (o assistente da primeira entrada grava)
   avaliacoes.txt, notas.txt plano de avaliação das disciplinas e notas lançadas
   estado.json               loja, carteira, o que está equipado e os prêmios reais do jogador
@@ -16,6 +16,7 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   cf.json                   cache do Codeforces (problemas aceitos por dia e os marcados à mão)
   duo.json                  cache do Duolingo (a última ofensiva lida, os dias já creditados e desde quando está ligado)
   contrib.json              issues do jogador no GitHub fechadas como resolvidas (bug corrigido, ideia feita) e o dia em que o jogo as viu
+  grupo.json, enviado.json  modo em grupo: os grupos (com o token) e o que já foi enviado a cada um; grupo/ guarda o último placar
 
 Rotas (as mesmas que web/demo.js simula no modo demonstração):
   GET  /api/jogo                          tudo o que a página precisa
@@ -40,6 +41,13 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   GET  /api/atualizacao[?agora]           versão instalada e as mais novas publicadas no GitHub (confere a cada 6 h; ?agora = na hora)
   POST /api/atualizar {}                  baixa a versão nova (git pull ou ZIP do GitHub) e reinicia o servidor
   POST /api/canal {canal}                 troca entre a versão normal (main) e as de teste (beta, grupo), só em cópia git, e reinicia
+  GET  /api/grupo                         modo em grupo: os grupos do jogador e o último placar de cada um (sem os tokens)
+  POST /api/grupo/entrar {link}           entra com o link do convite (https://endereco/g/ID#CODIGO)
+  POST /api/grupo/sair {chave}            sai do grupo
+  POST /api/grupo/sincronizar {resumo}    manda os dias que mudaram (motor.js → resumoGrupo) e traz o placar
+  POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config (repassado ao servidor do grupo)
+  POST /api/grupo/host {acao, ...}        estado | servidor | funnel | criar {nome, endereco}: este computador como servidor do grupo
+  GET  /api/grupo/copia                   cópia do banco do servidor do grupo desta máquina (só o dono)
 
 Todo dia o servidor cria as recorrentes de hoje (um hábito por linha, rec:ID:DATA, e as do Codeforces e do Duolingo se ligados),
 tira as que ficaram abertas de dias anteriores e conclui sozinho a do Codeforces quando a meta do dia é batida. Se a meta foi
@@ -52,6 +60,7 @@ Iniciar com o computador (opcional): serviço do usuário no systemd (Linux; sem
 pasta Inicializar (Windows) ou LaunchAgent (Mac). O servidor de segundo plano roda com --fundo e grava o log em servidor.log.
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -60,6 +69,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import webbrowser
@@ -69,12 +79,19 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.6.5"
-VERSAO_NOME = "atualização das expedições"   # nome da série 0.6 (aparece em Configurações → servidor)
+VERSAO = "0.7"
+VERSAO_NOME = "atualização do Ganbatte"   # nome da série 0.7 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
 DADOS = Path()   # definido em main()
 TODO_DIR = Path()   # pasta do todo.txt e do done.txt: a de dados, ou a do --todo
+APP = "ganbatte"   # nome no /api/ping, no User-Agent e no início automático
+APP_ANTIGO = "hunter-todo"   # o nome até a 0.6.6-beta1 (#15): o servidor ainda reconhece e migra o que tinha esse nome
+
+
+def env(nome):
+    """A variável GANBATTE_NOME, ou a HUNTER_NOME de antes do #15 (aceita por um tempo)."""
+    return os.environ.get("GANBATTE_" + nome) or os.environ.get("HUNTER_" + nome) or ""
 lock = threading.RLock()
 undo_stack = []
 
@@ -646,7 +663,7 @@ def cf_envios(handle, desde):
         if pg:
             time.sleep(2)
         url = "https://codeforces.com/api/user.status?" + urllib.parse.urlencode({"handle": handle, "from": 1 + pg * 1000, "count": 1000})
-        req = urllib.request.Request(url, headers={"User-Agent": f"hunter-todo/{VERSAO}"})
+        req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}"})
         with urllib.request.urlopen(req, timeout=10) as r:
             j = json.load(r)
         if j.get("status") != "OK":
@@ -788,7 +805,7 @@ duo_vivo = {"t": 0.0, "rodando": False}
 
 def duo_perfil(usuario):
     url = "https://www.duolingo.com/2017-06-30/users?" + urllib.parse.urlencode({"username": usuario, "fields": "users{id,username,streak,streakData}"})
-    req = urllib.request.Request(url, headers={"User-Agent": f"Mozilla/5.0 (hunter-todo/{VERSAO})"})
+    req = urllib.request.Request(url, headers={"User-Agent": f"Mozilla/5.0 ({APP}/{VERSAO})"})
     with urllib.request.urlopen(req, timeout=10) as r:
         us = json.load(r).get("users") or []
     u = next((u for u in us if str(u.get("username", "")).lower() == usuario.lower()), None)
@@ -880,9 +897,9 @@ DONO = "CaioParanaiba"   # quem desenvolve: as issues dele são anotações do d
 
 
 def contrib_issues(usuario):
-    q = f"repo:{DONO}/todo-engine is:issue author:{usuario} reason:completed"
+    q = f"repo:{DONO}/ganbatte is:issue author:{usuario} reason:completed"
     url = "https://api.github.com/search/issues?" + urllib.parse.urlencode({"q": q, "per_page": 100})
-    req = urllib.request.Request(url, headers={"User-Agent": f"hunter-todo/{VERSAO}", "Accept": "application/vnd.github+json"})
+    req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}", "Accept": "application/vnd.github+json"})
     with urllib.request.urlopen(req, timeout=10) as r:
         itens = json.load(r).get("items") or []
     out = {}
@@ -1114,7 +1131,7 @@ def api_jogo_estado(d):
 
 
 # ---------- temporadas guardadas (#7) ----------
-# Quando a temporada acaba, a página calcula a cápsula (HJ.capsula em web/motor.js: números finais congelados, chaves neutras
+# Quando a temporada acaba, a página calcula a cápsula (GB.capsula em web/motor.js: números finais congelados, chaves neutras
 # e os nomes do tema) e o servidor grava temporadas/NOME/ com ela e uma cópia dos arquivos daquele momento.
 NOME_TEMP = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$")
 DIA = re.compile(r"^\d{4}-\d\d-\d\d$")
@@ -1233,8 +1250,8 @@ def api_conquistas(d):
 
 
 # ---------- atualização: confere no GitHub se há versão nova e, se o jogador pedir, atualiza ----------
-GITHUB = "https://github.com/CaioParanaiba/todo-engine"
-RAW = os.environ.get("HUNTER_RAW") or ""   # HUNTER_RAW: outro endereço, para testar; vazio = a branch do canal
+GITHUB = "https://github.com/CaioParanaiba/ganbatte"
+RAW = env("RAW")   # GANBATTE_RAW: outro endereço, para testar; vazio = a branch do canal
 
 
 CANAIS = ("main", "beta", "grupo")   # estável, versões de teste e o modo em grupo (0.9.0-betaN)
@@ -1275,7 +1292,7 @@ def confere_github(forcar=False):
         if not forcar and time.time() - ATUAL["quando"] < 6 * 3600:
             return
         try:
-            with urllib.request.urlopen(urllib.request.Request((RAW or f"https://raw.githubusercontent.com/CaioParanaiba/todo-engine/{canal()}/") + "web/novidades.js", headers={"User-Agent": "hunter-todo/" + VERSAO}), timeout=8) as r:
+            with urllib.request.urlopen(urllib.request.Request((RAW or f"https://raw.githubusercontent.com/CaioParanaiba/ganbatte/{canal()}/") + "web/novidades.js", headers={"User-Agent": APP + "/" + VERSAO}), timeout=8) as r:
                 ATUAL.update(remota=novidades_de(r.read(400_000).decode("utf-8")), erro="")
         except urllib.error.HTTPError as e:   # 404: a versão publicada ainda não tem o novidades.js (é anterior à 0.5)
             ATUAL.update(remota=[], erro="" if e.code == 404 else "o GitHub não respondeu direito")
@@ -1298,7 +1315,7 @@ def api_atualizacao_get(forcar):
 
 def baixa_zip():
     """Sem git: baixa o ZIP da versão publicada e copia os arquivos por cima do código (os dados ficam em outra pasta)."""
-    with urllib.request.urlopen(urllib.request.Request(GITHUB + "/archive/refs/heads/main.zip", headers={"User-Agent": "hunter-todo/" + VERSAO}), timeout=60) as r:
+    with urllib.request.urlopen(urllib.request.Request(GITHUB + "/archive/refs/heads/main.zip", headers={"User-Agent": APP + "/" + VERSAO}), timeout=60) as r:
         corpo = r.read(60_000_000)
     with zipfile.ZipFile(BytesIO(corpo)) as z:
         nomes = [n for n in z.namelist() if not n.endswith("/")]
@@ -1521,7 +1538,7 @@ def ia_executa(tid, ag, exe, pedido, anexos, leve):
     import tempfile
     t = ia_tarefas[tid]
     try:
-        with tempfile.TemporaryDirectory(prefix="hunter-ia-") as pasta:
+        with tempfile.TemporaryDirectory(prefix="ganbatte-ia-") as pasta:
             if anexos:
                 import shutil
                 for a in anexos:
@@ -1596,8 +1613,325 @@ def api_ia_plano(d):
     return {"ok": True, "nome": nome, "planos": planos()}
 
 
+# ---------- modo em grupo (0.9, #38–#40): o jogo conversa com o servidor do grupo (grupo/servidor_grupo.py) ----------
+# A página calcula o resumo dos dias (motor.js → resumoGrupo: só números e os hábitos do grupo) e este servidor manda ao do
+# grupo só os dias novos ou que mudaram. O token fica aqui, nunca na página. Na pasta de dados (só acrescenta):
+#   grupo.json    lista dos grupos em que o jogador está: {url, id, nome, membro, token, admin, publico?, entrou}
+#   enviado.json  {"url|id": {dia: assinatura}}: o que já chegou ao servidor (o resto vai na próxima sincronização)
+#   grupo/        o último placar de cada grupo, para a aba continuar mostrando quando o servidor está fora do ar
+GRUPO_PORTA = 8643
+GRUPO_APP = "ganbatte-grupo"
+PROTOCOLO_GRUPO = 1
+LINK_GRUPO = re.compile(r"^(https?://[^/\s#?]+)/g/([a-z0-9][a-z0-9-]{1,30})/?#([A-Za-z0-9]{6,12})$")
+
+
+class GrupoFora(Erro):
+    """O servidor do grupo não respondeu (sem internet, Funnel desligado, notebook do host dormindo)."""
+
+
+def grupo_pasta_servidor():
+    return Path(env("GRUPO_DADOS") or Path.home() / ".ganbatte-grupo")
+
+
+def grupo_local():
+    return f"http://127.0.0.1:{int(env('GRUPO_PORTA') or GRUPO_PORTA)}"
+
+
+def grupo_pede(url, metodo, rota, corpo=None, token="", tempo=15, bruto=False):
+    h = {"User-Agent": f"{APP}/{VERSAO}", "Content-Type": "application/json"}
+    if token:
+        h["Authorization"] = "Bearer " + token
+    req = urllib.request.Request(url.rstrip("/") + rota, data=None if corpo is None else json.dumps(corpo).encode(), method=metodo, headers=h)
+    try:
+        with urllib.request.urlopen(req, timeout=tempo) as r:
+            return r.read() if bruto else json.load(r)
+    except urllib.error.HTTPError as e:
+        try:
+            msg = json.load(e).get("error") or ""
+        except ValueError:
+            msg = ""
+        if not msg or e.code in (502, 503, 504):   # o túnel respondeu, mas o servidor do grupo atrás dele não
+            raise GrupoFora(f"o servidor do grupo não respondeu ({e.code})", 502)
+        raise Erro(msg, e.code if e.code in (401, 403, 404, 409, 426, 429) else 400)
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        raise GrupoFora(f"o servidor do grupo está fora do ar ({getattr(e, 'reason', e)})", 502)
+
+
+def grupos():
+    g = ler_json("grupo.json", [])
+    return [x for x in g if isinstance(x, dict) and x.get("url") and x.get("id")] if isinstance(g, list) else []
+
+
+def chave_grupo(g):
+    return f"{g['url']}|{g['id']}"
+
+
+def arquivo_placar(g):
+    return DADOS / "grupo" / (re.sub(r"[^a-z0-9]+", "-", g["url"].lower().split("//", 1)[-1]).strip("-") + "--" + g["id"] + ".json")
+
+
+def grupo_da(chave):
+    g = next((x for x in grupos() if chave_grupo(x) == chave), None)
+    if not g:
+        raise Erro("grupo não encontrado neste jogo")
+    return g
+
+
+def api_grupo_get():
+    lista = []
+    for g in grupos():
+        p = ler_json_arquivo(arquivo_placar(g))
+        lista.append({"chave": chave_grupo(g), "id": g["id"], "nome": g.get("nome") or g["id"], "admin": bool(g.get("admin")),
+                      "convite": (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}", "placar": p})
+    return {"ok": True, "grupos": lista, "host": (grupo_pasta_servidor() / "dono.token").is_file()}
+
+
+def ler_json_arquivo(f):
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def entra_grupo(url, gid, codigo, nome, avatar, publico=""):
+    r = grupo_pede(url, "POST", f"/g/{gid}/entrar", {"codigo": codigo, "nome": nome, "avatar": avatar})
+    with lock:
+        lista = [x for x in grupos() if not (x["url"] == url and x["id"] == gid)]
+        novo = {"url": url, "id": gid, "nome": r["grupo"]["nome"], "membro": r["membro"], "token": r["token"], "admin": r["admin"],
+                "entrou": hoje().isoformat()}
+        if publico:
+            novo["publico"] = publico
+        gravar_json("grupo.json", lista + [novo])
+        env_ = ler_json("enviado.json", {})
+        env_.pop(f"{url}|{gid}", None)   # perfil novo ou reconvite: manda a temporada inteira de novo
+        gravar_json("enviado.json", env_)
+    return {"ok": True, "chave": f"{url}|{gid}", "nome": r["grupo"]["nome"], "admin": r["admin"]}
+
+
+def nome_publico(d):
+    j = jogador()
+    nome = " ".join(str(d.get("nome") or j.get("nick") or j.get("nome") or "").split())[:40]
+    if not nome:
+        raise Erro("escreva o seu nome no jogo (Configurações) antes de entrar num grupo")
+    av = str(d.get("avatar") or "")
+    return nome, (av if NOME_AV.match(av) and (WEB / "a" / f"{av}.png").is_file() else "")
+
+
+def api_grupo_entrar(d):
+    """{link: https://endereco/g/ID#CODIGO, nome?, avatar?}: o link do convite, colado em Configurações → grupo."""
+    m = LINK_GRUPO.match(str(d.get("link", "")).strip())
+    if not m:
+        raise Erro("link de convite inválido: copie o link inteiro, do https:// até o código depois do #")
+    nome, av = nome_publico(d)
+    url, publico = m.group(1), ""
+    if ping_grupo() and url.split("//", 1)[1].split(":")[0] == tailscale_nome():
+        url, publico = grupo_local(), url   # convite do servidor desta máquina: fala com ele direto, sem dar a volta pela internet
+    return entra_grupo(url, m.group(2), m.group(3).upper(), nome, av, publico)
+
+
+def api_grupo_sair(d):
+    g = grupo_da(d.get("chave"))
+    try:
+        grupo_pede(g["url"], "POST", f"/g/{g['id']}/sair", {}, g["token"])
+    except Erro as e:
+        if not isinstance(e, GrupoFora) and e.code != 401:
+            raise   # ex.: o único admin precisa passar o poder antes
+    with lock:
+        gravar_json("grupo.json", [x for x in grupos() if chave_grupo(x) != chave_grupo(g)])
+        env_ = ler_json("enviado.json", {})
+        env_.pop(chave_grupo(g), None)
+        gravar_json("enviado.json", env_)
+    f = arquivo_placar(g)
+    if f.exists():
+        f.unlink()
+    return {"ok": True}
+
+
+def assinatura(dia):
+    return hashlib.sha1(json.dumps(dia, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def api_grupo_sincronizar(d):
+    """{resumo} (motor.js → resumoGrupo): manda a cada grupo os dias novos ou que mudaram e traz o placar. Fora do ar, o
+    placar guardado volta com offline; o que não foi fica para a próxima (enviado.json só marca o que o servidor recebeu)."""
+    r = d.get("resumo") or {}
+    dias = r.get("dias")
+    if not isinstance(dias, list):
+        raise Erro("resumo inválido")
+    out = {}
+    for g in grupos():
+        k = chave_grupo(g)
+        try:
+            with lock:
+                feito = ler_json("enviado.json", {}).get(k, {})
+            novos = [x for x in dias if isinstance(x, dict) and feito.get(x.get("dia")) != assinatura(x)]
+            for i in range(0, len(novos), 400):
+                parte = novos[i:i + 400]
+                grupo_pede(g["url"], "POST", f"/g/{g['id']}/envio", {"protocolo": PROTOCOLO_GRUPO, "dias": parte}, g["token"], tempo=30)
+                with lock:
+                    env_ = ler_json("enviado.json", {})
+                    env_.setdefault(k, {}).update({x["dia"]: assinatura(x) for x in parte})
+                    gravar_json("enviado.json", env_)
+            p = grupo_pede(g["url"], "GET", f"/g/{g['id']}/placar", token=g["token"])
+            p["recebido"] = time.time()
+            f = arquivo_placar(g)
+            f.parent.mkdir(exist_ok=True)
+            f.write_text(json.dumps(p, ensure_ascii=False), encoding="utf-8")
+            if p.get("voce", {}).get("admin") != g.get("admin") or p.get("grupo", {}).get("nome") != g.get("nome"):
+                with lock:
+                    lista = grupos()
+                    for x in lista:
+                        if chave_grupo(x) == k:
+                            x.update(admin=p["voce"]["admin"], nome=p["grupo"]["nome"])
+                    gravar_json("grupo.json", lista)
+            out[k] = {"placar": p, "enviados": len(novos)}
+        except GrupoFora as e:
+            out[k] = {"placar": ler_json_arquivo(arquivo_placar(g)), "offline": True, "erro": str(e)}
+        except Erro as e:
+            out[k] = {"placar": ler_json_arquivo(arquivo_placar(g)), "erro": str(e), "sem_acesso": e.code == 401}
+    return {"ok": True, "grupos": out}
+
+
+ADMIN_ACOES = {"convite": "admin/convite", "cancelar": "admin/cancelar", "membro": "admin/membro", "config": "admin/config"}
+
+
+def api_grupo_admin(d):
+    """{chave, acao: ver | convite | cancelar | membro | config, ...}: a aba Administrar, repassada ao servidor do grupo."""
+    g = grupo_da(d.get("chave"))
+    acao = d.get("acao")
+    if acao == "ver":
+        return grupo_pede(g["url"], "GET", f"/g/{g['id']}/admin", token=g["token"])
+    if acao not in ADMIN_ACOES:
+        raise Erro("ação desconhecida")
+    corpo = {k: v for k, v in d.items() if k not in ("chave", "acao")}
+    r = grupo_pede(g["url"], "POST", f"/g/{g['id']}/{ADMIN_ACOES[acao]}", corpo, g["token"])
+    if acao == "convite":
+        r["link"] = (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}#{r['codigo']}"
+    return r
+
+
+# ---------- host: o servidor do grupo nesta máquina e o Tailscale Funnel (decidido em 13/10: modo misto) ----------
+def ping_grupo():
+    try:
+        with urllib.request.urlopen(grupo_local() + "/api/ping", timeout=2) as r:
+            return json.load(r).get("app") == GRUPO_APP
+    except Exception:
+        return False
+
+
+def liga_servidor_grupo():
+    """Instala o ganbatte-grupo para subir com a máquina e liga agora (se já não estiver ligado)."""
+    if ping_grupo():
+        return
+    exe = Path(sys.executable)
+    if sistema() == "windows" and exe.with_name("pythonw.exe").exists():
+        exe = exe.with_name("pythonw.exe")
+    cmd = [str(exe), str(REPO / "grupo" / "servidor_grupo.py"), "--fundo", "--porta", grupo_local().rsplit(":", 1)[1], "--dados", str(grupo_pasta_servidor())]
+    auto_ligar(GRUPO_APP, cmd, "Ganbatte (servidor do grupo)")
+    iniciar_fundo(GRUPO_APP, cmd)
+    for _ in range(40):
+        if ping_grupo():
+            return
+        time.sleep(0.25)
+    raise Erro("o servidor do grupo não subiu (veja servidor-grupo.log em " + str(grupo_pasta_servidor()) + ")", 500)
+
+
+def dono_token():
+    try:
+        return (grupo_pasta_servidor() / "dono.token").read_text(encoding="utf-8").strip()
+    except OSError:
+        raise Erro("este computador não é o servidor do grupo (falta o dono.token)", 403)
+
+
+def acha_tailscale():
+    t = shutil.which("tailscale", path=path_agentes())
+    if t:
+        return t
+    for p in (Path("/Applications/Tailscale.app/Contents/MacOS/Tailscale"),
+              Path(os.environ.get("ProgramFiles") or "C:\\Program Files") / "Tailscale" / "tailscale.exe"):
+        if p.is_file():
+            return str(p)
+    return None
+
+
+def tailscale_status(exe):
+    try:
+        r = subprocess.run([exe, "status", "--json"], capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL)
+        return json.loads(r.stdout or "{}")
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return {}
+
+
+def tailscale_nome():
+    exe = acha_tailscale()
+    dns = ((tailscale_status(exe).get("Self") or {}).get("DNSName") or "").rstrip(".") if exe else ""
+    return dns
+
+
+def saida_de(e):
+    v = (getattr(e, "stdout", None) or b"", getattr(e, "stderr", None) or b"")
+    return " ".join(x.decode("utf-8", "replace") if isinstance(x, bytes) else x for x in v)
+
+
+def liga_funnel():
+    """Tenta ligar o Funnel na porta do servidor do grupo. Devolve {estado: ok | sem | login | autorizar | sudo | erro, ...}:
+    a autorização da primeira vez (um link) e o sudo do Linux não dá para fazer por aqui, então a página mostra o que fazer."""
+    exe = acha_tailscale()
+    if not exe:
+        return {"estado": "sem"}
+    st = tailscale_status(exe)
+    if st.get("BackendState") != "Running":
+        return {"estado": "login", "comando": ("sudo tailscale up" if sistema() == "linux" else "abra o Tailscale e entre na conta")}
+    porta = grupo_local().rsplit(":", 1)[1]
+    try:
+        r = subprocess.run([exe, "funnel", "--bg", porta], capture_output=True, text=True, timeout=20, stdin=subprocess.DEVNULL)
+        saida, ok = (r.stdout or "") + " " + (r.stderr or ""), r.returncode == 0
+    except subprocess.TimeoutExpired as e:   # esperando a autorização no navegador
+        saida, ok = saida_de(e), False
+    except OSError as e:
+        return {"estado": "erro", "msg": str(e)}
+    link = re.search(r"https://login\.tailscale\.com/\S+", saida)
+    if link:
+        return {"estado": "autorizar", "link": link.group(0).rstrip(".,)")}
+    if not ok and re.search(r"access denied|permission denied|must be root|operator|sudo", saida, re.I):
+        return {"estado": "sudo", "comando": f"sudo tailscale set --operator=$USER   (ou: sudo tailscale funnel --bg {porta})"}
+    dns = ((st.get("Self") or {}).get("DNSName") or "").rstrip(".")
+    if ok and dns:
+        return {"estado": "ok", "endereco": "https://" + dns}
+    return {"estado": "erro", "msg": " ".join(saida.split())[-300:] or "o tailscale não respondeu"}
+
+
+def api_grupo_host(d):
+    """{acao: estado | servidor | funnel | criar {nome, endereco}}: o host cria um grupo pelo jogo."""
+    acao = d.get("acao")
+    if acao == "estado":
+        ligado, dono, dns = ping_grupo(), (grupo_pasta_servidor() / "dono.token").is_file(), tailscale_nome()
+        return {"ok": True, "servidor": ligado, "dono": dono, "tailscale": bool(acha_tailscale()), "endereco": "https://" + dns if dns else "",
+                "grupos": grupo_pede(grupo_local(), "GET", "/dono", token=dono_token())["grupos"] if ligado and dono else []}
+    if acao == "servidor":
+        liga_servidor_grupo()
+        return {"ok": True}
+    if acao == "funnel":
+        liga_servidor_grupo()
+        return dict(liga_funnel(), ok=True)
+    if acao == "criar":
+        end = str(d.get("endereco") or "").strip().rstrip("/")
+        if not re.match(r"^https?://[^/\s#?]+$", end):
+            raise Erro("endereço do servidor inválido (ex.: https://notebook.tailXXXX.ts.net)")
+        liga_servidor_grupo()
+        r = grupo_pede(grupo_local(), "POST", "/dono/grupo", {"nome": d.get("nome")}, dono_token())
+        nome, av = nome_publico({"avatar": d.get("avatar")})   # o "nome" daqui é o do grupo; o do jogador vem do jogador.json
+        e = entra_grupo(grupo_local(), r["grupo"]["id"], r["convite"], nome, av, publico=end)
+        return dict(e, ok=True)
+    raise Erro("ação desconhecida")
+
+
+def copia_grupo():
+    return grupo_pede(grupo_local(), "GET", "/dono/copia", token=dono_token(), tempo=60, bruto=True)
+
+
 # ---------- iniciar com o computador (opcional: liga e desliga na aba Configurações, ou com --instalar / --desinstalar) ----------
-SERVICO = "hunter-todo"
+SERVICO = APP
 EXEC = {"fundo": False, "porta": 8642, "srv": None, "passou": False, "systemd": None}
 
 
@@ -1624,19 +1958,20 @@ def comando_fundo():
         ["--todo", str(TODO_DIR)] if TODO_DIR != DADOS else [])
 
 
-def arquivo_auto():
+def arquivo_auto(nome=SERVICO):
     so = sistema()
     if so == "windows":
-        return Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / f"{SERVICO}.vbs"
+        return Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / f"{nome}.vbs"
     if so == "mac":
-        return Path.home() / "Library" / "LaunchAgents" / f"com.{SERVICO}.servidor.plist"
+        return Path.home() / "Library" / "LaunchAgents" / f"com.{nome}.servidor.plist"
     if tem_systemd():
-        return Path.home() / ".config" / "systemd" / "user" / f"{SERVICO}.service"
-    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "autostart" / f"{SERVICO}.desktop"
+        return Path.home() / ".config" / "systemd" / "user" / f"{nome}.service"
+    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "autostart" / f"{nome}.desktop"
 
 
-def conteudo_auto(f):
-    cmd = comando_fundo()
+def conteudo_auto(f, cmd=None, nome=SERVICO, desc="Ganbatte (servidor local do jogo)"):
+    """cmd e nome: outro serviço com o mesmo esquema (o ganbatte-grupo, do servidor do grupo)."""
+    cmd = cmd or comando_fundo()
     if f.suffix == ".vbs":
         linha = " ".join('""' + x + '""' for x in cmd)
         return f'CreateObject("WScript.Shell").Run "{linha}", 0, False\r\n'
@@ -1644,14 +1979,14 @@ def conteudo_auto(f):
         from xml.sax.saxutils import escape
         args = "".join(f"<string>{escape(x)}</string>" for x in cmd)
         return ('<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
-                f'<plist version="1.0"><dict><key>Label</key><string>com.{SERVICO}.servidor</string><key>ProgramArguments</key><array>{args}</array>'
+                f'<plist version="1.0"><dict><key>Label</key><string>com.{nome}.servidor</string><key>ProgramArguments</key><array>{args}</array>'
                 '<key>RunAtLoad</key><true/><key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict></dict></plist>\n')
     aspas = lambda x: '"' + re.sub(r'(["\\`$])', r"\\\1", x).replace("%", "%%") + '"'
     exec_ = " ".join(aspas(x) for x in cmd)
     if f.suffix == ".service":
-        return (f"[Unit]\nDescription=Hunter.todo (servidor local do jogo)\n\n[Service]\nExecStart={exec_}\nRestart=on-failure\nRestartSec=10\n\n"
+        return (f"[Unit]\nDescription={desc}\n\n[Service]\nExecStart={exec_}\nRestart=on-failure\nRestartSec=10\n\n"
                 "[Install]\nWantedBy=default.target\n")
-    return f"[Desktop Entry]\nType=Application\nName=Hunter.todo\nExec={exec_}\nNoDisplay=true\nX-GNOME-Autostart-enabled=true\n"
+    return f"[Desktop Entry]\nType=Application\nName={desc.split(' (')[0]}\nExec={exec_}\nNoDisplay=true\nX-GNOME-Autostart-enabled=true\n"
 
 
 def systemctl(*args):
@@ -1664,18 +1999,18 @@ def auto_ligado():
     return arquivo_auto().exists()
 
 
-def auto_ligar():
-    f = arquivo_auto()
+def auto_ligar(nome=SERVICO, cmd=None, desc="Ganbatte (servidor local do jogo)"):
+    f = arquivo_auto(nome)
     f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(conteudo_auto(f), encoding="utf-8")
+    f.write_text(conteudo_auto(f, cmd, nome, desc), encoding="utf-8")
     if f.suffix == ".service":
         systemctl("daemon-reload")
         systemctl("enable", f.name)
 
 
-def auto_desligar():
+def auto_desligar(nome=SERVICO):
     """Não derruba o servidor que está rodando agora (a página continua aberta); só deixa de iniciar com o computador."""
-    f = arquivo_auto()
+    f = arquivo_auto(nome)
     if f.suffix == ".service" and f.exists():
         systemctl("disable", f.name)
     if f.exists():
@@ -1684,9 +2019,44 @@ def auto_desligar():
         systemctl("daemon-reload")
 
 
-def iniciar_fundo():
-    """Liga o servidor em segundo plano agora (a porta precisa estar livre)."""
-    f = arquivo_auto()
+def migra_pasta(p):
+    """#15: a pasta padrão era ~/.hunter-todo. Se o jogo abriu nela (o padrão, ou o --dados que o início automático
+    gravou antes), ela vira ~/.ganbatte e fica um atalho no lugar da antiga (Linux e Mac). Outra pasta fica onde está."""
+    velha, nova = Path.home() / ".hunter-todo", Path.home() / ".ganbatte"
+    if p.absolute() not in (velha.absolute(), nova.absolute()):
+        return p
+    if velha.is_dir() and not velha.is_symlink() and not nova.exists():
+        try:
+            velha.rename(nova)
+        except OSError as e:
+            log("não consegui mover a pasta de dados para ~/.ganbatte:", e)
+            return velha
+        log("pasta de dados movida de ~/.hunter-todo para ~/.ganbatte")
+        try:
+            velha.symlink_to(nova, target_is_directory=True)
+        except OSError:
+            pass
+    return nova if nova.is_dir() and (velha.is_symlink() or not velha.exists()) else p
+
+
+def migra_servico():
+    """#15: o início automático se chamava hunter-todo. Grava o do ganbatte (já com a pasta nova) e apaga o antigo, sem
+    pedir nada ao jogador. O servidor que está rodando continua; o do nome novo assume no próximo login."""
+    velho = arquivo_auto(APP_ANTIGO)
+    if not velho.exists():
+        return
+    try:
+        auto_ligar()
+        auto_desligar(APP_ANTIGO)
+        log("início automático trocado de hunter-todo para ganbatte")
+    except (Erro, OSError, subprocess.SubprocessError) as e:
+        log("não consegui trocar o início automático:", e)
+
+
+def iniciar_fundo(nome=SERVICO, cmd=None):
+    """Liga o servidor em segundo plano agora (a porta precisa estar livre). nome e cmd: outro serviço (ganbatte-grupo)."""
+    f = arquivo_auto(nome)
+    cmd = cmd or comando_fundo()
     if f.suffix == ".service":
         return systemctl("start", "--no-block", f.name)
     if f.suffix == ".plist":
@@ -1694,9 +2064,9 @@ def iniciar_fundo():
         return
     nulo = subprocess.DEVNULL
     if sistema() == "windows":
-        subprocess.Popen(comando_fundo(), creationflags=0x00000008 | 0x00000200, close_fds=True, stdin=nulo, stdout=nulo, stderr=nulo)
+        subprocess.Popen(cmd, creationflags=0x00000008 | 0x00000200, close_fds=True, stdin=nulo, stdout=nulo, stderr=nulo)
     else:
-        subprocess.Popen(comando_fundo(), start_new_session=True, stdin=nulo, stdout=nulo, stderr=nulo)
+        subprocess.Popen(cmd, start_new_session=True, stdin=nulo, stdout=nulo, stderr=nulo)
 
 
 def passar_para_fundo():
@@ -1722,19 +2092,21 @@ def api_autostart(d):
 ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/reabre": api_reabre, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
          "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
-         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada}
-LIMITE = {"/api/temporada": 3_000_000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000}
+         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada,
+         "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
+         "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host}
+LIMITE = {"/api/temporada": 3_000_000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),
              "/ia.js": ("ia.js", "text/javascript; charset=utf-8"), "/conquistas.js": ("conquistas.js", "text/javascript; charset=utf-8"),
              "/novidades.js": ("novidades.js", "text/javascript; charset=utf-8"), "/expedicoes.js": ("expedicoes.js", "text/javascript; charset=utf-8"),
              "/feedback.js": ("feedback.js", "text/javascript; charset=utf-8"), "/temporadas.js": ("temporadas.js", "text/javascript; charset=utf-8"),
-             "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8")}
+             "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8"), "/grupo.js": ("grupo.js", "text/javascript; charset=utf-8")}
 
 
 class H(BaseHTTPRequestHandler):
-    server_version = "hunter-todo/" + VERSAO
+    server_version = APP + "/" + VERSAO
     porta = 0
 
     def log_message(self, fmt, *a):
@@ -1776,7 +2148,7 @@ class H(BaseHTTPRequestHandler):
                 return self._arquivo(WEB / "a" / caminho[3:], "image/png", "max-age=3600")
             return self._json(404, {"ok": False, "error": "foto não encontrada"})
         if caminho == "/api/ping":
-            return self._json(200, {"ok": True, "app": "hunter-todo", "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
+            return self._json(200, {"ok": True, "app": APP, "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
         if caminho == "/api/backup":
             try:
                 corpo = backup()
@@ -1785,7 +2157,21 @@ class H(BaseHTTPRequestHandler):
                 return self._json(500, {"ok": False, "error": "não consegui ler a pasta de dados"})
             self.send_response(200)
             self.send_header("Content-Type", "application/zip")
-            self.send_header("Content-Disposition", f'attachment; filename="hunter-todo-dados-{hoje().isoformat()}.zip"')
+            self.send_header("Content-Disposition", f'attachment; filename="{APP}-dados-{hoje().isoformat()}.zip"')
+            self.send_header("Content-Length", str(len(corpo)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            return self.wfile.write(corpo)
+        if caminho == "/api/grupo":
+            return self._json(200, api_grupo_get())
+        if caminho == "/api/grupo/copia":
+            try:
+                corpo = copia_grupo()
+            except Erro as e:
+                return self._json(e.code, {"ok": False, "error": str(e)})
+            self.send_response(200)
+            self.send_header("Content-Type", "application/vnd.sqlite3")
+            self.send_header("Content-Disposition", f'attachment; filename="{GRUPO_APP}-{hoje().isoformat()}.db"')
             self.send_header("Content-Length", str(len(corpo)))
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
@@ -1849,7 +2235,7 @@ def boas_vindas(a, url):
     linha = "=" * 64
     print(f"""
 {linha}
-  Bem-vindo ao Hunter.todo {VERSAO}
+  Bem-vindo ao Ganbatte {VERSAO}
 {linha}
 O jogo roda no seu computador. Este programa (o "servidor") guarda as suas
 tarefas em {TODO_DIR}
@@ -1895,7 +2281,7 @@ def ping(porta):
     try:
         with urllib.request.urlopen(f"http://127.0.0.1:{porta}/api/ping", timeout=2) as r:
             j = json.load(r)
-            return j if j.get("app") == "hunter-todo" else None
+            return j if j.get("app") in (APP, APP_ANTIGO) else None
     except Exception:
         return None
 
@@ -1980,11 +2366,11 @@ def vira_dia():
 
 def main():
     global DADOS, TODO_DIR
-    ap = argparse.ArgumentParser(description="Hunter.todo: servidor local do jogo")
-    ap.add_argument("--porta", type=int, default=int(os.environ.get("HUNTER_PORTA") or 8642))
-    ap.add_argument("--dados", default=os.environ.get("HUNTER_DADOS") or str(Path.home() / ".hunter-todo"),
-                    help="pasta dos seus dados (padrão: ~/.hunter-todo)")
-    ap.add_argument("--todo", default=os.environ.get("HUNTER_TODO") or "",
+    ap = argparse.ArgumentParser(description="Ganbatte: servidor local do jogo")
+    ap.add_argument("--porta", type=int, default=int(env("PORTA") or 8642))
+    ap.add_argument("--dados", default=env("DADOS") or str(Path.home() / ".ganbatte"),
+                    help="pasta dos seus dados (padrão: ~/.ganbatte)")
+    ap.add_argument("--todo", default=env("TODO"),
                     help="pasta de um todo.txt que você já usa (padrão: a pasta de dados)")
     ap.add_argument("--sem-navegador", action="store_true", help="não abre o navegador")
     ap.add_argument("--instalar", action="store_true", help="passa a iniciar o servidor junto com o computador, em segundo plano")
@@ -1993,23 +2379,27 @@ def main():
     a = ap.parse_args()
     if sys.version_info < (3, 8):
         sys.exit("Precisa do Python 3.8 ou mais novo.")
-    DADOS = Path(a.dados).expanduser().resolve()
+    DADOS = migra_pasta(Path(a.dados).expanduser()).resolve()
     DADOS.mkdir(parents=True, exist_ok=True)
     TODO_DIR = Path(a.todo).expanduser().resolve() if a.todo else DADOS
     if not TODO_DIR.is_dir():
         sys.exit(f"A pasta do --todo não existe: {TODO_DIR}")
     EXEC.update(porta=a.porta, fundo=a.fundo)
     url = f"http://127.0.0.1:{a.porta}/"
+    if not a.desinstalar:
+        migra_servico()
+    else:
+        auto_desligar(APP_ANTIGO)
     if a.instalar or a.desinstalar:
         try:
             if a.desinstalar:
                 auto_desligar()
-                return print("Pronto: o Hunter.todo não inicia mais com o computador. Se ele estiver rodando agora, continua até você reiniciar.")
+                return print("Pronto: o Ganbatte não inicia mais com o computador. Se ele estiver rodando agora, continua até você reiniciar.")
             auto_ligar()
             if ja_rodando(a.porta):
-                return print(f"Pronto: o Hunter.todo vai iniciar sozinho a partir do próximo login. Agora ele já está em {url}")
+                return print(f"Pronto: o Ganbatte vai iniciar sozinho a partir do próximo login. Agora ele já está em {url}")
             iniciar_fundo()
-            return print(f"Pronto: o Hunter.todo está rodando em segundo plano em {url} e vai iniciar sozinho com o computador.")
+            return print(f"Pronto: o Ganbatte está rodando em segundo plano em {url} e vai iniciar sozinho com o computador.")
         except (Erro, OSError, subprocess.SubprocessError) as e:
             sys.exit(f"Não deu: {e}")
     if a.fundo or sys.stdout is None:   # sem terminal (pythonw no Windows): o log vai para servidor.log na pasta de dados
@@ -2023,7 +2413,7 @@ def main():
     H.porta = a.porta
     antigo = ping(a.porta)
     if antigo and antigo.get("versao") != VERSAO and troca_antigo(a.porta, antigo) and ja_rodando(a.porta):
-        print(f"Hunter.todo atualizado para a {VERSAO} (o servidor em segundo plano foi reiniciado): {url}")
+        print(f"Ganbatte atualizado para a {VERSAO} (o servidor em segundo plano foi reiniciado): {url}")
         if not a.sem_navegador and not a.fundo:
             webbrowser.open(url)
         return
@@ -2035,7 +2425,7 @@ def main():
         if ja_rodando(a.porta):
             if a.fundo:
                 sys.exit(0)
-            print(f"O Hunter.todo já está rodando em {url}")
+            print(f"O Ganbatte já está rodando em {url}")
             if not a.sem_navegador:
                 webbrowser.open(url)
             return
@@ -2044,7 +2434,7 @@ def main():
     threading.Thread(target=vigia_codigo, daemon=True).start()
     threading.Thread(target=vira_dia, daemon=True).start()
     arruma_dia()
-    print(f"Hunter.todo {VERSAO} ({VERSAO_NOME}) em {url}")
+    print(f"Ganbatte {VERSAO} ({VERSAO_NOME}) em {url}")
     print(f"Seus dados: {DADOS}" + (f" (tarefas em {TODO_DIR})" if TODO_DIR != DADOS else ""))
     if not a.fundo:
         print("Deixe esta janela aberta enquanto joga. Para parar: Ctrl+C.")

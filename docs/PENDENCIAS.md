@@ -246,6 +246,22 @@ O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
   `xp`, `hab` (só os `HAB_GRUPO` ligados: `cf` = problemas, `duo` = 0/1), `missao` (o dia contou para a missão da semana:
   `S.missaoDias`) e `ferias`. Nunca leva texto, tag, disciplina nem hábito pessoal. Botão em Configurações → balanceamento.
 
+**Modo em grupo: estrutura da 0.9.0** (13/10/2026, #38, #39, #40; decisões em `docs/COLETIVO.md`, "Servidor da Associação"):
+- `grupo/servidor_grupo.py`: servidor à parte (serviço `ganbatte-grupo`, porta 8643, `~/.ganbatte-grupo/`), SQLite com
+  `grupos`, `membros`, `convites`, `dias` (os fatos, sobrescritos por jogador e dia), `fechados` e `ligado` (intervalos em
+  que o servidor esteve ligado). Tokens e convites só com hash; `dono.token` no disco para as rotas `/dono`. Convite de 8
+  letras, uso único, 7 dias; 20 erros em 10 min travam o grupo por 10 min. `fecha_periodos()` a cada 5 min (prazo às 6h do
+  fuso do grupo + `HORAS_LIGADO`), congelando os números do período (membros, dias com XP, mediana do XP diário, soma dos
+  hábitos) para calibrar a #42. Cópia diária em `copias/`. Reinicia sozinho quando o arquivo muda (git pull).
+- O início automático do `servidor.py` (`auto_ligar`, `iniciar_fundo`, `conteudo_auto`) aceita outro nome e comando.
+- Jogo: `/api/grupo/*` no `servidor.py`; `grupo.json` (lista), `enviado.json` (assinatura de cada dia enviado) e
+  `grupo/` (último placar). A página sincroniza ao abrir e a cada 10 min (`web/grupo.js`): sem a página aberta, nada é
+  enviado. O convite do próprio servidor (o host entrando pelo endereço do Funnel) fala com `127.0.0.1:8643` direto.
+- Funnel (`liga_funnel()`): `tailscale funnel --bg 8643`; reconhece o link de autorização, o `sudo`/operator do Linux e o
+  Tailscale sem login. **Não testado com o Tailscale de verdade** (o primeiro teste é do Caio).
+- Placar só de fatos: o XP de cada um não sai do servidor, só "teve XP no dia". Faltam: a página do placar no próprio
+  servidor (hoje ele só explica o convite), o catálogo de hábitos (#41) e os pontos (#42).
+
 **Cápsula da temporada** (0.6.4-beta1, 13/10/2026, issue #7): `HJ.capsula(api)` no motor calcula a temporada como o
 jogo mostrava no último dia (`fimTemporada`: véspera da volta; antes disso, uma foto até hoje): roda `carregar` com `hoje`
 no corte e tira tarefas, compras (e o `spent` delas) e `xpDias` de depois. Resumo com chaves neutras (`moeda`, `sequencia`,
@@ -255,6 +271,10 @@ outra com `ate` menor. `GET /api/jogo` → `temporadas` ([{nome, ate, guardada}]
 abrir depois do fim (uma tentativa por aba), antes de o assistente gravar outra temporada (`antesDeTrocar`, nas duas
 gravações do `guia.js`) e pelo card *temporada* em Configurações (foto parcial). Falta: a tela de histórico e decidir o que
 zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
+
+**0.7 · atualização do Ganbatte** (13/10/2026): lançada na `main`, juntando a 0.6.6-beta1 a beta3 (issues #15, #34, #35,
+#54): nome Ganbatte com repositório e Pages novos, visual Nen (clássico em Configurações), nomes base das abas, prazo da
+caçada, tarefa vira caçada e cofre opcional. A janela grande escolhe o visual na hora e agradece a quem contribuiu.
 
 **0.6.5** (13/10/2026): lançada na `main`, juntando a 0.6.5-beta1 (issue #51): o estado volta a salvar (a 0.6.4 recusava `migra`
 e `tenRec`), nível do Duolingo pela ofensiva, ids de hábito preservados e religados, devolução das compras do rebalanceamento.
@@ -352,27 +372,31 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
 5. **Ideias guardadas, fora do template para não complicar** (avaliar se interessam aos amigos):
    - gravar o áudio da aula e transcrever no computador, gerando resumo e tarefas (o jogo do autor faz);
    - conferir datas de prova na agenda do Google.
+6. **Peles na loja (#17).** O visual Nen seco virou o padrão na 0.6.6-beta3; duas peles testadas junto ficaram guardadas
+   em `docs/peles/` (Licença Hunter e Nen com aura), com o passo a passo para virarem itens da Masadora.
 
 ## Técnico
 
 - **Testar no Windows e no Mac:** `instalar.ps1`, início automático (`.vbs` na pasta Inicializar, LaunchAgent no Mac),
   `pythonw` sem janela, boas-vindas no terminal. Precisa de um amigo em cada sistema.
-- **GitHub Pages:** no ar em https://caioparanaiba.github.io/todo-engine/ (atualiza a cada push que mexe em `web/`).
+- **GitHub Pages:** no ar em https://caioparanaiba.github.io/ganbatte/ (atualiza a cada push que mexe em `web/`).
 - **Testes automáticos** do `servidor.py` (hoje os testes são scripts soltos e o Firefox controlado por script).
 - **Aba Lista, bloco "constância":** sobra muito espaço entre os heatmaps (20 semanas) e a borda direita. Avaliar: mais
   semanas conforme a largura, quadradinhos maiores, ou outra coisa ao lado (resumo dos números, por exemplo).
 
-## Renomear para `feito` (decidido em 09/10/2026, fazer depois)
+## Renomear para `ganbatte` (nome decidido em 13/10/2026, #15)
 
-O nome definitivo é **`feito`**: a tarefa feita e o feito (façanha), sem depender do tema. Um repositório só; o servidor
-do modo em grupo entra como pasta (`grupo/`, serviço `feito-grupo`). O que muda:
+O nome definitivo é **Ganbatte** (no código, pastas e serviços, `ganbatte`), sem depender do tema. Um repositório só; o servidor
+do modo em grupo entra como pasta (`grupo/`, serviço `ganbatte-grupo`). O que muda:
 
-- repositório `todo-engine` → `feito` (o GitHub redireciona o nome antigo; atualizar o link do Pages e do instalador);
-- pasta de dados `~/.hunter-todo/` → `~/.feito/`, com **migração automática** (o servidor move a pasta antiga na primeira
-  vez) e a variável `HUNTER_DADOS` → `FEITO_DADOS` (aceitar as duas por um tempo);
-- serviço do início automático `hunter-todo` → `feito` (desligar o antigo e ligar o novo sem pedir nada ao jogador);
-- pasta do instalador `~/todo-engine` → `~/feito`, nome do ZIP de backup e o `server_version`/`app` do `/api/ping`;
-- textos "Hunter.todo" na página, no README e no `IA.md`.
+Feito na 0.6.6-beta2 (detalhes na tabela de versões do README): pasta de dados com migração automática, variáveis
+`GANBATTE_*` (as `HUNTER_*` ainda valem), início automático `ganbatte`, instalador em `~/ganbatte` (quem tem `~/todo-engine`
+continua nela), `/api/ping`, User-Agent e ZIP de backup, textos "Hunter.todo", prefixos `GB`/`GB_`/`GBx`/`gb-` e os
+nomes base das abas (`NOMES` no motor).
+
+Repositório renomeado para `ganbatte` e endereços trocados na 0.7 (o Pages novo é `caioparanaiba.github.io/ganbatte`; o
+antigo não redireciona). Falta:
+- tirar o suporte a `HUNTER_*`, `hj-` e `APP_ANTIGO` depois que todo mundo passar da 0.6.6.
 
 Cuidado para não repetir a migração: no código, nomes neutros (`grupo`, `placar`, `moeda`); os nomes do tema
 (Associação Hunter, Torre Trick, Trick Coin) ficam só no texto que aparece na tela.

@@ -1,4 +1,4 @@
-/* Hunter.todo · aba Novidades: o que mudou em cada versão e o aviso de versão nova.
+/* Ganbatte · aba Novidades: o que mudou em cada versão e o aviso de versão nova.
  * A lista entre os marcadores abaixo é JSON puro: o servidor lê a do GitHub (GET /api/atualizacao, no máximo a cada 6 h)
  * para saber se saiu versão nova. Ao lançar uma versão, ponha a nova no topo (a mesma do VERSAO do servidor.py).
  * Versão grande (X.Y, com nome novo): uma entrada só, com os destaques em "itens" e as versões que levaram até ela em
@@ -11,10 +11,53 @@
  * a chave sobrevive à junção das betas na versão final, então quem viu na beta não vê de novo.
  * "janela": {"de", "resumo", "itens"} (0.6.5): a janela grande junta outra versão, de "de" até esta, com os destaques das duas
  * e o "no seu jogo" de cada uma; a linha do tempo da aba continua com os "itens" da própria versão.
+ * Versão grande (0.7): "cap" troca a linha de cima da janela, "visual": true põe a escolha Nen/clássico nela e "obrigado":
+ * {"t", "d", "quem": [{"n": usuário do GitHub (vazio = sem link), "o": o que a pessoa fez}]} agradece no fim.
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
-window.HJ_NOVIDADES = /*NOVIDADES*/[
+window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.7", "nome": "atualização do Ganbatte", "data": "2026-10-13", "visual": true,
+   "cap": "nova série · o Hunter.todo agora é Ganbatte",
+   "resumo": "Ganbatte: força, vai lá, você consegue. O jogo ganhou nome próprio, um visual novo com a cara do Nen e abas que não mudam quando o tema mudar. As suas tarefas, o seu XP, a sua Jenny e tudo o que você comprou continuam exatamente iguais.",
+   "itens": [
+     {"ic": "crown", "t": "Agora é Ganbatte", "d": "O Hunter.todo cresceu e ganhou nome próprio. Hunter x Hunter continua sendo o tema desta temporada, com a Arena Celestial, o Genei Ryodan e a Masadora; a próxima temporada pode ter outro anime, e o nome do jogo fica (#15)."},
+     {"ic": "esp", "t": "Visual Nen", "d": "Linhas finas, cantos quase retos, hexágonos nos marcadores e na caixa de concluir, o selo 念 ao lado do nome e a marca nova na aba do navegador. A sua paleta, moldura, fundo e fonte continuam valendo. Gostava mais do de antes? Ele não foi embora: escolha clássico logo abaixo ou em Configurações → configurações deste computador → visual."},
+     {"ic": "scroll", "t": "Abas com nome fixo", "d": "O menu usa nomes que valem para qualquer temporada: Progresso, Chefões, Projetos, Calendário, Conquistas, Loja e Grupo. O nome do tema (Arena Celestial, Expedições, Semestre, Book, Masadora, Torre Trick) aparece ao passar o mouse e continua dentro de cada aba."},
+     {"ic": "alvo", "t": "Caçadas com prazo", "d": "A caçada inteira pode ter um prazo, que aparece na Lista, nos marcos e no cronograma. E uma tarefa comum vira caçada pelo editor (✎): ela vira a primeira etapa e o resto entra com + etapa (#54, #35)."},
+     {"ic": "coin", "t": "Cofre do mês opcional", "d": "O cofre do mês vem desligado: o R$ dos prêmios reais vira só um lembrete. Quem usa continua com ele; para ligar, Configurações → cofre do mês (#34)."},
+     {"ic": "antenna", "t": "Endereços novos", "d": "O jogo mora em github.com/CaioParanaiba/ganbatte e a demonstração em caioparanaiba.github.io/ganbatte. Os seus dados passam sozinhos para a pasta ~/.ganbatte, e o jogo continua atualizando por aqui como sempre."}
+   ],
+   "obrigado": {"t": "Obrigado a quem jogou junto",
+    "d": "O Ganbatte começou como a lista de tarefas de uma pessoa só. Virou jogo porque amigos testaram, acharam bugs, tiraram dúvidas e pediram coisas, e quase tudo desta série nasceu de uma conversa assim. Valeu demais.",
+    "quem": [
+      {"n": "luy121314", "o": "14 ideias e bugs: o Duolingo no jogo, caçadas por etapas, pontos para quem contribui, prazo da caçada, tarefa vira caçada e o cofre opcional"},
+      {"n": "Caduyz", "o": "a prévia das paletas na loja e a ficha do Mundo Pixel"},
+      {"n": "", "o": "quem perguntou, testou e opinou fora do GitHub, inclusive a ideia dos nomes fixos das abas"}
+    ]},
+   "versoes": [
+     {"versao": "0.6.6-beta3", "nome": "atualização das expedições", "data": "2026-10-13",
+      "resumo": "Visual novo, mais seco e com a cara do Nen, e a marca do Ganbatte. O visual de antes continua em Configurações.",
+      "itens": [
+        {"ic": "esp", "t": "Visual Nen", "d": "Linhas finas, cantos quase retos, hexágonos nos marcadores e na caixa de concluir, abas com um traço embaixo e o selo 念 ao lado do nome. Sem brilho nem degradê: efeito fica para a loja. A sua paleta, moldura, fundo e fonte continuam valendo. Prefere o de antes? Configurações → configurações deste computador → visual: clássico."},
+        {"ic": "crown", "t": "Marca do Ganbatte", "d": "O hexágono com H×H no cabeçalho, na aba do navegador e no assistente. A sua foto de perfil não muda."},
+        {"ic": "scroll", "t": "XP alinhado na Lista", "d": "O XP de cada tarefa fica sempre na ponta da linha; antes ele andava conforme os botões de prioridade que a tarefa tinha. No modo demonstração, a aba Projetos não abre mais vazia."}
+      ]},
+     {"versao": "0.6.6-beta2", "nome": "atualização das expedições", "data": "2026-10-13",
+      "resumo": "O jogo agora se chama Ganbatte, e as abas ganharam nomes fixos que não mudam quando o tema da temporada mudar.",
+      "itens": [
+        {"ic": "crown", "t": "Ganbatte", "d": "O Hunter.todo virou Ganbatte. Hunter x Hunter continua sendo o tema desta temporada: a próxima pode ter outro, e o nome do jogo fica. Nada do seu jogo muda: tarefas, XP, Jenny e compras continuam iguais (#15)."},
+        {"ic": "scroll", "t": "Abas com nome fixo", "d": "O menu usa nomes que valem para qualquer temporada: Progresso (Arena Celestial), Projetos (Expedições), Calendário (Semestre), Conquistas (Book), Loja (Masadora) e Grupo (Torre Trick). O nome do tema aparece ao passar o mouse e continua dentro de cada aba."},
+        {"ic": "esp", "t": "Pasta de dados nova", "d": "Os seus dados passam de ~/.hunter-todo para ~/.ganbatte, sozinhos, na primeira vez que o jogo abre. No Linux e no Mac fica um atalho no lugar da pasta antiga. O início automático também troca de nome sem você precisar fazer nada."}
+      ]},
+     {"versao": "0.6.6-beta1", "nome": "atualização das expedições", "data": "2026-10-13",
+      "resumo": "A caçada inteira pode ter um prazo, uma tarefa comum vira caçada pelo editor e o cofre do mês agora é opcional.",
+      "itens": [
+        {"ic": "alvo", "t": "Prazo da caçada", "d": "Ao criar ou editar uma caçada, dá para escolher um prazo para ela toda. Ele aparece na Lista, nos marcos e no cronograma das Expedições, fica vermelho quando vence com etapas abertas e avisa quando alguma etapa tem prazo depois dele. Uma caçada com prazo próximo sobe na Lista. É só para organizar: o XP continua pelo prazo de cada etapa. Ideia de luy121314 (#54)."},
+        {"ic": "alvo", "t": "Tarefa vira caçada", "d": "No editor da tarefa (✎), o campo caçada põe a tarefa numa caçada aberta, tira ela de uma, ou cria uma caçada nova com a própria tarefa como primeira etapa: depois é só adicionar as outras com + etapa. Ideia de luy121314 (#35)."},
+        {"ic": "coin", "t": "Cofre do mês opcional", "d": "O cofre do mês agora vem desligado: a Masadora fica sem o card dele, e o R$ dos prêmios reais é só um lembrete, sem travar o resgate. Para usar, ligue em Configurações → cofre do mês, onde também fica o valor por mês. Quem já tinha gastado do cofre continua com ele ligado. Ideia de luy121314 (#34)."}
+      ]}
+   ]},
   {"versao": "0.6.5", "nome": "atualização das expedições", "data": "2026-10-13", "aviso": "0.6.5",
    "resumo": "Correções da 0.6.4: a loja volta a salvar, o nível do Duolingo segue a sua ofensiva, os hábitos não perdem mais o histórico e as compras feitas com a Jenny que o rebalanceamento tirou voltam para a loja.",
    "itens": [
@@ -289,7 +332,7 @@ window.HJ_NOVIDADES = /*NOVIDADES*/[
 ]/*FIM*/;
 (function(){
 'use strict';
-const NOV = window.HJ_NOVIDADES, HJ = window.HJ;
+const NOV = window.GB_NOVIDADES, GB = window.GB;
 
 document.head.insertAdjacentHTML('beforeend', `<style>
 .nv{display:flex;flex-direction:column;gap:16px}
@@ -345,17 +388,26 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .nv-big .nv-it:first-child{grid-column:1/-1;border-color:color-mix(in srgb,var(--volt) 55%,var(--hair));background:color-mix(in srgb,var(--volt) 8%,var(--panel2))}
 .nv-big .pe{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 30px 24px} .nv-big .pe .sp{flex:1}
 .nv-big .grande{padding:10px 18px;font:700 14px var(--f-hud);border-radius:10px}
+.nv-big .nv-marca{float:right;width:84px;height:84px;margin:0 0 8px 16px}
+.nv-vis{margin:6px 30px 4px;padding:14px 16px;border:1px solid var(--hair);border-radius:12px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--panel2)}
+.nv-vis > div:first-child{flex:1;min-width:220px} .nv-vis b{display:block;font:700 15px var(--f-hud)} .nv-vis span{font-size:13.5px;color:var(--soft)}
+.nv-vis-b{display:flex;gap:8px} .nv-vis-b [aria-pressed="true"]{border-color:#E0364F;color:var(--ink);background:color-mix(in srgb,#E0364F 14%,transparent)}
+.nv-obg{margin:14px 30px 4px;padding:18px 20px;border:1px solid color-mix(in srgb,var(--amb) 45%,var(--hair));border-radius:14px;background:radial-gradient(120% 160% at 100% 0%,color-mix(in srgb,var(--amb) 14%,transparent),transparent 60%),var(--panel2)}
+.nv-obg h3{margin:0 0 6px;font:700 19px var(--f-hud);display:flex;gap:8px;align-items:center;color:var(--amb)} .nv-obg p{margin:0 0 12px;font-size:14px;max-width:70ch}
+.nv-obg-l{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.nv-obg-l > *{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border:1px solid var(--hair);border-radius:10px;background:var(--panel);color:var(--ink);text-decoration:none}
+.nv-obg-l a:hover{border-color:var(--amb)} .nv-obg-l b{font:700 14px var(--f-mono);color:var(--amb)} .nv-obg-l span{font-size:13px;color:var(--soft)}
 .nv-big.aviso > div{border-color:var(--amb)} .nv-big.aviso .cab{background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--amb) 24%,transparent),transparent 60%)} .nv-big.aviso h2 span{color:var(--amb)}
 .nv-seu{margin-top:16px;display:grid;gap:4px;padding:14px 16px;border:1px solid var(--amb);border-radius:12px;background:color-mix(in srgb,var(--amb) 10%,var(--panel2));max-width:70ch}
 .nv-seu b{font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--amb)} .nv-seu span{font-size:15px} .nv-seu strong{color:var(--ink)}
 .nv-seu.ok{border-color:var(--grn);background:color-mix(in srgb,var(--grn) 8%,var(--panel2))} .nv-seu.ok b{color:var(--grn)}
 .gnav .nv-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amb);margin-left:4px;vertical-align:top}
-@media (max-width:820px){ .nv-big .cab,.nv-big .nv-itens,.nv-big .pe{padding-left:18px;padding-right:18px} .nv-hero{grid-template-columns:minmax(0,1fr)} .nv-st{border-left:0;border-top:1px solid var(--hair)} .nv-ver .num{font-size:52px} }
+@media (max-width:820px){ .nv-big .nv-marca{width:56px;height:56px} .nv-big .cab,.nv-big .nv-itens,.nv-big .pe{padding-left:18px;padding-right:18px} .nv-vis,.nv-obg{margin-left:18px;margin-right:18px} .nv-hero{grid-template-columns:minmax(0,1fr)} .nv-st{border-left:0;border-top:1px solid var(--hair)} .nv-ver .num{font-size:52px} }
 </style>`);
 
 let AT = null;   // GET /api/atualizacao: {versao, novas:[...], erro, metodo, conferido}; null = conferindo
 let ATUALIZANDO = false;
-const curta = d => d ? HJ.brData(d) : '';
+const curta = d => d ? GB.brData(d) : '';
 const temNova = () => !!(AT && AT.ok && AT.novas && AT.novas.length);
 const naoVista = () => CTX && EST && EST.visto !== VERSAO_PAGINA;
 const grande = v => /^\d+\.\d+$/.test(String(v.versao));   // 0.6, 0.7: versão grande, com nome novo e as menores dentro
@@ -467,19 +519,28 @@ function seuAviso(v){
   }
   const dv = EST.devolve;
   if(dv && v.aviso === '0.6.5'){   // devolução (#51): o que voltou para a loja e o que a carteira recebeu
-    const nome = c => c.tipo === 'feitico' ? 'feitiço ' + ((HJx.SPELLS.find(s => s.k === c.id) || {}).n || c.id) : ((COS.find(i => i.id === c.id) || {}).n || c.id);
+    const nome = c => c.tipo === 'feitico' ? 'feitiço ' + ((GBx.SPELLS.find(s => s.k === c.id) || {}).n || c.id) : ((COS.find(i => i.id === c.id) || {}).n || c.id);
     partes.push(`Na 0.6.5, voltaram para a loja: <strong>${esc((dv.itens || []).map(nome).join(', '))}</strong>${dv.j > 0 ? `, e a carteira recebeu <strong>${(+dv.j).toLocaleString('pt-BR')} J</strong>, a parte paga com Jenny ganha jogando` : ''}.`);
   }
   const todas = partes.concat(ok); if(!todas.length) return '';
   return `<div class="nv-seu${partes.length ? '' : ' ok'}"><b>No seu jogo</b><span>${todas.map(t => t[0].toUpperCase() + t.slice(1)).join(' ')}</span></div>`;
 }
 /* versão grande e aviso de pontos: os destaques numa janela que cobre a tela, uma vez (fechar marca como vista) */
+/* 0.7: a escolha do visual dentro da janela (o clique em [data-visual] é tratado pela página) e o agradecimento */
+const visualHTML = () => { const nen = document.documentElement.classList.contains('vis-nen');
+  return `<div class="nv-vis"><div><b>Qual visual?</b><span>Dá para trocar aqui e ver na hora. Depois, em Configurações → configurações deste computador.</span></div>
+    <div class="nv-vis-b"><button type="button" class="btn" data-visual="nen" aria-pressed="${nen}">Nen (novo)</button><button type="button" class="btn" data-visual="classico" aria-pressed="${!nen}">clássico</button></div></div>`; };
+const obrigadoHTML = o => `<div class="nv-obg"><h3>${ic('crown')} ${esc(o.t)}</h3><p>${esc(o.d)}</p><div class="nv-obg-l">${(o.quem || []).map(q => q.n
+  ? `<a href="https://github.com/${encodeURIComponent(q.n)}" target="_blank" rel="noopener"><b>@${esc(q.n)}</b><span>${esc(q.o)}</span></a>`
+  : `<div><b>e você</b><span>${esc(q.o)}</span></div>`).join('')}</div></div>`;
+document.addEventListener('click', e => { if(e.target.closest('#nv-big [data-visual]')) setTimeout(() => { const nen = document.documentElement.classList.contains('vis-nen');
+  document.querySelectorAll('#nv-big [data-visual]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.visual === 'nen') === nen))); }, 0); });
 function janelaGrande(v){
   const [a, b] = String(v.versao).split(/\.(.*)/s), exp = !v.aviso && (v.itens || []).some(x => x.ic === 'island') && RENDER.x;
   const J = v.janela, w = J ? {...v, resumo: J.resumo || v.resumo, itens: J.itens || v.itens} : v;   // "janela": a janela junta outra versão (0.6.4 → 0.6.5)
   document.body.insertAdjacentHTML('beforeend', `<div class="nv-big${v.aviso ? ' aviso' : ''}" id="nv-big" data-chave="${esc(chaveG(v))}" role="dialog" aria-modal="true" aria-labelledby="nv-big-t"><div>
-    <div class="cab"><p class="cap">${v.aviso ? 'mudança nos pontos · leia antes de jogar' : 'o jogo foi atualizado'}</p><h2 id="nv-big-t">${J && J.de ? `${esc(J.de)}<span> → ${esc(v.versao)}</span>` : `${esc(a)}<span>.${esc(b)}</span>`}</h2><div class="nome">${esc(v.nome || '')}</div>${w.resumo ? `<p>${esc(w.resumo)}</p>` : ''}${v.aviso ? seuAviso(v) : ''}</div>
-    <div class="nv-itens">${itensHTML(w)}</div>
+    <div class="cab">${v.cap && typeof MARCA === 'string' ? `<img class="nv-marca" src="${MARCA}" alt="">` : ''}<p class="cap">${v.aviso ? 'mudança nos pontos · leia antes de jogar' : esc(v.cap || 'o jogo foi atualizado')}</p><h2 id="nv-big-t">${J && J.de ? `${esc(J.de)}<span> → ${esc(v.versao)}</span>` : `${esc(a)}<span>.${esc(b)}</span>`}</h2><div class="nome">${esc(v.nome || '')}</div>${w.resumo ? `<p>${esc(w.resumo)}</p>` : ''}${v.aviso ? seuAviso(v) : ''}</div>
+    <div class="nv-itens">${itensHTML(w)}</div>${v.visual ? visualHTML() : ''}${v.obrigado ? obrigadoHTML(v.obrigado) : ''}
     <div class="pe">${exp ? '<button type="button" class="btn v grande" data-nvbig="x">conhecer as Expedições</button>' : ''}<button type="button" class="btn grande" data-nvbig="nv">ver tudo o que mudou</button><span class="sp"></span><button type="button" class="btn" data-nvbig="">fechar</button></div>
   </div></div>`);
   document.querySelector('#nv-big [data-nvbig]').focus({preventScroll:true});   // o foco no botão do pé não rola a janela: o topo (e o "no seu jogo") aparece primeiro
@@ -494,6 +555,6 @@ document.addEventListener('click', e => {
   if(e.target.id === 'nv-big') fechaGrande('');
 });
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.getElementById('nv-big')) fechaGrande(''); });
-window.HJ_NOV = {confere, canal: () => AT && AT.canal};
+window.GB_NOV = {confere, canal: () => AT && AT.canal};
 (function tenta(){ if(!CTX){ setTimeout(tenta, 500); return; } VISTO0 = EST.visto || ''; if(cur === 'nv') render(); setTimeout(boasNovas, 1500); setTimeout(() => confere(false), 1800); })();
 })();
