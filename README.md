@@ -87,6 +87,7 @@ Tudo o que é seu fica numa pasta separada do código:
 | `conquistas.json` | conquistas criadas pela IA (Book, 200 em diante) e o que você resgatou |
 | `estado.json` | loja, Jenny gasta (com o registro de compras, desde a 0.6.3-beta2) e o que está equipado |
 | `cf.json`, `duo.json`, `contrib.json` | o que o jogo leu do Codeforces, do Duolingo e das suas issues no GitHub |
+| `colecao/` | coleção permanente (#33): `colecao.json` com uma cópia de cada item comprado (nome, categoria, como equipar, origem e dia) e `arquivos/` com a imagem dele. Só cresce; a temporada nova e as versões novas do jogo não mexem nela |
 | `temporadas/` | cada temporada que acabou (`2026-2/`...): `resumo.json` com os números finais congelados e uma cópia dos arquivos daquele momento |
 | `servidor.log` | o que o servidor anotou quando roda em segundo plano |
 
@@ -165,6 +166,8 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   letras, números, `-`, `_` ou `.`) vira um item da Masadora por 1.000 J (os grátis ficam no `AV_GRATIS` do motor). O
   jogador não envia fotos: quem desenvolve põe aqui, e só imagens que podem ser distribuídas. Não renomeie uma foto que já
   saiu: o nome é o id do item comprado e equipado.
+  `web/chefoes/`: os retratos dos chefões (#33), 256×256, um item da Masadora cada (`RETRATOS` no motor); o ícone padrão
+  de cada chefão continua o do `avaliacoes.txt`, e o retrato escolhido fica em `estado.json` → `equip.chefes` (sigla → item).
 - **Testes:** `python3 -m unittest discover tests` (pasta de dados temporária e a internet simulada; ver `tests/test_servidor.py`).
 - **Balanceamento:** `node ferramentas/simulador.mjs` joga uma temporada com três jogadores inventados pelo `web/motor.js` e
   mostra XP, andar, Jenny e quanto da loja cada um compra; `--comparar relatorio.json` põe ao lado o relatório de um

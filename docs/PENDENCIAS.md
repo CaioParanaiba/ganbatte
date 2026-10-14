@@ -256,6 +256,15 @@ abrir depois do fim (uma tentativa por aba), antes de o assistente gravar outra 
 gravações do `guia.js`) e pelo card *temporada* em Configurações (foto parcial). Falta: a tela de histórico e decidir o que
 zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
 
+**Coleção permanente e retratos dos chefões** (issue #33, PR em revisão): o comprado vai para `colecao/` dos dados
+(`api_colecao` no servidor: só acrescenta, copia a imagem de `web/a/` ou `web/chefoes/` para `colecao/arquivos/`;
+`GET /api/jogo` → `colecao`). A página manda o que falta em `guardaColecao()` (na carga, que migra o `own` antigo, e a cada
+compra); `OWN` = `own` do `estado.json` + a coleção. `GB.catalogo(avatares, colecao)` põe de volta, com `fora`, o item da
+coleção que saiu da loja; `GB.padrao` = o que vem com o jogo (a Simples, as fotos grátis, o emblema). Loja → **Comprados**:
+o que é do jogador sai da vitrine e fica lá, com a escolha do ícone de cada chefão (`equip.chefes`, sigla → `ch-SLUG`).
+Na compra, o retrato vai para o chefão de mesmo nome (`alvo`). Itens de CSS (paleta, textura, efeito) guardam só a cópia
+do item: o código do efeito precisa continuar no jogo (regra: não apagar efeito que já foi vendido, só tirar da vitrine).
+
 **0.7 · atualização do Ganbatte** (13/10/2026): lançada na `main`, juntando a 0.6.6-beta1 a beta3 (issues #15, #34, #35,
 #54): nome Ganbatte com repositório e Pages novos, visual Nen (clássico em Configurações), nomes base das abas, prazo da
 caçada, tarefa vira caçada e cofre opcional. A janela grande escolhe o visual na hora e agradece a quem contribuiu.
