@@ -9,7 +9,11 @@ própria (padrão ~/.ganbatte-grupo/, ou a variável GANBATTE_GRUPO_DADOS), porq
   grupo.db      SQLite: grupos, membros, convites, o catálogo de hábitos, os fatos de cada dia e os períodos fechados
   dono.token    o token do dono do servidor (criado na primeira vez). Quem lê o arquivo é o dono: o jogo do host o usa
                 para criar grupos. Nunca "veio de localhost": o Funnel entrega os pedidos da internet por localhost
-  copias/       uma cópia do banco por dia (as últimas COPIAS)
+  copias/       uma cópia do banco por dia (as últimas COPIAS) e a de antes de cada restauração
+
+Mudar de computador (#91): o dono baixa a cópia (/dono/copia), restaura no servidor novo (/dono/restaurar: os tokens
+continuam valendo, porque o banco guarda o hash deles) e avisa no antigo o endereço novo (/dono/mudar). Daí em diante o
+antigo responde a qualquer pedido de grupo com 410 e {mudou: endereço}, e o jogo de cada membro passa para o novo sozinho.
 
 Os tokens (jogador, admin, convite) vão no cabeçalho Authorization: Bearer e o banco guarda só o hash deles.
 O jogo manda fatos (o resumo do dia do motor, protocolo 1), nunca pontos: os andares da Torre Trick (#42), os placares
@@ -25,6 +29,8 @@ Rotas (JSON):
   POST /dono/grupo {nome, fuso?}              cria um grupo → {grupo, convite} (convite de administrador)
   POST /dono/convite {grupo}                  novo convite de administrador (o admin perdeu o acesso)
   GET  /dono/copia                            cópia do banco (SQLite)
+  POST /dono/restaurar (corpo: o arquivo .db)   troca o banco por uma cópia → {grupos}
+  POST /dono/mudar {endereco}                 avisa os membros do endereço novo (vazio desfaz)
   jogador
   POST /g/<id>/entrar {codigo, nome, avatar?} usa um convite → {token, membro, admin, grupo}
   POST /g/<id>/envio {protocolo, dias}        fatos dos dias novos ou que mudaram (sobrescreve por jogador e dia)
@@ -79,6 +85,8 @@ HAB_MAX = 20   # hábitos ativos por grupo
 AVATAR = re.compile(r"^[A-Za-z0-9_.-]{0,80}$")
 DIA = re.compile(r"^\d{4}-\d\d-\d\d$")
 FUSO = re.compile(r"^([+-])(\d{2}):(\d{2})$")
+ENDERECO = re.compile(r"^https?://[^/\s#?]+$")
+BANCO_MAX = 100_000_000   # tamanho máximo de uma cópia restaurada
 DADOS = Path()
 db_lock = threading.RLock()
 CON = None
@@ -96,6 +104,7 @@ CREATE TABLE IF NOT EXISTS fechados (grupo TEXT NOT NULL, periodo TEXT NOT NULL,
 CREATE TABLE IF NOT EXISTS ligado (id INTEGER PRIMARY KEY, ini REAL NOT NULL, fim REAL NOT NULL);
 CREATE TABLE IF NOT EXISTS habitos (grupo TEXT NOT NULL, id TEXT NOT NULL, nome TEXT NOT NULL, fonte TEXT NOT NULL, desde TEXT NOT NULL,
   criado REAL NOT NULL, removido REAL, PRIMARY KEY (grupo, id));
+CREATE TABLE IF NOT EXISTS servidor (chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS frases (grupo TEXT NOT NULL, semana TEXT NOT NULL, membro INTEGER NOT NULL, texto TEXT NOT NULL, criado REAL NOT NULL,
   apagada REAL, PRIMARY KEY (grupo, semana));
 """
@@ -318,6 +327,67 @@ def copia_do_dia():
         log("cópia do banco:", f.name)
     for velha in sorted(pasta.glob("grupo-*.db"))[:-COPIAS]:
         velha.unlink()
+
+
+# ---------- mudar de computador (#91) ----------
+def mudou():
+    """O endereço novo do servidor, se o dono avisou que o grupo mudou de computador; vazio se não."""
+    r = q1("SELECT valor FROM servidor WHERE chave = 'mudou'")
+    return r["valor"] if r else ""
+
+
+def muda_para(d):
+    end = str(d.get("endereco") or "").strip().rstrip("/")
+    if end and not ENDERECO.match(end):
+        raise Erro("endereço inválido (ex.: https://notebook.tailXXXX.ts.net)")
+    with transacao() as c:
+        if end:
+            c.execute("INSERT OR REPLACE INTO servidor (chave, valor) VALUES ('mudou', ?)", (end,))
+        else:
+            c.execute("DELETE FROM servidor WHERE chave = 'mudou'")
+    log("mudou para:", end or "(cancelado)")
+    return {"ok": True, "mudou": end}
+
+
+def restaura(corpo):
+    """Troca o banco pela cópia de outro computador. Confere o arquivo antes, guarda o banco atual em copias/ e tira da cópia
+    o aviso de mudança (uma cópia baixada depois de avisar não pode mandar os membros de volta)."""
+    if not corpo.startswith(b"SQLite format 3\x00"):
+        raise Erro("o arquivo não é uma cópia do servidor do grupo (o .db de baixar cópia do servidor)")
+    tmp = DADOS / f".restaura-{secrets.token_hex(4)}.db"
+    try:
+        tmp.write_bytes(corpo)
+        try:
+            c = sqlite3.connect(str(tmp), isolation_level=None)
+            try:
+                ok = c.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+                tabelas = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+                if "servidor" in tabelas:
+                    c.execute("DELETE FROM servidor WHERE chave = 'mudou'")
+                c.execute("PRAGMA journal_mode=DELETE")
+            finally:
+                c.close()
+        except sqlite3.DatabaseError:
+            ok = False
+        if not ok or not {"grupos", "membros", "dias"} <= tabelas:
+            raise Erro("a cópia está corrompida ou não é do servidor do grupo")
+        with db_lock:
+            (DADOS / "copias").mkdir(exist_ok=True)
+            faz_copia(DADOS / "copias" / f"antes-de-restaurar-{datetime.now().strftime('%Y-%m-%d-%H%M%S')}.db")
+            CON.close()
+            for resto in ("grupo.db-wal", "grupo.db-shm"):
+                if (DADOS / resto).exists():
+                    (DADOS / resto).unlink()
+            os.replace(tmp, DADOS / "grupo.db")
+            abre_banco()
+            LIGADO["id"] = None
+            marca_ligado()
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+    gs = [{"id": g["id"], "nome": g["nome"]} for g in q("SELECT id, nome FROM grupos ORDER BY criado")]
+    log("cópia restaurada:", ", ".join(g["id"] for g in gs) or "sem grupos")
+    return {"ok": True, "grupos": gs}
 
 
 def rotina():
@@ -793,6 +863,12 @@ class H(BaseHTTPRequestHandler):
             raise Erro("JSON inválido")
         return d
 
+    def _bruto(self):
+        n = int(self.headers.get("Content-Length") or 0)
+        if n > BANCO_MAX:
+            raise Erro("cópia grande demais", 413)
+        return self.rfile.read(n)
+
     def _rota(self, metodo):
         caminho = urllib.parse.unquote(self.path.split("?", 1)[0]).rstrip("/") or "/"
         p = caminho.strip("/").split("/")
@@ -806,7 +882,7 @@ class H(BaseHTTPRequestHandler):
                 gs = [{"id": g["id"], "nome": g["nome"], "fuso": fuso_txt(g["fuso"]),
                        "membros": q1("SELECT COUNT(*) AS n FROM membros WHERE grupo = ? AND saiu IS NULL", (g["id"],))["n"]}
                       for g in q("SELECT * FROM grupos ORDER BY criado")]
-                return self._json(200, {"ok": True, "grupos": gs, "versao": jogo.VERSAO, "dados": str(DADOS)})
+                return self._json(200, {"ok": True, "grupos": gs, "versao": jogo.VERSAO, "dados": str(DADOS), "mudou": mudou()})
             if metodo == "GET" and caminho == "/dono/copia":
                 f = DADOS / f".copia-{secrets.token_hex(4)}.db"
                 try:
@@ -816,6 +892,10 @@ class H(BaseHTTPRequestHandler):
                     if f.exists():
                         f.unlink()
                 return self._resp(200, body, "application/vnd.sqlite3")
+            if metodo == "POST" and caminho == "/dono/restaurar":
+                return self._json(200, restaura(self._bruto()))
+            if metodo == "POST" and caminho == "/dono/mudar":
+                return self._json(200, muda_para(self._corpo()))
             if metodo == "POST" and caminho == "/dono/grupo":
                 return self._json(200, cria_grupo(self._corpo()))
             if metodo == "POST" and caminho == "/dono/convite":
@@ -823,6 +903,9 @@ class H(BaseHTTPRequestHandler):
                 with transacao() as c:
                     return self._json(200, {"ok": True, "convite": novo_convite(c, gid, True)})
         if len(p) >= 3 and p[0] == "g":
+            novo = mudou()
+            if novo:   # o grupo foi para outro computador: o jogo do membro passa a falar com o novo
+                return self._json(410, {"ok": False, "error": f"o grupo mudou de servidor: agora fica em {novo}", "mudou": novo})
             gid, resto, tk = p[1], "/".join(p[2:]), self._token()
             if metodo == "GET":
                 fn = {"placar": lambda: placar(gid, tk), "admin": lambda: admin_ver(gid, tk)}.get(resto)

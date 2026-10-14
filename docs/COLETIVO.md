@@ -58,6 +58,11 @@ Tema: **HxH para todos** nesta temporada.
   servidor somar 12h ligado depois do prazo** (constante ajustável): o host pode ser um notebook que desliga.
 - **Backup:** cópia diária automática do banco (`copias/`, as últimas 14, pela função de backup do `sqlite3`) e o botão
   *baixar cópia do servidor* para o dono.
+- **Mudar de computador (#91):** no novo, *restaurar uma cópia* troca o banco pelo `.db` baixado (o atual vai para
+  `copias/antes-de-restaurar-*`; os tokens continuam valendo, o banco guarda o hash). No antigo, *avisar os membros*: o
+  servidor passa a responder 410 com `{mudou: endereço}` a todo pedido de grupo, e o jogo de cada membro troca o endereço
+  sozinho depois de conferir que o novo conhece o token dele, mandando a temporada inteira de novo. Máquina antiga morta:
+  o membro cola o link do grupo sem o código (`https://novo/g/ID`) em Configurações → grupo.
 
 ## Pontos da Torre Trick
 

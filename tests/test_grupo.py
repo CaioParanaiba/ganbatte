@@ -191,6 +191,64 @@ class Fechamento(Base):
         self.assertEqual(c.execute("SELECT COUNT(*) FROM membros").fetchone()[0], 1)
 
 
+class Mudanca(Base):
+    """Levar o servidor do grupo para outro computador (#91): restaurar a cópia e avisar o endereço novo."""
+
+    def setUp(self):
+        super().setUp()
+        self.gid, cod = self.grupo()
+        self.tk = self.entra(self.gid, cod)["token"]
+        sg.envio(self.gid, self.tk, {"protocolo": 1, "dias": [{"dia": "2026-10-01", "xp": 10}]})
+        self.copia = sg.DADOS / "copia.db"
+        sg.faz_copia(self.copia)
+
+    def test_restaura_a_copia_e_o_token_continua_valendo(self):
+        self.grupo("Outro")   # depois da cópia: some ao restaurar
+        r = sg.restaura(self.copia.read_bytes())
+        self.assertEqual([g["id"] for g in r["grupos"]], [self.gid])
+        self.assertEqual(sg.membro_do(self.gid, self.tk)["nome"], "Ana")
+        self.assertEqual(sg.q1("SELECT xp FROM dias")["xp"], 10)
+        self.assertEqual(len(list((sg.DADOS / "copias").glob("antes-de-restaurar-*.db"))), 1)
+
+    def test_recusa_arquivo_que_nao_e_copia(self):
+        import sqlite3
+        vazio = sg.DADOS / "vazio.db"
+        sqlite3.connect(str(vazio)).close()
+        sqlite3.connect(str(vazio)).execute("CREATE TABLE x (a)").connection.close()
+        for ruim in (b"isto nao e um banco", vazio.read_bytes(), self.copia.read_bytes()[:2000]):
+            with self.assertRaises(sg.Erro):
+                sg.restaura(ruim)
+        self.assertEqual(sg.membro_do(self.gid, self.tk)["nome"], "Ana")   # o banco atual ficou como estava
+
+    def test_copia_baixada_depois_do_aviso_nao_manda_de_volta(self):
+        sg.muda_para({"endereco": "https://novo.tail1.ts.net"})
+        sg.faz_copia(self.copia)
+        sg.restaura(self.copia.read_bytes())
+        self.assertEqual(sg.mudou(), "")
+
+    def test_aviso_responde_410_com_o_endereco_novo(self):
+        import threading
+        from http.server import ThreadingHTTPServer
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), sg.H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.server_close)
+        self.addCleanup(srv.shutdown)
+        url = f"http://127.0.0.1:{srv.server_address[1]}"
+        self.assertEqual(s.grupo_pede(url, "GET", f"/g/{self.gid}/placar", token=self.tk)["grupo"]["id"], self.gid)
+        sg.muda_para({"endereco": "https://novo.tail1.ts.net/"})
+        with self.assertRaises(s.GrupoMudou) as e:
+            s.grupo_pede(url, "GET", f"/g/{self.gid}/placar", token=self.tk)
+        self.assertEqual(e.exception.para, "https://novo.tail1.ts.net")
+        self.assertEqual(s.grupo_pede(url, "GET", "/dono", token=self.dono)["mudou"], "https://novo.tail1.ts.net")
+        with self.assertRaises(sg.Erro):
+            sg.muda_para({"endereco": "novo.ts.net"})
+        sg.muda_para({"endereco": ""})
+        self.assertEqual(s.grupo_pede(url, "GET", f"/g/{self.gid}/placar", token=self.tk)["grupo"]["id"], self.gid)
+        # o arquivo vai cru, como o jogo do host manda
+        r = s.grupo_pede(url, "POST", "/dono/restaurar", token=self.dono, arquivo=self.copia.read_bytes())
+        self.assertEqual([g["id"] for g in r["grupos"]], [self.gid])
+
+
 CF = {"id": "cf", "nome": "Codeforces", "fonte": "automatico", "desde": ""}
 DUO = {"id": "duo", "nome": "Duolingo", "fonte": "vinculo", "desde": "2026-08-01"}
 
@@ -380,6 +438,8 @@ class Jogo(Base):
         s.gravar_json("jogador.json", {"configurado": True, "nome": "Caio", "nick": "caio"})
         self.fora = False
         self.chamadas = []
+        self.mudou = {}   # endereço antigo → novo (o servidor antigo responde 410)
+        self.sem_acesso = set()
         p = mock.patch.object(s, "grupo_pede", self.pede)
         p.start()
         self.addCleanup(p.stop)
@@ -389,10 +449,14 @@ class Jogo(Base):
         self.addCleanup(p2.stop)
         self.chave = s.api_grupo_entrar({"link": f"https://pc.tail1.ts.net/g/{self.gid}#{cod}"})["chave"]
 
-    def pede(self, url, metodo, rota, corpo=None, token="", tempo=15, bruto=False):
+    def pede(self, url, metodo, rota, corpo=None, token="", tempo=15, bruto=False, arquivo=None):
         if self.fora:
             raise s.GrupoFora("fora do ar", 502)
-        self.chamadas.append(rota)
+        if url in self.mudou:
+            raise s.GrupoMudou("o grupo mudou de servidor", self.mudou[url])
+        if url in self.sem_acesso:
+            raise s.Erro("token inválido", 401)
+        self.chamadas.append((url, rota))
         p = rota.strip("/").split("/")
         try:
             if p[2] == "entrar":
@@ -401,6 +465,8 @@ class Jogo(Base):
                 return sg.envio(p[1], token, corpo)
             if p[2] == "placar":
                 return sg.placar(p[1], token)
+            if p[2] == "admin":
+                return sg.admin_ver(p[1], token)
         except sg.Erro as e:
             raise s.Erro(str(e), e.code)
         raise AssertionError(rota)
@@ -433,6 +499,38 @@ class Jogo(Base):
         self.assertEqual(r["placar"]["grupo"]["id"], self.gid)
         self.fora = False
         self.assertEqual(s.api_grupo_sincronizar(self.resumo(30))["grupos"][self.chave]["enviados"], 1)
+
+    def test_segue_o_aviso_de_mudanca(self):
+        s.api_grupo_sincronizar(self.resumo(10))
+        self.mudou["https://pc.tail1.ts.net"] = "https://novo.tail1.ts.net"
+        r = s.api_grupo_sincronizar(self.resumo(10))["grupos"]
+        nova = f"https://novo.tail1.ts.net|{self.gid}"
+        self.assertEqual(list(r), [nova])
+        self.assertTrue(r[nova]["mudou"])
+        self.assertEqual(r[nova]["enviados"], 2)   # o servidor novo recebe a temporada inteira de novo
+        self.assertEqual(s.grupos()[0]["url"], "https://novo.tail1.ts.net")
+        self.assertEqual(list(s.ler_json("enviado.json", {})), [nova])
+        self.assertEqual(len(list((s.DADOS / "grupo").glob("*.json"))), 1)
+
+    def test_admin_tambem_segue_o_aviso(self):
+        self.mudou["https://pc.tail1.ts.net"] = "https://novo.tail1.ts.net"
+        self.assertTrue(s.api_grupo_admin({"chave": self.chave, "acao": "ver"})["ok"])
+        self.assertEqual(s.grupos()[0]["url"], "https://novo.tail1.ts.net")
+
+    def test_servidor_novo_sem_o_token_nao_troca(self):
+        self.mudou["https://pc.tail1.ts.net"] = "https://novo.tail1.ts.net"
+        self.sem_acesso.add("https://novo.tail1.ts.net")
+        r = s.api_grupo_sincronizar(self.resumo(10))["grupos"][self.chave]
+        self.assertIn("reconvite", r["erro"])
+        self.assertEqual(s.grupos()[0]["url"], "https://pc.tail1.ts.net")
+
+    def test_link_sem_codigo_troca_o_endereco(self):
+        r = s.api_grupo_entrar({"link": f"https://novo.tail1.ts.net/g/{self.gid}"})
+        self.assertTrue(r["mudou"])
+        self.assertEqual(s.grupos()[0]["url"], "https://novo.tail1.ts.net")
+        self.assertEqual(len(s.grupos()), 1)
+        with self.assertRaises(s.Erro):
+            s.api_grupo_entrar({"link": "https://novo.tail1.ts.net/g/outro-grupo"})
 
     def test_sair_apaga_o_vinculo(self):
         with mock.patch.object(s, "grupo_pede", side_effect=s.GrupoFora("fora", 502)):
