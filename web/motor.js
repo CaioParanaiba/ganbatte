@@ -1122,20 +1122,24 @@ function capsula(api){
     compras:C.EST.compras, equipado:C.EST.equip};
 }
 
-/* ---------- resumo para o grupo (#37) ----------
-   Um dia por linha, só com o que pode sair da máquina no modo em grupo (#16): o XP do dia (o número), os hábitos do grupo
-   (os que o jogo mede sozinho: Codeforces e Duolingo, se ligados) e se o dia contou para a missão da semana. Nunca leva
-   texto de tarefa, tag, disciplina nem os hábitos pessoais. É o formato do envio ao servidor do grupo (protocolo 1); até
-   lá, o jogador baixa o arquivo e manda ao host, para calibrar a Torre Trick com dados reais. */
-const HAB_GRUPO = ['cf', 'duo'];
-function resumoGrupo(C, S){
+/* ---------- resumo para o grupo (#37, #41) ----------
+   Um dia por linha, só com o que pode sair da máquina no modo em grupo (#16): o XP do dia (o número), o Codeforces (o único
+   hábito que o jogo mede sozinho) e se o dia contou para a missão da semana. Com pessoais = true (a sincronização), leva
+   também `pes`: o sim/não de cada hábito pessoal (e do Duolingo, se ligado) pelo id. Esse campo não sai do computador: o
+   servidor do jogo troca pelos hábitos do catálogo de cada grupo a que o jogador ligou um pessoal (envio_do_grupo) e manda
+   só {chave do grupo: 0/1}. Nunca leva texto de tarefa, tag nem disciplina. O export (Configurações → balanceamento) vai sem `pes`. */
+const HAB_GRUPO = ['cf'];
+function resumoGrupo(C, S, pessoais){
   const {HOJE, TEMP, JOG} = C, J = JOG || {}, ate = HOJE < fimTemporada(TEMP) ? HOJE : fimTemporada(TEMP);
-  const cfDia = (C.D.cf && C.D.cf.por_dia) || {};
-  const liga = {cf: !!(J.cf && J.cf.handle), duo: !!(J.duo && J.duo.usuario)}, duo = liga.duo ? diasHab(C, 'duo') : new Set();
-  const habitos = HAB_GRUPO.filter(h => liga[h]), fer = feriasDe(TEMP), linhas = [];
+  const cfDia = (C.D.cf && C.D.cf.por_dia) || {}, ligaCf = !!(J.cf && J.cf.handle);
+  const ids = pessoais ? (J.habitos || []).map(h => h.id).concat(J.duo && J.duo.usuario ? ['duo'] : []) : [];
+  const feitos = ids.map(id => [id, diasHab(C, id)]);
+  const habitos = ligaCf ? ['cf'] : [], fer = feriasDe(TEMP), linhas = [];
   for(let d = TEMP.ini; d <= ate; d = addD(d, 1)){
-    const hab = {}; if(liga.cf) hab.cf = cfDia[d] || 0; if(liga.duo) hab.duo = duo.has(d) ? 1 : 0;
-    linhas.push({dia:d, xp:S.xpDia[d] || 0, hab, missao:S.missaoDias.has(d), ferias:!!fer(d)});
+    const hab = {}; if(ligaCf) hab.cf = cfDia[d] || 0;
+    const x = {dia:d, xp:S.xpDia[d] || 0, hab, missao:S.missaoDias.has(d), ferias:!!fer(d)};
+    if(pessoais){ x.pes = {}; for(const [id, ds] of feitos) if(ds.has(d)) x.pes[id] = 1; }
+    linhas.push(x);
   }
   return {formato:1, protocolo:1, gerado:HOJE, versao:(C.SRV && C.SRV.versao) || '', jogador:J.nick || J.nome || '',
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};

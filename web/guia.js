@@ -494,7 +494,6 @@ function srvHTML(){
 const CANAIS = {
   main: {nome:'Estável', curto:'normal', entra:'voltar para a normal', sobre:'A versão normal, a mesma de todo mundo.'},
   beta: {nome:'Beta', curto:'beta', entra:'entrar na beta', sobre:'As novidades chegam aqui antes da versão normal, mas ainda em teste: às vezes vêm com erros que só são corrigidos depois.'},
-  grupo: {nome:'Grupo', curto:'do grupo', entra:'entrar no grupo', sobre:'O modo em grupo (0.9) em construção, para quem testa com os amigos. Recebe também tudo o que sai na versão normal.'},
 };
 let BETA = null;   // null | {alvo} (pergunta) | {alvo, trocando}
 function betaHTML(s){
@@ -508,7 +507,7 @@ function betaHTML(s){
   const alvo = BETA.alvo, nome = CANAIS[alvo].curto;
   if(BETA.trocando) return linha + `<p class="sub" style="margin:10px 0 0">${ic('antenna')} Trocando para a versão ${nome} e reiniciando o jogo...</p>`;
   const texto = alvo === 'main'
-    ? 'Voltar para a versão normal. Ela pode ser mais antiga que a de teste que você usa agora e não conhecer algo que a versão de teste já gravou nos seus dados.' + (atual === 'grupo' ? ' A aba do grupo some; os dados do grupo ficam guardados na pasta, sem uso.' : '')
+    ? 'Voltar para a versão normal. Ela pode ser mais antiga que a de teste que você usa agora e não conhecer algo que a versão de teste já gravou nos seus dados.'
     : `Entrar na versão ${nome}. Os seus dados não mudam de pasta, mas uma versão de teste pode gravar coisas novas neles, e voltar depois para a normal nem sempre fica perfeito.`;
   return linha + `<div style="margin-top:10px;padding:12px 14px;border:1px solid var(--hair);border-radius:12px">
       <p style="margin:0 0 8px;font-size:14px">${texto} Baixe os seus dados antes, para poder restaurar se algo sair errado.</p>

@@ -17,6 +17,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.0-beta1", "nome": "atualização do grupo", "data": "2026-10-14",
+   "resumo": "Primeiro teste do modo em grupo: um amigo vira o servidor, manda um convite, e a aba Grupo mostra quem jogou em cada dia. Por enquanto são só fatos; os pontos da Torre Trick entram depois, calibrados com o uso de vocês.",
+   "itens": [
+     {"ic": "tower", "t": "Aba Grupo", "d": "Um placar entre amigos com quem jogou em cada dia, a sequência de dias seguidos, o Codeforces e o Duolingo das últimas cinco semanas e quando cada um sincronizou. O seu XP e as suas tarefas não aparecem: o grupo vê só se você jogou no dia (#38, #40)."},
+     {"ic": "scroll", "t": "Convite por link", "d": "Sem conta e sem senha: o admin do grupo gera um link de uso único (vale 7 dias), e você cola em Configurações → grupo. Dá para estar em mais de um grupo, sair quando quiser e, se trocar de computador, pedir um reconvite que volta com o seu histórico (#39)."},
+     {"ic": "antenna", "t": "Seu computador como servidor", "d": "Em Configurações → grupo → criar um grupo, o jogo liga o servidor do grupo e tenta abrir o acesso pela internet com o Tailscale Funnel (grátis). Os admins convidam, cancelam convites e cuidam dos membros e das datas da temporada na aba Grupo → administrar (#38)."},
+     {"ic": "esp", "t": "Funciona offline", "d": "Sem internet, ou com o servidor do grupo desligado, a aba mostra o último placar recebido e o seu jogo segue igual. O que você fizer nesse tempo vai junto na próxima vez que o jogo conseguir falar com o servidor (#40)."}
+   ]},
   {"versao": "0.7.1-beta1", "nome": "atualização do Ganbatte", "data": "2026-10-14",
    "resumo": "Retratos para os chefões, uma aba Comprados na loja e tudo o que você compra guardado para sempre, numa pasta só sua.",
    "itens": [

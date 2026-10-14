@@ -23,10 +23,11 @@ O `guia.js` roda num escopo fechado: no roteiro, abra o tutorial clicando em `[d
 numa chamada separada. Depois de mexer em `web/`, rode `python3 ferramentas/standalone.py` (gera o `docs/prototipo.html`);
 o Pages atualiza a cada push.
 
-**Branch `grupo`** (desde 13/10/2026): o modo em grupo (0.9, issues no índice #16), com versões `0.9.0-betaN`. Recebe
-merge da `beta` a cada versão nova, **sempre junto com uma 0.9.0-betaN nova** cuja entrada nas novidades diz o que veio
-(só o merge não avisa ninguém: o jogo só avisa versão maior que a atual). O caminho contrário só com a 0.9 pronta
-(`grupo` → `beta` → uso real → `main`). Na pasta de dados, a `grupo` só acrescenta (`grupo.json`, `enviado.json`, `grupo/`).
+**Branch `grupo`: desativada na 0.9.0-beta2** (14/10/2026). Foi onde o modo em grupo (0.9, índice #16) nasceu, de 13 a
+14/10, com a 0.9.0-beta1. Na 0.9.0-beta2 ela entrou na `beta` e parou: fica no GitHub só como registro, no mesmo commit da
+beta2, e não recebe mais nada. Issues com o label `grupo` usam a `beta` como base. A cópia que ainda está na `grupo`
+segue a `beta` (`ANTIGOS` no `servidor.py`: `canal()` responde `beta`, e o "atualizar agora" troca a branch em vez de
+puxar). Na pasta de dados, o modo em grupo só acrescenta (`grupo.json`, `enviado.json`, `grupo/`).
 
 **Branches: `main` e `beta`.** A `main` é a versão estável: é a que o instalador baixa e a que o botão "Atualizar agora"
 confere. A `beta` é onde as versões novas são testadas em uso real antes de sair, e pode quebrar; nenhum instalador
@@ -252,12 +253,55 @@ O que entrou:
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
 **Preparação do modo em grupo** (0.6.4-beta5, 13/10/2026, issues #36, #46, #37; índice em #16):
-- `CANAIS = ("main", "beta", "grupo")` no `servidor.py`: `canal()` devolve a branch da cópia git se for um deles (senão
-  `main`) e o `api_canal()` troca para qualquer um. Configurações → servidor tem **Versão: Estável · Beta · Grupo**
-  (`CANAIS` e `betaHTML()` em `web/guia.js`). `podeTeste()` (modo teste da Masadora) vale na beta e no grupo.
+- `CANAIS` no `servidor.py`: `canal()` devolve a branch da cópia git se for um deles (senão `main`) e o `api_canal()`
+  troca para qualquer um. Configurações → servidor tem **Versão: Estável · Beta** (`CANAIS` e `betaHTML()` em
+  `web/guia.js`). `podeTeste()` (modo teste da Masadora) vale na beta. Até a 0.9.0-beta1 havia também o canal Grupo;
+  desde a beta2 ele está em `ANTIGOS` e segue a beta.
 - `HJ.resumoGrupo(C, S)` no motor (`protocolo: 1`): um dia por linha da temporada (`TEMP.ini` até hoje ou o fim) com
   `xp`, `hab` (só os `HAB_GRUPO` ligados: `cf` = problemas, `duo` = 0/1), `missao` (o dia contou para a missão da semana:
   `S.missaoDias`) e `ferias`. Nunca leva texto, tag, disciplina nem hábito pessoal. Botão em Configurações → balanceamento.
+
+**Modo em grupo: estrutura da 0.9.0** (13/10/2026, #38, #39, #40; decisões em `docs/COLETIVO.md`, "Servidor da Associação"):
+- `grupo/servidor_grupo.py`: servidor à parte (serviço `ganbatte-grupo`, porta 8643, `~/.ganbatte-grupo/`), SQLite com
+  `grupos`, `membros`, `convites`, `dias` (os fatos, sobrescritos por jogador e dia), `fechados` e `ligado` (intervalos em
+  que o servidor esteve ligado). Tokens e convites só com hash; `dono.token` no disco para as rotas `/dono`. Convite de 8
+  letras, uso único, 7 dias; 20 erros em 10 min travam o grupo por 10 min. `fecha_periodos()` a cada 5 min (prazo às 6h do
+  fuso do grupo + `HORAS_LIGADO`), congelando os números do período (membros, dias com XP, mediana do XP diário, soma dos
+  hábitos) para calibrar a #42. Cópia diária em `copias/`. Reinicia sozinho quando o arquivo muda (git pull).
+- O início automático do `servidor.py` (`auto_ligar`, `iniciar_fundo`, `conteudo_auto`) aceita outro nome e comando.
+- Jogo: `/api/grupo/*` no `servidor.py`; `grupo.json` (lista), `enviado.json` (assinatura de cada dia enviado) e
+  `grupo/` (último placar). A página sincroniza ao abrir e a cada 10 min (`web/grupo.js`): sem a página aberta, nada é
+  enviado. O convite do próprio servidor (o host entrando pelo endereço do Funnel) fala com `127.0.0.1:8643` direto.
+- Funnel (`liga_funnel()`): `tailscale funnel --bg 8643`; reconhece o link de autorização, o `sudo`/operator do Linux e o
+  Tailscale sem login. **Não testado com o Tailscale de verdade** (o primeiro teste é do Caio).
+- Placar só de fatos: o XP de cada um não sai do servidor, só "teve XP no dia". Faltam: a página do placar no próprio
+  servidor (hoje ele só explica o convite) e os pontos (#42).
+- **Catálogo de hábitos** (14/10/2026, #41): tabela `habitos` no servidor do grupo (`id`, `nome`, `fonte`, `desde`,
+  `removido`). O grupo nasce com o `cf` (o único `automatico`; os grupos da beta1 ganham na migração do `abre_banco`); os
+  admins criam os de `vinculo` (sim/não por dia, `desde` = o dia da criação) e arquivam ou trazem de volta em Grupo →
+  administrar (`admin/habito`). O envio guarda só as chaves do catálogo, do `desde` em diante (`le_dia`), e o placar mostra
+  só as ativas (`habitos` na resposta; as colunas do `web/grupo.js` saem dele). No jogo, o `resumoGrupo(C, S, true)` leva
+  `pes` (o sim/não de cada hábito pessoal e do Duolingo, pelo id) só até o `servidor.py`: `envio_do_grupo()` troca pelo
+  catálogo de cada grupo com os `vinculos` do `grupo.json` (`/api/grupo/vinculo`, o seletor em Configurações → grupo).
+  Mudar um vínculo muda a assinatura dos dias, e a temporada vai de novo. O Duolingo deixou de ser hábito do grupo.
+- **Torre Trick** (14/10/2026, #42; regras no `docs/COLETIVO.md`): `grupo/torre.py`, funções puras sobre o retrato do grupo
+  (`retrato()` no servidor: membros, todos os `dias`, catálogo, `fechados`, calibração). 1 andar = 1 teto; o teto do mês é
+  a mediana do mês anterior congelada no fechamento (`numeros()` agora guarda também a `mediana_ativos`, a dos dias com XP,
+  que vale quando a mediana dá 0); no 1º mês, a do próprio mês, provisória. A superação (`razao()`: base = maior entre a
+  média dos últimos 3 meses ou 4 semanas e a da temporada, com a projeção do período em curso) só entra nos andares com o
+  período fechado; antes, vai em `projecao`. `calcula()` devolve `teto`, `geral`, `placares` (gerados pelo catálogo com
+  `specs()`; só os ligados e com 2+ participantes), `titulos` e `evolucao` (a posição no fim de cada uma das últimas 6
+  semanas, recalculada dos dias). O `placar()` leva tudo em `torre`, junto com a `frase` (#76: tabela `frases`, o líder é
+  quem mais desceu na última semana fechada, `andares_semana()`; uma vez só; fica até a semana seguinte fechar). Calibração
+  e placares por grupo nas colunas `calib` e `placares` de `grupos` (JSON; migração no `abre_banco`), editados em
+  `admin/calibracao` e `admin/placar`; `admin/frase` apaga. No jogo, `/api/grupo/frase` e as ações novas do `/api/grupo/admin`.
+- **Aba Torre Trick** (14/10/2026, #67, desenho aprovado no protótipo do #67): `web/grupo.js`, classes com o prefixo `tt-`
+  (o jogo já usa `.lic`, `.shaft`, `.row`, `.k`...). Sub-abas `placar` (licença horizontal que vira com um clique, pódio
+  herói, frase do líder, o 4º em diante, específicos como campeões ou quem lidera, a escolha fica no `localStorage`
+  `gb-tt-esp`), `placares` (o placar em foco e o gráfico da evolução, com a tabela) e `jogadores` (a licença aberta, frente
+  e verso). `data-ttjog` abre a licença de alguém, `data-ttplac` abre um placar. A licença tem cores próprias (é um
+  objeto), iguais nos dois temas e visuais. Administrar ganhou os números (`torreAdminHTML`), os placares e as frases.
+  Placar guardado sem `torre` (servidor do grupo antigo): a tabela de fatos de antes (`placarHTML`).
 
 **Cápsula da temporada** (0.6.4-beta1, 13/10/2026, issue #7): `HJ.capsula(api)` no motor calcula a temporada como o
 jogo mostrava no último dia (`fimTemporada`: véspera da volta; antes disso, uma foto até hoje): roda `carregar` com `hoje`
