@@ -45,13 +45,15 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/atualizar {}                  baixa a versão nova (git pull ou ZIP do GitHub) e reinicia o servidor
   POST /api/canal {canal}                 troca entre a versão normal (main) e a de teste (beta), só em cópia git, e reinicia
   GET  /api/grupo                         modo em grupo: os grupos do jogador e o último placar de cada um (sem os tokens)
-  POST /api/grupo/entrar {link}           entra com o link do convite (https://endereco/g/ID#CODIGO)
+  POST /api/grupo/entrar {link}           entra com o link do convite (https://endereco/g/ID#CODIGO); sem o código, troca o
+                                          endereço de um grupo em que já está (o grupo mudou de computador, #91)
   POST /api/grupo/sair {chave}            sai do grupo
   POST /api/grupo/sincronizar {resumo}    manda os dias que mudaram (motor.js → resumoGrupo) e traz o placar
   POST /api/grupo/vinculo {chave, habito, pessoal} liga um hábito pessoal a um hábito do catálogo do grupo ("" desliga)
   POST /api/grupo/frase {chave, texto}    a frase do líder da semana (#76), repassada ao servidor do grupo
   POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config | habito | calibracao | placar | frase
-  POST /api/grupo/host {acao, ...}        estado | servidor | funnel | criar {nome, endereco}: este computador como servidor do grupo
+  POST /api/grupo/host {acao, ...}        estado | servidor | funnel | criar {nome, endereco} | restaurar {banco, endereco} |
+                                          mudar {endereco}: este computador como servidor do grupo
   GET  /api/grupo/copia                   cópia do banco do servidor do grupo desta máquina (só o dono)
 
 Todo dia o servidor cria as recorrentes de hoje (um hábito por linha, rec:ID:DATA, e as do Codeforces e do Duolingo se ligados),
@@ -65,6 +67,7 @@ Iniciar com o computador (opcional): serviço do usuário no systemd (Linux; sem
 pasta Inicializar (Windows) ou LaunchAgent (Mac). O servidor de segundo plano roda com --fundo e grava o log em servidor.log.
 """
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -1772,10 +1775,19 @@ GRUPO_PORTA = 8643
 GRUPO_APP = "ganbatte-grupo"
 PROTOCOLO_GRUPO = 1
 LINK_GRUPO = re.compile(r"^(https?://[^/\s#?]+)/g/([a-z0-9][a-z0-9-]{1,30})/?#([A-Za-z0-9]{6,12})$")
+LINK_NOVO = re.compile(r"^(https?://[^/\s#?]+)/g/([a-z0-9][a-z0-9-]{1,30})/?$")   # o grupo mudou de computador (#91): o link sem código
+ENDERECO_GRUPO = re.compile(r"^https?://[^/\s#?]+$")
 
 
 class GrupoFora(Erro):
     """O servidor do grupo não respondeu (sem internet, Funnel desligado, notebook do host dormindo)."""
+
+
+class GrupoMudou(Erro):
+    """O grupo foi para outro computador (#91): o servidor antigo responde 410 com o endereço novo."""
+    def __init__(self, msg, para):
+        super().__init__(msg, 410)
+        self.para = para
 
 
 def grupo_pasta_servidor():
@@ -1786,19 +1798,23 @@ def grupo_local():
     return f"http://127.0.0.1:{int(env('GRUPO_PORTA') or GRUPO_PORTA)}"
 
 
-def grupo_pede(url, metodo, rota, corpo=None, token="", tempo=15, bruto=False):
-    h = {"User-Agent": f"{APP}/{VERSAO}", "Content-Type": "application/json"}
+def grupo_pede(url, metodo, rota, corpo=None, token="", tempo=15, bruto=False, arquivo=None):
+    h = {"User-Agent": f"{APP}/{VERSAO}", "Content-Type": "application/octet-stream" if arquivo is not None else "application/json"}
     if token:
         h["Authorization"] = "Bearer " + token
-    req = urllib.request.Request(url.rstrip("/") + rota, data=None if corpo is None else json.dumps(corpo).encode(), method=metodo, headers=h)
+    dados = arquivo if arquivo is not None else None if corpo is None else json.dumps(corpo).encode()
+    req = urllib.request.Request(url.rstrip("/") + rota, data=dados, method=metodo, headers=h)
     try:
         with urllib.request.urlopen(req, timeout=tempo) as r:
             return r.read() if bruto else json.load(r)
     except urllib.error.HTTPError as e:
         try:
-            msg = json.load(e).get("error") or ""
+            j = json.load(e)
+            msg = j.get("error") or ""
         except ValueError:
-            msg = ""
+            j, msg = {}, ""
+        if e.code == 410 and ENDERECO_GRUPO.match(str(j.get("mudou") or "")):
+            raise GrupoMudou(msg, j["mudou"])
         if not msg or e.code in (502, 503, 504):   # o túnel respondeu, mas o servidor do grupo atrás dele não
             raise GrupoFora(f"o servidor do grupo não respondeu ({e.code})", 502)
         raise Erro(msg, e.code if e.code in (401, 403, 404, 409, 426, 429) else 400)
@@ -1824,6 +1840,56 @@ def grupo_da(chave):
     if not g:
         raise Erro("grupo não encontrado neste jogo")
     return g
+
+
+def muda_grupo(g, novo):
+    """Passa o grupo g para o endereço novo (#91), depois de conferir que o servidor de lá conhece o seu token. A chave muda
+    junto, então o enviado.json começa do zero para ela e a próxima sincronização manda a temporada inteira ao servidor novo."""
+    novo = novo.rstrip("/")
+    for _ in range(3):   # mudou duas vezes seguidas: segue o aviso do servidor do meio
+        try:
+            p = grupo_pede(novo, "GET", f"/g/{g['id']}/placar", token=g["token"])
+            break
+        except GrupoMudou as e:
+            novo = e.para.rstrip("/")
+        except GrupoFora:
+            raise GrupoFora(f"o grupo mudou para {novo}, que ainda não respondeu", 502)
+        except Erro as e:
+            if e.code in (401, 403, 404):
+                raise Erro(f"o servidor novo ({novo}) não reconhece o seu acesso a este grupo: peça um reconvite a um admin", e.code)
+            raise
+    else:
+        raise Erro("o grupo mudou de servidor várias vezes seguidas; peça o link novo a um admin")
+    with lock:
+        lista = grupos()
+        for x in lista:
+            if chave_grupo(x) == chave_grupo(g):
+                x["url"] = novo
+                x.pop("publico", None)
+                x["nome"] = p.get("grupo", {}).get("nome") or x.get("nome")
+                novo_g = x
+        gravar_json("grupo.json", lista)
+        env_ = ler_json("enviado.json", {})
+        env_.pop(chave_grupo(g), None)
+        gravar_json("enviado.json", env_)
+    velho = arquivo_placar(g)
+    if velho.exists():
+        velho.unlink()
+    p["recebido"] = time.time()
+    f = arquivo_placar(novo_g)
+    f.parent.mkdir(exist_ok=True)
+    f.write_text(json.dumps(p, ensure_ascii=False), encoding="utf-8")
+    log(f"grupo {g['id']} mudou de servidor: {novo}")
+    return novo_g
+
+
+def pede_g(g, metodo, rota, corpo=None):
+    """grupo_pede com o token do grupo g, seguindo o aviso de mudança de computador (g é atualizado no lugar)."""
+    try:
+        return grupo_pede(g["url"], metodo, rota, corpo, g["token"], tempo=30)
+    except GrupoMudou as e:
+        g.update(muda_grupo(g, e.para))
+        return grupo_pede(g["url"], metodo, rota, corpo, g["token"], tempo=30)
 
 
 def api_grupo_get():
@@ -1868,7 +1934,11 @@ def nome_publico(d):
 
 def api_grupo_entrar(d):
     """{link: https://endereco/g/ID#CODIGO, nome?, avatar?}: o link do convite, colado em Configurações → grupo."""
-    m = LINK_GRUPO.match(str(d.get("link", "")).strip())
+    link = str(d.get("link", "")).strip()
+    n = LINK_NOVO.match(link)
+    if n:
+        return novo_endereco(n.group(1), n.group(2))
+    m = LINK_GRUPO.match(link)
     if not m:
         raise Erro("link de convite inválido: copie o link inteiro, do https:// até o código depois do #")
     nome, av = nome_publico(d)
@@ -1878,10 +1948,23 @@ def api_grupo_entrar(d):
     return entra_grupo(url, m.group(2), m.group(3).upper(), nome, av, publico)
 
 
+def novo_endereco(url, gid):
+    """O link do grupo sem código (#91): o servidor do grupo foi para outro computador e o aviso não chegou a este jogo (a
+    máquina antiga já não liga). Troca o endereço e mantém o perfil, se o servidor novo conhece o token."""
+    meus = [x for x in grupos() if x["id"] == gid]
+    if not meus:
+        raise Erro("esse link é de um grupo em que você não está: falta o código do convite depois do #")
+    if ping_grupo() and url.split("//", 1)[1].split(":")[0] == tailscale_nome():
+        url = grupo_local()   # o servidor novo é esta máquina
+    g = next((x for x in meus if x["url"] != url), meus[0])
+    novo = muda_grupo(g, url)
+    return {"ok": True, "chave": chave_grupo(novo), "nome": novo.get("nome") or gid, "admin": bool(novo.get("admin")), "mudou": True}
+
+
 def api_grupo_sair(d):
     g = grupo_da(d.get("chave"))
     try:
-        grupo_pede(g["url"], "POST", f"/g/{g['id']}/sair", {}, g["token"])
+        pede_g(g, "POST", f"/g/{g['id']}/sair", {})
     except Erro as e:
         if not isinstance(e, GrupoFora) and e.code != 401:
             raise   # ex.: o único admin precisa passar o poder antes
@@ -1929,39 +2012,51 @@ def api_grupo_sincronizar(d):
     for g in grupos():
         k = chave_grupo(g)
         try:
-            with lock:
-                feito = ler_json("enviado.json", {}).get(k, {})
-            p = ler_json_arquivo(arquivo_placar(g))
-            if not p or "habitos" not in p:   # sem o catálogo ainda (grupo novo ou placar da 0.9.0-beta1): busca antes
-                p = grupo_pede(g["url"], "GET", f"/g/{g['id']}/placar", token=g["token"])
-            cat, vinc = p.get("habitos") or [], vinculos_de(g)
-            dias_g = [envio_do_grupo(x, cat, vinc) for x in dias if isinstance(x, dict)]
-            novos = [x for x in dias_g if feito.get(x.get("dia")) != assinatura(x)]
-            for i in range(0, len(novos), 400):
-                parte = novos[i:i + 400]
-                grupo_pede(g["url"], "POST", f"/g/{g['id']}/envio", {"protocolo": PROTOCOLO_GRUPO, "dias": parte}, g["token"], tempo=30)
-                with lock:
-                    env_ = ler_json("enviado.json", {})
-                    env_.setdefault(k, {}).update({x["dia"]: assinatura(x) for x in parte})
-                    gravar_json("enviado.json", env_)
-            p = grupo_pede(g["url"], "GET", f"/g/{g['id']}/placar", token=g["token"])
-            p["recebido"] = time.time()
-            f = arquivo_placar(g)
-            f.parent.mkdir(exist_ok=True)
-            f.write_text(json.dumps(p, ensure_ascii=False), encoding="utf-8")
-            if p.get("voce", {}).get("admin") != g.get("admin") or p.get("grupo", {}).get("nome") != g.get("nome"):
-                with lock:
-                    lista = grupos()
-                    for x in lista:
-                        if chave_grupo(x) == k:
-                            x.update(admin=p["voce"]["admin"], nome=p["grupo"]["nome"])
-                    gravar_json("grupo.json", lista)
-            out[k] = {"placar": p, "enviados": len(novos)}
+            try:
+                out[k] = sincroniza_grupo(g, dias)
+            except GrupoMudou as e:
+                out.pop(k, None)
+                g = muda_grupo(g, e.para)
+                k = chave_grupo(g)
+                out[k] = dict(sincroniza_grupo(g, dias), mudou=True)
         except GrupoFora as e:
             out[k] = {"placar": ler_json_arquivo(arquivo_placar(g)), "offline": True, "erro": str(e)}
         except Erro as e:
             out[k] = {"placar": ler_json_arquivo(arquivo_placar(g)), "erro": str(e), "sem_acesso": e.code == 401}
     return {"ok": True, "grupos": out}
+
+
+def sincroniza_grupo(g, dias):
+    """Um grupo da sincronização: manda os dias novos ou que mudaram e traz o placar."""
+    k = chave_grupo(g)
+    with lock:
+        feito = ler_json("enviado.json", {}).get(k, {})
+    p = ler_json_arquivo(arquivo_placar(g))
+    if not p or "habitos" not in p:   # sem o catálogo ainda (grupo novo ou placar da 0.9.0-beta1): busca antes
+        p = grupo_pede(g["url"], "GET", f"/g/{g['id']}/placar", token=g["token"])
+    cat, vinc = p.get("habitos") or [], vinculos_de(g)
+    dias_g = [envio_do_grupo(x, cat, vinc) for x in dias if isinstance(x, dict)]
+    novos = [x for x in dias_g if feito.get(x.get("dia")) != assinatura(x)]
+    for i in range(0, len(novos), 400):
+        parte = novos[i:i + 400]
+        grupo_pede(g["url"], "POST", f"/g/{g['id']}/envio", {"protocolo": PROTOCOLO_GRUPO, "dias": parte}, g["token"], tempo=30)
+        with lock:
+            env_ = ler_json("enviado.json", {})
+            env_.setdefault(k, {}).update({x["dia"]: assinatura(x) for x in parte})
+            gravar_json("enviado.json", env_)
+    p = grupo_pede(g["url"], "GET", f"/g/{g['id']}/placar", token=g["token"])
+    p["recebido"] = time.time()
+    f = arquivo_placar(g)
+    f.parent.mkdir(exist_ok=True)
+    f.write_text(json.dumps(p, ensure_ascii=False), encoding="utf-8")
+    if p.get("voce", {}).get("admin") != g.get("admin") or p.get("grupo", {}).get("nome") != g.get("nome"):
+        with lock:
+            lista = grupos()
+            for x in lista:
+                if chave_grupo(x) == k:
+                    x.update(admin=p["voce"]["admin"], nome=p["grupo"]["nome"])
+            gravar_json("grupo.json", lista)
+    return {"placar": p, "enviados": len(novos)}
 
 
 def api_grupo_vinculo(d):
@@ -1999,11 +2094,11 @@ def api_grupo_admin(d):
     g = grupo_da(d.get("chave"))
     acao = d.get("acao")
     if acao == "ver":
-        return grupo_pede(g["url"], "GET", f"/g/{g['id']}/admin", token=g["token"])
+        return pede_g(g, "GET", f"/g/{g['id']}/admin")
     if acao not in ADMIN_ACOES:
         raise Erro("ação desconhecida")
     corpo = {k: v for k, v in d.items() if k not in ("chave", "acao")}
-    r = grupo_pede(g["url"], "POST", f"/g/{g['id']}/{ADMIN_ACOES[acao]}", corpo, g["token"])
+    r = pede_g(g, "POST", f"/g/{g['id']}/{ADMIN_ACOES[acao]}", corpo)
     if acao == "convite":
         r["link"] = (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}#{r['codigo']}"
     return r
@@ -2012,7 +2107,7 @@ def api_grupo_admin(d):
 def api_grupo_frase(d):
     """{chave, texto}: a frase do líder da semana (#76). O servidor do grupo confere se é o líder e se ainda não escreveu."""
     g = grupo_da(d.get("chave"))
-    return grupo_pede(g["url"], "POST", f"/g/{g['id']}/frase", {"texto": str(d.get("texto") or "")}, g["token"])
+    return pede_g(g, "POST", f"/g/{g['id']}/frase", {"texto": str(d.get("texto") or "")})
 
 
 # ---------- host: o servidor do grupo nesta máquina e o Tailscale Funnel (decidido em 13/10: modo misto) ----------
@@ -2111,8 +2206,9 @@ def api_grupo_host(d):
     acao = d.get("acao")
     if acao == "estado":
         ligado, dono, dns = ping_grupo(), (grupo_pasta_servidor() / "dono.token").is_file(), tailscale_nome()
+        srv = grupo_pede(grupo_local(), "GET", "/dono", token=dono_token()) if ligado and dono else {}
         return {"ok": True, "servidor": ligado, "dono": dono, "tailscale": bool(acha_tailscale()), "endereco": "https://" + dns if dns else "",
-                "grupos": grupo_pede(grupo_local(), "GET", "/dono", token=dono_token())["grupos"] if ligado and dono else []}
+                "grupos": srv.get("grupos") or [], "mudou": srv.get("mudou") or ""}
     if acao == "servidor":
         liga_servidor_grupo()
         return {"ok": True}
@@ -2128,7 +2224,55 @@ def api_grupo_host(d):
         nome, av = nome_publico({"avatar": d.get("avatar")})   # o "nome" daqui é o do grupo; o do jogador vem do jogador.json
         e = entra_grupo(grupo_local(), r["grupo"]["id"], r["convite"], nome, av, publico=end)
         return dict(e, ok=True)
+    if acao == "restaurar":
+        return restaura_grupo(d)
+    if acao == "mudar":
+        return avisa_mudanca(str(d.get("endereco") or "").strip().rstrip("/"))
     raise Erro("ação desconhecida")
+
+
+# ---------- mudar o servidor do grupo de computador (#91) ----------
+def restaura_grupo(d):
+    """{banco: o .db em base64, endereco}: no computador novo, troca o banco do servidor do grupo pela cópia do antigo. Os
+    grupos deste jogo que falam com o servidor daqui passam a usar o endereço público novo nos convites e mandam a temporada
+    de novo (a cópia pode ser mais velha do que o que já tinha chegado)."""
+    end = str(d.get("endereco") or "").strip().rstrip("/")
+    if end and not ENDERECO_GRUPO.match(end):
+        raise Erro("endereço público inválido (ex.: https://notebook.tailXXXX.ts.net)")
+    try:
+        banco = base64.b64decode(str(d.get("banco") or ""), validate=True)
+    except ValueError:
+        raise Erro("arquivo inválido")
+    liga_servidor_grupo()
+    r = grupo_pede(grupo_local(), "POST", "/dono/restaurar", token=dono_token(), tempo=120, arquivo=banco)
+    with lock:
+        lista, env_ = grupos(), ler_json("enviado.json", {})
+        for x in lista:
+            if x["url"] == grupo_local():
+                env_.pop(chave_grupo(x), None)
+                if end:
+                    x["publico"] = end
+        gravar_json("grupo.json", lista)
+        gravar_json("enviado.json", env_)
+    return dict(r, ok=True)
+
+
+def avisa_mudanca(end):
+    """No computador antigo: o servidor do grupo passa a responder aos membros com o endereço novo (vazio desfaz). Antes,
+    confere que lá já tem um servidor do grupo respondendo e que não é este mesmo (os membros ficariam dando voltas)."""
+    if end:
+        if not ENDERECO_GRUPO.match(end):
+            raise Erro("endereço inválido (ex.: https://notebook.tailXXXX.ts.net)")
+        dns = tailscale_nome()
+        if (dns and end.split("//", 1)[1].split(":")[0] == dns) or any(x.get("publico") == end for x in grupos() if x["url"] == grupo_local()):
+            raise Erro("esse é o endereço deste computador: use o endereço do computador novo")
+        try:
+            ok = grupo_pede(end, "GET", "/api/ping", tempo=15).get("app") == GRUPO_APP
+        except Erro:
+            ok = False
+        if not ok:
+            raise Erro(f"nenhum servidor do grupo respondeu em {end}: ligue-o no computador novo e restaure a cópia lá antes")
+    return dict(grupo_pede(grupo_local(), "POST", "/dono/mudar", {"endereco": end}, dono_token()), ok=True)
 
 
 def copia_grupo():
@@ -2301,7 +2445,7 @@ ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
          "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
          "/api/grupo/frase": api_grupo_frase}
-LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000}
+LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000, "/api/grupo/host": 140_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),

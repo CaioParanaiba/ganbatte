@@ -8,7 +8,7 @@
    No modo demonstração não há servidor: a aba continua só explicando o que vem. */
 (() => {
 if(window.GB_DEMO) return;
-const G = {lista:null, res:{}, sel:'', aba:'placar', adm:null, admErr:'', convite:'', link:'', host:null, hostAberto:false, funnel:null, nome:'', endereco:'', ocupado:false, ultima:0, entrarAberto:false};
+const G = {lista:null, res:{}, sel:'', aba:'placar', adm:null, admErr:'', convite:'', link:'', host:null, hostAberto:false, funnel:null, nome:'', endereco:'', ocupado:false, ultima:0, entrarAberto:false, mudaEnd:''};
 const SINC_MIN = 10;   // minutos entre sincronizações com a página aberta
 
 const quando = ts => {
@@ -32,12 +32,14 @@ const reRender = () => { if(cur === 'tt' || cur === 'cfg') render(); };
 async function carrega(){
   try { const j = await (await fetch('/api/grupo', {cache:'no-store'})).json(); if(j.ok){ G.lista = j.grupos; G.host = j.host; } }
   catch(e){ G.lista = G.lista || []; }
-  if(G.lista && !G.lista.some(g => g.chave === G.sel)) G.sel = G.lista.length ? G.lista[0].chave : '';
+  if(G.lista && !G.lista.some(g => g.chave === G.sel)){ const mesmo = G.lista.find(g => G.sel && g.id === G.sel.split('|').pop());   // mudou de endereço (#91): a chave é outra
+    G.sel = mesmo ? mesmo.chave : G.lista.length ? G.lista[0].chave : ''; }
 }
 async function sincroniza(){
   if(!CTX || !G.lista || !G.lista.length || G.ocupado) return;
   G.ocupado = true;
-  try { const j = await post('/api/grupo/sincronizar', {resumo: GBx.resumoGrupo(CTX, estado(), true)}); G.res = j.grupos; G.ultima = Date.now(); }
+  try { const j = await post('/api/grupo/sincronizar', {resumo: GBx.resumoGrupo(CTX, estado(), true)}); G.res = j.grupos; G.ultima = Date.now();
+    if(Object.values(j.grupos).some(x => x.mudou)){ await carrega(); toast('O servidor do grupo mudou de computador <small>o seu jogo já passou para o endereço novo</small>'); } }
   catch(e){ /* o servidor do jogo caiu: a próxima tentativa resolve */ }
   G.ocupado = false; reRender();
 }
@@ -349,8 +351,21 @@ function hostHTML(){
     <div class="gp-f" style="margin-top:12px"><label>Nome do grupo<input id="gp-h-nome" value="${esc(G.nome)}" maxlength="40" placeholder="ex.: Amigos da facul"></label>
       <label>Endereço público<input id="gp-h-end" value="${esc(G.endereco || (G.funnel && G.funnel.endereco) || h.endereco || '')}" placeholder="https://notebook.tailXXXX.ts.net" class="mono"></label></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn v" data-gpcria>criar grupo</button>${h.dono ? '<a class="btn" href="/api/grupo/copia" download>baixar cópia do servidor</a>' : ''}<button type="button" class="btn" data-gphostfecha>fechar</button></div>
-    ${(h.grupos || []).length ? `<p class="sub" style="margin:10px 0 0">Grupos neste servidor: ${h.grupos.map(x => `${esc(x.nome)} (${x.membros})`).join(' · ')}</p>` : ''}</div>`;
+    ${(h.grupos || []).length ? `<p class="sub" style="margin:10px 0 0">Grupos neste servidor: ${h.grupos.map(x => `${esc(x.nome)} (${x.membros})`).join(' · ')}</p>` : ''}
+    ${h.dono ? mudaHTML(h) : ''}</div>`;
 }
+/* levar o servidor do grupo para outro computador (#91) */
+function mudaHTML(h){
+  if(h.mudou) return `<div class="gp-muda"><b>Este servidor está avisando os membros: o grupo agora fica em ${esc(h.mudou)}.</b>
+    <p class="sub" style="margin:6px 0 10px">O jogo de cada um passa para lá na próxima sincronização. Deixe este computador ligado até todos aparecerem no placar do servidor novo; depois pode desligar.</p>
+    <button type="button" class="btn" data-gpmuda="">cancelar o aviso</button></div>`;
+  return `<div class="gp-muda"><b>Mudar o grupo de computador</b>
+    <ol class="sub"><li>Neste computador: <i>baixar cópia do servidor</i>.</li><li>No computador novo: ligue o Funnel aqui em cima e restaure a cópia em <i>restaurar uma cópia</i>.</li><li>De volta a este: cole o endereço do computador novo e avise os membros. O jogo de cada um troca de endereço sozinho, e ninguém perde nada.</li></ol>
+    <div class="gp-f"><label>Restaurar uma cópia (.db)<input type="file" id="gp-rest-arq" accept=".db,application/vnd.sqlite3"></label>
+      <label>Endereço do computador novo<input id="gp-muda-end" value="${esc(G.mudaEnd)}" placeholder="https://novo.tailXXXX.ts.net" class="mono"></label></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-gprestaura>restaurar a cópia aqui</button><button type="button" class="btn" data-gpmuda="1">avisar os membros</button></div></div>`;
+}
+const leBase64 = f => new Promise((ok, erro) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1] || ''); r.onerror = () => erro(new Error('não deu para ler o arquivo')); r.readAsDataURL(f); });
 function vinculosHTML(g){
   const hs = habsDe(placarDe(g)).filter(h => h.fonte === 'vinculo');
   if(!hs.length) return '';
@@ -366,6 +381,7 @@ function cardGrupo(){
   return `<div class="card" id="cfg-grupo"><h2><span class="c">~/</span>grupo</h2>
     ${l.length ? l.map(g => `<div class="gp-lin"><span><b>${esc(g.nome)}</b>${g.admin ? ' <small class="sub">admin</small>' : ''} <span class="sub mono">${esc(g.convite)}</span></span><button type="button" class="btn" data-gpsai="${esc(g.chave)}" data-n="${esc(g.nome)}">sair</button></div>${vinculosHTML(g)}`).join('') : '<p style="margin:0 0 10px;font-size:14px">Você não está em nenhum grupo.</p>'}
     ${entrarHTML()}
+    ${l.length ? '<p class="sub" style="margin:6px 0 0">O servidor do grupo mudou de computador e o seu jogo não acompanhou? Cole aqui o link novo do grupo, sem o código.</p>' : ''}
     <p class="sub" style="margin:8px 0 0">Vão para o grupo só o seu nickname, a foto de perfil e, por dia, o XP (para as contas; ninguém vê o número), o Codeforces e, dos hábitos do grupo, só se você cumpriu no dia o hábito pessoal que ligou a cada um. Suas tarefas, os nomes dos seus hábitos e os que você não ligou ficam aqui.</p>
     ${hostHTML()}</div>`;
 }
@@ -374,8 +390,8 @@ RENDER.cfg = S => { RENDER0.cfg(S); const a = document.getElementById('cfg-srv')
 async function admin(acao, corpo){ return post('/api/grupo/admin', Object.assign({chave: grupoSel().chave, acao}, corpo || {})); }
 async function abreAdmin(){ G.adm = null; G.admErr = ''; render(); try { G.adm = await admin('ver'); } catch(e){ G.admErr = e.message; } render(); }
 async function hostEstado(){ try { G.hostEstado = await post('/api/grupo/host', {acao:'estado'}); } catch(e){ G.hostEstado = {}; toast('Não deu: ' + esc(e.message)); } render(); }
-const guarda = () => { const n = document.getElementById('gp-h-nome'), e = document.getElementById('gp-h-end');
-  if(n) G.nome = n.value; if(e) G.endereco = e.value; };
+const guarda = () => { const n = document.getElementById('gp-h-nome'), e = document.getElementById('gp-h-end'), m = document.getElementById('gp-muda-end');
+  if(n) G.nome = n.value; if(e) G.endereco = e.value; if(m) G.mudaEnd = m.value; };
 
 const vaiPara = mudar => { Object.assign(TT, mudar); G.aba = 'placar'; render(); const r = document.getElementById('tt-root'); if(r && r.getBoundingClientRect().top < 0) r.scrollIntoView({behavior:'smooth', block:'start'}); };
 document.addEventListener('click', async e => {
@@ -414,12 +430,21 @@ document.addEventListener('click', async e => {
       G.adm = await admin('config', {nome: v('gp-c-nome'), fuso: v('gp-c-fuso'), ini: v('gp-c-ini'), fim: v('gp-c-fim')}); await carrega(); await sincroniza(); toast('Grupo salvo'); return; }
     if((b = q('[data-gpentra]'))){ guarda(); G.convite = b.closest('.gp-entra').querySelector('[data-gpconvite]').value.trim();
       const r = await post('/api/grupo/entrar', {link: G.convite, avatar: avatar()}); G.convite = ''; G.sel = r.chave; G.entrarAberto = false; G.aba = 'placar';
-      await carrega(); render(); toast(`Você entrou em ${esc(r.nome)}${cur === 'tt' ? '' : ` <small>o placar fica na aba ${esc(ABA.tt.n)}</small>`}`); sincroniza(); return; }
+      await carrega(); render(); toast(r.mudou ? `Endereço de ${esc(r.nome)} atualizado <small>o seu jogo manda a temporada para o servidor novo</small>` : `Você entrou em ${esc(r.nome)}${cur === 'tt' ? '' : ` <small>o placar fica na aba ${esc(ABA.tt.n)}</small>`}`); sincroniza(); return; }
     if((b = q('[data-gpsai]'))){ if(!confirm(`Sair de ${b.dataset.n}? Para voltar, só com um convite novo.`)) return;
       await post('/api/grupo/sair', {chave: b.dataset.gpsai}); await carrega(); render(); toast('Você saiu do grupo'); return; }
     if(q('[data-gphost]')){ G.hostAberto = true; render(); hostEstado(); return; }
     if(q('[data-gphostfecha]')){ guarda(); G.hostAberto = false; render(); return; }
     if((b = q('[data-gpfunnel]'))){ guarda(); b.disabled = true; b.textContent = 'ligando...'; G.funnel = await post('/api/grupo/host', {acao:'funnel'}); await hostEstado(); return; }
+    if((b = q('[data-gprestaura]'))){ guarda(); const f = (document.getElementById('gp-rest-arq').files || [])[0];
+      if(!f){ toast('Escolha o arquivo .db baixado no computador antigo'); return; }
+      if(!confirm('Trocar o banco deste servidor do grupo pela cópia? Os grupos daqui passam a ser os da cópia (o banco atual fica guardado em copias/).')) return;
+      b.disabled = true; b.textContent = 'restaurando...';
+      const r = await post('/api/grupo/host', {acao:'restaurar', banco: await leBase64(f), endereco: G.endereco || (G.funnel && G.funnel.endereco) || (G.hostEstado || {}).endereco || ''});
+      await carrega(); await hostEstado(); toast(`Cópia restaurada <small>${r.grupos.length ? esc(r.grupos.map(x => x.nome).join(', ')) : 'sem grupos'}. Agora avise os membros no computador antigo</small>`); sincroniza(); return; }
+    if((b = q('[data-gpmuda]'))){ guarda(); const end = b.dataset.gpmuda ? G.mudaEnd.trim() : '';
+      if(b.dataset.gpmuda && !confirm(`Avisar os membros que o grupo agora fica em ${end}? O jogo de cada um passa para lá na próxima sincronização.`)) return;
+      b.disabled = true; await post('/api/grupo/host', {acao:'mudar', endereco: end}); await hostEstado(); toast(end ? 'Membros avisados <small>deixe este computador ligado até todos passarem</small>' : 'Aviso cancelado'); return; }
     if((b = q('[data-gpcria]'))){ guarda(); b.disabled = true;
       const r = await post('/api/grupo/host', {acao:'criar', nome: G.nome, endereco: G.endereco || (G.funnel && G.funnel.endereco) || (G.hostEstado || {}).endereco || '', avatar: avatar()});
       G.sel = r.chave; G.nome = ''; await carrega(); await hostEstado(); toast(`Grupo ${esc(r.nome)} criado <small>convide os amigos na aba ${esc(ABA.tt.n)} → administrar</small>`); sincroniza(); return; }
@@ -457,6 +482,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .gp-quem small{font:600 10.5px var(--f-mono);color:var(--soft)}
 .gp-lin{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--hair);font-size:14px}
 .gp-aviso{margin:0 0 12px;padding:10px 14px;border:1px solid var(--amb);border-radius:12px;font-size:14px}
+.gp-muda{margin-top:14px;padding-top:12px;border-top:1px solid var(--hair);font-size:14px} .gp-muda ol{margin:6px 0 10px;padding-left:18px} .gp-muda li{margin:2px 0}
 .gp-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px}
 .gp-f label{display:flex;flex-direction:column;gap:4px;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 .gp-f input{font:14px var(--f-ui);text-transform:none;letter-spacing:0}
