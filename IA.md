@@ -104,6 +104,7 @@ O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer
 | `temporadas/` | temporadas guardadas: `NOME/resumo.json` com os números finais congelados (chaves neutras e os nomes do tema em `tema`) e uma cópia dos arquivos daquele momento | só ler: quem guarda é o jogo |
 | `jogador.json` | nome, tags, hábitos, disciplinas, Codeforces, Duolingo, formato de data, IA ligada (`ia`) | só ler |
 | `estado.json`, `cf.json`, `duo.json`, `contrib.json` | loja, carteira; cache do Codeforces, do Duolingo e das contribuições no GitHub | não mexer |
+| `grupo.json`, `enviado.json`, `grupo/` | modo em grupo: os grupos do jogador (com o token de acesso), o que já foi enviado e o último placar | não mexer (o token é a senha do jogador no grupo) |
 
 ### 2. Como ler e gravar
 

@@ -165,7 +165,12 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   letras, números, `-`, `_` ou `.`) vira um item da Masadora por 1.000 J (os grátis ficam no `AV_GRATIS` do motor). O
   jogador não envia fotos: quem desenvolve põe aqui, e só imagens que podem ser distribuídas. Não renomeie uma foto que já
   saiu: o nome é o id do item comprado e equipado.
-- **Testes:** `python3 -m unittest discover tests` (pasta de dados temporária e a internet simulada; ver `tests/test_servidor.py`).
+- **Modo em grupo** (branch `grupo`, 0.9): `grupo/servidor_grupo.py` é o servidor do grupo (Associação), separado do
+  jogo: SQLite, porta 8643, dados em `~/.ganbatte-grupo/`, serviço `ganbatte-grupo`. `web/grupo.js` faz a aba do grupo
+  (placar só de fatos e *administrar*) e o card *grupo* em Configurações; o `servidor.py` (rotas `/api/grupo/*`) guarda o
+  token e manda ao servidor do grupo só os dias que mudaram. Desenho e decisões em `docs/COLETIVO.md`.
+- **Testes:** `python3 -m unittest discover tests` (pasta de dados temporária e a internet simulada; ver `tests/test_servidor.py`
+  e, do modo em grupo, `tests/test_grupo.py`).
 - **Balanceamento:** `node ferramentas/simulador.mjs` joga uma temporada com três jogadores inventados pelo `web/motor.js` e
   mostra XP, andar, Jenny e quanto da loja cada um compra; `--comparar relatorio.json` põe ao lado o relatório de um
   jogador de verdade (Configurações → balanceamento). Os perfis ficam no topo do arquivo.

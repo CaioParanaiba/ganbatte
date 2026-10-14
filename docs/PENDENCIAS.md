@@ -246,6 +246,22 @@ O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
   `xp`, `hab` (só os `HAB_GRUPO` ligados: `cf` = problemas, `duo` = 0/1), `missao` (o dia contou para a missão da semana:
   `S.missaoDias`) e `ferias`. Nunca leva texto, tag, disciplina nem hábito pessoal. Botão em Configurações → balanceamento.
 
+**Modo em grupo: estrutura da 0.9.0** (13/10/2026, #38, #39, #40; decisões em `docs/COLETIVO.md`, "Servidor da Associação"):
+- `grupo/servidor_grupo.py`: servidor à parte (serviço `ganbatte-grupo`, porta 8643, `~/.ganbatte-grupo/`), SQLite com
+  `grupos`, `membros`, `convites`, `dias` (os fatos, sobrescritos por jogador e dia), `fechados` e `ligado` (intervalos em
+  que o servidor esteve ligado). Tokens e convites só com hash; `dono.token` no disco para as rotas `/dono`. Convite de 8
+  letras, uso único, 7 dias; 20 erros em 10 min travam o grupo por 10 min. `fecha_periodos()` a cada 5 min (prazo às 6h do
+  fuso do grupo + `HORAS_LIGADO`), congelando os números do período (membros, dias com XP, mediana do XP diário, soma dos
+  hábitos) para calibrar a #42. Cópia diária em `copias/`. Reinicia sozinho quando o arquivo muda (git pull).
+- O início automático do `servidor.py` (`auto_ligar`, `iniciar_fundo`, `conteudo_auto`) aceita outro nome e comando.
+- Jogo: `/api/grupo/*` no `servidor.py`; `grupo.json` (lista), `enviado.json` (assinatura de cada dia enviado) e
+  `grupo/` (último placar). A página sincroniza ao abrir e a cada 10 min (`web/grupo.js`): sem a página aberta, nada é
+  enviado. O convite do próprio servidor (o host entrando pelo endereço do Funnel) fala com `127.0.0.1:8643` direto.
+- Funnel (`liga_funnel()`): `tailscale funnel --bg 8643`; reconhece o link de autorização, o `sudo`/operator do Linux e o
+  Tailscale sem login. **Não testado com o Tailscale de verdade** (o primeiro teste é do Caio).
+- Placar só de fatos: o XP de cada um não sai do servidor, só "teve XP no dia". Faltam: a página do placar no próprio
+  servidor (hoje ele só explica o convite), o catálogo de hábitos (#41) e os pontos (#42).
+
 **Cápsula da temporada** (0.6.4-beta1, 13/10/2026, issue #7): `HJ.capsula(api)` no motor calcula a temporada como o
 jogo mostrava no último dia (`fimTemporada`: véspera da volta; antes disso, uma foto até hoje): roda `carregar` com `hoje`
 no corte e tira tarefas, compras (e o `spent` delas) e `xpDias` de depois. Resumo com chaves neutras (`moeda`, `sequencia`,
