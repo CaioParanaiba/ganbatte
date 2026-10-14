@@ -256,14 +256,23 @@ abrir depois do fim (uma tentativa por aba), antes de o assistente gravar outra 
 gravações do `guia.js`) e pelo card *temporada* em Configurações (foto parcial). Falta: a tela de histórico e decidir o que
 zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
 
-**Coleção permanente e retratos dos chefões** (issue #33, PR em revisão): o comprado vai para `colecao/` dos dados
-(`api_colecao` no servidor: só acrescenta, copia a imagem de `web/a/` ou `web/chefoes/` para `colecao/arquivos/`;
-`GET /api/jogo` → `colecao`). A página manda o que falta em `guardaColecao()` (na carga, que migra o `own` antigo, e a cada
-compra); `OWN` = `own` do `estado.json` + a coleção. `GB.catalogo(avatares, colecao)` põe de volta, com `fora`, o item da
-coleção que saiu da loja; `GB.padrao` = o que vem com o jogo (a Simples, as fotos grátis, o emblema). Loja → **Comprados**:
-o que é do jogador sai da vitrine e fica lá, com a escolha do ícone de cada chefão (`equip.chefes`, sigla → `ch-SLUG`).
-Na compra, o retrato vai para o chefão de mesmo nome (`alvo`). Itens de CSS (paleta, textura, efeito) guardam só a cópia
-do item: o código do efeito precisa continuar no jogo (regra: não apagar efeito que já foi vendido, só tirar da vitrine).
+**Coleção permanente e retratos dos chefões** (issue #33, PR #74, decidido com o Caio em 14/10/2026):
+- O comprado vai para `colecao/` dos dados (`api_colecao`: só acrescenta e copia a imagem de `web/a/` ou `web/chefoes/` para
+  `colecao/arquivos/`; `GET /api/jogo` → `colecao`). A página manda o que falta em `guardaColecao()` (na carga, que migra o
+  `own` antigo, e a cada compra); `OWN` = `own` do `estado.json` + a coleção. `GB.catalogo(avatares, colecao)` põe de volta,
+  com `fora`, o item da coleção que saiu da loja; `GB.padrao` = o que vem com o jogo, que fica só em **Comprados**.
+- **Rastreio:** cada item tem `uid` e `hist` (quando, como: compra | chefao | migracao, origem, temporada, preço). Sem
+  devolução nem venda por enquanto; o `hist` está pronto para trocas e vendas pelo grupo (itens raros, de temporadas passadas).
+- **Loja pública do grupo:** segue a mesma regra (`origem: "grupo"`): o que o jogador compra é dele e entra nesta coleção,
+  não compra repetido em outro grupo e não perde nada quando o grupo troca de temporada ou de itens. Ver `COLETIVO.md`.
+- **Itens de código** (paleta, textura, efeito, fonte, som): a coleção guarda a ficha; o código do efeito nunca sai do jogo
+  depois de vendido, só sai da vitrine.
+- **Fotos marcadas como chefão** (`RETRATOS` no motor, quem desenvolve escolhe; hoje as 15 de `web/chefoes/`): vendidas
+  como retrato de chefão (`ch-SLUG`, 1.500 J). Um dono por retrato (`poeRetrato`). Ao derrotar o chefão que está com o
+  retrato, ele vira foto de perfil de graça (`av-ch-SLUG`, `como: chefao`) e a imagem desse chefão trava em
+  `estado.json` → `travas["TEMPORADA:SIGLA"]` (id do retrato ou `""` se era o ícone padrão; o servidor mantém a primeira),
+  mesmo se uma nota corrigida trouxer o chefão de volta. Os guardas da torre continuam com o ícone.
+- Falta: o equilíbrio de preços da loja inteira (issue própria).
 
 **0.7 · atualização do Ganbatte** (13/10/2026): lançada na `main`, juntando a 0.6.6-beta1 a beta3 (issues #15, #34, #35,
 #54): nome Ganbatte com repositório e Pages novos, visual Nen (clássico em Configurações), nomes base das abas, prazo da

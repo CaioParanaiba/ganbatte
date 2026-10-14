@@ -166,8 +166,10 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   letras, números, `-`, `_` ou `.`) vira um item da Masadora por 1.000 J (os grátis ficam no `AV_GRATIS` do motor). O
   jogador não envia fotos: quem desenvolve põe aqui, e só imagens que podem ser distribuídas. Não renomeie uma foto que já
   saiu: o nome é o id do item comprado e equipado.
-  `web/chefoes/`: os retratos dos chefões (#33), 256×256, um item da Masadora cada (`RETRATOS` no motor); o ícone padrão
-  de cada chefão continua o do `avaliacoes.txt`, e o retrato escolhido fica em `estado.json` → `equip.chefes` (sigla → item).
+  `web/chefoes/`: as fotos marcadas como chefão (#33), 256×256 (`RETRATOS` no motor). Cada uma é vendida como retrato de
+  chefão; o ícone do `avaliacoes.txt` continua o padrão, e o retrato escolhido fica em `estado.json` → `equip.chefes`
+  (sigla → item, um chefão por retrato). A versão de perfil só vem ao derrotar o chefão que está com ela, e a imagem dele
+  trava (`travas`). A origem de cada imagem fica no [`CREDITOS.md`](CREDITOS.md).
 - **Testes:** `python3 -m unittest discover tests` (pasta de dados temporária e a internet simulada; ver `tests/test_servidor.py`).
 - **Balanceamento:** `node ferramentas/simulador.mjs` joga uma temporada com três jogadores inventados pelo `web/motor.js` e
   mostra XP, andar, Jenny e quanto da loja cada um compra; `--comparar relatorio.json` põe ao lado o relatório de um
