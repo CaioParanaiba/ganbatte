@@ -254,6 +254,32 @@ class ConquistasIA(Base):
         s.api_conquistas({"acao": "resgatar", "no": r["nos"][0], "como": "jenny", "j": 800})
         self.assertTrue(s.api_conquistas({"acao": "criar", "itens": [self.item("D", 30), self.item("C"), self.item("C", 11)]})["ok"])
 
+    def test_metas_novas_sao_preservadas_e_nao_reutilizam_hoje(self):
+        item = {**self.item("D", 14), "versao": 2, "diasMin": 7, "inicio": "2000-01-01"}
+        r = s.api_conquistas({"acao": "criar", "itens": [item]})
+        c = s.ler_json("conquistas.json", [])[0]
+        self.assertEqual(c["no"], r["nos"][0])
+        self.assertEqual((c["versao"], c["diasMin"], c["inicio"]), (2, 7, "2026-10-13"))
+        with self.assertRaises(s.Erro):
+            s.api_conquistas({"acao": "criar", "itens": [{**item, "n": 20}]})
+
+    def test_xp_guarda_semanas_e_recusa_meta_menor_que_o_rank(self):
+        item = {"regra": "semana", "xp": 600, "semanas": 8, "versao": 2, "rk": "A", "nome": "Oito semanas"}
+        s.api_conquistas({"acao": "criar", "itens": [item]})
+        self.assertEqual(s.ler_json("conquistas.json", [])[0]["semanas"], 8)
+        for semanas in (1, 7, True, 21):
+            with self.assertRaises(s.Erro):
+                s.conq_item({**item, "semanas": semanas})
+
+    def test_nao_grava_lote_com_alvos_repetidos_ou_dias_insuficientes(self):
+        item = {**self.item("D", 14), "versao": 2, "diasMin": 7}
+        with self.assertRaises(s.Erro):
+            s.api_conquistas({"acao": "criar", "itens": [item, {**item, "n": 20}]})
+        self.assertEqual(s.ler_json("conquistas.json", []), [])
+        for dias in (0, 1, True, 60):
+            with self.assertRaises(s.Erro):
+                s.conq_item({**item, "diasMin": dias})
+
 
 class Leitura(Base):
     def test_api_jogo(self):

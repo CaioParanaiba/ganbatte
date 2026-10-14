@@ -168,7 +168,11 @@ function rota(url, body){
   if(url === '/api/autostart') throw new Error('no modo demonstração não há servidor');
   if(url === '/api/conquistas'){
     if(body.acao === 'criar'){ const prox = Math.max(199, ...conquistas.map(c => +c.no)) + 1, nos = [];
-      if(conquistas.filter(c => !c.resgate && !c.descartada).length + body.itens.length > 5) throw new Error('no máximo 5 conquistas da IA abertas: conquiste ou descarte alguma antes');
+      const abertas = conquistas.filter(c => !c.resgate && !c.descartada);
+      for(const [rk, vagas] of Object.entries(window.GB.CONQ_VAGAS)) if(abertas.filter(c => c.rk === rk).length + body.itens.filter(c => c.rk === rk).length > vagas)
+        throw new Error(`no máximo ${vagas} conquista(s) da IA de rank ${rk} abertas`);
+      const alvos = new Set(abertas.map(window.GB.alvoConq));
+      for(const c of body.itens) if(c.versao === 2){ const alvo = window.GB.alvoConq(c); if(alvos.has(alvo)) throw new Error('já existe uma conquista aberta para esse alvo'); alvos.add(alvo); }
       body.itens.forEach((it, i) => { conquistas.push({...it, no:String(prox + i), criada:HOJE}); nos.push(String(prox + i)); }); return {ok:true, nos}; }
     const c = conquistas.find(c => c.no === body.no); if(!c) throw new Error('conquista não encontrada');
     if(body.acao === 'descartar') c.descartada = HOJE;

@@ -843,10 +843,31 @@ function cartas(C, S){
 /* conquistas da IA abertas (não resgatadas) ao mesmo tempo, por rank (0.6.4): 4 fáceis, 3 médias, 2 difíceis e 1 lendária.
    Resgatada, a carta vai para a coleção (Book → Conquistas) e a vaga abre */
 const CONQ_VAGAS = {D:4, C:3, B:2, A:1}, CONQ_MAX = Object.values(CONQ_VAGAS).reduce((a, b) => a + b, 0);
-// rank pela estimativa de dias até cumprir; recompensa à escolha do jogador: Jenny ou o feitiço (a calibrar)
+// Valores por rank; as metas de novas cartas vêm de CONQ_METAS. A coluna dias é a régua antiga, para referência.
 const CONQ_RK = [['D', 7, 800, 'zetsu', 'fácil'], ['C', 14, 1500, 'gyo', 'média'], ['B', 30, 3000, 'ko', 'difícil'], ['A', Infinity, 6000, 'escolha', 'lendária']]
   .map(([rk, dias, j, f, n]) => ({rk, dias, j, f, n}));
 const conqRk = rk => CONQ_RK.find(x => x.rk === rk) || CONQ_RK[0];
+/* Novas cartas (#75): o rank exige trabalho verificável, não a falta de histórico. Valores em Jenny preservados. */
+const CONQ_METAS = [
+  {rk:'D', dias:7, tarefas:14, semanasHab:2, semanasXP:2, fatorXP:1.1, nota:8, peso:25},
+  {rk:'C', dias:14, tarefas:35, semanasHab:4, semanasXP:4, fatorXP:1.2, nota:9, peso:40},
+  {rk:'B', dias:30, tarefas:90, semanasHab:8, semanasXP:6, fatorXP:1.35, nota:9.5, peso:60},
+  {rk:'A', dias:60, tarefas:180, semanasHab:12, semanasXP:8, fatorXP:1.5, nota:10, peso:80},
+];
+/* Metas calculadas por filtro: a amostra começa no primeiro dia observado, nunca antes da temporada. */
+function metasConq(C, S, filtro = {}){
+  const datas = C.D.feitas.map(t => t.done).filter(d => d && d <= C.HOJE).sort();
+  const de = [addD(C.HOJE, -27), C.TEMP.ini, datas[0] || C.HOJE].sort().pop();
+  const janela = Math.max(1, dias(de, C.HOJE) + 1);
+  const k = C.D.feitas.filter(t => t.done >= de && t.done <= C.HOJE && casaConq(t, filtro, C)).length;
+  const ritmo = Math.max(1, k / janela);   // poucas tarefas não promovem uma carta a lendária
+  let melhor = 0;
+  for(let i = 1; i <= 8; i++){ const w = addD(C.HOJE, -dow(C.HOJE) - 7*i); let xp = 0;
+    for(let j = 0; j < 7; j++) xp += S.xpDia[addD(w, j)] || 0; melhor = Math.max(melhor, xp); }
+  return CONQ_METAS.map(m => ({...m, tarefas:Math.max(m.tarefas, Math.ceil(ritmo*m.dias*1.25 - 1e-9)), xp:Math.ceil(Math.max(100, melhor)*m.fatorXP - 1e-9), ritmo}));
+}
+const alvoConq = r => JSON.stringify(r.regra === 'contagem' ? [r.regra, r.palavra || '', r.disc || '', r.tipo || '', !!r.prazo]
+  : r.regra === 'sequencia' ? [r.regra, r.hab] : r.regra === 'nota' ? [r.regra, r.disc] : [r.regra]);
 const CONQ_TIPOS = {ent:'entrega', est:'estudo', fac:'faculdade', tre:'treino e projetos', vid:'vida'};
 const CONQ_ICS = 'int tra con esp man emi spider tower card flame moon island crown scroll'.split(' ');
 const tipoDe = t => isEnt(t) ? 'ent' : isEst(t) ? 'est' : isTre(t) ? 'tre' : isFac(t) ? 'fac' : 'vid';
@@ -861,20 +882,28 @@ const maiorSeq = (de, ate, ok, neutro) => { let m = 0, cur = 0; for(let d = de; 
 /* progresso de uma regra contado a partir de `de`: {at, meta, on} */
 function progConq(r, C, S, de){
   const {HOJE} = C;
-  if(r.regra === 'contagem'){ const at = C.D.feitas.filter(t => t.done && t.done >= de && casaConq(t, r, C)).length; return {at, meta:r.n, on: at >= r.n}; }
+  if(r.regra === 'contagem'){ const ts = C.D.feitas.filter(t => t.done && t.done >= de && t.done <= HOJE && casaConq(t, r, C)), at = ts.length;
+    const diasFeitos = new Set(ts.map(t => t.done)).size;
+    return {at, meta:r.n, diasFeitos, diasMin:r.diasMin || 0, on: at >= r.n && diasFeitos >= (r.diasMin || 0)}; }
   if(r.regra === 'sequencia'){
     const sem = r.hab === 'cf' ? 0 : semanalDe(C.JOG, r.hab), ds = diasHab(C, r.hab);
     if(!sem){ const at = maiorSeq(de, HOJE, d => ds.has(d)); return {at, meta:r.n, on: at >= r.n}; }
     let m = 0, cur = 0;   // semanal: semanas seguidas (seg a dom) com a meta cumprida
-    for(let w = addD(de, -dow(de)); w <= HOJE; w = addD(w, 7)){ let k = 0; for(let i = 0; i < 7; i++){ const d = addD(w, i); if(d >= de && ds.has(d)) k++; }
+    for(let w = r.versao === 2 ? addD(de, (7 - dow(de)) % 7) : addD(de, -dow(de)); w <= HOJE; w = addD(w, 7)){ let k = 0; for(let i = 0; i < 7; i++){ const d = addD(w, i); if(d >= de && d <= HOJE && ds.has(d)) k++; }
       cur = k >= sem ? cur + 1 : addD(w, 6) >= HOJE ? cur : 0; m = Math.max(m, cur); }   // a semana em curso não quebra a sequência
     return {at:m, meta:r.n, on: m >= r.n};
   }
-  if(r.regra === 'constancia'){ const at = maiorSeq(de, HOJE, d => S.ten.st[d] === 'on' || S.ten.st[d] === 'z', d => S.ten.st[d] === 'f'); return {at, meta:r.n, on: at >= r.n}; }
-  if(r.regra === 'semana'){ let m = 0; for(let w = addD(de, -dow(de)); w <= HOJE; w = addD(w, 7)){ let x = 0; for(let i = 0; i < 7; i++){ const d = addD(w, i); if(d >= de) x += S.xpDia[d] || 0; } m = Math.max(m, x); }
+  if(r.regra === 'constancia'){ const at = maiorSeq(de, HOJE, d => S.ten.st[d] === 'on' || (r.versao !== 2 && S.ten.st[d] === 'z'), d => S.ten.st[d] === 'f'); return {at, meta:r.n, on: at >= r.n}; }
+  if(r.regra === 'semana'){
+    if(r.versao === 2){ let m = 0, cur = 0; const primeira = addD(de, (7 - dow(de)) % 7);
+      for(let w = primeira; addD(w, 6) < HOJE; w = addD(w, 7)){ let x = 0; for(let i = 0; i < 7; i++) x += S.xpDia[addD(w, i)] || 0;
+        cur = x >= r.xp ? cur + 1 : 0; m = Math.max(m, cur); }
+      return {at:m, meta:r.semanas, on:m >= r.semanas}; }
+    let m = 0; for(let w = addD(de, -dow(de)); w <= HOJE; w = addD(w, 7)){ let x = 0; for(let i = 0; i < 7; i++){ const d = addD(w, i); if(d >= de) x += S.xpDia[d] || 0; } m = Math.max(m, x); }
     return {at:m, meta:r.xp, on: m >= r.xp}; }
   if(r.regra === 'nota'){ const b = S.bs.find(b => b.d === r.disc); if(!b) return {at:0, meta:r.media || r.nota, on:false};
-    if(r.aval){ const a = b.avs.find(a => a.k === r.aval), n = a && a.nota != null ? a.nota : 0; return {at:Math.round(n*10)/10, meta:r.nota, on: !!a && a.nota != null && a.nota >= r.nota}; }
+    if(r.aval){ const a = b.avs.find(a => a.k === r.aval), n = a && a.nota != null ? a.nota : 0; return {at:Math.round(n*10)/10, meta:r.nota, on: !!a && a.nota != null && a.nota >= r.nota && (r.versao !== 2 || C.NDATA[r.disc+':'+r.aval] >= de)}; }
+    if(r.versao === 2){ const soma = b.avs.reduce((s, a) => s + a.w, 0), at = soma ? b.pts / soma * 10 : 0; return {at:Math.round(at*10)/10, meta:r.media, on:at >= r.media - 1e-9}; }
     return {at:Math.round(b.pts)/10, meta:r.media, on: b.pts >= r.media*10 - 1e-9}; }
   return {at:0, meta:1, on:false};
 }
@@ -882,29 +911,31 @@ function progConq(r, C, S, de){
 function descConq(r, C){
   const nomeHab = id => id === 'cf' ? 'Codeforces (um problema aceito por dia)' : id === 'duo' ? 'Duolingo (lição feita no dia)' : (((C.JOG && C.JOG.habitos) || []).find(h => h.id === id) || {n:id}).n;
   if(r.regra === 'contagem') return `${r.n} tarefa${r.n > 1 ? 's' : ''}` + (r.tipo ? ` de ${CONQ_TIPOS[r.tipo]}` : '') + (r.disc ? ` de ${r.disc}` : '')
-    + (r.palavra ? ` com a palavra "${r.palavra}"` : '') + (r.prazo ? ', feitas até o prazo' : '') + '.';
+    + (r.palavra ? ` com a palavra "${r.palavra}"` : '') + (r.prazo ? ', feitas até o prazo' : '') + (r.diasMin ? `, em pelo menos ${r.diasMin} dias diferentes` : '') + '.';
   if(r.regra === 'sequencia') return semanalDe(C.JOG, r.hab) ? `${nomeHab(r.hab)}: ${r.n} semanas seguidas com a meta da semana cumprida.` : `${nomeHab(r.hab)} em ${r.n} dias seguidos.`;
+  if(r.regra === 'nota' && r.versao === 2 && !r.aval) return `Garantir média final ${numTxt(r.media)} na disciplina ${r.disc}.`;
   if(r.regra === 'nota') return r.aval ? `Tirar ${numTxt(r.nota)} ou mais em ${r.aval} de ${r.disc}.` : `Garantir ${numTxt(r.media*10)} pontos em ${r.disc} (média ${numTxt(r.media)}).`;
-  if(r.regra === 'constancia') return `Ten de ${r.n} dias seguidos.`;
-  if(r.regra === 'semana') return `Uma semana (seg a dom) com ${r.xp} XP ou mais.`;
+  if(r.regra === 'constancia') return r.versao === 2 ? `${r.n} dias seguidos com tarefa feita; folgas não contam e férias vazias pausam.` : `Ten de ${r.n} dias seguidos.`;
+  if(r.regra === 'semana') return r.versao === 2 ? `${r.semanas} semanas completas seguidas (seg a dom), cada uma com ${r.xp} XP ou mais.` : `Uma semana (seg a dom) com ${r.xp} XP ou mais.`;
   return '';
 }
 const numTxt = x => String(Math.round(x*10)/10).replace('.', ',');
-/* confere a proposta da IA e estima a dificuldade pelo histórico das últimas 4 semanas: {r, rk, dias} ou {erro} */
+/* confere a proposta, exige os mínimos por rank e estima o prazo: {r, rk, dias} ou {erro} */
 function avaliaConq(p, C, S){
   const {HOJE} = C, int = (v, a, b) => Number.isInteger(+v) && +v >= a && +v <= b, r = {regra:p.regra};
   const habs = ((C.JOG && C.JOG.habitos) || []).map(h => h.id).concat(C.JOG && C.JOG.cf && C.JOG.cf.handle ? ['cf'] : []).concat(C.JOG && C.JOG.duo && C.JOG.duo.usuario ? ['duo'] : []);
   if(p.regra === 'contagem'){
-    if(!int(p.n, 2, 300)) return {erro:'número de tarefas fora de 2 a 300'};
+    if(!int(p.n, 2, 5000)) return {erro:'número de tarefas fora de 2 a 5000'};
     r.n = +p.n;
     if(p.palavra){ r.palavra = String(p.palavra).trim().toLowerCase(); if(r.palavra.length < 2 || r.palavra.length > 30) return {erro:'palavra inválida'}; }
     if(p.disc){ r.disc = String(p.disc).toUpperCase(); if(!C.BOSSES.some(b => b.d === r.disc)) return {erro:`disciplina ${r.disc} não existe`}; }
     if(p.tipo){ if(!CONQ_TIPOS[p.tipo]) return {erro:`tipo ${p.tipo} não existe`}; r.tipo = p.tipo; }
     if(p.prazo === true) r.prazo = true;
+    if(!r.palavra && !r.disc && !r.tipo && !r.prazo) return {erro:'escolha pelo menos um filtro de tarefas'};
   } else if(p.regra === 'sequencia'){
     if(!habs.includes(p.hab)) return {erro:`hábito ${p.hab} não existe`};
     const sem = p.hab === 'cf' ? 0 : semanalDe(C.JOG, p.hab);
-    if(!int(p.n, 3, sem ? 20 : 120)) return {erro:'sequência fora do limite'};
+    if(!int(p.n, sem ? 2 : 3, sem ? 20 : 120)) return {erro:'sequência fora do limite'};
     Object.assign(r, {hab:p.hab, n:+p.n});
   } else if(p.regra === 'constancia'){
     if(!int(p.n, 5, 120)) return {erro:'Ten fora de 5 a 120 dias'};
@@ -912,6 +943,8 @@ function avaliaConq(p, C, S){
   } else if(p.regra === 'semana'){
     if(!int(p.xp, 50, 5000)) return {erro:'XP da semana fora de 50 a 5000'};
     r.xp = +p.xp;
+    if(!int(p.semanas, 2, 20)) return {erro:'escolha de 2 a 20 semanas seguidas'};
+    r.semanas = +p.semanas;
   } else if(p.regra === 'nota'){
     r.disc = String(p.disc || '').toUpperCase(); const b = S.bs.find(b => b.d === r.disc);
     if(!b) return {erro:`disciplina ${r.disc} não existe`};
@@ -921,29 +954,55 @@ function avaliaConq(p, C, S){
     else { if(!(+p.media >= 6 && +p.media <= 10)) return {erro:'média fora de 6 a 10'}; r.media = Math.round(+p.media*10)/10; }
   } else return {erro:`regra ${p.regra} não existe`};
   if(progConq(r, C, S, HOJE).on) return {erro:'já está cumprida'};
-  // estimativa de dias para cumprir, no ritmo das últimas 4 semanas
-  const ini = addD(HOJE, -27);
-  let est;
-  if(r.regra === 'contagem'){ const k = C.D.feitas.filter(t => t.done >= ini && casaConq(t, r, C)).length; est = k ? r.n / (k/28) : r.n * 7; }
-  else if(r.regra === 'sequencia'){ const sem = r.hab !== 'cf' && semanalDe(C.JOG, r.hab), ds = diasHab(C, r.hab), base = sem ? r.n*7 : r.n;
-    const feitos = [...ds].filter(d => d >= ini).length / (sem ? 4*sem : 28);   // fração das vezes em que o hábito saiu
-    est = base * (feitos >= .85 ? 1 : feitos >= .5 ? 1.6 : 2.5); }
-  else if(r.regra === 'constancia'){ const at = Object.keys(S.ten.st).filter(d => d >= ini && S.ten.st[d] !== 'x').length / 28; est = r.n * (at >= .85 ? 1 : at >= .5 ? 1.6 : 2.5); }
-  else if(r.regra === 'semana'){ let m = 0; for(let k = 0; k < 8; k++){ let x = 0; const w = addD(HOJE, -dow(HOJE) - 7*(k+1)); for(let i = 0; i < 7; i++) x += S.xpDia[addD(w, i)] || 0; m = Math.max(m, x); }
-    const q = m ? r.xp / m : 9; if(q > 2) return {erro:`acima do dobro da sua melhor semana (${m} XP)`}; est = q <= .8 ? 7 : q <= 1 ? 14 : q <= 1.3 ? 30 : 45; }
-  else { const b = S.bs.find(b => b.d === r.disc), a = r.aval && b.avs.find(a => a.k === r.aval);
-    let need; if(a) need = r.nota; else { const rest = b.avs.filter(a => a.nota == null || a.cont).reduce((s, a) => s + a.w, 0); need = rest ? (r.media*10 - b.pts) / rest * 10 : 99; }
-    if(need > 10) return {erro:'não dá mais para chegar lá com o que falta'};
-    est = need <= 7 ? 7 : need <= 8.5 ? 14 : need <= 9.5 ? 30 : 45; }   // pela nota que falta, não pela data da prova
-  const t = CONQ_RK.find(x => est <= x.dias);
-  return {r, rk:t.rk, dias:Math.round(est)};
+  const metas = metasConq(C, S, r), sem = r.regra === 'sequencia' && r.hab !== 'cf' && semanalDe(C.JOG, r.hab);
+  let peso = 0, need = 0, dataNota = HOJE;
+  if(r.regra === 'nota'){
+    const b = S.bs.find(b => b.d === r.disc), soma = b.avs.reduce((s, a) => s + a.w, 0), a = r.aval && b.avs.find(a => a.k === r.aval);
+    if(!soma) return {erro:'o plano precisa ter pesos para calcular este desafio'};
+    if(a){ peso = a.w / soma * 100; need = r.nota; dataNota = a.dt || HOJE;
+      if(a.nota != null && !a.cont) return {erro:`${r.aval} já tem nota; escolha outra avaliação`};
+      if(a.cont && a.nota != null && a.nota < 10 && r.nota === 10) return {erro:'as parciais já lançadas impedem média 10 nessa avaliação'}; }
+    else { const pendentes = b.avs.filter(a => a.nota == null || a.cont), rest = pendentes.reduce((s, a) => s + a.w, 0);
+      const parcial = pendentes.reduce((s, a) => s + (a.nota == null ? 0 : a.w*a.nota/10), 0);
+      peso = rest / soma * 100; need = rest ? (r.media*soma/10 - (b.pts - parcial)) / rest * 10 : Infinity;
+      dataNota = pendentes.map(a => a.dt).sort().pop() || HOJE;
+      if(r.media === 10 && pendentes.some(a => a.nota != null && a.nota < 10)) return {erro:'as parciais já lançadas impedem média final 10'};
+      if(b.pts / soma * 10 >= r.media) return {erro:'já está cumprida'}; }
+    if(need > 10 + 1e-9) return {erro:'não dá mais para chegar lá com o que falta'};
+  }
+  const qualifica = m => r.regra === 'contagem' ? r.n >= m.tarefas
+    : r.regra === 'sequencia' ? r.n >= (sem ? m.semanasHab : m.dias)
+    : r.regra === 'constancia' ? r.n >= m.dias
+    : r.regra === 'semana' ? r.xp >= m.xp && r.semanas >= m.semanasXP
+    : (r.nota || r.media) >= m.nota && peso >= m.peso - 1e-9;
+  if(p.rk && !CONQ_METAS.some(m => m.rk === p.rk)) return {erro:'rank desconhecido'};
+  const t = metas.filter(m => (!p.rk || m.rk === p.rk) && qualifica(m)).pop();
+  if(!t){ const m = metas.find(m => m.rk === p.rk) || metas[0];
+    const alvo = r.regra === 'contagem' ? `${m.tarefas} tarefas em ${m.dias} dias diferentes`
+      : r.regra === 'sequencia' ? `${sem ? m.semanasHab : m.dias} ${sem ? 'semanas' : 'dias'} seguidos`
+      : r.regra === 'constancia' ? `${m.dias} dias seguidos com tarefa`
+      : r.regra === 'semana' ? `${m.semanasXP} semanas seguidas de pelo menos ${m.xp} XP`
+      : `nota ${numTxt(m.nota)} e pelo menos ${m.peso}% do peso da disciplina ainda por conquistar`;
+    return {erro:`rank ${m.rk} exige ao menos ${alvo}`}; }
+  r.versao = 2;
+  r.inicio = r.regra === 'nota' ? HOJE : addD(HOJE, 1);   // não reutiliza as tarefas já feitas no dia da aceitação
+  if(r.regra === 'contagem') r.diasMin = t.dias;
+  const est = r.regra === 'contagem' ? Math.max(t.dias, Math.ceil(r.n / t.ritmo))
+    : r.regra === 'sequencia' ? (sem ? r.n*7 + (7 - dow(r.inicio)) % 7 : r.n)
+    : r.regra === 'constancia' ? r.n
+    : r.regra === 'semana' ? r.semanas*7 + (7 - dow(r.inicio)) % 7 + 1
+    : Math.max(1, dias(HOJE, dataNota) + 1);
+  if(r.regra === 'nota' ? dataNota > C.TEMP.fim : addD(r.inicio, est - 1) > C.TEMP.fim) return {erro:'a meta não cabe no tempo restante da temporada no seu ritmo'};
+  const aberta = (C.CONQ || []).some(c => c && !c.resgate && !c.descartada && alvoConq(c) === alvoConq(r));
+  if(aberta) return {erro:'já existe uma conquista aberta para esse alvo; escolha outro'};
+  return {r, rk:t.rk, dias:est};
 }
 /* as conquistas da IA (sem as descartadas) com o progresso, no formato das cartas do Book */
 function conqIA(C, S){
   return (C.CONQ || []).filter(c => c && !c.descartada && c.regra).map(c => {
-    const p = progConq(c, C, S, c.criada || C.HOJE), rk = conqRk(c.rk);
+    const p = progConq(c, C, S, c.inicio || c.criada || C.HOJE), rk = conqRk(c.rk);
     return {no:c.no, rk:rk.rk, o:'ia', rg:c.regra, n:c.nome, d:c.texto || '', regra:descConq(c, C), ic: CONQ_ICS.includes(c.ic) ? c.ic : 'card', on: p.on || !!c.resgate,
-      at:p.at, meta:p.meta, criada:c.criada, resgate:c.resgate || null, dif:rk.n, j:rk.j, f:rk.f, temporada:c.temporada || ''};
+      at:p.at, meta:p.meta, diasFeitos:p.diasFeitos, diasMin:p.diasMin, inicio:c.inicio, criada:c.criada, resgate:c.resgate || null, dif:rk.n, j:rk.j, f:rk.f, temporada:c.temporada || ''};
   }).sort((p, q) => String(p.no).localeCompare(String(q.no)));
 }
 
@@ -1069,7 +1128,7 @@ function resumoGrupo(C, S){
 window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
-  CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
+  CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_METAS, metasConq, alvoConq, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
   MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, feriasDe,
   FONTES, lojaTotal, relatorio, relatorioCSV, TEMA, NOMES, nomeTemporada, fimTemporada, capsula, HAB_GRUPO, resumoGrupo};
 })();

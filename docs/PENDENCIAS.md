@@ -402,3 +402,22 @@ antigo não redireciona). Falta:
 
 Cuidado para não repetir a migração: no código, nomes neutros (`grupo`, `placar`, `moeda`); os nomes do tema
 (Associação Hunter, Torre Trick, Trick Coin) ficam só no texto que aparece na tela.
+
+## Issue #75: exigência das novas conquistas da IA
+
+Implementação para avaliação, ainda sem lançamento: mantém 800/1.500/3.000/6.000 J, mas novas cartas têm `versao: 2`.
+D/C/B/A: contagem com piso de 14/35/90/180 tarefas e 7/14/30/60 dias diferentes, ou volume de 125% do ritmo filtrado
+nesses dias; sequência diária e constância de 7/14/30/60 dias; hábito semanal por 2/4/8/12 semanas; XP em 2/4/6/8 semanas
+completas consecutivas, cada uma acima do recorde em 10%/20%/35%/50%; nota 8/9/9,5/10 com pelo menos 25%/40%/60%/80%
+do peso normalizado (para média final, peso ainda em aberto). Piso de 1 tarefa/dia e recorde mínimo de 100 XP.
+
+Constância requer tarefa feita: Zetsu continua salvando o Ten, mas não substitui atividade nesse novo desafio; férias
+vazias pausam. Atividades começam no dia seguinte à aceitação, notas podem contar hoje. O motor recusa metas que não
+cabem no semestre e cartas com o mesmo alvo aberto, mesmo com números diferentes. Cartas existentes, suas regras,
+feitiços e Jenny já resgatada ficam preservados. Ainda é possível uma tarefa servir a alvos diferentes (estudo e disciplina,
+por exemplo); o bloqueio é por alvo, não por consumo exclusivo da tarefa.
+
+`tests/test_conquistas.mjs` cobre as regressões e `ferramentas/simulador-conquistas.mjs` executa cenários fictícios no
+motor real, comparando com a revisão anterior via `--antes REF`. Os resultados estão em `ISSUE-75-SIMULACOES.md`.
+A escolha dos números precisa da avaliação do contribuidor e revisão do Caio. Avisar nas Novidades que novas metas
+ficaram mais exigentes; não muda saldo já ganho, preços ou regras de XP das tarefas.
