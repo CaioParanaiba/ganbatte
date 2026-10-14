@@ -330,9 +330,22 @@ class Canal(Base):
         return mock.patch.multiple(s, metodo_atualizar=lambda: "git", subprocess=mock.Mock(run=lambda *a, **k: r, SubprocessError=Exception))
 
     def test_segue_a_branch(self):
-        for b in ("main", "beta", "grupo"):
+        for b in ("main", "beta"):
             with self.branch(b):
                 self.assertEqual(s.canal(), b)
+
+    def test_grupo_segue_a_beta(self):
+        """0.9.0-beta2: a grupo entrou na beta; a cópia que ainda está nela confere e atualiza pela beta."""
+        with self.branch("grupo"):
+            self.assertEqual(s.canal(), "beta")
+        with self.assertRaises(s.Erro):
+            s.api_canal({"canal": "grupo"})
+
+    def test_atualizar_na_grupo_troca_para_a_beta(self):
+        with mock.patch.multiple(s, branch_atual=lambda: "grupo", troca_branch=mock.Mock(), metodo_atualizar=lambda: "git"), \
+             mock.patch.object(s.threading, "Timer"):
+            s.api_atualizar({})
+            s.troca_branch.assert_called_once_with("beta")
 
     def test_outra_branch_ou_zip_e_main(self):
         with self.branch("minha-feature"):

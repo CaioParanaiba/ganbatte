@@ -106,14 +106,14 @@ explica o que mudou em cada versão.
 
 Atualizar nunca mexe nos seus dados, porque eles ficam fora da pasta do código.
 
-### Versões de teste (beta e grupo)
+### Versão de teste (beta)
 
-As novidades saem primeiro na branch `beta` e passam para a `main` (a versão normal) depois de testadas. O modo em grupo
-(0.9) é construído na branch `grupo`, que recebe também tudo o que sai na versão normal. Em **Configurações → servidor**,
-**Versão** escolhe entre **Estável** (`main`), **Beta** e **Grupo**; o aviso de versão nova e o **atualizar agora** seguem
-a escolhida.
+As novidades saem primeiro na branch `beta` e passam para a `main` (a versão normal) depois de testadas. Em
+**Configurações → servidor**, **Versão** escolhe entre **Estável** (`main`) e **Beta**; o aviso de versão nova e o
+**atualizar agora** seguem a escolhida. O modo em grupo (0.9) nasceu na branch `grupo`, que entrou na `beta` na
+0.9.0-beta2 e ficou parada; quem ainda está nela passa para a `beta` no próximo **atualizar agora**.
 
-Pelo terminal é o mesmo: `git -C ~/ganbatte switch beta` (ou `grupo`; `switch main` para voltar). Só funciona no jogo instalado
+Pelo terminal é o mesmo: `git -C ~/ganbatte switch beta` (`switch main` para voltar). Só funciona no jogo instalado
 com git; o instalado pelo ZIP fica sempre na versão normal.
 
 A beta pode ter erros que ainda não foram corrigidos. Os dados continuam na mesma pasta, mas uma versão de teste pode
@@ -173,7 +173,13 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   chefão; o ícone do `avaliacoes.txt` continua o padrão, e o retrato escolhido fica em `estado.json` → `equip.chefes`
   (sigla → item, um chefão por retrato). A versão de perfil só vem ao derrotar o chefão que está com ela, e a imagem dele
   trava (`travas`). A origem de cada imagem fica no [`CREDITOS.md`](CREDITOS.md).
-- **Testes:** `python3 -m unittest discover tests` (pasta de dados temporária e a internet simulada; ver `tests/test_servidor.py`).
+- **Modo em grupo** (0.9): `grupo/servidor_grupo.py` é o servidor do grupo (Associação), separado do
+  jogo: SQLite, porta 8643, dados em `~/.ganbatte-grupo/`, serviço `ganbatte-grupo`; `grupo/torre.py` faz as contas da
+  Torre Trick (andares, placares específicos, títulos, evolução) a partir dos fatos. `web/grupo.js` faz a aba do grupo
+  (sub-abas *placar*, *placares* e *jogadores*, com a licença hunter, e *administrar*) e o card *grupo* em Configurações; o `servidor.py` (rotas `/api/grupo/*`) guarda o
+  token e manda ao servidor do grupo só os dias que mudaram. Desenho e decisões em `docs/COLETIVO.md`.
+- **Testes:** `python3 -m unittest discover tests` (pasta de dados temporária e a internet simulada; ver `tests/test_servidor.py`
+  e, do modo em grupo, `tests/test_grupo.py`).
 - **Balanceamento:** `node ferramentas/simulador.mjs` joga uma temporada com três jogadores inventados pelo `web/motor.js` e
   mostra XP, andar, Jenny e quanto da loja cada um compra; `--comparar relatorio.json` põe ao lado o relatório de um
   jogador de verdade (Configurações → balanceamento). Os perfis ficam no topo do arquivo.
@@ -186,6 +192,8 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.9.0-beta2 | atualização da Torre Trick | **A grupo entra na beta.** Junta a branch `grupo` (0.9.0-beta1, #41, #42, #67, #76) com a beta (0.7.1-beta1, #57, #59, #60, #75): modo em grupo, Torre Trick e a aba dela para todos da beta. O canal `grupo` some de `CANAIS`: a cópia que ainda está nela passa para a `beta` ao atualizar (`api_atualizar`). Novidades com a janela grande da 0.9. |
+| 0.9.0-beta1 | atualização do grupo | Só na branch `grupo`. **Modo em grupo, estrutura** (#38, #39, #40): `grupo/servidor_grupo.py` (serviço `ganbatte-grupo`, porta 8643, SQLite em `~/.ganbatte-grupo/`, tokens só com hash, `dono.token`, fechamento às 6h no fuso do grupo com 12h ligado, cópia diária), rotas `/api/grupo/*` no `servidor.py` (`grupo.json`, `enviado.json`, `grupo/`), `web/grupo.js` (aba Grupo com o placar só de fatos e *administrar*; card *grupo* em Configurações com o Funnel em modo misto). Pontos da Torre Trick ficam para a #42 |
 | 0.7.1-beta1 | atualização do Ganbatte | Retratos dos chefões e coleção permanente (#33): fotos marcadas como chefão (`RETRATOS` no motor, `web/chefoes/`, créditos no `CREDITOS.md`) vendidas como retrato (`ch-SLUG`, 1.500 J, um dono por retrato, `equip.chefes`); o chefão derrotado trava a imagem (`travas`) e libera a foto de perfil (`av-ch-SLUG`). Loja → Comprados: o que é do jogador sai da vitrine. `colecao/` nos dados (`POST /api/colecao`): cópia de cada item comprado e da imagem, com `uid` e `hist`, só cresce |
 | **0.7** | **atualização do Ganbatte** | **Junta a 0.6.6-beta1 a beta3** (as linhas abaixo): o nome Ganbatte com os links novos (repositório `CaioParanaiba/ganbatte`, Pages em `caioparanaiba.github.io/ganbatte`; o GitHub redireciona o git, o ZIP e o raw do nome antigo, então as cópias instaladas continuam atualizando), o visual Nen, os nomes base das abas, prazo da caçada, tarefa vira caçada e cofre opcional. Janela grande com `"cap"`, a escolha do visual (`"visual"`, Nen ou clássico na hora) e o agradecimento a quem contribuiu (`"obrigado"`) |
 | 0.6.6-beta3 | atualização das expedições | Visual Nen como padrão (bloco `gb-visual` com `:where(.vis-nen)`, clássico em Configurações → configurações deste computador, `localStorage` → `gb-visual`), marca do jogo (`MARCA`) no cabeçalho, no favicon e no assistente, XP sempre na ponta da linha da Lista e o modo demonstração esperando os scripts de baixo |
