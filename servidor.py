@@ -45,6 +45,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/grupo/entrar {link}           entra com o link do convite (https://endereco/g/ID#CODIGO)
   POST /api/grupo/sair {chave}            sai do grupo
   POST /api/grupo/sincronizar {resumo}    manda os dias que mudaram (motor.js → resumoGrupo) e traz o placar
+  POST /api/grupo/vinculo {chave, habito, pessoal} liga um hábito pessoal a um hábito do catálogo do grupo ("" desliga)
   POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config (repassado ao servidor do grupo)
   POST /api/grupo/host {acao, ...}        estado | servidor | funnel | criar {nome, endereco}: este computador como servidor do grupo
   GET  /api/grupo/copia                   cópia do banco do servidor do grupo desta máquina (só o dono)
@@ -1616,7 +1617,8 @@ def api_ia_plano(d):
 # ---------- modo em grupo (0.9, #38–#40): o jogo conversa com o servidor do grupo (grupo/servidor_grupo.py) ----------
 # A página calcula o resumo dos dias (motor.js → resumoGrupo: só números e os hábitos do grupo) e este servidor manda ao do
 # grupo só os dias novos ou que mudaram. O token fica aqui, nunca na página. Na pasta de dados (só acrescenta):
-#   grupo.json    lista dos grupos em que o jogador está: {url, id, nome, membro, token, admin, publico?, entrou}
+#   grupo.json    lista dos grupos em que o jogador está: {url, id, nome, membro, token, admin, publico?, entrou, vinculos?}
+#                 vinculos = {hábito do grupo: id do hábito pessoal} (#41): o nome do pessoal nunca sai daqui
 #   enviado.json  {"url|id": {dia: assinatura}}: o que já chegou ao servidor (o resto vai na próxima sincronização)
 #   grupo/        o último placar de cada grupo, para a aba continuar mostrando quando o servidor está fora do ar
 GRUPO_PORTA = 8643
@@ -1682,7 +1684,7 @@ def api_grupo_get():
     for g in grupos():
         p = ler_json_arquivo(arquivo_placar(g))
         lista.append({"chave": chave_grupo(g), "id": g["id"], "nome": g.get("nome") or g["id"], "admin": bool(g.get("admin")),
-                      "convite": (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}", "placar": p})
+                      "convite": (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}", "placar": p, "vinculos": vinculos_de(g)})
     return {"ok": True, "grupos": lista, "host": (grupo_pasta_servidor() / "dono.token").is_file()}
 
 
@@ -1747,6 +1749,24 @@ def api_grupo_sair(d):
     return {"ok": True}
 
 
+def vinculos_de(g):
+    v = g.get("vinculos")
+    return {k: p for k, p in v.items() if isinstance(p, str) and p} if isinstance(v, dict) else {}
+
+
+def envio_do_grupo(x, cat, vinc):
+    """Um dia do resumo como este grupo o recebe (#41): o Codeforces se está no catálogo e, de cada hábito de vínculo, 1 se o
+    pessoal ligado a ele foi feito no dia. O `pes` (os ids dos hábitos pessoais) fica aqui."""
+    hab, pes, out = x.get("hab") or {}, x.get("pes") or {}, {}
+    for h in cat:
+        if h.get("fonte") == "automatico":
+            if h["id"] in hab:
+                out[h["id"]] = hab[h["id"]]
+        elif vinc.get(h["id"]):
+            out[h["id"]] = 1 if pes.get(vinc[h["id"]]) else 0
+    return {**{k: v for k, v in x.items() if k != "pes"}, "hab": out}
+
+
 def assinatura(dia):
     return hashlib.sha1(json.dumps(dia, sort_keys=True).encode()).hexdigest()[:16]
 
@@ -1764,7 +1784,12 @@ def api_grupo_sincronizar(d):
         try:
             with lock:
                 feito = ler_json("enviado.json", {}).get(k, {})
-            novos = [x for x in dias if isinstance(x, dict) and feito.get(x.get("dia")) != assinatura(x)]
+            p = ler_json_arquivo(arquivo_placar(g))
+            if not p or "habitos" not in p:   # sem o catálogo ainda (grupo novo ou placar da 0.9.0-beta1): busca antes
+                p = grupo_pede(g["url"], "GET", f"/g/{g['id']}/placar", token=g["token"])
+            cat, vinc = p.get("habitos") or [], vinculos_de(g)
+            dias_g = [envio_do_grupo(x, cat, vinc) for x in dias if isinstance(x, dict)]
+            novos = [x for x in dias_g if feito.get(x.get("dia")) != assinatura(x)]
             for i in range(0, len(novos), 400):
                 parte = novos[i:i + 400]
                 grupo_pede(g["url"], "POST", f"/g/{g['id']}/envio", {"protocolo": PROTOCOLO_GRUPO, "dias": parte}, g["token"], tempo=30)
@@ -1792,7 +1817,33 @@ def api_grupo_sincronizar(d):
     return {"ok": True, "grupos": out}
 
 
-ADMIN_ACOES = {"convite": "admin/convite", "cancelar": "admin/cancelar", "membro": "admin/membro", "config": "admin/config"}
+def api_grupo_vinculo(d):
+    """{chave, habito, pessoal}: liga um hábito pessoal (ou o Duolingo, "duo") a um hábito de vínculo do grupo; pessoal vazio
+    desliga. Os dias mudam de assinatura, então a próxima sincronização manda a temporada de novo, já com o vínculo."""
+    g = grupo_da(d.get("chave"))
+    hid, pes = str(d.get("habito", "")), str(d.get("pessoal") or "")
+    cat = (ler_json_arquivo(arquivo_placar(g)) or {}).get("habitos") or []
+    if not any(h.get("id") == hid and h.get("fonte") == "vinculo" for h in cat):
+        raise Erro("hábito do grupo não encontrado (sincronize e tente de novo)")
+    j = jogador()
+    if pes and pes not in [h["id"] for h in habitos(j)] + (["duo"] if duo_conf(j) else []):
+        raise Erro("hábito pessoal não encontrado")
+    with lock:
+        lista = grupos()
+        for x in lista:
+            if chave_grupo(x) == chave_grupo(g):
+                v = vinculos_de(x)
+                if pes:
+                    v[hid] = pes
+                else:
+                    v.pop(hid, None)
+                x["vinculos"] = v
+        gravar_json("grupo.json", lista)
+    return {"ok": True}
+
+
+ADMIN_ACOES = {"convite": "admin/convite", "cancelar": "admin/cancelar", "membro": "admin/membro", "config": "admin/config",
+               "habito": "admin/habito"}
 
 
 def api_grupo_admin(d):
@@ -2094,7 +2145,7 @@ ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/
          "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada,
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
-         "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host}
+         "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo}
 LIMITE = {"/api/temporada": 3_000_000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),

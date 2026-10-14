@@ -68,9 +68,12 @@ Tema: **HxH para todos** nesta temporada.
 
 ### B. Hábitos coletivos
 - **Codeforces:** verificado pela API do CF. O placar mostra o **heatmap do Codeforces** de cada jogador.
-- **Typing e outros:** a pessoa marca no jogo individual (recorrente com tag de hábito). O público recebe só
-  **fez / não fez** por dia.
-- ⏳ lista final dos hábitos · ⏳ pontos por hábito.
+- **Catálogo por grupo** (#41, decidido em 14/10): os admins editam em Grupo → administrar. O **Codeforces** é o único
+  automático (o jogo mede sozinho) e já vem no grupo novo; o host pode tirá-lo. Os outros são de **vínculo**: o jogador liga
+  um hábito pessoal ao do grupo em Configurações → grupo (o Duolingo entra assim, como hábito pessoal). O público recebe só
+  **fez / não fez** por dia, e o nome do hábito pessoal nunca sai da máquina. Hábito novo conta a partir do dia em que foi
+  criado; remover arquiva.
+- ⏳ pontos por hábito (#42).
 
 ### C. Missão da semana
 - Cumprir a missão (3 dias no atributo mais fraco) dá pontos ⏳.
@@ -136,7 +139,7 @@ Tema: **HxH para todos** nesta temporada.
 ## Pendências (⏳)
 
 1. Teto do 1º mês
-2. Lista de hábitos coletivos · pontos por hábito
+2. Pontos por hábito (a lista virou o catálogo do #41)
 3. Pontos da missão
 4. S de cada dimensão da superação · XP com ou sem teto na superação · período dos hábitos
 5. k das notas · referência do 1º semestre

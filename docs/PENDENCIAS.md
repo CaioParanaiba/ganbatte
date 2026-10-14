@@ -260,7 +260,15 @@ O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 - Funnel (`liga_funnel()`): `tailscale funnel --bg 8643`; reconhece o link de autorização, o `sudo`/operator do Linux e o
   Tailscale sem login. **Não testado com o Tailscale de verdade** (o primeiro teste é do Caio).
 - Placar só de fatos: o XP de cada um não sai do servidor, só "teve XP no dia". Faltam: a página do placar no próprio
-  servidor (hoje ele só explica o convite), o catálogo de hábitos (#41) e os pontos (#42).
+  servidor (hoje ele só explica o convite) e os pontos (#42).
+- **Catálogo de hábitos** (14/10/2026, #41): tabela `habitos` no servidor do grupo (`id`, `nome`, `fonte`, `desde`,
+  `removido`). O grupo nasce com o `cf` (o único `automatico`; os grupos da beta1 ganham na migração do `abre_banco`); os
+  admins criam os de `vinculo` (sim/não por dia, `desde` = o dia da criação) e arquivam ou trazem de volta em Grupo →
+  administrar (`admin/habito`). O envio guarda só as chaves do catálogo, do `desde` em diante (`le_dia`), e o placar mostra
+  só as ativas (`habitos` na resposta; as colunas do `web/grupo.js` saem dele). No jogo, o `resumoGrupo(C, S, true)` leva
+  `pes` (o sim/não de cada hábito pessoal e do Duolingo, pelo id) só até o `servidor.py`: `envio_do_grupo()` troca pelo
+  catálogo de cada grupo com os `vinculos` do `grupo.json` (`/api/grupo/vinculo`, o seletor em Configurações → grupo).
+  Mudar um vínculo muda a assinatura dos dias, e a temporada vai de novo. O Duolingo deixou de ser hábito do grupo.
 
 **Cápsula da temporada** (0.6.4-beta1, 13/10/2026, issue #7): `HJ.capsula(api)` no motor calcula a temporada como o
 jogo mostrava no último dia (`fimTemporada`: véspera da volta; antes disso, uma foto até hoje): roda `carregar` com `hoje`
