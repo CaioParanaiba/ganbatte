@@ -6,13 +6,16 @@ Uso:  python3 grupo/servidor_grupo.py [--porta 8643] [--dados PASTA] [--instalar
 Roda separado do jogo (serviço ganbatte-grupo, sobe com a máquina) e só escuta em localhost: quem o expõe na internet é o
 host (Tailscale Funnel, outro túnel, VPS). Um servidor atende vários grupos, cada um em /g/<id>. Os dados ficam numa pasta
 própria (padrão ~/.ganbatte-grupo/, ou a variável GANBATTE_GRUPO_DADOS), porque o servidor pode rodar sem jogo na máquina:
-  grupo.db      SQLite: grupos, membros, convites, os fatos de cada dia e os períodos fechados
+  grupo.db      SQLite: grupos, membros, convites, o catálogo de hábitos, os fatos de cada dia e os períodos fechados
   dono.token    o token do dono do servidor (criado na primeira vez). Quem lê o arquivo é o dono: o jogo do host o usa
                 para criar grupos. Nunca "veio de localhost": o Funnel entrega os pedidos da internet por localhost
   copias/       uma cópia do banco por dia (as últimas COPIAS)
 
 Os tokens (jogador, admin, convite) vão no cabeçalho Authorization: Bearer e o banco guarda só o hash deles.
 O jogo manda fatos (o resumo do dia do motor, protocolo 1), nunca pontos: o placar da 0.9.0 mostra só fatos (#42).
+Hábitos do grupo (#41): um catálogo por grupo, que os admins editam. O Codeforces é o único automático (o jogo mede sozinho)
+e já vem no grupo novo; os outros são de vínculo, sim/não por dia: cada jogador liga um hábito pessoal a ele no jogo, e só a
+chave do grupo chega aqui. O envio guarda só as chaves do catálogo, a partir do "desde" de cada uma. Remover só arquiva.
 
 Rotas (JSON):
   GET  /api/ping                              {app, versao, protocolo}
@@ -32,6 +35,7 @@ Rotas (JSON):
   POST /g/<id>/admin/cancelar {convite}       cancela um convite aberto
   POST /g/<id>/admin/membro {membro, admin?, remover?}
   POST /g/<id>/admin/config {nome?, fuso?, ini?, fim?}
+  POST /g/<id>/admin/habito {nome} | {id, remover} cria um hábito de vínculo, arquiva (remover: true) ou traz de volta (false)
 """
 import argparse
 import hashlib
@@ -64,6 +68,8 @@ JANELA = 35   # dias do placar
 ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"   # sem 0/O e 1/I: o código pode ser lido em voz alta
 ID_GRUPO = re.compile(r"^[a-z0-9][a-z0-9-]{1,30}$")
 CHAVE_HAB = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
+HAB_AUTO = {"cf": "Codeforces"}   # os hábitos que o jogo mede sozinho (um novo precisa de código no jogo)
+HAB_MAX = 20   # hábitos ativos por grupo
 AVATAR = re.compile(r"^[A-Za-z0-9_.-]{0,80}$")
 DIA = re.compile(r"^\d{4}-\d\d-\d\d$")
 FUSO = re.compile(r"^([+-])(\d{2}):(\d{2})$")
@@ -82,6 +88,8 @@ CREATE TABLE IF NOT EXISTS dias (grupo TEXT NOT NULL, membro INTEGER NOT NULL, d
   missao INTEGER NOT NULL, ferias INTEGER NOT NULL, recebido REAL NOT NULL, PRIMARY KEY (grupo, membro, dia));
 CREATE TABLE IF NOT EXISTS fechados (grupo TEXT NOT NULL, periodo TEXT NOT NULL, fechado REAL NOT NULL, dados TEXT NOT NULL, PRIMARY KEY (grupo, periodo));
 CREATE TABLE IF NOT EXISTS ligado (id INTEGER PRIMARY KEY, ini REAL NOT NULL, fim REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS habitos (grupo TEXT NOT NULL, id TEXT NOT NULL, nome TEXT NOT NULL, fonte TEXT NOT NULL, desde TEXT NOT NULL,
+  criado REAL NOT NULL, removido REAL, PRIMARY KEY (grupo, id));
 """
 
 
@@ -109,6 +117,9 @@ def abre_banco():
     CON.row_factory = sqlite3.Row
     CON.execute("PRAGMA journal_mode=WAL")
     CON.executescript(ESQUEMA)
+    # grupos de antes do catálogo (0.9.0-beta1): começam com o Codeforces, como um grupo novo
+    for g in CON.execute("SELECT id FROM grupos WHERE id NOT IN (SELECT DISTINCT grupo FROM habitos)").fetchall():
+        poe_cf(CON, g["id"])
 
 
 def q(sql, args=()):
@@ -344,6 +355,7 @@ def cria_grupo(d):
         while c.execute("SELECT 1 FROM grupos WHERE id = ?", (gid,)).fetchone():
             gid, i = f"{base}-{i}", i + 1
         c.execute("INSERT INTO grupos (id, nome, fuso, criado) VALUES (?, ?, ?, ?)", (gid, nome, fuso, agora()))
+        poe_cf(c, gid)
         codigo = novo_convite(c, gid, True)
     log("grupo criado:", gid)
     return {"ok": True, "grupo": {"id": gid, "nome": nome, "fuso": fuso_txt(fuso)}, "convite": codigo}
@@ -400,8 +412,9 @@ def membro_do(gid, token, admin=False):
     return m
 
 
-def le_dia(x, g):
-    """Um dia do resumo do jogo (web/motor.js → resumoGrupo), validado. None = fora da temporada do grupo."""
+def le_dia(x, g, cat):
+    """Um dia do resumo do jogo (servidor.py → envio_do_grupo), validado. None = fora da temporada do grupo. Dos hábitos, fica
+    só o que está no catálogo (mesmo arquivado, para um dia reenviado não perder o que já tinha) a partir do desde."""
     if not isinstance(x, dict) or not DIA.match(str(x.get("dia", ""))):
         raise Erro("dia inválido no envio")
     dia = x["dia"]
@@ -417,6 +430,7 @@ def le_dia(x, g):
     for k, v in hab.items():
         if not CHAVE_HAB.match(str(k)) or not isinstance(v, (int, float)) or not 0 <= v <= 100000:
             raise Erro("hábitos inválidos no envio")
+    hab = {k: (v if cat[k]["fonte"] == "automatico" else int(bool(v))) for k, v in hab.items() if k in cat and dia >= cat[k]["desde"]}
     return (dia, int(round(xp)), json.dumps(hab, sort_keys=True), int(bool(x.get("missao"))), int(bool(x.get("ferias"))))
 
 
@@ -428,7 +442,8 @@ def envio(gid, token, d):
     dias = d.get("dias")
     if not isinstance(dias, list) or len(dias) > 800:
         raise Erro("envio inválido")
-    linhas = [v for v in (le_dia(x, g) for x in dias) if v]
+    cat = {h["id"]: h for h in catalogo(gid, arquivados=True)}
+    linhas = [v for v in (le_dia(x, g, cat) for x in dias) if v]
     t = agora()
     with transacao() as c:
         c.executemany("INSERT OR REPLACE INTO dias (grupo, membro, dia, xp, hab, missao, ferias, recebido) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -453,11 +468,13 @@ def placar(gid, token):
     eu = membro_do(gid, token)
     hoje = hoje_no(g["fuso"])
     ini = hoje - timedelta(days=JANELA - 1)
+    cat = catalogo(gid)
+    vale = {h["id"] for h in cat}
     membros = []
     for m in q("SELECT * FROM membros WHERE grupo = ? AND saiu IS NULL ORDER BY entrou", (gid,)):
         dias, ativos = {}, set()
         for r in q("SELECT dia, xp, hab, missao FROM dias WHERE grupo = ? AND membro = ? AND dia >= ?", (gid, m["id"], ini.isoformat())):
-            f = {k: v for k, v in json.loads(r["hab"]).items() if v}
+            f = {k: v for k, v in json.loads(r["hab"]).items() if v and k in vale}
             if r["xp"] > 0:
                 f["a"] = 1
                 ativos.add(r["dia"])
@@ -471,7 +488,7 @@ def placar(gid, token):
     fechado = q1("SELECT MAX(periodo) AS p FROM fechados WHERE grupo = ? AND periodo LIKE 'dia:%'", (gid,))["p"]
     return {"ok": True, "grupo": {"id": gid, "nome": g["nome"], "fuso": fuso_txt(g["fuso"]), "ini": g["ini"] or "", "fim": g["fim"] or ""},
             "hoje": hoje.isoformat(), "janela": ini.isoformat(), "fechado_ate": fechado[4:] if fechado else "",
-            "voce": {"membro": eu["id"], "admin": bool(eu["admin"])}, "membros": membros, "protocolo": PROTOCOLO}
+            "voce": {"membro": eu["id"], "admin": bool(eu["admin"])}, "habitos": cat, "membros": membros, "protocolo": PROTOCOLO}
 
 
 def sair(gid, token):
@@ -492,7 +509,7 @@ def admin_ver(gid, token):
     cs = [{"id": c["id"], "admin": bool(c["admin"]), "membro": c["membro"], "criado": c["criado"], "vence": c["vence"]}
           for c in q("SELECT * FROM convites WHERE grupo = ? AND usado IS NULL AND cancelado = 0 AND vence > ? ORDER BY criado", (gid, agora()))]
     return {"ok": True, "grupo": {"id": gid, "nome": g["nome"], "fuso": fuso_txt(g["fuso"]), "ini": g["ini"] or "", "fim": g["fim"] or ""},
-            "membros": ms, "convites": cs}
+            "membros": ms, "convites": cs, "habitos": catalogo(gid, arquivados=True)}
 
 
 def admin_convite(gid, token, d):
@@ -550,6 +567,62 @@ def admin_config(gid, token, d):
     with transacao() as c:
         for k, v in mud.items():
             c.execute(f"UPDATE grupos SET {k} = ? WHERE id = ?", (v, gid))
+    return admin_ver(gid, token)
+
+
+# ---------- catálogo de hábitos do grupo (#41) ----------
+def poe_cf(c, gid):
+    c.execute("INSERT OR IGNORE INTO habitos (grupo, id, nome, fonte, desde, criado) VALUES (?, 'cf', ?, 'automatico', '', ?)",
+              (gid, HAB_AUTO["cf"], agora()))
+
+
+def catalogo(gid, arquivados=False):
+    """[{id, nome, fonte, desde, removido?}] na ordem de criação. desde vazio = desde sempre (os automáticos)."""
+    out = []
+    for h in q("SELECT * FROM habitos WHERE grupo = ? ORDER BY criado, id", (gid,)):
+        if h["removido"] and not arquivados:
+            continue
+        x = {"id": h["id"], "nome": h["nome"], "fonte": h["fonte"], "desde": h["desde"]}
+        if arquivados:
+            x["removido"] = bool(h["removido"])
+        out.append(x)
+    return out
+
+
+def admin_habito(gid, token, d):
+    g = grupo_ou_404(gid)
+    eu = membro_do(gid, token, admin=True)
+    with transacao() as c:
+        if "id" in d:
+            h = c.execute("SELECT * FROM habitos WHERE grupo = ? AND id = ?", (gid, str(d["id"]))).fetchone()
+            if not h:
+                raise Erro("hábito não encontrado")
+            volta = not d.get("remover")
+            if volta and h["removido"] and c.execute("SELECT COUNT(*) FROM habitos WHERE grupo = ? AND removido IS NULL", (gid,)).fetchone()[0] >= HAB_MAX:
+                raise Erro(f"o grupo já tem {HAB_MAX} hábitos")
+            c.execute("UPDATE habitos SET removido = ? WHERE grupo = ? AND id = ?", (None if volta else agora(), gid, h["id"]))
+        else:
+            nome = nome_ok(d.get("nome"), "o nome do hábito")
+            if c.execute("SELECT COUNT(*) FROM habitos WHERE grupo = ? AND removido IS NULL", (gid,)).fetchone()[0] >= HAB_MAX:
+                raise Erro(f"o grupo já tem {HAB_MAX} hábitos")
+            base = slug(nome)[:36]
+            if base in HAB_AUTO:
+                base += "-h"
+            hid, i = base, 2
+            while True:
+                h = c.execute("SELECT * FROM habitos WHERE grupo = ? AND id = ?", (gid, hid)).fetchone()
+                if not h:
+                    break
+                if h["removido"] and h["fonte"] == "vinculo" and h["nome"] == nome:   # o mesmo de antes: volta, com o histórico
+                    c.execute("UPDATE habitos SET removido = NULL WHERE grupo = ? AND id = ?", (gid, hid))
+                    break
+                if not h["removido"] and h["nome"].lower() == nome.lower():
+                    raise Erro("o grupo já tem um hábito com esse nome")
+                hid, i = f"{base}-{i}", i + 1
+            if not h:
+                c.execute("INSERT INTO habitos (grupo, id, nome, fonte, desde, criado) VALUES (?, ?, ?, 'vinculo', ?, ?)",
+                          (gid, hid, nome, hoje_no(g["fuso"]).isoformat(), agora()))
+    log("admin", eu["id"], "mudou o catálogo de hábitos do grupo", gid)
     return admin_ver(gid, token)
 
 
@@ -632,7 +705,8 @@ class H(BaseHTTPRequestHandler):
                 d = self._corpo()
                 fn = {"entrar": lambda: entrar(gid, d), "envio": lambda: envio(gid, tk, d), "sair": lambda: sair(gid, tk),
                       "admin/convite": lambda: admin_convite(gid, tk, d), "admin/cancelar": lambda: admin_cancelar(gid, tk, d),
-                      "admin/membro": lambda: admin_membro(gid, tk, d), "admin/config": lambda: admin_config(gid, tk, d)}.get(resto)
+                      "admin/membro": lambda: admin_membro(gid, tk, d), "admin/config": lambda: admin_config(gid, tk, d),
+                      "admin/habito": lambda: admin_habito(gid, tk, d)}.get(resto)
             if fn:
                 return self._json(200, fn())
         raise Erro("não encontrado", 404)

@@ -1,7 +1,8 @@
 /* ---------- modo em grupo (0.9, #38–#40): a aba Torre Trick com o placar do grupo e o card "grupo" em Configurações ----------
    A página calcula o resumo dos dias (GBx.resumoGrupo: só números e os hábitos do grupo) e o servidor do jogo manda ao
    servidor do grupo o que mudou (POST /api/grupo/sincronizar). O placar da 0.9.0 mostra só fatos, sem pontos (#42): quem
-   jogou em cada dia, Codeforces, Duolingo e a sequência. Fora do ar, a aba mostra o último placar recebido.
+   jogou em cada dia, a sequência e os hábitos do catálogo do grupo (#41: o Codeforces e os de vínculo, que cada um liga a
+   um hábito pessoal no card "grupo" de Configurações). Fora do ar, a aba mostra o último placar recebido.
    No modo demonstração não há servidor: a aba continua só explicando o que vem. */
 (() => {
 if(window.GB_DEMO) return;
@@ -19,6 +20,11 @@ const quando = ts => {
 const avatar = () => (UI.avatar && UI.avatar !== 'logo' && CTX.AVATARES.includes(UI.avatar)) ? UI.avatar : '';
 const grupoSel = () => (G.lista || []).find(g => g.chave === G.sel) || (G.lista || [])[0];
 const placarDe = g => (G.res[g.chave] && G.res[g.chave].placar) || g.placar;
+const HAB_CF = {id:'cf', nome:'Codeforces', fonte:'automatico', desde:''};
+const habsDe = P => (P && P.habitos) || [HAB_CF];   // placar de antes do catálogo (0.9.0-beta1): só o Codeforces
+const curto = h => h.id === 'cf' ? 'CF' : h.nome;
+/* hábitos pessoais que dá para ligar a um hábito do grupo: os da Configuração e o Duolingo, se ligado */
+const pessoais = () => { const J = (CTX && CTX.JOG) || {}; return (J.habitos || []).map(h => ({id:h.id, n:h.n})).concat(J.duo && J.duo.usuario ? [{id:'duo', n:'Duolingo'}] : []); };
 const reRender = () => { if(cur === 'tt' || cur === 'cfg') render(); };
 
 async function carrega(){
@@ -29,7 +35,7 @@ async function carrega(){
 async function sincroniza(){
   if(!CTX || !G.lista || !G.lista.length || G.ocupado) return;
   G.ocupado = true;
-  try { const j = await post('/api/grupo/sincronizar', {resumo: GBx.resumoGrupo(CTX, estado())}); G.res = j.grupos; G.ultima = Date.now(); }
+  try { const j = await post('/api/grupo/sincronizar', {resumo: GBx.resumoGrupo(CTX, estado(), true)}); G.res = j.grupos; G.ultima = Date.now(); }
   catch(e){ /* o servidor do jogo caiu: a próxima tentativa resolve */ }
   G.ocupado = false; reRender();
 }
@@ -38,10 +44,10 @@ const espera = setInterval(() => { if(CTX){ clearInterval(espera); inicia(); } }
 
 /* ---------- aba Torre Trick ---------- */
 function heat(m, P){
-  const cel = [];
+  const cel = [], hs = habsDe(P).filter(h => h.id !== 'cf');
   for(let d = P.janela; d <= P.hoje; d = GBx.addD(d, 1)){
     const f = m.dias[d] || {}, aberto = !P.fechado_ate || d > P.fechado_ate;
-    const tit = [ddmm(d), f.a ? 'com XP' : 'sem XP', f.cf ? `Codeforces ${f.cf}` : '', f.duo ? 'Duolingo' : '', f.m ? 'missão' : '', aberto ? 'provisório' : ''].filter(Boolean).join(' · ');
+    const tit = [ddmm(d), f.a ? 'com XP' : 'sem XP', f.cf ? `Codeforces ${f.cf}` : '', ...hs.filter(h => f[h.id]).map(h => h.nome), f.m ? 'missão' : '', aberto ? 'provisório' : ''].filter(Boolean).join(' · ');
     cel.push(`<i class="gp-c${f.a ? ' a' : ''}${f.cf ? ' cf' : ''}${aberto ? ' p' : ''}" title="${tit}"></i>`);
   }
   return `<span class="gp-heat" aria-hidden="true">${cel.join('')}</span>`;
@@ -51,14 +57,14 @@ function placarHTML(g){
   if(!P) return `<div class="card"><p style="margin:0;font-size:14px">${r.erro ? esc(r.erro) : 'Buscando o placar no servidor do grupo...'}</p></div>`;
   const aviso = r.offline ? `<p class="gp-aviso">O servidor do grupo está fora do ar. Mostrando o placar de ${esc(quando(P.recebido))}; o que você fizer até lá vai junto na próxima vez.</p>`
     : r.sem_acesso ? `<p class="gp-aviso">${esc(r.erro)}</p>` : '';
-  const soma = (m, k) => Object.values(m.dias).reduce((s, f) => s + (f[k] || 0), 0);
+  const soma = (m, k) => Object.values(m.dias).reduce((s, f) => s + (f[k] || 0), 0), hs = habsDe(P);
   const linhas = P.membros.map(m => `<tr${m.id === P.voce.membro ? ' class="gp-eu"' : ''}>
       <td><span class="gp-quem">${m.avatar ? `<span class="av pic" style="--s:26px;background-image:url(${avSrc(m.avatar)})"></span>` : `<span class="av logo" style="--s:26px"><img src="${LOGO}" alt=""></span>`}<b>${esc(m.nome)}</b>${m.admin ? '<small>admin</small>' : ''}</span></td>
-      <td class="mono">${m.sequencia}</td><td class="mono">${soma(m, 'a')}</td><td class="mono">${soma(m, 'cf')}</td><td class="mono">${soma(m, 'duo')}</td>
+      <td class="mono">${m.sequencia}</td><td class="mono">${soma(m, 'a')}</td>${hs.map(h => `<td class="mono">${soma(m, h.id)}</td>`).join('')}
       <td>${heat(m, P)}</td><td class="sub">${esc(quando(m.envio))}</td></tr>`).join('');
   return `${aviso}<div class="card"><h2><span class="c">~/</span>${esc(P.grupo.nome)} · ${P.membros.length} ${P.membros.length === 1 ? 'membro' : 'membros'}</h2>
-    <p class="sub" style="margin:0 0 12px">Só fatos por enquanto: quem jogou em cada dia, Codeforces e Duolingo nos últimos ${GBx.dias(P.janela, P.hoje) + 1} dias. Os pontos da Torre Trick entram quando o grupo tiver algumas semanas de uso.${P.fechado_ate ? ` Dias fechados até ${ddmm(P.fechado_ate)}; os mais recentes ainda podem mudar.` : ' Nenhum dia fechado ainda: tudo é provisório.'}</p>
-    <div class="tbl-wrap"><table class="rg-t gp-t"><thead><tr><th>jogador</th><th title="dias seguidos com XP">seq.</th><th title="dias com XP na janela">dias</th><th>CF</th><th title="dias com lição">duo</th><th>últimos dias</th><th>sincronizou</th></tr></thead><tbody>${linhas}</tbody></table></div>
+    <p class="sub" style="margin:0 0 12px">Só fatos por enquanto: quem jogou em cada dia e os hábitos do grupo nos últimos ${GBx.dias(P.janela, P.hoje) + 1} dias. Os pontos da Torre Trick entram quando o grupo tiver algumas semanas de uso.${P.fechado_ate ? ` Dias fechados até ${ddmm(P.fechado_ate)}; os mais recentes ainda podem mudar.` : ' Nenhum dia fechado ainda: tudo é provisório.'}</p>
+    <div class="tbl-wrap"><table class="rg-t gp-t"><thead><tr><th>jogador</th><th title="dias seguidos com XP">seq.</th><th title="dias com XP na janela">dias</th>${hs.map(h => `<th title="${h.id === 'cf' ? 'problemas aceitos' : esc(h.nome) + ': dias cumpridos'}">${esc(curto(h))}</th>`).join('')}<th>últimos dias</th><th>sincronizou</th></tr></thead><tbody>${linhas}</tbody></table></div>
     <p class="sub" style="margin:10px 0 0">O seu XP e as suas tarefas não aparecem aqui: o grupo vê só se você jogou no dia. Última sincronização: ${G.ultima ? esc(quando(G.ultima / 1000)) : 'ainda não'} <button type="button" class="btn" data-gpsinc style="margin-left:6px">sincronizar agora</button></p></div>`;
 }
 function adminHTML(g){
@@ -75,6 +81,11 @@ function adminHTML(g){
     <div class="card"><h2><span class="c">~/</span>membros</h2>
       ${ativos.map(m => `<div class="gp-lin"><span><b>${esc(m.nome)}</b>${m.admin ? ' <small class="sub">admin</small>' : ''} <span class="sub">· sincronizou ${esc(quando(m.envio))}</span></span>
         <span style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn" data-gpadm="${m.id}" data-v="${m.admin ? 0 : 1}">${m.admin ? 'tirar admin' : 'tornar admin'}</button><button type="button" class="btn" data-gpreconv="${m.id}" title="token perdido (reinstalou, trocou de computador): liga ao mesmo perfil, com o histórico">reconvite</button><button type="button" class="btn" data-gptira="${m.id}" data-n="${esc(m.nome)}">remover</button></span></div>`).join('')}</div>
+    <div class="card"><h2><span class="c">~/</span>hábitos do grupo</h2>
+      <p style="margin:0 0 10px;font-size:14px">O Codeforces o jogo mede sozinho. Os outros são sim/não por dia: cada um liga um hábito pessoal ao do grupo em Configurações → grupo (o nome do hábito pessoal não sai do computador dele). Um hábito novo conta a partir de hoje; remover só esconde, e o histórico fica.</p>
+      ${(A.habitos || []).map(h => `<div class="gp-lin"><span${h.removido ? ' class="sub"' : ''}><b>${esc(h.nome)}</b> <span class="sub">· ${h.fonte === 'automatico' ? 'automático' : 'vínculo'}${h.desde ? ` · desde ${ddmm(h.desde)}` : ''}${h.removido ? ' · removido' : ''}</span></span>
+        <button type="button" class="btn" data-gphab="${esc(h.id)}" data-v="${h.removido ? 0 : 1}" data-n="${esc(h.nome)}">${h.removido ? 'trazer de volta' : 'remover'}</button></div>`).join('')}
+      <div style="display:flex;gap:8px;margin-top:10px"><input id="gp-hab-nome" maxlength="40" placeholder="ex.: Digitação" style="flex:1;min-width:0"><button type="button" class="btn v" data-gphabnovo>criar hábito</button></div></div>
     <div class="card"><h2><span class="c">~/</span>configuração do grupo</h2>
       <div class="gp-f"><label>Nome<input id="gp-c-nome" value="${esc(A.grupo.nome)}" maxlength="40"></label>
         <label>Fuso (fechamento às 6h)<input id="gp-c-fuso" value="${esc(A.grupo.fuso)}" maxlength="6" class="mono"></label>
@@ -115,13 +126,20 @@ function hostHTML(){
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn v" data-gpcria>criar grupo</button>${h.dono ? '<a class="btn" href="/api/grupo/copia" download>baixar cópia do servidor</a>' : ''}<button type="button" class="btn" data-gphostfecha>fechar</button></div>
     ${(h.grupos || []).length ? `<p class="sub" style="margin:10px 0 0">Grupos neste servidor: ${h.grupos.map(x => `${esc(x.nome)} (${x.membros})`).join(' · ')}</p>` : ''}</div>`;
 }
+function vinculosHTML(g){
+  const hs = habsDe(placarDe(g)).filter(h => h.fonte === 'vinculo');
+  if(!hs.length) return '';
+  const ps = pessoais(), v = g.vinculos || {};
+  return `<div class="gp-vinc">${hs.map(h => `<label><span>${esc(h.nome)}</span><select data-gpvinc="${esc(h.id)}" data-chave="${esc(g.chave)}">
+      <option value="">não ligado</option>${ps.map(p => `<option value="${esc(p.id)}"${v[h.id] === p.id ? ' selected' : ''}>${esc(p.n)}</option>`).join('')}</select></label>`).join('')}</div>`;
+}
 function cardGrupo(){
   const l = G.lista || [];
   return `<div class="card" id="cfg-grupo"><h2><span class="c">~/</span>grupo</h2>
-    ${l.length ? l.map(g => `<div class="gp-lin"><span><b>${esc(g.nome)}</b>${g.admin ? ' <small class="sub">admin</small>' : ''} <span class="sub mono">${esc(g.convite)}</span></span><button type="button" class="btn" data-gpsai="${esc(g.chave)}" data-n="${esc(g.nome)}">sair</button></div>`).join('') : '<p style="margin:0 0 10px;font-size:14px">Você não está em nenhum grupo.</p>'}
+    ${l.length ? l.map(g => `<div class="gp-lin"><span><b>${esc(g.nome)}</b>${g.admin ? ' <small class="sub">admin</small>' : ''} <span class="sub mono">${esc(g.convite)}</span></span><button type="button" class="btn" data-gpsai="${esc(g.chave)}" data-n="${esc(g.nome)}">sair</button></div>${vinculosHTML(g)}`).join('') : '<p style="margin:0 0 10px;font-size:14px">Você não está em nenhum grupo.</p>'}
     <label class="sub" for="gp-convite" style="display:block;margin:10px 0 4px">Link do convite (o amigo que é admin do grupo manda)</label>
     <div style="display:flex;gap:8px"><input id="gp-convite" class="mono" value="${esc(G.convite)}" placeholder="https://.../g/grupo#CODIGO" style="flex:1;min-width:0"><button type="button" class="btn v" data-gpentra>entrar</button></div>
-    <p class="sub" style="margin:8px 0 0">Vão para o grupo só o seu nickname, a foto de perfil e, por dia, o XP (para as contas; ninguém vê o número), o Codeforces e o Duolingo. Suas tarefas e os outros hábitos ficam aqui.</p>
+    <p class="sub" style="margin:8px 0 0">Vão para o grupo só o seu nickname, a foto de perfil e, por dia, o XP (para as contas; ninguém vê o número), o Codeforces e, dos hábitos do grupo, só se você cumpriu no dia o hábito pessoal que ligou a cada um. Suas tarefas, os nomes dos seus hábitos e os que você não ligou ficam aqui.</p>
     ${hostHTML()}</div>`;
 }
 RENDER.cfg = S => { RENDER0.cfg(S); const a = document.getElementById('cfg-srv') || document.getElementById('cfg'); if(a) a.insertAdjacentHTML('afterend', cardGrupo()); else document.getElementById('cfg-root').insertAdjacentHTML('afterbegin', cardGrupo()); };
@@ -146,6 +164,10 @@ document.addEventListener('click', async e => {
     if((b = q('[data-gpadm]'))){ await admin('membro', {membro: +b.dataset.gpadm, admin: b.dataset.v === '1'}); G.adm = await admin('ver'); render(); return; }
     if((b = q('[data-gptira]'))){ if(!confirm(`Remover ${b.dataset.n} do grupo? O histórico fica; para voltar, só com um reconvite.`)) return;
       await admin('membro', {membro: +b.dataset.gptira, remover: true}); G.adm = await admin('ver'); render(); return; }
+    if((b = q('[data-gphab]'))){ if(b.dataset.v === '1' && !confirm(`Remover ${b.dataset.n} do placar do grupo? O histórico fica, e dá para trazer de volta.`)) return;
+      G.adm = await admin('habito', {id: b.dataset.gphab, remover: b.dataset.v === '1'}); render(); sincroniza(); return; }
+    if(q('[data-gphabnovo]')){ const i = document.getElementById('gp-hab-nome');
+      G.adm = await admin('habito', {nome: i.value.trim()}); render(); await sincroniza(); await carrega(); render(); toast('Hábito criado <small>cada um liga o seu em Configurações → grupo</small>'); return; }
     if(q('[data-gpcfg]')){ const v = id => document.getElementById(id).value.trim();
       G.adm = await admin('config', {nome: v('gp-c-nome'), fuso: v('gp-c-fuso'), ini: v('gp-c-ini'), fim: v('gp-c-fim')}); await carrega(); await sincroniza(); toast('Grupo salvo'); return; }
     if(q('[data-gpentra]')){ guarda(); const r = await post('/api/grupo/entrar', {link: G.convite, avatar: avatar()}); G.convite = ''; G.sel = r.chave;
@@ -159,6 +181,14 @@ document.addEventListener('click', async e => {
       const r = await post('/api/grupo/host', {acao:'criar', nome: G.nome, endereco: G.endereco || (G.funnel && G.funnel.endereco) || (G.hostEstado || {}).endereco || '', avatar: avatar()});
       G.sel = r.chave; G.nome = ''; await carrega(); await hostEstado(); toast(`Grupo ${esc(r.nome)} criado <small>convide os amigos na aba ${esc(ABA.tt.n)} → administrar</small>`); sincroniza(); return; }
   } catch(err){ toast('Não deu: ' + esc(err.message)); render(); }
+});
+
+document.addEventListener('change', async e => {
+  const s = e.target.closest('[data-gpvinc]');
+  if(!s) return;
+  try { await post('/api/grupo/vinculo', {chave: s.dataset.chave, habito: s.dataset.gpvinc, pessoal: s.value}); await carrega(); render();
+    toast(s.value ? 'Hábito ligado <small>os dias desde o início do hábito no grupo vão na próxima sincronização</small>' : 'Hábito desligado'); sincroniza(); }
+  catch(err){ toast('Não deu: ' + esc(err.message)); render(); }
 });
 
 document.head.insertAdjacentHTML('beforeend', `<style>
@@ -176,6 +206,9 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .gp-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px}
 .gp-f label{display:flex;flex-direction:column;gap:4px;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 .gp-f input{font:14px var(--f-ui);text-transform:none;letter-spacing:0}
+.gp-vinc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;padding:0 0 10px}
+.gp-vinc label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.gp-vinc select{max-width:60%}
 .gp-host{margin-top:14px;padding:14px;border:1px solid var(--hair);border-radius:12px}
 </style>`);
 })();
