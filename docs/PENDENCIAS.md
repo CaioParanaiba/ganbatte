@@ -5,6 +5,11 @@ tem as pendências dele em [`COLETIVO.md`](COLETIVO.md).
 
 ## Onde estamos
 
+**Issue #57 — Jenny por tarefa:** a Lista mostra o dinheiro ao lado do XP, inclusive na criação e na edição.
+`valeL()` usa `estado().valeTarefa()`, com a mesma conta da conclusão (prazo, missão, fúria, férias, nível dos hábitos e
+feitiços), e converte o XP final em Jenny ×10. As regras de ganho e os recibos permanecem iguais.
+Teste da prévia contra o ganho real: `node tests/test_jenny.mjs`.
+
 **v0.3** publicada em 09/10/2026 (tag `v0.3`, testada no Linux pelos amigos com foco em usabilidade). Entraram nela:
 ligação tarefa → avaliação pelo prazo e com várias palavras-chave (`liga()`/`ligaCom()` em `web/motor.js`, com o
 `→ P2` e o motivo nos Chefões), aba Torre Trick explicando o modo em grupo, backup em ZIP (`GET /api/backup`, aba Regras),
@@ -18,10 +23,11 @@ O `guia.js` roda num escopo fechado: no roteiro, abra o tutorial clicando em `[d
 numa chamada separada. Depois de mexer em `web/`, rode `python3 ferramentas/standalone.py` (gera o `docs/prototipo.html`);
 o Pages atualiza a cada push.
 
-**Branch `grupo`** (desde 13/10/2026): o modo em grupo (0.9, issues no índice #16), com versões `0.9.0-betaN`. Recebe
-merge da `beta` a cada versão nova, **sempre junto com uma 0.9.0-betaN nova** cuja entrada nas novidades diz o que veio
-(só o merge não avisa ninguém: o jogo só avisa versão maior que a atual). O caminho contrário só com a 0.9 pronta
-(`grupo` → `beta` → uso real → `main`). Na pasta de dados, a `grupo` só acrescenta (`grupo.json`, `enviado.json`, `grupo/`).
+**Branch `grupo`: desativada na 0.9.0-beta2** (14/10/2026). Foi onde o modo em grupo (0.9, índice #16) nasceu, de 13 a
+14/10, com a 0.9.0-beta1. Na 0.9.0-beta2 ela entrou na `beta` e parou: fica no GitHub só como registro, no mesmo commit da
+beta2, e não recebe mais nada. Issues com o label `grupo` usam a `beta` como base. A cópia que ainda está na `grupo`
+segue a `beta` (`ANTIGOS` no `servidor.py`: `canal()` responde `beta`, e o "atualizar agora" troca a branch em vez de
+puxar). Na pasta de dados, o modo em grupo só acrescenta (`grupo.json`, `enviado.json`, `grupo/`).
 
 **Branches: `main` e `beta`.** A `main` é a versão estável: é a que o instalador baixa e a que o botão "Atualizar agora"
 confere. A `beta` é onde as versões novas são testadas em uso real antes de sair, e pode quebrar; nenhum instalador
@@ -160,6 +166,30 @@ peso atual, caiu de 2502 para 1212 J. O gasto (`spent`) fica gravado; o ganho er
   junte-os numa tabela de eras (decidido em 13/10/2026 não fazer antes de precisar). Mexeu em pontos já ganhos: aviso grande
   na Novidades (ver a seção abaixo).
 
+## Contribuições com mais de um dev (#96, #97; decidido em 14/10/2026)
+
+Com um segundo dev, a recompensa de bug/ideia separa **quem relata** de **quem faz**:
+- **Recompensa de quem relatou** (`CONTRIB`, 15 XP + 150 J o bug, 10 XP + 50 J a ideia) sai quando a issue **entra no
+  beta**: label `no beta` ou fechada como resolvida, o que vier primeiro. A branch padrão é a `main`, então o `Fecha #N`
+  de PR para a `beta` não fecha a issue; por isso o label. Antes pagava só na ida para a `main` e juntava um "canhão".
+- **Quem fez a própria issue** (autor também responsável) não ganha a recompensa: o trabalho é pago pela tarefa de dev.
+  As issues do Caio continuam fora da recompensa por relatar (ele decide o que fecha como resolvido).
+- **Tarefa de dev** (`dev_tarefas()` no servidor): issue com o jogador como responsável vira `Issue #N: título +exp.SLUG
+  gh:N esf:…` no todo.txt (na expedição aberta chamada Ganbatte, `projeto_dev()`; sem ela, `+ganbatte`), concluída sozinha quando entra no beta. Vale pelo label de esforço (`ESF_XP` no motor: rápido 10,
+  médio 15, demorado 25 XP, as faixas de vida, estudo e entrega); o servidor guarda o último esforço visto em
+  `contrib.json` → `dev` (vale mesmo se o label sair) e sem nenhum visto conta médio. Apagada pelo jogador não volta;
+  responsável trocado ou issue recusada antes do beta tira a tarefa aberta.
+- **Labels (0.9.0-beta3):** o `no beta` entra no merge de cada PR, não no lançamento da versão (senão os pagamentos se juntam
+  no lançamento), e o `esforço` fica até a `main` (`CONTRIBUINDO.md`, "Só para o dono").
+- **Esforço sempre no label:** a IA que avalia ou pega uma issue põe o label e troca se a issue complicar
+  (`CONTRIBUINDO.md`).
+- **Só daqui para a frente:** `CONTRIB_LEGADO` lista as issues que já estavam no beta ou resolvidas em 14/10/2026: o autor
+  ganha mesmo tendo feito (regra antiga) e elas não viram tarefa. As abertas na época (inclusive #84, #91 e #92, já
+  juntadas na beta mas sem `no beta`) seguem a regra nova. Os responsáveis das antigas foram preenchidos pelos PRs, só para
+  organizar (antes do PR #61 o Caio era o único dev).
+- O jogo confere o GitHub a cada 1 h (`CONTRIB_SEG`) e pelo botão "conferir agora" em Configurações (`POST /api/contrib`,
+  um por minuto). Quem joga na `main` vê um aviso de que a correção ou a ideia já está no beta e chega na próxima versão.
+
 ## Balanceamento (análise de 13/10/2026, relatórios do Caio e de um amigo)
 
 O que se viu: a Jenny do amigo (15.262) veio 37% de contribuições (5 issues antigas creditadas de uma vez no dia em que ele
@@ -212,13 +242,21 @@ coisas que o jogo deveria decidir. Cada computador ficaria de um jeito. Decisão
 que o jogador já tem; a IA só devolve texto, e o jogo confere e grava.**
 
 O que entrou:
-- **Configurações → IA** (`iaHTML()` em `web/ia.js`): o servidor acha `claude`, `codex` e `gemini` (PATH + pastas comuns, porque
+- **Configurações → IA** (`iaHTML()` em `web/ia.js`): o servidor acha `claude`, `codex`, `gemini` e `agy` (PATH + pastas comuns, porque
   o serviço do início automático roda com PATH curto), o jogador escolhe e clica em *testar*. Fica em `jogador.json` →
   `"ia": {"agente", "desde", "cartas"}` (`POST /api/ia/config`; o `/api/config` do assistente preserva o campo).
 - **Rota única** `POST /api/ia/rodar {pedido, anexo?}` → `{id}`; a página consulta `GET /api/ia/rodar?id=`. Um pedido por
   vez, 10 min de limite, pasta temporária só com o anexo, pedido pela entrada padrão. Comandos em `comando_agente()`:
   `claude -p --tools Read --permission-mode dontAsk` (testado de verdade), `codex exec --sandbox read-only` e
   `gemini -p` (**não testados**: conferir num computador com eles). Erro de login vira "rode `X` no terminal".
+  **#60 (14/10/2026):** o Gemini CLI 0.64 recusa pasta não confiável no modo sem perguntas (a temporária é nova a cada
+  pedido); o servidor passa `GEMINI_CLI_TRUST_WORKSPACE=true` (a `--skip-trust` não existe em versão velha). Mas o Google
+  parou de aceitar o Gemini CLI com conta pessoal gratuita (`IneligibleTierError`, "migrate to the Antigravity"): o erro
+  vira um aviso em português. No lugar entrou o **Antigravity CLI** (`agy`, testado de verdade na 1.3.5): ele não lê a
+  entrada padrão (responde vazio), então o pedido vai no arquivo `.pedido.txt` da pasta temporária; sem `--mode plan` ele
+  grava arquivos, com ele não. Termina com código 0 e saída vazia quando nega uma ferramenta (vira erro). Pedido leve
+  usa o modelo de sempre (os nomes, tipo `gemini-3.8-flash-low`, mudam a cada versão). Cada pedido fica nas conversas
+  do agy (`~/.gemini/antigravity-cli/conversations`): não há flag para não guardar.
 - **Plano de ensino:** pasta `~/.hunter-todo/planos/` (`POST /api/ia/plano` para *enviar arquivo*). No editor do chefão,
   *ler plano com IA* (o arquivo com a sigla ou o nome da disciplina vem escolhido). As linhas `#` da resposta aparecem
   como "Observações da IA" e ficam no bloco como `# (IA) ...` (trocadas a cada nova resposta).
@@ -239,12 +277,55 @@ O que entrou:
 O que falta da IA está em "Planejado para a v0.5" e em "Arquivado".
 
 **Preparação do modo em grupo** (0.6.4-beta5, 13/10/2026, issues #36, #46, #37; índice em #16):
-- `CANAIS = ("main", "beta", "grupo")` no `servidor.py`: `canal()` devolve a branch da cópia git se for um deles (senão
-  `main`) e o `api_canal()` troca para qualquer um. Configurações → servidor tem **Versão: Estável · Beta · Grupo**
-  (`CANAIS` e `betaHTML()` em `web/guia.js`). `podeTeste()` (modo teste da Masadora) vale na beta e no grupo.
+- `CANAIS` no `servidor.py`: `canal()` devolve a branch da cópia git se for um deles (senão `main`) e o `api_canal()`
+  troca para qualquer um. Configurações → servidor tem **Versão: Estável · Beta** (`CANAIS` e `betaHTML()` em
+  `web/guia.js`). `podeTeste()` (modo teste da Masadora) vale na beta. Até a 0.9.0-beta1 havia também o canal Grupo;
+  desde a beta2 ele está em `ANTIGOS` e segue a beta.
 - `HJ.resumoGrupo(C, S)` no motor (`protocolo: 1`): um dia por linha da temporada (`TEMP.ini` até hoje ou o fim) com
   `xp`, `hab` (só os `HAB_GRUPO` ligados: `cf` = problemas, `duo` = 0/1), `missao` (o dia contou para a missão da semana:
   `S.missaoDias`) e `ferias`. Nunca leva texto, tag, disciplina nem hábito pessoal. Botão em Configurações → balanceamento.
+
+**Modo em grupo: estrutura da 0.9.0** (13/10/2026, #38, #39, #40; decisões em `docs/COLETIVO.md`, "Servidor da Associação"):
+- `grupo/servidor_grupo.py`: servidor à parte (serviço `ganbatte-grupo`, porta 8643, `~/.ganbatte-grupo/`), SQLite com
+  `grupos`, `membros`, `convites`, `dias` (os fatos, sobrescritos por jogador e dia), `fechados` e `ligado` (intervalos em
+  que o servidor esteve ligado). Tokens e convites só com hash; `dono.token` no disco para as rotas `/dono`. Convite de 8
+  letras, uso único, 7 dias; 20 erros em 10 min travam o grupo por 10 min. `fecha_periodos()` a cada 5 min (prazo às 6h do
+  fuso do grupo + `HORAS_LIGADO`), congelando os números do período (membros, dias com XP, mediana do XP diário, soma dos
+  hábitos) para calibrar a #42. Cópia diária em `copias/`. Reinicia sozinho quando o arquivo muda (git pull).
+- O início automático do `servidor.py` (`auto_ligar`, `iniciar_fundo`, `conteudo_auto`) aceita outro nome e comando.
+- Jogo: `/api/grupo/*` no `servidor.py`; `grupo.json` (lista), `enviado.json` (assinatura de cada dia enviado) e
+  `grupo/` (último placar). A página sincroniza ao abrir e a cada 10 min (`web/grupo.js`): sem a página aberta, nada é
+  enviado. O convite do próprio servidor (o host entrando pelo endereço do Funnel) fala com `127.0.0.1:8643` direto.
+- Funnel (`liga_funnel()`): `tailscale funnel --bg 8643`; reconhece o link de autorização, o `sudo`/operator do Linux e o
+  Tailscale sem login. **Não testado com o Tailscale de verdade** (o primeiro teste é do Caio).
+- Placar só de fatos: o XP de cada um não sai do servidor, só "teve XP no dia". Faltam: a página do placar no próprio
+  servidor (hoje ele só explica o convite) e os pontos (#42).
+- **Catálogo de hábitos** (14/10/2026, #41): tabela `habitos` no servidor do grupo (`id`, `nome`, `fonte`, `desde`,
+  `removido`). O grupo nasce com o `cf` (o único `automatico`; os grupos da beta1 ganham na migração do `abre_banco`); os
+  admins criam os de `vinculo` (sim/não por dia, `desde` = o dia da criação) e arquivam ou trazem de volta em Grupo →
+  administrar (`admin/habito`). O envio guarda só as chaves do catálogo, do `desde` em diante (`le_dia`), e o placar mostra
+  só as ativas (`habitos` na resposta; as colunas do `web/grupo.js` saem dele). No jogo, o `resumoGrupo(C, S, true)` leva
+  `pes` (o sim/não de cada hábito pessoal e do Duolingo, pelo id) só até o `servidor.py`: `envio_do_grupo()` troca pelo
+  catálogo de cada grupo com os `vinculos` do `grupo.json` (`/api/grupo/vinculo`, o seletor em Configurações → grupo; vai para dentro da aba do grupo com o layout do #67, ver `COLETIVO.md` B).
+  Mudar um vínculo muda a assinatura dos dias, e a temporada vai de novo. O Duolingo deixou de ser hábito do grupo.
+- **Torre Trick** (14/10/2026, #42; regras no `docs/COLETIVO.md`): `grupo/torre.py`, funções puras sobre o retrato do grupo
+  (`retrato()` no servidor: membros, todos os `dias`, catálogo, `fechados`, calibração). 1 andar = 1 teto; o teto do mês é
+  a mediana do mês anterior congelada no fechamento (`numeros()` agora guarda também a `mediana_ativos`, a dos dias com XP,
+  que vale quando a mediana dá 0); no 1º mês, a do próprio mês, provisória. A superação (`razao()`: base = maior entre a
+  média dos últimos 3 meses ou 4 semanas e a da temporada, com a projeção do período em curso) só entra nos andares com o
+  período fechado; antes, vai em `projecao`. `calcula()` devolve `teto`, `geral`, `placares` (gerados pelo catálogo com
+  `specs()`; só os ligados e com 2+ participantes), `titulos` e `evolucao` (a posição no fim de cada uma das últimas 6
+  semanas, recalculada dos dias). O `placar()` leva tudo em `torre`, junto com a `frase` (#76: tabela `frases`, o líder é
+  quem mais desceu na última semana fechada, `andares_semana()`; uma vez só; fica até a semana seguinte fechar). Calibração
+  e placares por grupo nas colunas `calib` e `placares` de `grupos` (JSON; migração no `abre_banco`), editados em
+  `admin/calibracao` e `admin/placar`; `admin/frase` apaga. No jogo, `/api/grupo/frase` e as ações novas do `/api/grupo/admin`.
+- **Aba Torre Trick** (14/10/2026, #67, desenho aprovado no protótipo do #67): `web/grupo.js`, classes com o prefixo `tt-`
+  (o jogo já usa `.lic`, `.shaft`, `.row`, `.k`...). Sub-abas `placar` (licença horizontal que vira com um clique, pódio
+  herói, frase do líder, o 4º em diante, específicos como campeões ou quem lidera, a escolha fica no `localStorage`
+  `gb-tt-esp`), `placares` (o placar em foco e o gráfico da evolução, com a tabela) e `jogadores` (a licença aberta, frente
+  e verso). `data-ttjog` abre a licença de alguém, `data-ttplac` abre um placar. A licença tem cores próprias (é um
+  objeto), iguais nos dois temas e visuais. Administrar ganhou os números (`torreAdminHTML`), os placares e as frases.
+  Placar guardado sem `torre` (servidor do grupo antigo): a tabela de fatos de antes (`placarHTML`).
 
 **Cápsula da temporada** (0.6.4-beta1, 13/10/2026, issue #7): `HJ.capsula(api)` no motor calcula a temporada como o
 jogo mostrava no último dia (`fimTemporada`: véspera da volta; antes disso, uma foto até hoje): roda `carregar` com `hoje`
@@ -255,6 +336,29 @@ outra com `ate` menor. `GET /api/jogo` → `temporadas` ([{nome, ate, guardada}]
 abrir depois do fim (uma tentativa por aba), antes de o assistente gravar outra temporada (`antesDeTrocar`, nas duas
 gravações do `guia.js`) e pelo card *temporada* em Configurações (foto parcial). Falta: a tela de histórico e decidir o que
 zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
+
+**Coleção permanente e retratos dos chefões** (issue #33, PR #74, decidido com o Caio em 14/10/2026):
+- O comprado vai para `colecao/` dos dados (`api_colecao`: só acrescenta e copia a imagem de `web/a/` ou `web/chefoes/` para
+  `colecao/arquivos/`; `GET /api/jogo` → `colecao`). A página manda o que falta em `guardaColecao()` (na carga, que migra o
+  `own` antigo, e a cada compra); `OWN` = `own` do `estado.json` + a coleção. `GB.catalogo(avatares, colecao)` põe de volta,
+  com `fora`, o item da coleção que saiu da loja; `GB.padrao` = o que vem com o jogo, que fica só em **Comprados**.
+- **Rastreio:** cada item tem `uid` e `hist` (quando, como: compra | chefao | migracao, origem, temporada, preço). Sem
+  devolução nem venda por enquanto; o `hist` está pronto para trocas e vendas pelo grupo (itens raros, de temporadas passadas).
+- **Loja pública do grupo:** segue a mesma regra (`origem: "grupo"`): o que o jogador compra é dele e entra nesta coleção,
+  não compra repetido em outro grupo e não perde nada quando o grupo troca de temporada ou de itens. Ver `COLETIVO.md`.
+- **Itens de código** (paleta, textura, efeito, fonte, som): a coleção guarda a ficha; o código do efeito nunca sai do jogo
+  depois de vendido, só sai da vitrine.
+- **Fotos marcadas como chefão** (`RETRATOS` no motor, quem desenvolve escolhe; hoje as 15 de `web/chefoes/`): vendidas
+  como retrato de chefão (`ch-SLUG`, 1.500 J). Um dono por retrato (`poeRetrato`). Ao derrotar o chefão que está com o
+  retrato, ele vira foto de perfil de graça (`av-ch-SLUG`, `como: chefao`) e a imagem desse chefão trava em
+  `estado.json` → `travas["TEMPORADA:SIGLA"]` (id do retrato ou `""` se era o ícone padrão; o servidor mantém a primeira),
+  mesmo se uma nota corrigida trouxer o chefão de volta. Os guardas da torre continuam com o ícone.
+- Falta: o equilíbrio de preços da loja inteira (issue própria).
+
+**0.9 · atualização da Torre Trick** (14/10/2026): lançada na `main`, juntando a 0.7.1-beta1 e a 0.9.0-beta1 a beta4
+(issues #33, #38, #39, #40, #41, #42, #57, #58, #59, #60, #67, #75, #76, #84, #91, #92, #96, #97): modo em grupo com a Torre
+Trick, licença hunter e placares, caçadas dentro de caçadas, retratos dos chefões e coleção permanente, contribuição paga no
+beta e tarefa de dev. A janela épica tem a marca `0.9-final`, a mesma da beta3 e da beta4: quem viu na beta não vê de novo.
 
 **0.7 · atualização do Ganbatte** (13/10/2026): lançada na `main`, juntando a 0.6.6-beta1 a beta3 (issues #15, #34, #35,
 #54): nome Ganbatte com repositório e Pages novos, visual Nen (clássico em Configurações), nomes base das abas, prazo da
@@ -337,6 +441,11 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
 - **Registrar:** campo limpo (o resto em "detalhes"), tecla N (o mesmo `#l-add` numa janela), tecla C (caçada com uma
   etapa por linha). Topo da Lista num bloco só, com a missão da semana no canto.
 - Tutorial da aba Expedições na 0.5.9-beta2 (#26, `TOURS.x` em `web/guia.js`). Editar o ícone de uma caçada não existe (é sempre o alvo, de propósito).
+- **Caçada dentro de caçada** (#92): `estado.json` → `cacadas[NOME].pai`, **só dois níveis** (o pai não pode ter pai).
+  A de dentro fica na expedição da de cima e não é marco: aparece dentro dela (Lista, marco, quadro, cronograma).
+  **Bônus:** cada uma fecha com o `bonusMarco` das próprias etapas (a de cima não soma o das de dentro, para nenhuma
+  etapa contar duas vezes). **A de cima só fecha depois das de dentro.** Progresso (vida, barra) conta as etapas de todas
+  (`tudo`, `tudoFeitas`). Expedição dentro de expedição ficou só como ideia (#93).
 
 ## Ideias para depois (sem versão definida)
 
@@ -358,6 +467,10 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
    - conferir datas de prova na agenda do Google.
 6. **Peles na loja (#17).** O visual Nen seco virou o padrão na 0.6.6-beta3; duas peles testadas junto ficaram guardadas
    em `docs/peles/` (Licença Hunter e Nen com aura), com o passo a passo para virarem itens da Masadora.
+7. **Versão para celular: muito no futuro** (decidido em 14/10/2026). O jogo é pensado para o computador. Algumas telas já
+   dobram em telas estreitas (a janela épica da 0.9.0-beta2, a aba Torre Trick por container query), mas ninguém testou em
+   celular de verdade e não há plano para isso agora. Quando for a hora, é um projeto próprio (layout, toque, o servidor
+   rodando no computador e o celular acessando), não um ajuste solto em cada PR.
 
 ## Técnico
 
@@ -384,3 +497,22 @@ antigo não redireciona). Falta:
 
 Cuidado para não repetir a migração: no código, nomes neutros (`grupo`, `placar`, `moeda`); os nomes do tema
 (Associação Hunter, Torre Trick, Trick Coin) ficam só no texto que aparece na tela.
+
+## Issue #75: exigência das novas conquistas da IA
+
+Implementação para avaliação, ainda sem lançamento: mantém 800/1.500/3.000/6.000 J, mas novas cartas têm `versao: 2`.
+D/C/B/A: contagem com piso de 14/35/90/180 tarefas e 7/14/30/60 dias diferentes, ou volume de 125% do ritmo filtrado
+nesses dias; sequência diária e constância de 7/14/30/60 dias; hábito semanal por 2/4/8/12 semanas; XP em 2/4/6/8 semanas
+completas consecutivas, cada uma acima do recorde em 10%/20%/35%/50%; nota 8/9/9,5/10 com pelo menos 25%/40%/60%/80%
+do peso normalizado (para média final, peso ainda em aberto). Piso de 1 tarefa/dia e recorde mínimo de 100 XP.
+
+Constância requer tarefa feita: Zetsu continua salvando o Ten, mas não substitui atividade nesse novo desafio; férias
+vazias pausam. Atividades começam no dia seguinte à aceitação, notas podem contar hoje. O motor recusa metas que não
+cabem no semestre e cartas com o mesmo alvo aberto, mesmo com números diferentes. Cartas existentes, suas regras,
+feitiços e Jenny já resgatada ficam preservados. Ainda é possível uma tarefa servir a alvos diferentes (estudo e disciplina,
+por exemplo); o bloqueio é por alvo, não por consumo exclusivo da tarefa.
+
+`tests/test_conquistas.mjs` cobre as regressões e `ferramentas/simulador-conquistas.mjs` executa cenários fictícios no
+motor real, comparando com a revisão anterior via `--antes REF`. Os resultados estão em `ISSUE-75-SIMULACOES.md`.
+A escolha dos números precisa da avaliação do contribuidor e revisão do Caio. Avisar nas Novidades que novas metas
+ficaram mais exigentes; não muda saldo já ganho, preços ou regras de XP das tarefas.

@@ -233,10 +233,93 @@ class Contribuicoes(Base):
         self.assertEqual(c["7"]["dia"], "2026-10-12")
         self.assertEqual(c["9"]["dia"], "2026-10-15")
 
-    def test_so_com_usuario_valido_e_que_nao_e_o_dono(self):
+    def test_so_com_usuario_valido(self):
         self.assertIsNone(s.contrib_leitura({}))
-        self.assertIsNone(s.contrib_leitura({"github": {"usuario": s.DONO}}))
+        self.assertIsNone(s.contrib_leitura({"github": {"usuario": "nome com espaço"}}))
         self.assertEqual(s.contrib_leitura({"github": {"usuario": "amigo"}}), {"usuario": "amigo", "issues": []})
+        self.assertEqual(s.contrib_leitura({"github": {"usuario": s.DONO}}), {"usuario": s.DONO, "issues": []})   # tarefas de dev (#97)
+
+
+def issue(n, autor="amigo", resp=(), labels=(), estado="open", motivo=None, titulo="Título"):
+    return {"number": n, "title": titulo, "state": estado, "state_reason": motivo, "user": {"login": autor},
+            "assignees": [{"login": r} for r in resp], "labels": [{"name": l} for l in labels]}
+
+
+class ContribRegras(Base):
+    """#96: a recompensa sai quando a issue entra no beta, e quem fez a própria issue não ganha por ela."""
+
+    def achadas(self, itens, usuario="amigo"):
+        with mock.patch.object(s, "gh_busca", return_value=(itens, True)):
+            return s.contrib_issues(usuario)
+
+    def test_paga_no_beta_ou_resolvida(self):
+        r = self.achadas([issue(100, labels=["bug", "no beta"]), issue(101, labels=["enhancement"], estado="closed", motivo="completed"),
+                          issue(102, labels=["bug"]), issue(103, labels=["bug", "no beta"], estado="closed", motivo="not_planned"),
+                          issue(104, labels=["bug", "no beta", "sem recompensa"]), issue(105, labels=["question", "no beta"])])
+        self.assertEqual(r, {"100": {"tipo": "bug", "titulo": "Título", "beta": True}, "101": {"tipo": "ideia", "titulo": "Título"}})
+
+    def test_quem_fez_a_propria_issue_nao_ganha_fora_do_legado(self):
+        r = self.achadas([issue(100, resp=["amigo"], labels=["bug", "no beta"]), issue(101, resp=["CaioParanaiba"], labels=["bug", "no beta"]),
+                          issue(58, resp=["amigo"], labels=["bug", "no beta"])])
+        self.assertEqual(sorted(r), ["101", "58"])
+
+    def test_dono_nao_ganha_por_relatar(self):
+        self.assertEqual(self.achadas([issue(100, autor=s.DONO, labels=["bug", "no beta"])], s.DONO), {})
+
+
+class TarefasDev(Base):
+    """#97: issue com o jogador como responsável vira tarefa gh:N, concluída sozinha quando entra no beta."""
+
+    def rodar(self, itens, completa=True, dia=HOJE):
+        with mock.patch.object(s, "hoje", lambda: dia), mock.patch.object(s, "gh_busca", return_value=(itens, completa)):
+            self.assertEqual(s.contrib_atualiza("amigo"), "")
+
+    def dev(self):
+        return [l for l in s.ler() + s.ler("done.txt") if "gh:" in l]
+
+    def test_cria_acompanha_o_esforco_e_conclui(self):
+        self.rodar([issue(100, resp=["amigo"], titulo="Botão +novo em @lista due:amanhã")])
+        self.assertEqual(self.dev(), ["Issue #100: Botão novo em lista due: amanhã +ganbatte gh:100"])
+        self.rodar([issue(100, resp=["amigo"], labels=["esforço: demorado"], titulo="Outro título")])
+        self.assertEqual(self.dev(), ["Issue #100: Botão novo em lista due: amanhã +ganbatte gh:100 esf:demorado"])
+        self.rodar([issue(100, resp=["amigo"], labels=["no beta"])], dia=HOJE + timedelta(days=2))   # o label de esforço sai no beta
+        self.assertEqual(self.dev(), ["x 2026-10-14 Issue #100: Botão novo em lista due: amanhã +ganbatte gh:100 esf:demorado"])
+        self.rodar([issue(100, resp=["amigo"], estado="closed", motivo="completed")], dia=HOJE + timedelta(days=9))
+        self.assertEqual(len(self.dev()), 1)   # ir para a main não paga de novo
+
+    def test_entrou_antes_de_o_jogo_ver_ja_entra_concluida(self):
+        self.rodar([issue(100, resp=["amigo"], labels=["esforço: rápido", "no beta"])])
+        self.assertEqual(self.dev(), ["x 2026-10-12 Issue #100: Título +ganbatte gh:100 esf:rapido"])
+
+    def test_apagada_nao_volta_e_recusada_ou_trocada_sai(self):
+        self.rodar([issue(100, resp=["amigo"]), issue(101, resp=["amigo"]), issue(102, resp=["amigo"])])
+        s.gravar([l for l in s.ler() if "gh:100" not in l])   # o jogador apagou
+        self.rodar([issue(100, resp=["amigo"]), issue(101, resp=["amigo"], estado="closed", motivo="not_planned"), issue(102, resp=["amigo"])], completa=False)
+        self.assertEqual(self.dev(), ["Issue #102: Título +ganbatte gh:102"])   # busca incompleta: a 102 fica mesmo sem vir
+        self.rodar([issue(100, resp=["amigo"], labels=["no beta"])])
+        self.assertEqual(self.dev(), [])   # a 102 saiu do jogador; a 100 apagada não volta concluída
+
+    def test_entra_na_expedicao_ganbatte_aberta(self):
+        s.gravar_json("estado.json", {"expedicoes": {"velha": {"n": "Ganbatte", "fim": "2026-10-01"}, "todo-engine": {"n": "Ganbatte", "fim": None}}})
+        self.rodar([issue(100, resp=["amigo"])])
+        self.assertEqual(self.dev(), ["Issue #100: Título +exp.todo-engine gh:100"])
+        s.gravar_json("estado.json", {"expedicoes": {"tcc": {"n": "TCC"}}})
+        self.rodar([issue(101, resp=["amigo"])])
+        self.assertIn("Issue #101: Título +ganbatte gh:101", self.dev())
+
+    def test_legado_nao_vira_tarefa(self):
+        self.rodar([issue(58, resp=["amigo"]), issue(41, resp=["amigo"], labels=["no beta"])])
+        self.assertEqual(self.dev(), [])
+
+    def test_botao_espera_um_minuto(self):
+        self.jogador({"github": {"usuario": "amigo"}})
+        self.assertTrue(s.api_contrib({}).get("cedo"))   # o setUp marca uma conferida agora
+        s.contrib_vivo["t"] = 0
+        with mock.patch.object(s, "gh_busca", side_effect=OSError("sem rede")), self.assertRaises(s.Erro):
+            s.api_contrib({})
+        s.contrib_vivo["t"] = 0
+        with mock.patch.object(s, "gh_busca", return_value=([], True)):
+            self.assertEqual(s.api_contrib({}), {"ok": True})
 
 
 class ConquistasIA(Base):
@@ -253,6 +336,32 @@ class ConquistasIA(Base):
             s.api_conquistas({"acao": "criar", "itens": [self.item("A", 30)]})
         s.api_conquistas({"acao": "resgatar", "no": r["nos"][0], "como": "jenny", "j": 800})
         self.assertTrue(s.api_conquistas({"acao": "criar", "itens": [self.item("D", 30), self.item("C"), self.item("C", 11)]})["ok"])
+
+    def test_metas_novas_sao_preservadas_e_nao_reutilizam_hoje(self):
+        item = {**self.item("D", 14), "versao": 2, "diasMin": 7, "inicio": "2000-01-01"}
+        r = s.api_conquistas({"acao": "criar", "itens": [item]})
+        c = s.ler_json("conquistas.json", [])[0]
+        self.assertEqual(c["no"], r["nos"][0])
+        self.assertEqual((c["versao"], c["diasMin"], c["inicio"]), (2, 7, "2026-10-13"))
+        with self.assertRaises(s.Erro):
+            s.api_conquistas({"acao": "criar", "itens": [{**item, "n": 20}]})
+
+    def test_xp_guarda_semanas_e_recusa_meta_menor_que_o_rank(self):
+        item = {"regra": "semana", "xp": 600, "semanas": 8, "versao": 2, "rk": "A", "nome": "Oito semanas"}
+        s.api_conquistas({"acao": "criar", "itens": [item]})
+        self.assertEqual(s.ler_json("conquistas.json", [])[0]["semanas"], 8)
+        for semanas in (1, 7, True, 21):
+            with self.assertRaises(s.Erro):
+                s.conq_item({**item, "semanas": semanas})
+
+    def test_nao_grava_lote_com_alvos_repetidos_ou_dias_insuficientes(self):
+        item = {**self.item("D", 14), "versao": 2, "diasMin": 7}
+        with self.assertRaises(s.Erro):
+            s.api_conquistas({"acao": "criar", "itens": [item, {**item, "n": 20}]})
+        self.assertEqual(s.ler_json("conquistas.json", []), [])
+        for dias in (0, 1, True, 60):
+            with self.assertRaises(s.Erro):
+                s.conq_item({**item, "diasMin": dias})
 
 
 class Leitura(Base):
@@ -304,9 +413,22 @@ class Canal(Base):
         return mock.patch.multiple(s, metodo_atualizar=lambda: "git", subprocess=mock.Mock(run=lambda *a, **k: r, SubprocessError=Exception))
 
     def test_segue_a_branch(self):
-        for b in ("main", "beta", "grupo"):
+        for b in ("main", "beta"):
             with self.branch(b):
                 self.assertEqual(s.canal(), b)
+
+    def test_grupo_segue_a_beta(self):
+        """0.9.0-beta2: a grupo entrou na beta; a cópia que ainda está nela confere e atualiza pela beta."""
+        with self.branch("grupo"):
+            self.assertEqual(s.canal(), "beta")
+        with self.assertRaises(s.Erro):
+            s.api_canal({"canal": "grupo"})
+
+    def test_atualizar_na_grupo_troca_para_a_beta(self):
+        with mock.patch.multiple(s, branch_atual=lambda: "grupo", troca_branch=mock.Mock(), metodo_atualizar=lambda: "git"), \
+             mock.patch.object(s.threading, "Timer"):
+            s.api_atualizar({})
+            s.troca_branch.assert_called_once_with("beta")
 
     def test_outra_branch_ou_zip_e_main(self):
         with self.branch("minha-feature"):
@@ -330,6 +452,52 @@ class Estado(Base):
                                       "tenRec": 3, "acertos": {"0.6.4": 500}}})
         e = s.ler_json("estado.json", {})
         self.assertEqual((e["own"], e["tenRec"], e["acertos"]["0.6.4"]), (["fr-hunter"], 3, 500))
+
+
+class Colecao(Base):
+    """Coleção permanente (#33): o comprado fica em colecao/, com a imagem copiada, e nada sai de lá."""
+
+    def test_guarda_com_imagem_e_so_acrescenta(self):
+        r = s.api_colecao({"itens": [{"id": "ch-uvogin", "cat": "chefe", "n": "Uvogin", "p": 1500, "img": "chefoes/uvogin.png",
+                                      "quando": "2026-10-10", "lixo": "x"}]})
+        it = r["colecao"]["itens"]["ch-uvogin"]
+        self.assertEqual((it["origem"], it["quando"], it["arquivo"]), ("masadora", "2026-10-10", "chefoes-uvogin.png"))
+        self.assertNotIn("lixo", it)
+        self.assertTrue((s.DADOS / "colecao" / "arquivos" / "chefoes-uvogin.png").is_file())
+        s.api_colecao({"itens": [{"id": "ch-uvogin", "cat": "chefe", "n": "Outro nome"}, {"id": "pal-gon", "cat": "pal", "n": "Gon"}]})
+        c = s.colecao()["itens"]
+        self.assertEqual(c["ch-uvogin"]["n"], "Uvogin")   # quem já está não é trocado
+        self.assertEqual(c["pal-gon"]["quando"], HOJE.isoformat())
+        self.assertIn("colecao", s.api_jogo_get())
+        self.assertEqual(len(c["ch-uvogin"]["uid"]), 12)   # rastreio: uid e o começo do histórico
+        self.assertEqual(c["ch-uvogin"]["hist"], [{"quando": "2026-10-10", "como": "compra", "origem": "masadora", "p": 1500}])
+
+    def test_foto_liberada_por_chefao(self):
+        r = s.api_colecao({"itens": [{"id": "av-ch-uvogin", "cat": "avatar", "n": "Uvogin", "p": 0, "img": "chefoes/uvogin.png",
+                                      "chefao": "ch-uvogin", "como": "chefao", "temporada": "2026-2"}]})
+        h = r["colecao"]["itens"]["av-ch-uvogin"]["hist"][0]
+        self.assertEqual((h["como"], h["temporada"]), ("chefao", "2026-2"))
+        with self.assertRaises(s.Erro):
+            s.api_colecao({"itens": [{"id": "x", "cat": "pal", "n": "X", "como": "roubado"}]})
+
+    def test_recusa_item_estranho(self):
+        for x in ({"id": "../x", "cat": "pal", "n": "a"}, {"id": "a", "cat": "feitico", "n": "a"}, {"id": "a", "cat": "pal", "n": ""},
+                  {"id": "a", "cat": "pal", "n": "a", "origem": "outra"}):
+            with self.assertRaises(s.Erro):
+                s.api_colecao({"itens": [x]})
+        r = s.api_colecao({"itens": [{"id": "av-x", "cat": "avatar", "n": "X", "img": "../servidor.png"}]})
+        self.assertNotIn("arquivo", r["colecao"]["itens"]["av-x"])
+
+
+class Travas(Base):
+    def test_trava_de_chefao_vale_a_primeira(self):
+        """Chefão derrotado (#33): a imagem travada não muda, nem por outra aba nem se ele voltar à vida."""
+        s.api_jogo_estado({"estado": {"travas": {"2026-2:CALC2": "ch-uvogin"}}})
+        s.api_jogo_estado({"estado": {"travas": {"2026-2:CALC2": "ch-meruem", "2026-2:BD": ""}}})
+        s.api_jogo_estado({"estado": {}})
+        self.assertEqual(s.ler_json("estado.json", {})["travas"], {"2026-2:CALC2": "ch-uvogin", "2026-2:BD": ""})
+        with self.assertRaises(s.Erro):
+            s.api_jogo_estado({"estado": {"travas": {"2026-2:ED1": 3}}})
 
 
 class Devolucao(Base):
@@ -391,6 +559,45 @@ class Religa(Base):
         self.assertEqual(self.prepara([{"id": "h-leitura", "n": "Leitura"}],
                                       ["x 2026-10-08 2026-10-08 Leitura +rotina rec:h-leitura:2026-10-08",
                                        "x 2026-10-10 2026-10-10 Leitura +rotina rec:leit:2026-10-10"]), ["h-leitura"])
+
+
+class Agentes(Base):
+    """#60: o Gemini CLI roda na pasta temporária sem perguntar; o agy recebe o pedido num arquivo e roda só lendo."""
+
+    def roda(self, ag, saida="ok", erro="", rc=0):
+        visto = {}
+
+        def falso(cmd, input=None, cwd=None, env=None, **kw):
+            visto.update(cmd=cmd, input=input, env=env, arquivos={f.name: f.read_text(encoding="utf-8") for f in Path(cwd).iterdir()})
+            return mock.Mock(returncode=rc, stdout=saida, stderr=erro)
+        s.ia_tarefas["t"] = {"estado": "rodando", "texto": "", "erro": "", "ini": time.time(), "seg": 0}
+        s.ia_lock.acquire()
+        with mock.patch.object(s.subprocess, "run", falso), mock.patch.object(s, "path_agentes", lambda: ""):
+            s.ia_executa("t", ag, "/bin/" + ag, "PEDIDO", [], False)
+        return visto, s.ia_tarefas["t"]
+
+    def test_gemini_confia_na_pasta(self):
+        visto, t = self.roda("gemini")
+        self.assertEqual(visto["env"]["GEMINI_CLI_TRUST_WORKSPACE"], "true")
+        self.assertEqual((visto["input"], t["estado"], t["texto"]), ("PEDIDO", "pronto", "ok"))
+
+    def test_agy_le_o_pedido_do_arquivo_e_so_le(self):
+        visto, t = self.roda("agy")
+        self.assertEqual(visto["arquivos"][s.PEDIDO_ARQ], "PEDIDO")
+        self.assertEqual(visto["input"], "")
+        self.assertEqual(visto["cmd"][1:3], ["--mode", "plan"])
+        self.assertEqual(t["estado"], "pronto")
+
+    def test_agy_sem_resposta_vira_erro(self):
+        _, t = self.roda("agy", saida="", erro='jetski: no output produced — a tool required the "command" permission that headless mode cannot prompt for')
+        self.assertEqual(t["estado"], "erro")
+        self.assertIn("sem permissão", t["erro"])
+
+    def test_gemini_sem_conta_gratuita_sugere_o_agy(self):
+        _, t = self.roda("gemini", saida="", rc=1, erro="Error authenticating: IneligibleTierError: This client is no longer supported "
+                         "for Gemini Code Assist for individuals. To continue using Gemini, please migrate to the Antigravity suite"
+                         + " at chunk.js:311997:11" * 40)   # o rastro empurra o motivo para antes dos últimos 400 caracteres
+        self.assertIn("Antigravity CLI (agy)", t["erro"])
 
 
 class Renomear(unittest.TestCase):

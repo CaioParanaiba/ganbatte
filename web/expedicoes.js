@@ -4,8 +4,9 @@
  * Lista: o bloco de cada caçada, as etiquetas de caçada e de expedição nas tarefas, o campo "caçada" do formulário e as teclas
  * N (o formulário numa janela, de qualquer aba) e C (uma caçada inteira, uma etapa por linha).
  * Aba Expedições: cinco formas de ver a mesma expedição (cards, trilha, quadro, foco, cronograma); a escolhida fica neste navegador.
- * Grava em estado.json: cacadas {nome: {n, exp, criada, fim, bonus, prazo}} e expedicoes {nome: {n, ic, sub, ini, fim, bonus}}.
+ * Grava em estado.json: cacadas {nome: {n, exp, pai, criada, fim, bonus, prazo}} e expedicoes {nome: {n, ic, sub, ini, fim, bonus}}.
  * As etapas são linhas normais do todo.txt com +cac.nome; as tarefas soltas de uma expedição levam +exp.nome.
+ * Caçada dentro de caçada (#92): pai = a caçada de cima, só dois níveis; a de dentro aparece dentro da de cima em todo lugar.
  */
 (function(){
 'use strict';
@@ -27,6 +28,8 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .l-cacl{border:0!important;border-radius:0!important;background:none!important;border-top:1px dashed var(--hair)!important;margin-left:24px}
 .l-cacl .l-task{border-top:1px dashed var(--hair)} .l-cacl .l-task:first-child{border-top:0}
 .l-cacb .l-tag.x-tcac{display:none}
+.l-cacl>.l-cacb{border-top:1px dashed var(--hair)} .l-cacl>.l-cacb .l-cach{padding-left:0}
+.x-sub{margin-top:6px;padding:8px 0 0 12px;border-left:2px solid color-mix(in srgb,var(--amb) 45%,var(--hair))}
 .l-cacf{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:4px 12px 10px 50px;font:11.5px var(--f-mono);color:var(--faint)}
 .l-tag.x-tcac{color:var(--amb);background:color-mix(in srgb,var(--amb) 12%,transparent)}
 .l-tag.x-texp{color:var(--aura);background:color-mix(in srgb,var(--aura) 13%,transparent)}
@@ -151,7 +154,7 @@ const xpDa = (t, S) => { const o = S.xs.find(o => o.t === t); return o ? o.x : 0
 const porDue = (p, q) => (p.due || '9').localeCompare(q.due || '9') || (p.n || 0) - (q.n || 0);
 const vida = c => `<span class="x-vida" title="vida: ${c.abertas.length} de ${c.etapas.length} etapas">${c.etapas.map((t, i) => `<i class="${i >= c.feitas ? 'on' : ''}"></i>`).join('')}</span>`;
 const ring = (e, s) => `<span class="x-ring" style="--p:${pct(e.ok, e.marcos.length)}${s ? `;--s:${s}px` : ''}"><span>${ic(e.ic)}</span></span>`;
-const marcos = e => `<div class="x-marcos" title="vida da expedição: os marcos que faltam">${e.marcos.map(c => c.fim ? '<i class="on"></i>' : `<i class="meio" style="--q:${pct(c.feitas, c.etapas.length)}%"></i>`).join('') || '<i></i>'}</div>`;
+const marcos = e => `<div class="x-marcos" title="vida da expedição: os marcos que faltam">${e.marcos.map(c => c.fim ? '<i class="on"></i>' : `<i class="meio" style="--q:${pct(c.tudoFeitas, c.tudo.length)}%"></i>`).join('') || '<i></i>'}</div>`;
 const semanas = e => `<div class="x-sem" title="tarefas feitas por semana, nas últimas 12">${e.semanas.map((n, i) => `<i class="${n >= 5 ? 'h3' : n >= 3 ? 'h2' : n ? 'h1' : ''}" title="${i === 11 ? 'esta semana' : `há ${11 - i} semana${11 - i > 1 ? 's' : ''}`}: ${n} tarefa${n === 1 ? '' : 's'}"></i>`).join('')}</div>`;
 const salva = () => post('/api/jogo/estado', {estado:EST});
 const meta = (k, slug) => { EST[k] = EST[k] || {}; return EST[k][slug] = EST[k][slug] || {}; };
@@ -171,7 +174,14 @@ const addIn = (alvo, ph) => `<form class="x-add" data-xadd="${esc(alvo)}" autoco
 const prazoTxt = d => { const k = GB.dias(HOJE, d); return k < 0 ? `prazo vencido há ${-k}d` : 'prazo ' + dueTxt(d); };
 const prazoTag = c => !c.prazo || c.fim ? '' : `<span class="l-tag${c.abertas.length ? (c.prazo < HOJE ? ' l-late' : c.prazo === HOJE ? ' l-hoje' : '') : ''}" title="prazo da caçada">${prazoTxt(c.prazo)}</span>`;
 const depoisTag = c => c.depois ? `<span class="l-tag l-late" title="essas etapas têm prazo depois do prazo da caçada">${c.depois} etapa${c.depois > 1 ? 's' : ''} depois do prazo</span>` : '';
-const fechaBtn = (c, S) => `<button type="button" class="btn" data-cfecha="${esc(c.slug)}">${c.exp ? `fechar marco · +${GB.bonusMarco(c)} XP` : 'fechar caçada'}</button>`;
+const fechaBtn = (c, S) => c.filhasAbertas ? `<span class="x-note" style="margin:0">feche antes ${c.filhasAbertas === 1 ? 'a caçada' : `as ${c.filhasAbertas} caçadas`} de dentro</span>`
+  : `<button type="button" class="btn" data-cfecha="${esc(c.slug)}">${c.exp ? `fechar ${c.pai ? 'caçada' : 'marco'} · +${GB.bonusMarco(c)} XP` : 'fechar caçada'}</button>`;
+/* caçada dentro de caçada (#92): o nome com o da de cima, a vida com as etapas das de dentro, e o que ainda falta */
+const nomeC = (c, G) => c.pai && G.cac[c.pai] ? `${G.cac[c.pai].n} › ${c.n}` : c.n;
+const vidaT = c => c.filhas.length ? `<span class="x-vida" title="vida: ${c.tudo.length - c.tudoFeitas} de ${c.tudo.length} etapas, contando as caçadas de dentro">${c.tudo.map((t, i) => `<i class="${i >= c.tudoFeitas ? 'on' : ''}"></i>`).join('')}</span>` : vida(c);
+const falta = c => !c.abertas.length && !c.filhasAbertas;
+const cont = c => `${c.tudoFeitas}/${c.tudo.length}`;   // etapas feitas, contando as das caçadas de dentro
+const filhasTag = c => c.filhas.length ? `<span class="pill">${c.filhas.length - c.filhasAbertas}/${c.filhas.length} caçada${c.filhas.length === 1 ? '' : 's'} de dentro</span>` : '';
 
 /* ---------- a linha de uma etapa nova (campo "+ etapa" e janela da caçada) ----------
    prazo no fim do texto ("amanhã", "sexta", "15/10"); o tipo pelas palavras ou, sem palavra conhecida, o das outras etapas */
@@ -197,22 +207,25 @@ async function addEtapa(alvo, txt, S){
 }
 
 /* ---------- Lista ---------- */
-function blocosLista(S){
-  return Object.values(g(S).cac).filter(c => c.abertas.length || (!c.fim && c.etapas.length)).map(c => {
-    const e = c.exp && g(S).exp[c.exp], tudo = !c.abertas.length, fold = UI.cfold && UI.cfold[c.slug];
-    const h = `<li class="l-cacb${tudo ? ' fim' : ''}"><div class="l-cach">
+const naLista = c => c.abertas.length || (!c.fim && c.etapas.length);
+function blocoL(c, S){
+  const e = !c.pai && c.exp && g(S).exp[c.exp], tudo = falta(c), fold = UI.cfold && UI.cfold[c.slug];
+  const filhas = c.filhas.filter(naLista), tot = c.filhas.length ? c.tudo.length : c.etapas.length, ab = c.filhas.length ? c.tudo.length - c.tudoFeitas : c.abertas.length;
+  return `<li class="l-cacb${tudo ? ' fim' : ''}"><div class="l-cach">
       <button type="button" class="l-cact" data-cfold="${esc(c.slug)}" aria-expanded="${!fold}"><span class="x-alvo">${tudo ? '✓' : ic('alvo')}</span>
         <span class="l-cacn"><small>caçada</small>${esc(c.n)}${e ? `<span class="l-tag x-texp">${ic(e.ic)}${esc(e.n)} · marco ${e.marcos.indexOf(c) + 1}</span>` : ''}${prazoTag(c)}</span></button>
-      <span class="l-cacr">${vida(c)}${tudo ? 'todas feitas' : `faltam ${c.abertas.length} de ${c.etapas.length}`}</span>
+      <span class="l-cacr">${vidaT(c)}${!ab ? 'todas feitas' : `faltam ${ab} de ${tot}`}</span>
       <span class="l-cacr"><button type="button" class="l-ib" data-cedit="${esc(c.slug)}" title="editar a caçada" aria-label="editar a caçada ${esc(c.n)}">✎</button><button type="button" class="l-ib" data-cfold="${esc(c.slug)}" aria-label="${fold ? 'abrir' : 'recolher'}">${fold ? '▸' : '▾'}</button></span></div>
-      ${fold ? '' : `<ul class="l-list l-cacl">${c.abertas.slice().sort(porDue).map(t => rowL(t, S)).join('')}</ul>
-      <div class="l-cacf">${depoisTag(c)}${c.feitas ? `<span>${c.feitas} feita${c.feitas > 1 ? 's' : ''}</span>` : ''}<button type="button" class="go" data-cetapa="${esc(c.slug)}">+ etapa</button>${tudo ? fechaBtn(c, S) : ''}${c.fim && c.abertas.length ? '<span>reaberta: feche de novo quando terminar</span>' : ''}</div>`}</li>`;
-    return {due:c.due, prova:null, h, x:c.abertas.reduce((s, t) => s + valeL(t, S).x, 0)};
-  });
+      ${fold ? '' : `<ul class="l-list l-cacl">${c.abertas.slice().sort(porDue).map(t => rowL(t, S)).join('')}${filhas.slice().sort(porDue).map(f => blocoL(f, S)).join('')}</ul>
+      <div class="l-cacf">${depoisTag(c)}${c.feitas ? `<span>${c.feitas} feita${c.feitas > 1 ? 's' : ''}</span>` : ''}${filhasTag(c)}<button type="button" class="go" data-cetapa="${esc(c.slug)}">+ etapa</button>${c.pai ? '' : `<button type="button" class="go" data-xcnova="${esc(c.slug)}">+ caçada dentro</button>`}${!c.abertas.length && !c.fim ? fechaBtn(c, S) : ''}${c.fim && c.abertas.length ? '<span>reaberta: feche de novo quando terminar</span>' : ''}</div>`}</li>`;
+}
+function blocosLista(S){
+  return Object.values(g(S).cac).filter(c => !c.pai && (naLista(c) || c.filhas.some(naLista))).map(c =>
+    ({due:c.due, prova:null, h:blocoL(c, S), x:c.abertas.concat(c.filhas.flatMap(f => f.abertas)).reduce((s, t) => s + valeL(t, S).x, 0)}));
 }
 function etiquetas(t, S){
   const G = g(S), c = GB.cacDe(t), e = GB.expDe(t);
-  return (c && G.cac[c] ? `<span class="l-tag x-tcac">${ic('alvo')}${esc(G.cac[c].n)}</span>` : '') + (e && G.exp[e] ? `<span class="l-tag x-texp">${ic(G.exp[e].ic)}${esc(G.exp[e].n)}</span>` : '');
+  return (c && G.cac[c] ? `<span class="l-tag x-tcac">${ic('alvo')}${esc(nomeC(G.cac[c], G))}</span>` : '') + (e && G.exp[e] ? `<span class="l-tag x-texp">${ic(G.exp[e].ic)}${esc(G.exp[e].n)}</span>` : '');
 }
 function lateral(S){
   const L = ativas(S);
@@ -223,7 +236,8 @@ function lateral(S){
    "atual": a caçada da tarefa editada, que entra mesmo fechada */
 function opcoesCac(atual, nova){
   const S = estado(), G = g(S), abertas = Object.values(G.cac).filter(c => !c.fim || c.abertas.length || c.slug === atual);
-  const grupo = (nome, cs) => cs.length ? `<optgroup label="${esc(nome)}">${cs.map(c => `<option value="${esc(c.slug)}"${c.slug === atual ? ' selected' : ''}>${esc(c.n)}</option>`).join('')}</optgroup>` : '';
+  const grupo = (nome, cs) => cs.length ? `<optgroup label="${esc(nome)}">${cs.map(c => `<option value="${esc(c.slug)}"${c.slug === atual ? ' selected' : ''}>${esc(nomeC(c, G))}</option>`).join('')}</optgroup>` : '';
+  abertas.sort((p, q) => (p.pai || p.slug).localeCompare(q.pai || q.slug) || !!p.pai - !!q.pai);   // as de dentro logo depois da de cima
   return '<option value="">nenhuma</option>' + grupo('avulsas', abertas.filter(c => !c.exp || !G.exp[c.exp] || G.exp[c.exp].fim))
     + ativas(S).map(e => grupo(e.n, abertas.filter(c => c.exp === e.slug))).join('') + `<option value="+nova"${atual === '+nova' ? ' selected' : ''}>${nova || '+ nova caçada…'}</option>`;
 }
@@ -233,6 +247,16 @@ async function criaCac(nome){
   Object.assign(meta('cacadas', slug), {n, exp:null, criada:HOJE}); await salva();
   return slug;
 }
+/* as caçadas que podem receber outra dentro (#92): abertas, de primeiro nível e que não são a própria */
+const paisDe = (S, eu) => Object.values(g(S).cac).filter(c => !c.pai && (!c.fim || c.abertas.length) && c.slug !== eu).sort((p, q) => p.n.localeCompare(q.n));
+const paiSelect = (id, v, eu) => { const c = eu && g(estado()).cac[eu];
+  if(c && c.filhas.length) return `<select id="${id}" disabled><option value="">nenhuma (já tem caçadas dentro)</option></select>`;
+  return `<select id="${id}"><option value="">nenhuma</option>${paisDe(estado(), eu).map(p => `<option value="${esc(p.slug)}"${p.slug === v ? ' selected' : ''}>${esc(p.n)}</option>`).join('')}</select>`; };
+/* grava o lugar da caçada: dentro de outra (fica na expedição dela) ou na expedição escolhida */
+function lugar(m, exp, pai, S){
+  const p = pai && g(S).cac[pai];
+  if(p){ m.pai = p.slug; m.exp = p.exp || null; } else { delete m.pai; m.exp = exp || null; }
+}
 /* campo "caçada" do formulário: as abertas (avulsas e por expedição) e "+ nova caçada" */
 function formCacadas(){
   const sel = document.getElementById('l-cac'); if(!sel || !CTX) return;
@@ -241,7 +265,8 @@ function formCacadas(){
   const v = UI.lcac || ''; sel.value = [...sel.options].some(o => o.value === v) ? v : ''; UI.lcac = sel.value;
   const nova = sel.value === '+nova', cn = document.getElementById('l-cacn'), cx = document.getElementById('l-cacx');
   cn.hidden = cx.hidden = !nova;
-  const xh = '<option value="">sem expedição (avulsa)</option>' + ativas(S).map(e => `<option value="${esc(e.slug)}">marco de ${esc(e.n)}</option>`).join('');
+  const xh = '<option value="">sem expedição (avulsa)</option>' + ativas(S).map(e => `<option value="${esc(e.slug)}">marco de ${esc(e.n)}</option>`).join('')
+    + paisDe(S).map(c => `<option value="c:${esc(c.slug)}">dentro de ${esc(c.n)}</option>`).join('');
   if(cx.dataset.h !== xh){ const v2 = cx.value; cx.innerHTML = xh; cx.dataset.h = xh; cx.value = v2; }
   const det = document.getElementById('l-det'), mb = document.getElementById('l-more');
   det.hidden = !UI.ldet; mb.setAttribute('aria-expanded', !!UI.ldet); mb.textContent = UI.ldet ? 'menos ▴' : 'detalhes ▾';
@@ -255,32 +280,37 @@ function tagForm(){
 async function antesDeAdicionar(){
   const sel = document.getElementById('l-cac'); if(!sel || sel.value !== '+nova') return;
   const n = document.getElementById('l-cacn').value.trim(); if(!n) throw new Error('dê um nome para a caçada nova');
-  const slug = novoSlug(n, 'cacadas'), exp = document.getElementById('l-cacx').value || null;
-  Object.assign(meta('cacadas', slug), {n:n.slice(0, 80), exp, criada:HOJE}); await salva();
+  const slug = novoSlug(n, 'cacadas'), v = document.getElementById('l-cacx').value, m = meta('cacadas', slug);
+  Object.assign(m, {n:n.slice(0, 80), criada:HOJE}); lugar(m, v.startsWith('c:') ? '' : v, v.startsWith('c:') ? v.slice(2) : '', estado()); await salva();
   X.criou = slug;
 }
 function depoisDeAdicionar(){
   if(X.criou){ UI.lcac = X.criou; X.criou = ''; const cn = document.getElementById('l-cacn'); if(cn) cn.value = ''; }
-  if(document.getElementById('xn')) fechaN();
+  formL();
 }
 
 /* ---------- tecla N: o mesmo formulário da Lista, com os detalhes abertos, numa janela ---------- */
 const N = {};
 function abreN(cac){
   if(!CTX || document.getElementById('xn')) return;
-  const f = document.getElementById('l-add'); N.casa = f.parentNode; N.prox = f.nextSibling; N.det = UI.ldet; UI.ldet = true;
+  limpaAdicionada();
+  const f = document.getElementById('l-add'); N.foco = document.activeElement; N.det = UI.ldet; UI.ldet = true;
   if(cac !== undefined) UI.lcac = cac;
   const bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = 'xn';
-  bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa<small>Enter adiciona · Esc fecha · C cria uma caçada inteira</small></h3><div id="xn-slot"></div></div></div>`;
+  bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa<small>Enter adiciona · vazio, Enter fecha · Esc fecha · C cria uma caçada inteira</small></h3><div id="xn-slot"></div></div><div class="wz-foot"><button type="button" class="btn" data-nfecha>fechar</button></div></div>`;
   document.body.appendChild(bg); document.getElementById('xn-slot').appendChild(f); formL();
   document.getElementById('l-txt').focus();
 }
 function fechaN(){
   const bg = document.getElementById('xn'); if(!bg) return;
-  const f = document.getElementById('l-add'); N.casa.insertBefore(f, N.prox); UI.ldet = N.det; bg.remove(); formL();
+  limpaAdicionada();
+  // O painel da IA e os irmãos do formulário podem mudar enquanto a janela está aberta.
+  document.getElementById('l-form').appendChild(document.getElementById('l-add')); UI.ldet = N.det; bg.remove(); formL();
+  if(N.foco && N.foco.isConnected) N.foco.focus({preventScroll:true}); N.foco = null;
 }
 
 /* ---------- janelas: caçada nova (C), editar caçada, expedição nova ou editada ---------- */
+let C = null;
 function janela(id, titulo, corpo, ok){
   fechaJanela();
   const bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = id;
@@ -288,36 +318,64 @@ function janela(id, titulo, corpo, ok){
     <div class="wz-foot"><span class="err" role="alert" id="${id}-err"></span><span style="display:flex;gap:8px;margin-left:auto"><button type="button" class="btn" data-xfecha>cancelar</button><button type="button" class="btn v" data-xok>${ok}</button></span></div></div>`;
   document.body.appendChild(bg); const f = bg.querySelector('input,textarea,select'); if(f) f.focus();
 }
-function fechaJanela(){ document.querySelectorAll('#xc,#xe,#xx').forEach(x => x.remove()); }
+function fechaJanela(){ if(C){ clearTimeout(C.timer); C = null; } document.querySelectorAll('#xc,#xe,#xx').forEach(x => x.remove()); }
+function limpaAdicionadaC(c = C){
+  if(!c) return;
+  clearTimeout(c.timer); c.adicionada = false;
+  const btn = c.bg.querySelector('[data-xok]'); btn.classList.remove('salva'); btn.textContent = c.salvando ? 'criando…' : 'criar caçada';
+}
 const erro = (id, m) => { const el = document.getElementById(id + '-err'); if(el) el.textContent = m; };
 const expSelect = (id, v) => `<select id="${id}">${'<option value="">nenhuma (caçada avulsa)</option>' + ativas(estado()).map(e => `<option value="${esc(e.slug)}"${e.slug === v ? ' selected' : ''}>${esc(e.n)}</option>`).join('')}</select>`;
-function abreC(exp){
+function abreC(exp, pai){
   if(!CTX) return;
   const tipos = [['','o jogo decide'], ['ent','entrega'], ['est','estudo'], ['tre','treino e projetos'], ['vid','vida']];
   janela('xc', 'Nova caçada', `<p>Uma tarefa grande dividida em etapas. Na Lista, as etapas ficam juntas, com uma barra de quantas faltam; cada uma vale o XP normal dela. Numa expedição, a caçada vira um <b>marco</b>, e fechá-la dá bônus.</p>
-    <div class="wz-f"><label>nome<input id="xc-n" maxlength="80" placeholder="ex.: Trabalho da mãe"></label><label>expedição${expSelect('xc-x', exp || '')}</label>
+    <div class="wz-f"><label>nome<input id="xc-n" maxlength="80" placeholder="ex.: Trabalho da mãe"></label><label>expedição${expSelect('xc-x', exp || '')}</label><label>dentro da caçada${paiSelect('xc-c', pai || '')}<small class="h">Fica na expedição da caçada de cima.</small></label>
       <label>tipo das etapas<select id="xc-t">${tipos.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></label>
       <label>disciplina<select id="xc-d"><option value="">nenhuma</option>${BOSSES.map(b => `<option>${esc(b.d)}</option>`).join('')}</select></label>
       <label>prazo da caçada (opcional)<input id="xc-p" type="date"><small class="h">Só organiza: o XP continua pelo prazo de cada etapa.</small></label></div>
-    <label>etapas, uma por linha<textarea id="xc-e" placeholder="Pesquisar o tema&#10;Escrever a introdução&#10;Montar os slides amanhã&#10;Revisar com ela 20/10"></textarea><small class="h">"hoje", "amanhã", "sexta" ou uma data no fim da linha viram o prazo da etapa. Ctrl+Enter cria.</small></label>`, 'criar caçada');
+    <label>etapas, uma por linha<textarea id="xc-e" placeholder="Pesquisar o tema&#10;Escrever a introdução&#10;Montar os slides amanhã&#10;Revisar com ela 20/10"></textarea><small class="h">"hoje", "amanhã", "sexta" ou uma data no fim da linha viram o prazo da etapa. Enter cria · etapas vazias, Enter fecha · Shift+Enter quebra a linha · Esc fecha. Ctrl+Enter também cria.</small></label>`, 'criar caçada');
+  C = {bg:document.getElementById('xc'), salvando:false, adicionada:false, timer:null, slug:'', enviadas:0, aviso:null};
+  C.bg.querySelector('[data-xfecha]').textContent = 'fechar';
 }
 async function criaC(){
-  const n = document.getElementById('xc-n').value.trim(), exp = document.getElementById('xc-x').value || null, tipo = document.getElementById('xc-t').value, disc = document.getElementById('xc-d').value;
-  const prazo = document.getElementById('xc-p').value || null;
-  const ls = document.getElementById('xc-e').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const c = C; if(!c || c.salvando || !c.bg.isConnected) return;
+  const nome = c.bg.querySelector('#xc-n'), etapas = c.bg.querySelector('#xc-e'), data = c.bg.querySelector('#xc-p');
+  const n = nome.value.trim(), exp = c.bg.querySelector('#xc-x').value || null, pai = c.bg.querySelector('#xc-c').value, tipo = c.bg.querySelector('#xc-t').value, disc = c.bg.querySelector('#xc-d').value;
+  const prazo = data.value || null, ls = etapas.value.split('\n').map(s => s.trim()).filter(Boolean);
   if(!n) return erro('xc', 'Dê um nome para a caçada.');
   if(!ls.length) return erro('xc', 'Escreva pelo menos uma etapa.');
-  const slug = novoSlug(n, 'cacadas');
+  c.salvando = true; limpaAdicionadaC(c);
+  const btn = c.bg.querySelector('[data-xok]'), aviso = c.bg.querySelector('#xc-err'), campos = c.bg.querySelectorAll('input,select,textarea');
+  btn.disabled = true; aviso.textContent = ''; c.bg.setAttribute('aria-busy', 'true'); campos.forEach(el => el.disabled = true);
+  const slug = c.slug || (c.slug = novoSlug(n, 'cacadas'));
   try {
-    Object.assign(meta('cacadas', slug), {n:n.slice(0, 80), exp, criada:HOJE}, prazo ? {prazo} : {}); await salva();
-    for(const l of ls) await post('/api/add', {text: linhaEtapa(l, {grupo:'+cac.' + slug, tipo, disc})});
-    await recarrega();
-  } catch(err){ return erro('xc', 'Não criou: ' + err.message); }
-  fechaJanela(); render(); toast(`Caçada criada <small>${esc(n)} · ${ls.length} etapa${ls.length > 1 ? 's' : ''}${exp ? ' · marco novo' : ''}</small>`);
+    const m = meta('cacadas', slug); Object.assign(m, {n:n.slice(0, 80), criada:m.criada || HOJE}); lugar(m, exp, pai, estado());
+    if(prazo) m.prazo = prazo; else delete m.prazo;
+    await salva();
+    for(let i = 0; i < ls.length; i++){
+      await post('/api/add', {text: linhaEtapa(ls[i], {grupo:'+cac.' + slug, tipo, disc})});
+      c.enviadas++; etapas.value = ls.slice(i + 1).join('\n');   // numa falha parcial, só as etapas restantes são reenviadas
+    }
+    const total = c.enviadas; c.slug = ''; c.enviadas = 0; c.adicionada = true;
+    nome.value = ''; data.value = '';
+    try { await recarrega(); render(); }
+    catch(err){ aviso.textContent = 'Caçada criada. Não deu para atualizar a Lista; recarregue a página.'; }
+    c.aviso?.remove(); c.aviso = toast(`Caçada criada <small>${esc(n)} · ${total} etapa${total > 1 ? 's' : ''}${pai ? ' · dentro de ' + esc(g(estado()).cac[pai]?.n || pai) : exp ? ' · marco novo' : ''}</small>`, 2000);
+  } catch(err){
+    aviso.textContent = (c.enviadas ? 'Caçada criada em parte. Não adicionou as etapas restantes: ' : 'Não criou: ') + err.message;
+    if(c.enviadas){ try { await recarrega(); render(); } catch(e){} }
+  } finally {
+    c.salvando = false; btn.disabled = false; campos.forEach(el => el.disabled = false); c.bg.removeAttribute('aria-busy');
+    if(c.adicionada && c.bg.isConnected){
+      btn.textContent = '✓ caçada criada'; btn.classList.add('salva'); nome.focus({preventScroll:true});
+      c.timer = setTimeout(() => limpaAdicionadaC(c), 2000);
+    } else btn.textContent = 'criar caçada';
+  }
 }
 function abreEditC(slug){
   const c = g(estado()).cac[slug]; if(!c) return;
-  janela('xe', 'Editar caçada', `<div class="wz-f"><label>nome<input id="xe-n" maxlength="80" value="${esc(c.n)}"></label><label>expedição${expSelect('xe-x', c.exp || '')}</label>
+  janela('xe', 'Editar caçada', `<div class="wz-f"><label>nome<input id="xe-n" maxlength="80" value="${esc(c.n)}"></label><label>expedição${expSelect('xe-x', c.pai ? '' : c.exp || '')}</label><label>dentro da caçada${paiSelect('xe-c', c.pai || '', slug)}<small class="h">Fica na expedição da caçada de cima.</small></label>
       <label>prazo da caçada (opcional)<input id="xe-p" type="date" value="${esc(c.prazo || '')}"><small class="h">Só organiza: o XP continua pelo prazo de cada etapa.</small></label></div>
     <p>As etapas continuam com <span class="mono">+cac.${esc(slug)}</span> no todo.txt; o nome aqui é só o que aparece no jogo.${c.fim ? ` Fechada em ${ddmm(c.fim)}.` : ''}</p>`, 'salvar');
   X.edita = slug;
@@ -325,7 +383,7 @@ function abreEditC(slug){
 async function salvaEditC(){
   const n = document.getElementById('xe-n').value.trim(); if(!n) return erro('xe', 'O nome não pode ficar vazio.');
   const c = g(estado()).cac[X.edita], m = meta('cacadas', X.edita);
-  Object.assign(m, {n:n.slice(0, 80), exp:document.getElementById('xe-x').value || null, criada:m.criada || (c && c.criada) || HOJE});
+  Object.assign(m, {n:n.slice(0, 80), criada:m.criada || (c && c.criada) || HOJE}); lugar(m, document.getElementById('xe-x').value, document.getElementById('xe-c').value, estado());
   const prazo = document.getElementById('xe-p').value; if(prazo) m.prazo = prazo; else delete m.prazo;
   try { await salva(); } catch(err){ return erro('xe', 'Não salvou: ' + err.message); }
   fechaJanela(); render(); toast('Caçada salva');
@@ -347,12 +405,13 @@ async function salvaX(){
 
 /* ---------- fechar marco, concluir expedição ---------- */
 async function fechaCac(slug){
-  const S = estado(), c = g(S).cac[slug]; if(!c || c.abertas.length) return;
+  const S = estado(), c = g(S).cac[slug]; if(!c || !falta(c)) return;
   const m = meta('cacadas', slug), b = c.exp ? Math.max(+m.bonus || 0, GB.bonusMarco(c)) : 0;
   Object.assign(m, {n:c.n, exp:c.exp, criada:c.criada, fim:HOJE, bonus:b});
   try { await salva(); } catch(err){ toast('Não fechou: ' + esc(err.message)); return; }
   const e = c.exp && g(estado()).exp[c.exp]; render();
-  if(e){ toast(`Marco fechado! <small>+${b} XP · ${esc(e.n)} ${e.ok}/${e.marcos.length}</small>`); if(window.GB_FX) GB_FX.festa(); }
+  if(e && c.pai) toast(`Caçada fechada <small>+${b} XP · ${esc(nomeC(c, g(estado())))}</small>`);
+  else if(e){ toast(`Marco fechado! <small>+${b} XP · ${esc(e.n)} ${e.ok}/${e.marcos.length}</small>`); if(window.GB_FX) GB_FX.festa(); }
   else toast(`Caçada fechada <small>${esc(c.n)}</small>`);
 }
 async function concluiX(slug){
@@ -378,10 +437,18 @@ function etapas(c, S, lim){
 function marco(e, c, i, S, sempre){
   const agora = c === e.atual, aberto = sempre || X.marco === c.slug || (agora && X.marco === undefined);
   return `<div class="x-mrc${c.fim ? ' ok' : agora ? ' agora' : ''}"><div class="x-mrch"><span class="x-n">${c.fim ? '✓' : i + 1}</span><b>${esc(c.n)}</b>
-      ${c.fim ? `<span class="pill">fechado ${ddmm(c.fim)}</span><span class="pill bon">+${c.bonus} XP</span>` : `<span class="pill">${c.feitas}/${c.etapas.length} etapas</span>${agora ? '<span class="pill bon">marco atual</span>' : ''}${prazoTag(c) || depoisTag(c) ? `<span class="l-tags">${prazoTag(c)}${depoisTag(c)}</span>` : ''}`}
+      ${c.fim ? `<span class="pill">fechado ${ddmm(c.fim)}</span><span class="pill bon">+${c.bonus} XP</span>` : `<span class="pill">${cont(c)} etapas</span>${filhasTag(c)}${agora ? '<span class="pill bon">marco atual</span>' : ''}${prazoTag(c) || depoisTag(c) ? `<span class="l-tags">${prazoTag(c)}${depoisTag(c)}</span>` : ''}`}
       <button type="button" class="l-ib" data-cedit="${esc(c.slug)}" title="editar o marco" aria-label="editar ${esc(c.n)}">✎</button>${sempre ? '' : `<button type="button" class="go" data-xmarco="${esc(c.slug)}">${aberto ? 'recolher' : 'abrir'}</button>`}</div>
-    ${c.fim ? '' : `<div class="x-pbar"><i style="width:${pct(c.feitas, c.etapas.length)}%"></i></div>`}
-    ${aberto ? `<div class="x-corpo">${etapas(c, S)}</div>` : ''}</div>`;
+    ${c.fim ? '' : `<div class="x-pbar"><i style="width:${pct(c.tudoFeitas, c.tudo.length)}%"></i></div>`}
+    ${aberto ? `<div class="x-corpo">${etapas(c, S)}${c.filhas.map(f => sub(f, S)).join('')}${c.fim && !c.filhasAbertas ? '' : `<div class="x-st" style="margin-top:6px"><button type="button" class="go" data-xcnova="${esc(c.slug)}">+ caçada dentro de ${esc(c.n)}</button></div>`}</div>` : ''}</div>`;
+}
+/* uma caçada dentro do marco (#92): aberta até fechar; o botão abre ou recolhe */
+function sub(f, S){
+  const k = 'c:' + f.slug, aberto = f.fim && !f.abertas.length ? !!X.fold[k] : !X.fold[k];
+  return `<div class="x-sub"><div class="x-mrch"><span class="x-alvo${f.fim ? ' ok' : ''}" style="width:20px;height:20px;font-size:11px">${f.fim ? '✓' : ic('alvo')}</span><b>${esc(f.n)}</b>
+      ${f.fim ? `<span class="pill">fechada ${ddmm(f.fim)}</span>${f.exp ? `<span class="pill bon">+${f.bonus} XP</span>` : ''}` : `<span class="pill">${f.feitas}/${f.etapas.length} etapas</span>${prazoTag(f)}${depoisTag(f)}`}
+      <button type="button" class="l-ib" data-cedit="${esc(f.slug)}" title="editar a caçada" aria-label="editar ${esc(f.n)}">✎</button><button type="button" class="go" data-xfold="${esc(k)}">${aberto ? 'recolher' : 'abrir'}</button></div>
+    ${aberto ? etapas(f, S) : ''}</div>`;
 }
 const cab = e => `<div class="x-top">${ring(e)}<div><b>${esc(e.n)}</b>${e.sub ? `<small>${esc(e.sub)}</small>` : ''}</div></div>`;
 const stats = e => `<span class="pill">${e.ok}/${e.marcos.length} marco${e.marcos.length === 1 ? '' : 's'}</span><span class="pill">desde ${ddmm(e.ini)}</span>${e.ganho ? `<span class="pill bon">+${e.ganho} XP nos marcos</span>` : ''}`;
@@ -411,7 +478,7 @@ function vTrilha(L, e, S){
   const sel = e.marcos.find(c => c.slug === X.marco) || e.atual || e.marcos[e.marcos.length - 1];
   const st = e.marcos.map(c => { const agora = c === e.atual;
     return `<button type="button" class="x-stn${c.fim ? ' ok' : agora ? ' agora' : ''}${c === sel ? ' sel' : ''}" data-xmarco="${esc(c.slug)}">${agora ? '<span class="eu">você está aqui</span>' : ''}<span class="dot">${c.fim ? '✓' : ic('alvo')}</span>
-      <b>${esc(c.n)}</b><small>${c.fim ? `fechado ${ddmm(c.fim)} · +${c.bonus} XP` : `${c.feitas}/${c.etapas.length} etapas${c.prazo ? ' · prazo ' + ddmm(c.prazo) : ''}${agora ? '' : ' · depois'}`}</small></button>`; }).join('');
+      <b>${esc(c.n)}</b><small>${c.fim ? `fechado ${ddmm(c.fim)} · +${c.bonus} XP` : `${cont(c)} etapas${c.prazo ? ' · prazo ' + ddmm(c.prazo) : ''}${agora ? '' : ' · depois'}`}</small></button>`; }).join('');
   return `${seletor(L, e)}<div class="card"><h2><span class="c">~/</span>mapa · ${esc(e.n)}<span class="sub" style="margin-left:auto">clique numa parada</span></h2>
       <div class="x-trailw"><div class="x-trail"><div class="x-stn ini"><span class="dot">${ic('flag')}</span><b>Partida</b><small>${ddmm(e.ini)}</small></div>${st}
         <button type="button" class="x-stn fim" data-xmarconovo="${esc(e.slug)}" title="acrescentar um marco"><span class="dot">${ic('bau')}</span><b>Fim</b><small>+${GB.bonusExp(e)} XP hoje · + marco</small></button></div></div></div>
@@ -425,10 +492,13 @@ function vQuadro(L, e, S){
   const cols = e.marcos.map((c, i) => { const ver = X.verFeitas[c.slug], fe = c.etapas.filter(t => t.done);
     if(c.fim && !c.abertas.length && !ver) return `<div class="x-kcol ok"><div class="x-kh"><span class="x-k">marco ${i + 1} · fechado</span><b>${esc(c.n)}</b><small>${ddmm(c.fim)} · +${c.bonus} XP · ${c.etapas.length} etapa${c.etapas.length === 1 ? '' : 's'}</small><button type="button" class="go" data-xfeitas="${esc(c.slug)}" style="text-align:left">ver etapas</button></div></div>`;
     return `<div class="x-kcol${c === e.atual ? ' agora' : ''}${c.fim && !c.abertas.length ? ' ok' : ''}"><div class="x-kh"><span class="x-k">marco ${i + 1}${c === e.atual ? ' · atual' : ''}</span><b>${esc(c.n)}</b>
-        <span class="x-vida" style="width:100%">${c.etapas.map((t, j) => `<i class="${j >= c.feitas ? 'on' : ''}"></i>`).join('')}</span><small>${c.feitas}/${c.etapas.length} etapas${c.fim ? '' : ` · fechar dá +${GB.bonusMarco(c)} XP`}</small>${prazoTag(c) || depoisTag(c) ? `<span class="l-tags">${prazoTag(c)}${depoisTag(c)}</span>` : ''}</div>
+        <span class="x-vida" style="width:100%">${c.tudo.map((t, j) => `<i class="${j >= c.tudoFeitas ? 'on' : ''}"></i>`).join('')}</span><small>${cont(c)} etapas${c.fim ? '' : ` · fechar dá +${GB.bonusMarco(c)} XP`}</small>${filhasTag(c)}${prazoTag(c) || depoisTag(c) ? `<span class="l-tags">${prazoTag(c)}${depoisTag(c)}</span>` : ''}</div>
       <div class="x-kbody">${c.abertas.slice().sort(porDue).map(t => cartao(t, S)).join('')}${ver || !c.abertas.length ? fe.map(t => cartao(t, S)).join('') : ''}
         ${fe.length && c.abertas.length ? `<button type="button" class="go" data-xfeitas="${esc(c.slug)}">${ver ? 'esconder as feitas' : `${fe.length} feita${fe.length > 1 ? 's' : ''}`}</button>` : ''}
-        ${!c.abertas.length && !c.fim ? fechaBtn(c, S) : ''}${c.fim && !c.abertas.length ? `<button type="button" class="go" data-xfeitas="${esc(c.slug)}">recolher</button>` : addIn('cac:' + c.slug, '+ etapa')}</div></div>`; }).join('');
+        ${!c.abertas.length && !c.fim ? fechaBtn(c, S) : ''}${c.fim && !c.abertas.length ? `<button type="button" class="go" data-xfeitas="${esc(c.slug)}">recolher</button>` : addIn('cac:' + c.slug, '+ etapa')}
+        ${c.filhas.map(f => `<div class="x-sub"><span class="x-k" style="font:600 10px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--amb)">dentro · ${f.fim ? 'fechada' : `${f.feitas}/${f.etapas.length}`}</span> <b style="font:600 13px var(--f-ui)">${esc(f.n)}</b>
+          ${f.abertas.slice().sort(porDue).map(t => cartao(t, S)).join('')}${!f.abertas.length && !f.fim ? fechaBtn(f, S) : ''}${f.fim && !f.abertas.length ? '' : addIn('cac:' + f.slug, '+ etapa')}</div>`).join('')}
+        ${c.fim ? '' : `<button type="button" class="go" data-xcnova="${esc(c.slug)}">+ caçada dentro</button>`}</div></div>`; }).join('');
   const soltas = `<div class="x-kcol"><div class="x-kh"><span class="x-k" style="color:var(--soft)">sem marco</span><b>Tarefas soltas</b><small>XP normal · contam como semana ativa</small></div><div class="x-kbody">${e.soltas.filter(t => !t.done || t.n).slice().sort(porDue).map(t => cartao(t, S)).join('')}${addIn('exp:' + e.slug, '+ solta')}</div></div>`;
   const novo = `<button type="button" class="x-kcol" data-xmarconovo="${esc(e.slug)}" style="border-style:dashed;cursor:pointer;padding:18px;color:var(--soft);font:600 13px var(--f-ui);flex-basis:170px;align-items:center">+ marco<small class="sub">nova caçada</small></button>`;
   return `${seletor(L, e)}<div class="card" style="margin-bottom:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">${cab(e)}<div style="flex:1;min-width:160px">${marcos(e)}</div><span class="x-st">${stats(e)}<span class="pill bon">concluir hoje: +${GB.bonusExp(e)} XP</span><button type="button" class="go" data-xedit="${esc(e.slug)}">editar</button></span></div>
@@ -439,26 +509,26 @@ function vFoco(L, e, S){
   return `<div class="x-foco">${L.map(x => { const tudo = X.fold['f:' + x.slug], c = x.atual;
     return `<div class="card"><div class="x-fc"><div class="esq">${cab(x)}${marcos(x)}<span class="x-st">${stats(x)}</span>${semanas(x)}
         <div class="x-acts" style="margin-top:2px"><button type="button" class="go" data-xfold="f:${esc(x.slug)}">${tudo ? 'só o próximo passo' : `ver os ${x.marcos.length} marcos`}</button><button type="button" class="go" data-xmarconovo="${esc(x.slug)}">+ marco</button><button type="button" class="go" data-xsel="${esc(x.slug)}" data-xvis="cards">recompensa →</button></div></div>
-      <div class="x-prox">${tudo ? x.marcos.map((m, i) => marco(x, m, i, S)).join('') : c ? `<p class="cap">próximo passo · marco ${x.marcos.indexOf(c) + 1} de ${x.marcos.length} <b>${esc(c.n)}</b><span class="pill">${c.feitas}/${c.etapas.length}</span></p>${etapas(c, S, 3)}` : `<p class="x-note" style="margin:0">${x.marcos.length ? 'Todos os marcos fechados: conclua a expedição ou crie um marco novo.' : 'Sem marcos ainda.'}</p>`}
+      <div class="x-prox">${tudo ? x.marcos.map((m, i) => marco(x, m, i, S)).join('') : c ? (p => `<p class="cap">próximo passo · marco ${x.marcos.indexOf(c) + 1} de ${x.marcos.length} <b>${esc(nomeC(p, g(S)))}</b><span class="pill">${p.feitas}/${p.etapas.length}</span></p>${etapas(p, S, 3)}`)(c.abertas.length ? c : c.filhas.find(f => f.abertas.length) || c) : `<p class="x-note" style="margin:0">${x.marcos.length ? 'Todos os marcos fechados: conclua a expedição ou crie um marco novo.' : 'Sem marcos ainda.'}</p>`}
         ${x.soltas.some(t => !t.done) ? `<p class="cap" style="margin:12px 0 0">soltas</p><ul class="l-list x-flat">${x.soltas.filter(t => !t.done).sort(porDue).map(t => rowE(t, S)).join('')}</ul>` : ''}</div></div></div>`; }).join('')}
     <button type="button" class="card" data-xnova style="border-style:dashed;cursor:pointer;color:var(--soft);font:600 14px var(--f-ui)">+ nova expedição</button></div>`;
 }
 /* 5 · cronograma: os marcos numa linha do tempo; embaixo, as etapas por semana */
 function vCrono(L, e, S){
   const ini = GB.addD(HOJE, -GB.dow(HOJE) - 28), N9 = 63, fimJ = GB.addD(ini, N9), x = d => pct(GB.dias(ini, d), N9);
-  const linha = (c, i) => { const ds = c.etapas.map(t => t.done || t.due).filter(Boolean).sort(), a = ds[0] || HOJE, b = ds[ds.length - 1] || HOJE, l = x(a < ini ? ini : a), w = Math.max(1.5, x(b) - l);
-    return `<div class="lb"><span class="x-n" style="width:20px;height:20px;font-size:10px;${c.fim ? 'background:var(--aura);color:var(--bg)' : ''}">${c.fim ? '✓' : i + 1}</span>${esc(c.n)}<small>${c.feitas}/${c.etapas.length}</small></div>
+  const linha = (c, i, dentro) => { const ds = c.etapas.map(t => t.done || t.due).filter(Boolean).sort(), a = ds[0] || HOJE, b = ds[ds.length - 1] || HOJE, l = x(a < ini ? ini : a), w = Math.max(1.5, x(b) - l);
+    return `<div class="lb"${dentro ? ' style="padding-left:14px"' : ''}><span class="x-n" style="width:20px;height:20px;font-size:10px;${c.fim ? 'background:var(--aura);color:var(--bg)' : ''}">${c.fim ? '✓' : dentro ? '›' : i + 1}</span>${esc(c.n)}<small>${c.feitas}/${c.etapas.length}</small></div>
       <div class="tr">${b >= ini ? `<span class="br${c.fim ? ' ok' : ''}" style="left:${l}%;width:${w}%"></span>` : ''}${c.etapas.filter(t => { const d = t.done || t.due; return d && d >= ini && d <= fimJ; }).map(t => { const d = t.done || t.due, k = `pt${t.done ? ' f' : t.due < HOJE ? ' late' : ''}`, tt = `${esc(t.txt)} · ${t.done ? 'feita ' + ddmm(t.done) : 'prazo ' + ddmm(t.due)}`;
         return !t.done || t.n ? `<button type="button" class="${k}" data-ln="${t.n}" data-l="${t.done ? 'reopen' : 'done'}" style="left:${x(d)}%" title="${tt} (clique para ${t.done ? 'reabrir' : 'concluir'})" aria-label="${tt}"></button>` : `<button type="button" class="${k}" data-xreab="${esc(t.raw)}" style="left:${x(d)}%" title="${tt} (clique para reabrir)" aria-label="${tt}"></button>`; }).join('')}
         ${c.prazo && !c.fim && c.prazo >= ini && c.prazo <= fimJ ? `<span class="pz${c.abertas.length && c.prazo < HOJE ? ' late' : ''}" style="left:${x(c.prazo)}%" title="prazo da caçada: ${ddmm(c.prazo)}"></span>` : ''}
-        ${i === 0 ? `<span class="hj" style="left:${x(HOJE)}%"><span>hoje</span></span>` : ''}</div>`; };
-  const abertas = e.marcos.flatMap(c => c.abertas).concat(e.soltas.filter(t => !t.done)).sort(porDue), dom = GB.addD(HOJE, 6 - GB.dow(HOJE));
+        ${i === 0 && !dentro ? `<span class="hj" style="left:${x(HOJE)}%"><span>hoje</span></span>` : ''}</div>`; };
+  const todas = e.marcos.flatMap(c => [c].concat(c.filhas)), abertas = todas.flatMap(c => c.abertas).concat(e.soltas.filter(t => !t.done)).sort(porDue), dom = GB.addD(HOJE, 6 - GB.dow(HOJE));
   const grupos = [['Atrasadas', t => t.due && t.due < HOJE], ['Esta semana', t => t.due && t.due >= HOJE && t.due <= dom], ['Próxima semana', t => t.due && t.due > dom && t.due <= GB.addD(dom, 7)], ['Depois', t => t.due && t.due > GB.addD(dom, 7)], ['Sem data', t => !t.due]];
   return `${seletor(L, e)}<div class="card"><h2><span class="c">~/</span>cronograma · ${esc(e.n)}<span class="sub" style="margin-left:auto">cada ponto é uma etapa: clique para marcar</span></h2>
-      ${e.marcos.length ? `<div class="x-gantt"><div class="x-gt"><div></div><div class="hd">${Array.from({length:9}, (_, i) => GB.addD(ini, 7*i)).map(d => `<span style="left:${x(d)}%">${ddmm(d)}</span>`).join('')}</div>${e.marcos.map(linha).join('')}</div></div>` : '<p class="x-note">Sem marcos ainda.</p>'}
+      ${e.marcos.length ? `<div class="x-gantt"><div class="x-gt"><div></div><div class="hd">${Array.from({length:9}, (_, i) => GB.addD(ini, 7*i)).map(d => `<span style="left:${x(d)}%">${ddmm(d)}</span>`).join('')}</div>${e.marcos.map((c, i) => linha(c, i) + c.filhas.map(f => linha(f, i, true)).join('')).join('')}</div></div>` : '<p class="x-note">Sem marcos ainda.</p>'}
       <div class="x-st" style="margin-top:12px">${stats(e)}<span class="pill bon">concluir hoje: +${GB.bonusExp(e)} XP</span><button type="button" class="go" data-xmarconovo="${esc(e.slug)}">+ marco</button><button type="button" class="go" data-xedit="${esc(e.slug)}">editar</button></div></div>
     <div class="x-semanas">${grupos.map(([n, f]) => { const l = abertas.filter(f); return l.length ? `<div class="card"><h2><span class="c">~/</span>${n}<span class="sub" style="margin-left:auto">${l.length}</span></h2><ul class="l-list x-flat">${l.map(t => rowL(t, S)).join('')}</ul></div>` : ''; }).join('')}
-      <div class="card"><h2><span class="c">~/</span>etapa nova</h2>${e.marcos.filter(c => !c.fim || c.abertas.length).map(c => `<p class="cap" style="margin:6px 0 0">${esc(c.n)}</p>${addIn('cac:' + c.slug, '+ etapa (ex.: Gráficos sexta)')}`).join('')}<p class="cap" style="margin:6px 0 0">sem marco</p>${addIn('exp:' + e.slug, '+ tarefa solta')}</div></div>`;
+      <div class="card"><h2><span class="c">~/</span>etapa nova</h2>${todas.filter(c => !c.fim || c.abertas.length).map(c => `<p class="cap" style="margin:6px 0 0">${esc(nomeC(c, g(S)))}</p>${addIn('cac:' + c.slug, '+ etapa (ex.: Gráficos sexta)')}`).join('')}<p class="cap" style="margin:6px 0 0">sem marco</p>${addIn('exp:' + e.slug, '+ tarefa solta')}</div></div>`;
 }
 
 function aba(S){
@@ -490,6 +560,7 @@ document.addEventListener('click', async ev => {
   if(q('[data-xnova]')){ abreX(); return; }
   if((b = q('[data-xedit]'))){ abreX(b.dataset.xedit); return; }
   if((b = q('[data-xmarconovo]'))){ abreC(b.dataset.xmarconovo); return; }
+  if((b = q('[data-xcnova]'))){ const p = g(estado()).cac[b.dataset.xcnova]; abreC(p && p.exp || '', b.dataset.xcnova); return; }
   if((b = q('[data-xir]'))){ X.sel = b.dataset.xir; X.marco = undefined; tab('x'); return; }
   if((b = q('[data-xvis]'))){ X.vis = b.dataset.xvis; if(b.dataset.xsel) X.sel = b.dataset.xsel; X.marco = undefined; try { localStorage.setItem('gb-expv', X.vis); } catch(e){} render(); return; }
   if((b = q('[data-xsel]'))){ X.sel = b.dataset.xsel; X.marco = undefined; X.conf = ''; render(); return; }
@@ -505,11 +576,11 @@ document.addEventListener('click', async ev => {
   if((b = q('[data-xic]'))){ X.xic = b.dataset.xic; document.querySelectorAll('[data-xic]').forEach(x => x.setAttribute('aria-pressed', x === b)); return; }
   if(q('[data-xfecha]')){ fechaJanela(); return; }
   if(q('[data-xok]')){ if(document.getElementById('xc')) criaC(); else if(document.getElementById('xe')) salvaEditC(); else if(document.getElementById('xx')) salvaX(); return; }
-  if(ev.target.id === 'xn'){ fechaN(); return; }
+  if(q('[data-nfecha]') || ev.target.id === 'xn'){ fechaN(); return; }
   if(['xc','xe','xx'].includes(ev.target.id)){ fechaJanela(); return; }
 });
 document.addEventListener('change', ev => { if(ev.target.id === 'l-cac'){ UI.lcac = ev.target.value; formCacadas(); prevL(); if(UI.lcac === '+nova') document.getElementById('l-cacn').focus(); } });
-document.addEventListener('input', ev => { if(ev.target.id === 'l-cacn') prevL(); });
+document.addEventListener('input', ev => { if(ev.target.id === 'l-cacn') prevL(); if(ev.target.closest('#xc') && C && !C.salvando) limpaAdicionadaC(); });
 document.addEventListener('submit', async ev => {
   const f = ev.target.closest('[data-xadd]'); if(!f) return;
   ev.preventDefault(); const inp = f.querySelector('input'), v = inp.value.trim(); if(!v) return;
@@ -519,7 +590,16 @@ document.addEventListener('submit', async ev => {
 });
 document.addEventListener('keydown', ev => {
   if(ev.key === 'Escape'){ if(document.getElementById('xn')){ fechaN(); return; } if(document.querySelector('#xc,#xe,#xx')){ fechaJanela(); return; } }
-  if(ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey) && document.getElementById('xc')){ ev.preventDefault(); criaC(); return; }
+  if(ev.key === 'Enter' && ev.target.id === 'l-txt' && document.getElementById('xn') && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.isComposing){
+    ev.preventDefault(); if(LA.salvando || ev.repeat) return;
+    if(!ev.target.value.trim()) fechaN(); else document.getElementById('l-add').requestSubmit();
+    return;
+  }
+  if(ev.key === 'Enter' && document.getElementById('xc') && (ev.ctrlKey || ev.metaKey || ['xc-n','xc-e'].includes(ev.target.id)) && !ev.altKey && !ev.shiftKey && !ev.isComposing){
+    ev.preventDefault(); if(C.salvando || ev.repeat) return;
+    if(!document.getElementById('xc-e').value.trim() && (ev.target.id === 'xc-e' || !document.getElementById('xc-n').value.trim())) fechaJanela(); else criaC();
+    return;
+  }
   if(ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
   const a = document.activeElement; if(a && (a.matches('input,textarea,select') || a.isContentEditable)) return;
   if(document.querySelector('.wz-bg, #tr-pop')) return;   // outra janela ou um tutorial aberto

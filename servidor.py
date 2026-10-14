@@ -10,12 +10,16 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   jogador.json              nome, tags, hábitos, disciplinas e Codeforces (o assistente da primeira entrada grava)
   avaliacoes.txt, notas.txt plano de avaliação das disciplinas e notas lançadas
   estado.json               loja, carteira, o que está equipado e os prêmios reais do jogador
+  colecao/                  coleção permanente (#33): o que o jogador comprou, com uma cópia de cada item e da imagem dele;
+                            só cresce, e nem a temporada nova nem uma versão nova do jogo mexem nela
   ajustes.txt, narradas.json caixa de entrada e cartas narradas (opcionais)
   conquistas.json           conquistas criadas pela IA (200 em diante) e o que foi resgatado
   planos/                   planos de ensino (PDF, HTML...) que a IA lê
   cf.json                   cache do Codeforces (problemas aceitos por dia e os marcados à mão)
   duo.json                  cache do Duolingo (a última ofensiva lida, os dias já creditados e desde quando está ligado)
-  contrib.json              issues do jogador no GitHub fechadas como resolvidas (bug corrigido, ideia feita) e o dia em que o jogo as viu
+  contrib.json              issues do jogador no GitHub que entraram no beta (bug corrigido, ideia feita) e o dia em que o jogo as viu;
+                            em dev, as issues em que ele é o responsável (a tarefa gh:N do todo.txt, #97)
+  grupo.json, enviado.json  modo em grupo: os grupos (com o token) e o que já foi enviado a cada um; grupo/ guarda o último placar
 
 Rotas (as mesmas que web/demo.js simula no modo demonstração):
   GET  /api/jogo                          tudo o que a página precisa
@@ -31,15 +35,28 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/jogo/narrada {carta}         carta narrada colada da IA (aba Book) em narradas.json
   POST /api/jogo/planos {avaliacoes, notas} editor do chefão: grava os dois arquivos (o anterior fica em .bak)
   POST /api/jogo/nota {disc, aval, nota, parcial?} · /api/jogo/ajuste {texto} ou {quando, texto, aplicado} · /api/jogo/estado {estado}
+  POST /api/colecao {itens}               guarda na coleção permanente os itens comprados que ainda não estão nela (#33)
   POST /api/cf/mao {menos?}               +1 problema do Codeforces hoje, marcado à mão (ITMO, grupo privado); menos = desfaz
+  POST /api/contrib {}                    confere na hora as contribuições e as tarefas de dev no GitHub (senão, a cada 1 h)
   GET  /api/ia                            agentes de terminal achados, a escolha do jogador e os planos de ensino da pasta planos/
-  POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini) ou volta ao copiar e colar (chat)
+  POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini | agy) ou volta ao copiar e colar (chat)
   POST /api/ia/rodar {pedido, anexo?, leve?} roda o agente com o pedido da página → {id}; GET /api/ia/rodar?id= até ficar pronto
   POST /api/ia/plano {nome, base64}       guarda um plano de ensino em planos/
   POST /api/conquistas {acao, ...}        conquistas da IA: criar {itens} | resgatar {no, como, j|k} | descartar {no}
   GET  /api/atualizacao[?agora]           versão instalada e as mais novas publicadas no GitHub (confere a cada 6 h; ?agora = na hora)
   POST /api/atualizar {}                  baixa a versão nova (git pull ou ZIP do GitHub) e reinicia o servidor
-  POST /api/canal {canal}                 troca entre a versão normal (main) e as de teste (beta, grupo), só em cópia git, e reinicia
+  POST /api/canal {canal}                 troca entre a versão normal (main) e a de teste (beta), só em cópia git, e reinicia
+  GET  /api/grupo                         modo em grupo: os grupos do jogador e o último placar de cada um (sem os tokens)
+  POST /api/grupo/entrar {link}           entra com o link do convite (https://endereco/g/ID#CODIGO); sem o código, troca o
+                                          endereço de um grupo em que já está (o grupo mudou de computador, #91)
+  POST /api/grupo/sair {chave}            sai do grupo
+  POST /api/grupo/sincronizar {resumo}    manda os dias que mudaram (motor.js → resumoGrupo) e traz o placar
+  POST /api/grupo/vinculo {chave, habito, pessoal} liga um hábito pessoal a um hábito do catálogo do grupo ("" desliga)
+  POST /api/grupo/frase {chave, texto}    a frase do líder da semana (#76), repassada ao servidor do grupo
+  POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config | habito | calibracao | placar | frase
+  POST /api/grupo/host {acao, ...}        estado | servidor | funnel | criar {nome, endereco} | restaurar {banco, endereco} |
+                                          mudar {endereco}: este computador como servidor do grupo
+  GET  /api/grupo/copia                   cópia do banco do servidor do grupo desta máquina (só o dono)
 
 Todo dia o servidor cria as recorrentes de hoje (um hábito por linha, rec:ID:DATA, e as do Codeforces e do Duolingo se ligados),
 tira as que ficaram abertas de dias anteriores e conclui sozinho a do Codeforces quando a meta do dia é batida. Se a meta foi
@@ -52,6 +69,8 @@ Iniciar com o computador (opcional): serviço do usuário no systemd (Linux; sem
 pasta Inicializar (Windows) ou LaunchAgent (Mac). O servidor de segundo plano roda com --fundo e grava o log em servidor.log.
 """
 import argparse
+import base64
+import hashlib
 import json
 import os
 import re
@@ -60,6 +79,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import webbrowser
@@ -69,8 +89,8 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.7"
-VERSAO_NOME = "atualização do Ganbatte"   # nome da série 0.7 (aparece em Configurações → servidor)
+VERSAO = "0.9"
+VERSAO_NOME = "atualização da Torre Trick"   # nome da série 0.9 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
 DADOS = Path()   # definido em main()
@@ -878,66 +898,208 @@ def duo_leitura(j):
     return {"usuario": duo["usuario"], "ofensiva": cache.get("ofensiva"), "desde": cache.get("desde"), "ini": (cache.get("ult") or {}).get("ini")}
 
 
-# ---------- contribuições (#23) ----------
-# Quem informa o usuário do GitHub em Configurações ganha XP e Jenny por bug ou ideia que abriu no repositório, mas só
-# quando a issue é fechada como resolvida (state_reason "completed"). Repetida, recusada ("not planned"), dúvida ou com o
-# label "sem recompensa" não conta: reportar qualquer coisa não rende nada. A conta (quanto vale cada tipo) fica no motor.
+# ---------- contribuições (#23, #96) e tarefas de dev (#97) ----------
+# Quem informa o usuário do GitHub em Configurações ganha XP e Jenny por bug ou ideia que abriu no repositório quando ela
+# entra no beta: label "no beta" ou fechada como resolvida (state_reason "completed"), o que vier primeiro. A branch padrão
+# é a main, então o "Fecha #N" de um PR para a beta não fecha a issue: daí o label. Repetida, recusada ("not planned"),
+# dúvida ou com o label "sem recompensa" não conta: reportar qualquer coisa não rende nada. Quem fez a própria issue
+# (autor também responsável) não ganha a recompensa: o trabalho já é pago pela tarefa de dev. As issues do dono ficam de fora
+# da recompensa (ele decide o que fecha como resolvido), mas as tarefas de dev valem para ele também.
+# Tarefa de dev: issue com o jogador como responsável vira uma tarefa no todo.txt (gh:N, esforço do label em esf:), na
+# expedição Ganbatte se houver uma aberta (senão +ganbatte), concluída sozinha quando a issue entra no beta. A conta (quanto
+# vale cada tipo e cada esforço) fica no motor.
 contrib_vivo = {"t": 0.0, "rodando": False}
 DONO = "CaioParanaiba"   # quem desenvolve: as issues dele são anotações do desenvolvimento
+CONTRIB_SEG = 3600       # confere o GitHub no máximo a cada 1 h (a busca sem login aceita 10 por minuto); o botão confere na hora
+CONTRIB_BOTAO = 60       # o botão "conferir agora" espera 1 minuto entre uma conferida e outra
+# issues que já estavam no beta ou fechadas como resolvidas quando a regra de quem relata x quem faz entrou (#96): seguem a
+# regra antiga (o autor ganha mesmo tendo feito) e não viram tarefa de dev
+CONTRIB_LEGADO = frozenset({1, 2, 6, 7, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 31, 32, 33, 34, 35, 36, 37,
+                            38, 39, 40, 41, 42, 46, 47, 49, 50, 51, 54, 57, 58, 59, 60, 67, 75, 76})
+ESFORCO = {"esforço: rápido": "rapido", "esforço: médio": "medio", "esforço: demorado": "demorado"}
+
+
+def gh_busca(q):
+    """Busca de issues no GitHub (sem login), as atualizadas por último primeiro. Devolve (itens, completa)."""
+    url = "https://api.github.com/search/issues?" + urllib.parse.urlencode({"q": q, "per_page": 100, "sort": "updated", "order": "desc"})
+    req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}", "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        j = json.load(r)
+    itens = j.get("items") or []
+    return itens, len(itens) >= int(j.get("total_count") or 0)
+
+
+def gh_resumo(it):
+    labels = {str(l.get("name", "")).lower() for l in it.get("labels") or []}
+    resolvida = it.get("state") == "closed" and it.get("state_reason") == "completed"
+    fora = it.get("state") == "closed" and not resolvida
+    return {"n": int(it["number"]), "labels": labels, "autor": str((it.get("user") or {}).get("login", "")).lower(),
+            "resp": {str(a.get("login", "")).lower() for a in it.get("assignees") or []},
+            "entrou": not fora and (resolvida or "no beta" in labels), "beta": not fora and not resolvida and "no beta" in labels,
+            "fora": fora, "titulo": str(it.get("title", ""))[:120]}
 
 
 def contrib_issues(usuario):
-    q = f"repo:{DONO}/ganbatte is:issue author:{usuario} reason:completed"
-    url = "https://api.github.com/search/issues?" + urllib.parse.urlencode({"q": q, "per_page": 100})
-    req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}", "Accept": "application/vnd.github+json"})
-    with urllib.request.urlopen(req, timeout=10) as r:
-        itens = json.load(r).get("items") or []
+    """Bugs e ideias do jogador que já entraram no beta e rendem a recompensa de quem relatou."""
+    if usuario.lower() == DONO.lower():
+        return {}
     out = {}
-    for it in itens:
-        if str((it.get("user") or {}).get("login", "")).lower() != usuario.lower() or it.get("state_reason") != "completed":
+    for it in gh_busca(f"repo:{DONO}/ganbatte is:issue author:{usuario}")[0]:
+        r = gh_resumo(it)
+        if r["autor"] != usuario.lower() or not r["entrou"] or "sem recompensa" in r["labels"]:
             continue
-        labels = {str(l.get("name", "")).lower() for l in it.get("labels") or []}
-        tipo = "bug" if "bug" in labels else "ideia" if "enhancement" in labels else None
-        if tipo and "sem recompensa" not in labels:
-            out[str(it["number"])] = {"tipo": tipo, "titulo": str(it.get("title", ""))[:120]}
+        if r["n"] not in CONTRIB_LEGADO and usuario.lower() in r["resp"]:
+            continue   # fez a própria issue: ganha pela tarefa de dev (#97)
+        tipo = "bug" if "bug" in r["labels"] else "ideia" if "enhancement" in r["labels"] else None
+        if tipo:
+            out[str(r["n"])] = {"tipo": tipo, "titulo": r["titulo"], **({"beta": True} if r["beta"] else {})}
     return out
 
 
+def dev_issues(usuario):
+    """Issues com o jogador como responsável (fora as do legado): estado e esforço de cada uma. Devolve (issues, completa)."""
+    itens, completa = gh_busca(f"repo:{DONO}/ganbatte is:issue assignee:{usuario}")
+    out = {}
+    for it in itens:
+        r = gh_resumo(it)
+        if r["n"] in CONTRIB_LEGADO or usuario.lower() not in r["resp"]:
+            continue
+        esf = next((v for k, v in ESFORCO.items() if k in r["labels"]), None)
+        out[str(r["n"])] = {"titulo": r["titulo"], "esf": esf, "estado": "fora" if r["fora"] else "entrou" if r["entrou"] else "aberta"}
+    return out, completa
+
+
+def projeto_dev():
+    """Onde a tarefa de dev entra: a expedição aberta chamada Ganbatte (estado.json → expedicoes, pelo nome ou pelo slug),
+    como tarefa solta dela; sem nenhuma, o projeto +ganbatte."""
+    exps = ler_json("estado.json", {}).get("expedicoes")
+    for slug, e in (exps.items() if isinstance(exps, dict) else []):
+        if isinstance(e, dict) and not e.get("fim") and re.fullmatch(r"[a-z0-9-]{1,40}", slug) \
+                and "ganbatte" in (str(e.get("n", "")).lower().split() + [slug]):
+            return f"+exp.{slug}"
+    return "+ganbatte"
+
+
+def linha_dev(n, titulo, esf, proj="+ganbatte"):
+    t = re.sub(r"(^|\s)[+@]+", r"\1", " ".join(str(titulo).split()))   # o título não vira projeto, contexto nem chave:valor
+    t = re.sub(r"(?<=\w):(?=\S)", ": ", t)
+    return f"Issue #{n}: {t} {proj} gh:{n}" + (f" esf:{esf}" if esf else "")
+
+
+def com_esf(linha, esf):
+    if not esf:
+        return linha
+    return re.sub(r"(?<=\s)esf:\S+", f"esf:{esf}", linha) if re.search(r"(?<=\s)esf:\S+", linha) else f"{linha} esf:{esf}"
+
+
+def dev_tarefas(dev, achadas, completa):
+    """Cria, acompanha e conclui as tarefas de dev no todo.txt. dev (contrib.json → dev) guarda, por issue, o último esforço
+    visto e os dias em que a tarefa foi criada e concluída: apagada pelo jogador, não volta. Chamar com o lock."""
+    linhas, d, mudou, proj = ler(), hoje().isoformat(), False, projeto_dev()
+    aberta = lambda n: next((i for i, l in enumerate(linhas) if f"gh:{n}" in l.split() and not DONE_RE.match(l)), None)
+    for n, i in achadas.items():
+        e = dev.get(n)
+        esf = i["esf"] or (e or {}).get("esf")
+        k = aberta(n)
+        if i["estado"] == "fora":   # recusada ou repetida antes de entrar no beta: a tarefa aberta sai
+            if k is not None:
+                linhas.pop(k)
+                mudou = True
+                log(f"dev: issue #{n} fechada sem entrar, tarefa tirada")
+            dev.pop(n, None)
+        elif i["estado"] == "aberta":
+            if e is None:
+                inserir(linhas, linha_dev(n, i["titulo"], esf, proj))
+                dev[n] = {"criada": d}
+                mudou = True
+                log(f"dev: issue #{n} com você, tarefa criada")
+            elif k is not None and com_esf(linhas[k], esf) != linhas[k]:
+                linhas[k] = com_esf(linhas[k], esf)
+                mudou = True
+        elif not (e or {}).get("feita"):   # entrou no beta
+            if k is not None:
+                linhas[k] = transformar(com_esf(linhas[k], esf), "done")
+            elif e is None:   # entrou antes de o jogo ver: a tarefa já entra concluída
+                inserir(linhas, f"x {d} {linha_dev(n, i['titulo'], esf, proj)}")
+            if k is not None or e is None:
+                mudou = True
+                log(f"dev: issue #{n} no beta, tarefa concluída")
+            dev[n] = {**(e or {"criada": d}), "feita": d}
+        if esf and n in dev:
+            dev[n]["esf"] = esf
+    if completa:   # tirou o jogador de responsável: a tarefa aberta sai (só com a busca inteira, para não tirar por paginação)
+        for n in [n for n, e in dev.items() if n not in achadas and not e.get("feita")]:
+            k = aberta(n)
+            if k is not None:
+                linhas.pop(k)
+                mudou = True
+                log(f"dev: issue #{n} saiu de você, tarefa tirada")
+            dev.pop(n)
+    if mudou:
+        gravar(linhas)
+
+
 def contrib_atualiza(usuario):
-    """Confere as issues resolvidas (no máximo a cada 6 h). Cada uma ganha o dia em que o jogo a viu fechada pela primeira vez:
-    o XP entra nesse dia, sem mexer nos dias passados. Roda numa thread."""
+    """Confere as contribuições e as tarefas de dev. Cada contribuição ganha o dia em que o jogo a viu no beta pela primeira
+    vez: o XP entra nesse dia, sem mexer nos dias passados. Roda numa thread (ou na hora, pelo botão). Devolve o erro ou ""."""
     try:
         achadas = contrib_issues(usuario)
+        dev, completa = dev_issues(usuario)
         with lock:
             cache = ler_json("contrib.json", {})
             if cache.get("usuario") != usuario:
-                cache = {"usuario": usuario, "issues": {}}
+                cache = {"usuario": usuario, "issues": {}, "dev": {}}
             iss = cache.get("issues") or {}
             for n, i in achadas.items():
                 if n not in iss:
                     iss[n] = {**i, "dia": hoje().isoformat()}
-                    log(f"contribuição: issue #{n} resolvida ({i['tipo']}), recompensa creditada")
+                    log(f"contribuição: issue #{n} no beta ({i['tipo']}), recompensa creditada")
             cache["issues"] = iss
+            cache["dev"] = cache.get("dev") or {}
+            dev_tarefas(cache["dev"], dev, completa)
             gravar_json("contrib.json", cache)
+        return ""
     except Exception as e:   # sem internet ou limite da API do GitHub: fica o que estava
         log("contribuições:", e)
+        return str(e)
     finally:
         contrib_vivo["t"] = time.time()
         contrib_vivo["rodando"] = False
 
 
-def contrib_leitura(j):
+def gh_usuario(j):
     gh = j.get("github")
     usuario = str(gh.get("usuario", "")) if isinstance(gh, dict) else ""
-    if not HANDLE.match(usuario) or usuario.lower() == DONO.lower():
+    return usuario if HANDLE.match(usuario) else ""
+
+
+def contrib_leitura(j):
+    usuario = gh_usuario(j)
+    if not usuario:
         return None
-    if time.time() - contrib_vivo["t"] > 6 * 3600 and not contrib_vivo["rodando"]:
+    if time.time() - contrib_vivo["t"] > CONTRIB_SEG and not contrib_vivo["rodando"]:
         contrib_vivo["rodando"] = True
         threading.Thread(target=contrib_atualiza, args=(usuario,), daemon=True).start()
     cache = ler_json("contrib.json", {})
     if cache.get("usuario") != usuario:
         return {"usuario": usuario, "issues": []}
     return {"usuario": usuario, "issues": [{"n": int(n), **i} for n, i in sorted((cache.get("issues") or {}).items(), key=lambda x: int(x[0]))]}
+
+
+def api_contrib(d):
+    """Botão "conferir agora" (Configurações): confere o GitHub na hora, no máximo uma vez por minuto."""
+    usuario = gh_usuario(jogador())
+    if not usuario:
+        raise Erro("ponha o seu usuário do GitHub em Configurações")
+    if contrib_vivo["rodando"]:
+        raise Erro("já estou conferindo, espere um pouco")
+    if time.time() - contrib_vivo["t"] < CONTRIB_BOTAO:
+        return {"ok": True, "cedo": True}
+    contrib_vivo["rodando"] = True
+    erro = contrib_atualiza(usuario)
+    if erro:
+        raise Erro("não consegui falar com o GitHub (sem internet ou limite de consultas); tente daqui a pouco", 502)
+    return {"ok": True}
 
 
 # ---------- jogo: leitura e as três gravações ----------
@@ -963,7 +1125,7 @@ def api_jogo_get():
     return {"ok": True, "hoje": hoje().isoformat(), "todo": todo, "done": done, "avaliacoes": ler_txt("avaliacoes.txt"),
             "notas": ler_txt("notas.txt"), "ajustes": ler_txt("ajustes.txt"), "estado": estado if isinstance(estado, dict) else {},
             "cf": cf, "duo": duo, "contrib": contrib, "avatares": avatares(), "narradas": narradas if isinstance(narradas, list) else [], "jogador": j,
-            "conquistas": conquistas if isinstance(conquistas, list) else [], "temporadas": temporadas(),
+            "conquistas": conquistas if isinstance(conquistas, list) else [], "temporadas": temporadas(), "colecao": colecao(),
             "servidor": {"versao": VERSAO, "nome": VERSAO_NOME, "sistema": sistema(), "auto": auto_ligado(), "fundo": EXEC["fundo"], "dados": str(DADOS),
                          "canal": canal(), "metodo": metodo_atualizar()}}
 
@@ -1070,7 +1232,7 @@ def devolve_filtra(e):
         e["bought"][sem] = [k for k in e["bought"][sem] if k not in fe]
 
 
-RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas e expedições (web/motor.js)
+RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes", "travas")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas, expedições e a imagem travada dos chefões derrotados (#33)
 
 
 def api_jogo_estado(d):
@@ -1080,7 +1242,7 @@ def api_jogo_estado(d):
     ok = {"spent": (int, float), "cofreUsado": (int, float), "own": list, "resg": list, "bought": dict, "usados": dict, "usos": list,
           "equip": dict, "tour": dict, "premios": list, "cofreMes": (int, float), "visto": str,
           "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict, "cacadas": dict, "expedicoes": dict, "compras": list,
-          "migra": dict, "tenRec": (int, float), "devolve": dict}   # acerto da 0.6.4 (web/motor.js: rec.migra, rec.tenRec) e a devolução (#51)
+          "migra": dict, "tenRec": (int, float), "devolve": dict, "travas": dict}   # acerto da 0.6.4 (web/motor.js: rec.migra, rec.tenRec) e a devolução (#51)
     for k, v in e.items():
         if k not in ok or not isinstance(v, ok[k]):
             raise Erro(f"campo inválido no estado: {k}")
@@ -1090,6 +1252,8 @@ def api_jogo_estado(d):
             raise Erro("prêmio inválido: precisa de nome (até 80 letras) e preço")
     if len(e.get("premios", [])) > 60 or e.get("cofreMes", 0) < 0:
         raise Erro("prêmios demais (máx. 60) ou cofre negativo")
+    if not all(isinstance(v, str) and len(k) <= 60 and len(v) <= 60 for k, v in e.get("travas", {}).items()):   # "TEMPORADA:SIGLA": id do retrato ou "" (o ícone padrão)
+        raise Erro("trava de chefão inválida")
     for c in e.get("compras", []):   # registro de compras (relatório de balanceamento): {d, h, tipo, id, j}
         if not (isinstance(c, dict) and re.fullmatch(r"\d{4}-\d\d-\d\d", str(c.get("d", ""))) and isinstance(c.get("h", ""), str)
                 and c.get("tipo") in ("cos", "feitico", "premio") and isinstance(c.get("id"), str) and len(c["id"]) <= 60
@@ -1099,7 +1263,7 @@ def api_jogo_estado(d):
         antigo = ler_json("estado.json", {})
         for k in RECIBOS:   # recibos da carteira: uma aba antiga aberta não apaga o que outra já gravou
             if isinstance(antigo, dict) and isinstance(antigo.get(k), dict):
-                e[k] = {**antigo[k], **e.get(k, {})}
+                e[k] = {**e.get(k, {}), **antigo[k]} if k == "travas" else {**antigo[k], **e.get(k, {})}   # trava de chefão: vale a primeira
                 if k == "xpDias":   # XP de um dia fechado só sobe
                     e[k] = {d: max(v, antigo[k][d]) if isinstance(v, (int, float)) and isinstance(antigo[k].get(d), (int, float)) else v
                             for d, v in e[k].items()}
@@ -1160,10 +1324,93 @@ def api_temporada(d):
     return {"ok": True, "guardada": True}
 
 
+# ---------- coleção permanente (#33) ----------
+# O que o jogador compra fica em colecao/ da pasta de dados, separado da loja: colecao.json com uma cópia de cada item (nome,
+# categoria, como equipar, de onde veio e quando) e colecao/arquivos/ com a imagem dele (foto de perfil, retrato de chefão).
+# Só acrescenta: nada aqui é apagado ou trocado. Assim, trocar de temporada, tirar um item da loja numa versão nova ou comprar
+# na loja do grupo (origem "grupo", #43; a loja pública segue a mesma regra) não mexe no que já é do jogador. O estado.json
+# continua com o own (compatibilidade). Rastreio: cada item tem um uid e um histórico (hist) que só cresce, com como ele chegou
+# (compra, chefao = foto liberada ao derrotar um chefão, migracao = já era do jogador antes da coleção), de onde, a temporada e
+# a Jenny. Ainda não há troca nem venda; o hist está pronto para receber esses eventos (ex.: trocado pelo grupo).
+COLECAO_CATS = {"avatar", "pal", "tex", "fx", "frame", "title", "font", "som", "full", "px", "chefe"}
+COLECAO_ORIGENS = {"masadora", "grupo"}
+COLECAO_COMO = {"compra", "chefao", "migracao"}
+COLECAO_CAMPOS = {"id": str, "cat": str, "n": str, "d": str, "p": (int, float), "origem": str, "quando": str, "img": str,
+                  "eq": dict, "fx": str, "fxs": list, "parts": list, "skin": list, "ev": (bool, int), "sw": list,
+                  "chefao": str, "como": str, "temporada": str}
+COLECAO_MAX = 2000
+ID_ITEM = re.compile(r"^[A-Za-z0-9_.-]{1,60}$")
+IMG_ITEM = re.compile(r"^(a|chefoes)/([A-Za-z0-9_-][A-Za-z0-9_.-]{0,79})\.png$")
+
+
+def colecao():
+    c = ler_json("colecao/colecao.json", {})
+    itens = c.get("itens") if isinstance(c, dict) else None
+    return {"itens": itens if isinstance(itens, dict) else {}}
+
+
+def colecao_item(x):
+    """Confere um item mandado pela página e devolve só os campos conhecidos."""
+    if not isinstance(x, dict) or not ID_ITEM.match(str(x.get("id", ""))) or x.get("cat") not in COLECAO_CATS:
+        raise Erro("item inválido na coleção")
+    it = {k: v for k, v in x.items() if k in COLECAO_CAMPOS and isinstance(v, COLECAO_CAMPOS[k])}
+    if not 0 < len(it.get("n", "")) <= 80 or len(it.get("d", "")) > 300 or it.get("origem", "masadora") not in COLECAO_ORIGENS:
+        raise Erro("item inválido na coleção: nome, descrição ou origem")
+    if "quando" in it and not DIA.match(it["quando"]):
+        raise Erro("item inválido na coleção: data")
+    if it.get("como", "compra") not in COLECAO_COMO or len(it.get("temporada", "")) > 40:
+        raise Erro("item inválido na coleção: como ou temporada")
+    if "img" in it and not IMG_ITEM.match(it["img"]):
+        del it["img"]
+    if len(json.dumps(it, ensure_ascii=False)) > 3000:
+        raise Erro("item grande demais na coleção")
+    return it
+
+
+def api_colecao(d):
+    """Guarda na coleção os itens que ainda não estão nela, com a imagem copiada de web/. Quem já está fica como está."""
+    itens = d.get("itens")
+    if not isinstance(itens, list) or len(itens) > 400:
+        raise Erro("lista de itens inválida")
+    novos = [colecao_item(x) for x in itens]
+    with lock:
+        c = colecao()
+        for it in novos:
+            if it["id"] in c["itens"] or len(c["itens"]) >= COLECAO_MAX:
+                continue
+            it.setdefault("origem", "masadora")
+            it.setdefault("quando", hoje().isoformat())
+            it.setdefault("como", "compra")
+            it["uid"] = os.urandom(6).hex()
+            it["hist"] = [{k: it[k] for k in ("quando", "como", "origem", "temporada", "p") if k in it}]
+            m = IMG_ITEM.match(it.get("img", ""))
+            if m and (WEB / it["img"]).is_file():
+                arq = f"{m.group(1)}-{m.group(2)}.png"
+                (DADOS / "colecao" / "arquivos").mkdir(parents=True, exist_ok=True)
+                if not (DADOS / "colecao" / "arquivos" / arq).is_file():
+                    shutil.copyfile(WEB / it["img"], DADOS / "colecao" / "arquivos" / arq)
+                it["arquivo"] = arq
+            c["itens"][it["id"]] = it
+        (DADOS / "colecao").mkdir(parents=True, exist_ok=True)
+        gravar_json("colecao/colecao.json", c)
+    return {"ok": True, "colecao": c}
+
+
 CONQ_REGRAS = {"contagem", "sequencia", "nota", "constancia", "semana"}
 CONQ_VAGAS = {"D": 4, "C": 3, "B": 2, "A": 1}   # abertas (não resgatadas) por rank: fácil, média, difícil, lendária (o mesmo do motor.js)
 CONQ_MAX = sum(CONQ_VAGAS.values())
 CONQ_RANKS = {"D", "C", "B", "A"}
+CONQ_METAS = {"D": (7, 14, 2, 2, 8), "C": (14, 35, 4, 4, 9), "B": (30, 90, 6, 8, 9.5), "A": (60, 180, 8, 12, 10)}
+
+
+def conq_alvo(c):
+    if c.get("regra") == "contagem":
+        return ("contagem", c.get("palavra", ""), c.get("disc", ""), c.get("tipo", ""), bool(c.get("prazo")))
+    if c.get("regra") == "sequencia":
+        return ("sequencia", c.get("hab"))
+    if c.get("regra") == "nota":
+        return ("nota", c.get("disc"))
+    return (c.get("regra"),)
 
 
 def conq_item(p):
@@ -1193,6 +1440,29 @@ def conq_item(p):
         raise Erro("a conquista precisa de nome (até 60 letras) e texto de até 400")
     if p.get("rk") not in CONQ_RANKS:
         raise Erro("rank inválido")
+    if "versao" in p:
+        if type(p["versao"]) is not int or p["versao"] != 2:
+            raise Erro("versão de conquista inválida")
+        dias, tarefas, semanas, semanas_hab, nota = CONQ_METAS[p["rk"]]
+        if c["regra"] == "contagem":
+            if type(p.get("diasMin")) is not int or p["diasMin"] != dias or c.get("n", 0) < tarefas:
+                raise Erro("meta de tarefas insuficiente para esse rank")
+            c["diasMin"] = dias
+            if not any(c.get(k) for k in ("palavra", "disc", "tipo", "prazo")):
+                raise Erro("escolha pelo menos um filtro de tarefas")
+        if c["regra"] in ("sequencia", "constancia"):
+            habitos = ler_json("jogador.json", {}).get("habitos", [])
+            semanal = c["regra"] == "sequencia" and any(h.get("id") == c.get("hab") and h.get("semana") for h in habitos)
+            if type(c.get("n")) is not int or c["n"] < (semanas_hab if semanal else dias):
+                raise Erro("sequência insuficiente para esse rank")
+        if c["regra"] == "nota" and (c.get("nota") or c.get("media") or 0) < nota:
+            raise Erro("nota insuficiente para esse rank")
+        if c["regra"] == "semana":
+            if type(p.get("semanas")) is not int or not semanas <= p["semanas"] <= 20:
+                raise Erro("meta de semanas insuficiente para esse rank")
+            c["semanas"] = p["semanas"]
+        c["versao"] = 2
+        c["inicio"] = (hoje() if c["regra"] == "nota" else hoje() + timedelta(days=1)).isoformat()
     return {**c, "nome": nome, "texto": texto, "ic": p.get("ic") if p.get("ic") in ICONES else "card", "rk": p["rk"],
             "temporada": str(p.get("temporada", ""))[:40]}
 
@@ -1215,7 +1485,10 @@ def api_conquistas(d):
             prox = max([int(x["no"]) for x in lista if str(x.get("no", "")).isdigit()] + [199]) + 1
             novas = []
             for i, p in enumerate(itens):
-                novas.append({"no": str(prox + i), **conq_item(p), "criada": hoje().isoformat()})
+                c = conq_item(p)
+                if c.get("versao") == 2 and any(conq_alvo(x) == conq_alvo(c) for x in abertas + novas):
+                    raise Erro("já existe uma conquista aberta para esse alvo")
+                novas.append({"no": str(prox + i), **c, "criada": hoje().isoformat()})
             gravar_json("conquistas.json", lista + novas)
             return {"ok": True, "nos": [c["no"] for c in novas]}
         c = next((x for x in lista if x.get("no") == str(d.get("no", ""))), None)
@@ -1244,19 +1517,25 @@ GITHUB = "https://github.com/CaioParanaiba/ganbatte"
 RAW = env("RAW")   # GANBATTE_RAW: outro endereço, para testar; vazio = a branch do canal
 
 
-CANAIS = ("main", "beta", "grupo")   # estável, versões de teste e o modo em grupo (0.9.0-betaN)
+CANAIS = ("main", "beta")   # estável e versões de teste
+ANTIGOS = {"grupo": "beta"}   # canal que acabou → o que a cópia passa a seguir (a grupo entrou na beta na 0.9.0-beta2)
 
 
-def canal():
-    """Branch que esta cópia segue: a branch atual de uma cópia git, se for um dos CANAIS; senão (ZIP, outra branch) "main"."""
+def branch_atual():
+    """A branch atual de uma cópia git; "" no ZIP ou se o git falhar."""
     if metodo_atualizar() == "git":
         try:
             r = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, timeout=10)
-            if r.stdout.strip() in CANAIS:
-                return r.stdout.strip()
+            return r.stdout.strip()
         except (OSError, subprocess.SubprocessError):
             pass
-    return "main"
+    return ""
+
+
+def canal():
+    """Branch que esta cópia segue: a branch atual, se for um dos CANAIS (ou um dos ANTIGOS, que segue o novo); senão (ZIP, outra branch) "main"."""
+    b = branch_atual()
+    return b if b in CANAIS else ANTIGOS.get(b, "main")
 ATUAL = {"quando": 0.0, "remota": None, "erro": ""}
 atual_lock = threading.Lock()
 
@@ -1326,7 +1605,9 @@ def baixa_zip():
 def api_atualizar(_):
     if ia_lock.locked():
         raise Erro("a IA está trabalhando num pedido: espere terminar e tente de novo")
-    if metodo_atualizar() == "git":
+    if branch_atual() in ANTIGOS:   # a branch dela acabou: troca para a que segue agora (mesma conta do trocar canal)
+        troca_branch(canal())
+    elif metodo_atualizar() == "git":
         # sem terminal: o git não pode parar pedindo senha; e o servidor sobe sem o agente SSH,
         # então se o remoto for SSH e falhar, puxa a mesma branch pelo HTTPS público
         env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": "ssh -o BatchMode=yes"}
@@ -1352,17 +1633,8 @@ def api_atualizar(_):
     return {"ok": True}
 
 
-def api_canal(d):
-    """Versões de teste: troca a cópia git para outro dos CANAIS (main, beta, grupo) e reinicia com o código dela."""
-    alvo = d.get("canal")
-    if alvo not in CANAIS:
-        raise Erro("canal deve ser " + ", ".join(CANAIS))
-    if metodo_atualizar() != "git":
-        raise Erro("só dá para trocar de canal num jogo instalado com git; o instalado pelo ZIP fica na versão normal")
-    if ia_lock.locked():
-        raise Erro("a IA está trabalhando num pedido: espere terminar e tente de novo")
-    if canal() == alvo:
-        return {"ok": True, "igual": True}
+def troca_branch(alvo):
+    """Troca a cópia git para a branch alvo (buscando no GitHub antes), só andando para a frente."""
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": "ssh -o BatchMode=yes"}
     def git(*args, tempo=30):
         try:
@@ -1388,6 +1660,20 @@ def api_canal(d):
         raise Erro("o git não conseguiu trocar de canal" + (f" ({ult[-1]})" if ult else ""))
     with atual_lock:
         ATUAL.update(quando=0.0, remota=None, erro="")   # o próximo aviso de versão nova confere o canal novo
+
+
+def api_canal(d):
+    """Versões de teste: troca a cópia git para outro dos CANAIS (main, beta) e reinicia com o código dela."""
+    alvo = d.get("canal")
+    if alvo not in CANAIS:
+        raise Erro("canal deve ser " + ", ".join(CANAIS))
+    if metodo_atualizar() != "git":
+        raise Erro("só dá para trocar de canal num jogo instalado com git; o instalado pelo ZIP fica na versão normal")
+    if ia_lock.locked():
+        raise Erro("a IA está trabalhando num pedido: espere terminar e tente de novo")
+    if branch_atual() == alvo:
+        return {"ok": True, "igual": True}
+    troca_branch(alvo)
     log(f"canal trocado para {alvo} pela página: reiniciando")
     def reinicia():
         EXEC["recarregar"] = True
@@ -1417,7 +1703,9 @@ AGENTES = {
     "claude": {"nome": "Claude Code", "login": "claude   (na primeira vez ele pede o login)"},
     "codex": {"nome": "Codex", "login": "codex login"},
     "gemini": {"nome": "Gemini CLI", "login": "gemini   (na primeira vez ele pede o login)"},
+    "agy": {"nome": "Antigravity CLI", "login": "agy   (na primeira vez ele pede o login)"},
 }
+PEDIDO_ARQ = ".pedido.txt"   # o agy não lê a entrada padrão: o pedido vai num arquivo da pasta temporária
 IA_TEMPO = 600   # segundos por pedido
 PLANO_EXT = {".pdf", ".html", ".htm", ".txt", ".md", ".docx"}
 NOME_PLANO = re.compile(r"^[\w .()\-]{1,80}$")
@@ -1507,18 +1795,31 @@ def api_ia_config(d):
 
 
 def comando_agente(ag, exe, pasta, saida, leve=False):
-    """Linha de comando de cada agente, sem permissão de escrita. O pedido vai pela entrada padrão.
-    leve: pedido pequeno (tipo de uma tarefa), com o modelo mais barato e rápido de cada um."""
+    """Linha de comando de cada agente, sem permissão de escrita. O pedido vai pela entrada padrão (no agy, em PEDIDO_ARQ).
+    leve: pedido pequeno (tipo de uma tarefa), com o modelo mais barato e rápido de cada um (no agy, o modelo de sempre:
+    os nomes dele mudam a cada versão e um nome velho faz o pedido falhar)."""
     if ag == "claude":
         return [exe, "-p", "--tools", "Read", "--permission-mode", "dontAsk", "--no-session-persistence", "--strict-mcp-config"] + (["--model", "haiku"] if leve else [])
     if ag == "codex":
         return [exe, "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--color", "never", "--cd", pasta, "--output-last-message", saida]\
             + (["-c", 'model_reasoning_effort="low"'] if leve else []) + ["-"]
+    if ag == "agy":   # --mode plan: só lê (sem ele, o agy grava arquivos na pasta)
+        return [exe, "--mode", "plan", "-p", f"O pedido está no arquivo {PEDIDO_ARQ}, na pasta {pasta}. Leia-o inteiro e responda "
+                "seguindo as regras dele. Não rode comandos nem crie arquivos."]
     return [exe, "-p", "Responda ao pedido acima, seguindo as regras dele."] + (["-m", "gemini-2.5-flash"] if leve else [])
 
 
 def explica_erro(ag, saida):
-    s = " ".join(saida.split())[-400:]
+    tudo = " ".join(saida.split())
+    s = tudo[-400:]
+    if re.search(r"no longer supported|IneligibleTier|migrate to the Antigravity", tudo, re.I):   # vem antes do rastro de erro
+        return ("O Google não aceita mais o Gemini CLI com conta pessoal gratuita. Instale o Antigravity CLI (agy), entre na "
+                "conta rodando agy no terminal e escolha-o aqui em Configurações → IA.")
+    if re.search(r"not running in a trusted directory", tudo, re.I):
+        return ("O Gemini CLI recusou a pasta temporária do jogo (pasta não confiável). Atualize o Gemini CLI "
+                "(npm install -g @google/gemini-cli) e tente de novo. Mensagem: " + s)
+    if re.search(r"headless mode cannot prompt|denied_actions", tudo, re.I):
+        return f"O {AGENTES[ag]['nome']} tentou usar uma ferramenta sem permissão e parou sem responder. Tente de novo."
     if re.search(r"log ?in|logged|auth|credential|api key|401|403|unauthorized", s, re.I):
         return f"Parece que falta entrar na conta do {AGENTES[ag]['nome']}. Rode no terminal: {AGENTES[ag]['login']}. Mensagem: {s}"
     return s or "o agente terminou sem responder"
@@ -1536,7 +1837,11 @@ def ia_executa(tid, ag, exe, pedido, anexos, leve):
                 pedido += "\n\n" + (f"O arquivo {anexos[0]} está na pasta atual: leia-o." if len(anexos) == 1
                                      else "Os arquivos estão na pasta atual: " + ", ".join(anexos) + ". Leia-os.")
             saida = str(Path(pasta) / ".resposta.txt")
-            env = dict(os.environ, PATH=os.pathsep.join([str(Path(exe).parent), path_agentes()]))
+            if ag == "agy":
+                Path(pasta, PEDIDO_ARQ).write_text(pedido, encoding="utf-8")
+                pedido = ""
+            # GEMINI_CLI_TRUST_WORKSPACE: o Gemini CLI só roda sem perguntar em pasta confiável, e a temporária é nova a cada pedido
+            env = dict(os.environ, PATH=os.pathsep.join([str(Path(exe).parent), path_agentes()]), GEMINI_CLI_TRUST_WORKSPACE="true")
             r = subprocess.run(comando_agente(ag, exe, pasta, saida, leve), input=pedido, capture_output=True, text=True, encoding="utf-8",
                                errors="replace", cwd=pasta, env=env, timeout=IA_TEMPO)
             texto = Path(saida).read_text(encoding="utf-8") if ag == "codex" and Path(saida).exists() else r.stdout
@@ -1603,6 +1908,521 @@ def api_ia_plano(d):
     return {"ok": True, "nome": nome, "planos": planos()}
 
 
+# ---------- modo em grupo (0.9, #38–#40): o jogo conversa com o servidor do grupo (grupo/servidor_grupo.py) ----------
+# A página calcula o resumo dos dias (motor.js → resumoGrupo: só números e os hábitos do grupo) e este servidor manda ao do
+# grupo só os dias novos ou que mudaram. O token fica aqui, nunca na página. Na pasta de dados (só acrescenta):
+#   grupo.json    lista dos grupos em que o jogador está: {url, id, nome, membro, token, admin, publico?, entrou, vinculos?}
+#                 vinculos = {hábito do grupo: id do hábito pessoal} (#41): o nome do pessoal nunca sai daqui
+#   enviado.json  {"url|id": {dia: assinatura}}: o que já chegou ao servidor (o resto vai na próxima sincronização)
+#   grupo/        o último placar de cada grupo, para a aba continuar mostrando quando o servidor está fora do ar
+GRUPO_PORTA = 8643
+GRUPO_APP = "ganbatte-grupo"
+PROTOCOLO_GRUPO = 1
+LINK_GRUPO = re.compile(r"^(https?://[^/\s#?]+)/g/([a-z0-9][a-z0-9-]{1,30})/?#([A-Za-z0-9]{6,12})$")
+LINK_NOVO = re.compile(r"^(https?://[^/\s#?]+)/g/([a-z0-9][a-z0-9-]{1,30})/?$")   # o grupo mudou de computador (#91): o link sem código
+ENDERECO_GRUPO = re.compile(r"^https?://[^/\s#?]+$")
+
+
+class GrupoFora(Erro):
+    """O servidor do grupo não respondeu (sem internet, Funnel desligado, notebook do host dormindo)."""
+
+
+class GrupoMudou(Erro):
+    """O grupo foi para outro computador (#91): o servidor antigo responde 410 com o endereço novo."""
+    def __init__(self, msg, para):
+        super().__init__(msg, 410)
+        self.para = para
+
+
+def grupo_pasta_servidor():
+    return Path(env("GRUPO_DADOS") or Path.home() / ".ganbatte-grupo")
+
+
+def grupo_local():
+    return f"http://127.0.0.1:{int(env('GRUPO_PORTA') or GRUPO_PORTA)}"
+
+
+def grupo_pede(url, metodo, rota, corpo=None, token="", tempo=15, bruto=False, arquivo=None):
+    h = {"User-Agent": f"{APP}/{VERSAO}", "Content-Type": "application/octet-stream" if arquivo is not None else "application/json"}
+    if token:
+        h["Authorization"] = "Bearer " + token
+    dados = arquivo if arquivo is not None else None if corpo is None else json.dumps(corpo).encode()
+    req = urllib.request.Request(url.rstrip("/") + rota, data=dados, method=metodo, headers=h)
+    try:
+        with urllib.request.urlopen(req, timeout=tempo) as r:
+            return r.read() if bruto else json.load(r)
+    except urllib.error.HTTPError as e:
+        try:
+            j = json.load(e)
+            msg = j.get("error") or ""
+        except ValueError:
+            j, msg = {}, ""
+        if e.code == 410 and ENDERECO_GRUPO.match(str(j.get("mudou") or "")):
+            raise GrupoMudou(msg, j["mudou"])
+        if not msg or e.code in (502, 503, 504):   # o túnel respondeu, mas o servidor do grupo atrás dele não
+            raise GrupoFora(f"o servidor do grupo não respondeu ({e.code})", 502)
+        raise Erro(msg, e.code if e.code in (401, 403, 404, 409, 426, 429) else 400)
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        raise GrupoFora(f"o servidor do grupo está fora do ar ({getattr(e, 'reason', e)})", 502)
+
+
+def grupos():
+    g = ler_json("grupo.json", [])
+    return [x for x in g if isinstance(x, dict) and x.get("url") and x.get("id")] if isinstance(g, list) else []
+
+
+def chave_grupo(g):
+    return f"{g['url']}|{g['id']}"
+
+
+def arquivo_placar(g):
+    return DADOS / "grupo" / (re.sub(r"[^a-z0-9]+", "-", g["url"].lower().split("//", 1)[-1]).strip("-") + "--" + g["id"] + ".json")
+
+
+def grupo_da(chave):
+    g = next((x for x in grupos() if chave_grupo(x) == chave), None)
+    if not g:
+        raise Erro("grupo não encontrado neste jogo")
+    return g
+
+
+def muda_grupo(g, novo):
+    """Passa o grupo g para o endereço novo (#91), depois de conferir que o servidor de lá conhece o seu token. A chave muda
+    junto, então o enviado.json começa do zero para ela e a próxima sincronização manda a temporada inteira ao servidor novo."""
+    novo = novo.rstrip("/")
+    for _ in range(3):   # mudou duas vezes seguidas: segue o aviso do servidor do meio
+        try:
+            p = grupo_pede(novo, "GET", f"/g/{g['id']}/placar", token=g["token"])
+            break
+        except GrupoMudou as e:
+            novo = e.para.rstrip("/")
+        except GrupoFora:
+            raise GrupoFora(f"o grupo mudou para {novo}, que ainda não respondeu", 502)
+        except Erro as e:
+            if e.code in (401, 403, 404):
+                raise Erro(f"o servidor novo ({novo}) não reconhece o seu acesso a este grupo: peça um reconvite a um admin", e.code)
+            raise
+    else:
+        raise Erro("o grupo mudou de servidor várias vezes seguidas; peça o link novo a um admin")
+    with lock:
+        lista = grupos()
+        for x in lista:
+            if chave_grupo(x) == chave_grupo(g):
+                x["url"] = novo
+                x.pop("publico", None)
+                x["nome"] = p.get("grupo", {}).get("nome") or x.get("nome")
+                novo_g = x
+        gravar_json("grupo.json", lista)
+        env_ = ler_json("enviado.json", {})
+        env_.pop(chave_grupo(g), None)
+        gravar_json("enviado.json", env_)
+    velho = arquivo_placar(g)
+    if velho.exists():
+        velho.unlink()
+    p["recebido"] = time.time()
+    f = arquivo_placar(novo_g)
+    f.parent.mkdir(exist_ok=True)
+    f.write_text(json.dumps(p, ensure_ascii=False), encoding="utf-8")
+    log(f"grupo {g['id']} mudou de servidor: {novo}")
+    return novo_g
+
+
+def pede_g(g, metodo, rota, corpo=None):
+    """grupo_pede com o token do grupo g, seguindo o aviso de mudança de computador (g é atualizado no lugar)."""
+    try:
+        return grupo_pede(g["url"], metodo, rota, corpo, g["token"], tempo=30)
+    except GrupoMudou as e:
+        g.update(muda_grupo(g, e.para))
+        return grupo_pede(g["url"], metodo, rota, corpo, g["token"], tempo=30)
+
+
+def api_grupo_get():
+    lista = []
+    for g in grupos():
+        p = ler_json_arquivo(arquivo_placar(g))
+        lista.append({"chave": chave_grupo(g), "id": g["id"], "nome": g.get("nome") or g["id"], "admin": bool(g.get("admin")),
+                      "convite": (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}", "placar": p, "vinculos": vinculos_de(g)})
+    return {"ok": True, "grupos": lista, "host": (grupo_pasta_servidor() / "dono.token").is_file()}
+
+
+def ler_json_arquivo(f):
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def entra_grupo(url, gid, codigo, nome, avatar, publico=""):
+    r = grupo_pede(url, "POST", f"/g/{gid}/entrar", {"codigo": codigo, "nome": nome, "avatar": avatar})
+    with lock:
+        lista = [x for x in grupos() if not (x["url"] == url and x["id"] == gid)]
+        novo = {"url": url, "id": gid, "nome": r["grupo"]["nome"], "membro": r["membro"], "token": r["token"], "admin": r["admin"],
+                "entrou": hoje().isoformat()}
+        if publico:
+            novo["publico"] = publico
+        gravar_json("grupo.json", lista + [novo])
+        env_ = ler_json("enviado.json", {})
+        env_.pop(f"{url}|{gid}", None)   # perfil novo ou reconvite: manda a temporada inteira de novo
+        gravar_json("enviado.json", env_)
+    return {"ok": True, "chave": f"{url}|{gid}", "nome": r["grupo"]["nome"], "admin": r["admin"]}
+
+
+def nome_publico(d):
+    j = jogador()
+    nome = " ".join(str(d.get("nome") or j.get("nick") or j.get("nome") or "").split())[:40]
+    if not nome:
+        raise Erro("escreva o seu nome no jogo (Configurações) antes de entrar num grupo")
+    av = str(d.get("avatar") or "")
+    return nome, (av if NOME_AV.match(av) and (WEB / "a" / f"{av}.png").is_file() else "")
+
+
+def api_grupo_entrar(d):
+    """{link: https://endereco/g/ID#CODIGO, nome?, avatar?}: o link do convite, colado em Configurações → grupo."""
+    link = str(d.get("link", "")).strip()
+    n = LINK_NOVO.match(link)
+    if n:
+        return novo_endereco(n.group(1), n.group(2))
+    m = LINK_GRUPO.match(link)
+    if not m:
+        raise Erro("link de convite inválido: copie o link inteiro, do https:// até o código depois do #")
+    nome, av = nome_publico(d)
+    url, publico = m.group(1), ""
+    if ping_grupo() and url.split("//", 1)[1].split(":")[0] == tailscale_nome():
+        url, publico = grupo_local(), url   # convite do servidor desta máquina: fala com ele direto, sem dar a volta pela internet
+    return entra_grupo(url, m.group(2), m.group(3).upper(), nome, av, publico)
+
+
+def novo_endereco(url, gid):
+    """O link do grupo sem código (#91): o servidor do grupo foi para outro computador e o aviso não chegou a este jogo (a
+    máquina antiga já não liga). Troca o endereço e mantém o perfil, se o servidor novo conhece o token."""
+    meus = [x for x in grupos() if x["id"] == gid]
+    if not meus:
+        raise Erro("esse link é de um grupo em que você não está: falta o código do convite depois do #")
+    if ping_grupo() and url.split("//", 1)[1].split(":")[0] == tailscale_nome():
+        url = grupo_local()   # o servidor novo é esta máquina
+    g = next((x for x in meus if x["url"] != url), meus[0])
+    novo = muda_grupo(g, url)
+    return {"ok": True, "chave": chave_grupo(novo), "nome": novo.get("nome") or gid, "admin": bool(novo.get("admin")), "mudou": True}
+
+
+def api_grupo_sair(d):
+    g = grupo_da(d.get("chave"))
+    try:
+        pede_g(g, "POST", f"/g/{g['id']}/sair", {})
+    except Erro as e:
+        if not isinstance(e, GrupoFora) and e.code != 401:
+            raise   # ex.: o único admin precisa passar o poder antes
+    with lock:
+        gravar_json("grupo.json", [x for x in grupos() if chave_grupo(x) != chave_grupo(g)])
+        env_ = ler_json("enviado.json", {})
+        env_.pop(chave_grupo(g), None)
+        gravar_json("enviado.json", env_)
+    f = arquivo_placar(g)
+    if f.exists():
+        f.unlink()
+    return {"ok": True}
+
+
+def vinculos_de(g):
+    v = g.get("vinculos")
+    return {k: p for k, p in v.items() if isinstance(p, str) and p} if isinstance(v, dict) else {}
+
+
+def envio_do_grupo(x, cat, vinc):
+    """Um dia do resumo como este grupo o recebe (#41): o Codeforces se está no catálogo e, de cada hábito de vínculo, 1 se o
+    pessoal ligado a ele foi feito no dia. O `pes` (os ids dos hábitos pessoais) fica aqui."""
+    hab, pes, out = x.get("hab") or {}, x.get("pes") or {}, {}
+    for h in cat:
+        if h.get("fonte") == "automatico":
+            if h["id"] in hab:
+                out[h["id"]] = hab[h["id"]]
+        elif vinc.get(h["id"]):
+            out[h["id"]] = 1 if pes.get(vinc[h["id"]]) else 0
+    return {**{k: v for k, v in x.items() if k != "pes"}, "hab": out}
+
+
+def assinatura(dia):
+    return hashlib.sha1(json.dumps(dia, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def api_grupo_sincronizar(d):
+    """{resumo} (motor.js → resumoGrupo): manda a cada grupo os dias novos ou que mudaram e traz o placar. Fora do ar, o
+    placar guardado volta com offline; o que não foi fica para a próxima (enviado.json só marca o que o servidor recebeu)."""
+    r = d.get("resumo") or {}
+    dias = r.get("dias")
+    if not isinstance(dias, list):
+        raise Erro("resumo inválido")
+    out = {}
+    for g in grupos():
+        k = chave_grupo(g)
+        try:
+            try:
+                out[k] = sincroniza_grupo(g, dias)
+            except GrupoMudou as e:
+                out.pop(k, None)
+                g = muda_grupo(g, e.para)
+                k = chave_grupo(g)
+                out[k] = dict(sincroniza_grupo(g, dias), mudou=True)
+        except GrupoFora as e:
+            out[k] = {"placar": ler_json_arquivo(arquivo_placar(g)), "offline": True, "erro": str(e)}
+        except Erro as e:
+            out[k] = {"placar": ler_json_arquivo(arquivo_placar(g)), "erro": str(e), "sem_acesso": e.code == 401}
+    return {"ok": True, "grupos": out}
+
+
+def sincroniza_grupo(g, dias):
+    """Um grupo da sincronização: manda os dias novos ou que mudaram e traz o placar."""
+    k = chave_grupo(g)
+    with lock:
+        feito = ler_json("enviado.json", {}).get(k, {})
+    p = ler_json_arquivo(arquivo_placar(g))
+    if not p or "habitos" not in p:   # sem o catálogo ainda (grupo novo ou placar da 0.9.0-beta1): busca antes
+        p = grupo_pede(g["url"], "GET", f"/g/{g['id']}/placar", token=g["token"])
+    cat, vinc = p.get("habitos") or [], vinculos_de(g)
+    dias_g = [envio_do_grupo(x, cat, vinc) for x in dias if isinstance(x, dict)]
+    novos = [x for x in dias_g if feito.get(x.get("dia")) != assinatura(x)]
+    for i in range(0, len(novos), 400):
+        parte = novos[i:i + 400]
+        grupo_pede(g["url"], "POST", f"/g/{g['id']}/envio", {"protocolo": PROTOCOLO_GRUPO, "dias": parte}, g["token"], tempo=30)
+        with lock:
+            env_ = ler_json("enviado.json", {})
+            env_.setdefault(k, {}).update({x["dia"]: assinatura(x) for x in parte})
+            gravar_json("enviado.json", env_)
+    p = grupo_pede(g["url"], "GET", f"/g/{g['id']}/placar", token=g["token"])
+    p["recebido"] = time.time()
+    f = arquivo_placar(g)
+    f.parent.mkdir(exist_ok=True)
+    f.write_text(json.dumps(p, ensure_ascii=False), encoding="utf-8")
+    if p.get("voce", {}).get("admin") != g.get("admin") or p.get("grupo", {}).get("nome") != g.get("nome"):
+        with lock:
+            lista = grupos()
+            for x in lista:
+                if chave_grupo(x) == k:
+                    x.update(admin=p["voce"]["admin"], nome=p["grupo"]["nome"])
+            gravar_json("grupo.json", lista)
+    return {"placar": p, "enviados": len(novos)}
+
+
+def api_grupo_vinculo(d):
+    """{chave, habito, pessoal}: liga um hábito pessoal (ou o Duolingo, "duo") a um hábito de vínculo do grupo; pessoal vazio
+    desliga. Os dias mudam de assinatura, então a próxima sincronização manda a temporada de novo, já com o vínculo."""
+    g = grupo_da(d.get("chave"))
+    hid, pes = str(d.get("habito", "")), str(d.get("pessoal") or "")
+    cat = (ler_json_arquivo(arquivo_placar(g)) or {}).get("habitos") or []
+    if not any(h.get("id") == hid and h.get("fonte") == "vinculo" for h in cat):
+        raise Erro("hábito do grupo não encontrado (sincronize e tente de novo)")
+    j = jogador()
+    if pes and pes not in [h["id"] for h in habitos(j)] + (["duo"] if duo_conf(j) else []):
+        raise Erro("hábito pessoal não encontrado")
+    with lock:
+        lista = grupos()
+        for x in lista:
+            if chave_grupo(x) == chave_grupo(g):
+                v = vinculos_de(x)
+                if pes:
+                    v[hid] = pes
+                else:
+                    v.pop(hid, None)
+                x["vinculos"] = v
+        gravar_json("grupo.json", lista)
+    return {"ok": True}
+
+
+ADMIN_ACOES = {"convite": "admin/convite", "cancelar": "admin/cancelar", "membro": "admin/membro", "config": "admin/config",
+               "habito": "admin/habito", "calibracao": "admin/calibracao", "placar": "admin/placar", "frase": "admin/frase"}
+
+
+def api_grupo_admin(d):
+    """{chave, acao: ver | convite | cancelar | membro | config | habito | calibracao | placar | frase, ...}: a aba Administrar,
+    repassada ao servidor do grupo."""
+    g = grupo_da(d.get("chave"))
+    acao = d.get("acao")
+    if acao == "ver":
+        return pede_g(g, "GET", f"/g/{g['id']}/admin")
+    if acao not in ADMIN_ACOES:
+        raise Erro("ação desconhecida")
+    corpo = {k: v for k, v in d.items() if k not in ("chave", "acao")}
+    r = pede_g(g, "POST", f"/g/{g['id']}/{ADMIN_ACOES[acao]}", corpo)
+    if acao == "convite":
+        r["link"] = (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}#{r['codigo']}"
+    return r
+
+
+def api_grupo_frase(d):
+    """{chave, texto}: a frase do líder da semana (#76). O servidor do grupo confere se é o líder e se ainda não escreveu."""
+    g = grupo_da(d.get("chave"))
+    return pede_g(g, "POST", f"/g/{g['id']}/frase", {"texto": str(d.get("texto") or "")})
+
+
+# ---------- host: o servidor do grupo nesta máquina e o Tailscale Funnel (decidido em 13/10: modo misto) ----------
+def ping_grupo():
+    try:
+        with urllib.request.urlopen(grupo_local() + "/api/ping", timeout=2) as r:
+            return json.load(r).get("app") == GRUPO_APP
+    except Exception:
+        return False
+
+
+def liga_servidor_grupo():
+    """Instala o ganbatte-grupo para subir com a máquina e liga agora (se já não estiver ligado)."""
+    if ping_grupo():
+        return
+    exe = Path(sys.executable)
+    if sistema() == "windows" and exe.with_name("pythonw.exe").exists():
+        exe = exe.with_name("pythonw.exe")
+    cmd = [str(exe), str(REPO / "grupo" / "servidor_grupo.py"), "--fundo", "--porta", grupo_local().rsplit(":", 1)[1], "--dados", str(grupo_pasta_servidor())]
+    auto_ligar(GRUPO_APP, cmd, "Ganbatte (servidor do grupo)")
+    iniciar_fundo(GRUPO_APP, cmd)
+    for _ in range(40):
+        if ping_grupo():
+            return
+        time.sleep(0.25)
+    raise Erro("o servidor do grupo não subiu (veja servidor-grupo.log em " + str(grupo_pasta_servidor()) + ")", 500)
+
+
+def dono_token():
+    try:
+        return (grupo_pasta_servidor() / "dono.token").read_text(encoding="utf-8").strip()
+    except OSError:
+        raise Erro("este computador não é o servidor do grupo (falta o dono.token)", 403)
+
+
+def acha_tailscale():
+    t = shutil.which("tailscale", path=path_agentes())
+    if t:
+        return t
+    for p in (Path("/Applications/Tailscale.app/Contents/MacOS/Tailscale"),
+              Path(os.environ.get("ProgramFiles") or "C:\\Program Files") / "Tailscale" / "tailscale.exe"):
+        if p.is_file():
+            return str(p)
+    return None
+
+
+def tailscale_status(exe):
+    try:
+        r = subprocess.run([exe, "status", "--json"], capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL)
+        return json.loads(r.stdout or "{}")
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return {}
+
+
+def tailscale_nome():
+    exe = acha_tailscale()
+    dns = ((tailscale_status(exe).get("Self") or {}).get("DNSName") or "").rstrip(".") if exe else ""
+    return dns
+
+
+def saida_de(e):
+    v = (getattr(e, "stdout", None) or b"", getattr(e, "stderr", None) or b"")
+    return " ".join(x.decode("utf-8", "replace") if isinstance(x, bytes) else x for x in v)
+
+
+def liga_funnel():
+    """Tenta ligar o Funnel na porta do servidor do grupo. Devolve {estado: ok | sem | login | autorizar | sudo | erro, ...}:
+    a autorização da primeira vez (um link) e o sudo do Linux não dá para fazer por aqui, então a página mostra o que fazer."""
+    exe = acha_tailscale()
+    if not exe:
+        return {"estado": "sem"}
+    st = tailscale_status(exe)
+    if st.get("BackendState") != "Running":
+        return {"estado": "login", "comando": ("sudo tailscale up" if sistema() == "linux" else "abra o Tailscale e entre na conta")}
+    porta = grupo_local().rsplit(":", 1)[1]
+    try:
+        r = subprocess.run([exe, "funnel", "--bg", porta], capture_output=True, text=True, timeout=20, stdin=subprocess.DEVNULL)
+        saida, ok = (r.stdout or "") + " " + (r.stderr or ""), r.returncode == 0
+    except subprocess.TimeoutExpired as e:   # esperando a autorização no navegador
+        saida, ok = saida_de(e), False
+    except OSError as e:
+        return {"estado": "erro", "msg": str(e)}
+    link = re.search(r"https://login\.tailscale\.com/\S+", saida)
+    if link:
+        return {"estado": "autorizar", "link": link.group(0).rstrip(".,)")}
+    if not ok and re.search(r"access denied|permission denied|must be root|operator|sudo", saida, re.I):
+        return {"estado": "sudo", "comando": f"sudo tailscale set --operator=$USER   (ou: sudo tailscale funnel --bg {porta})"}
+    dns = ((st.get("Self") or {}).get("DNSName") or "").rstrip(".")
+    if ok and dns:
+        return {"estado": "ok", "endereco": "https://" + dns}
+    return {"estado": "erro", "msg": " ".join(saida.split())[-300:] or "o tailscale não respondeu"}
+
+
+def api_grupo_host(d):
+    """{acao: estado | servidor | funnel | criar {nome, endereco}}: o host cria um grupo pelo jogo."""
+    acao = d.get("acao")
+    if acao == "estado":
+        ligado, dono, dns = ping_grupo(), (grupo_pasta_servidor() / "dono.token").is_file(), tailscale_nome()
+        srv = grupo_pede(grupo_local(), "GET", "/dono", token=dono_token()) if ligado and dono else {}
+        return {"ok": True, "servidor": ligado, "dono": dono, "tailscale": bool(acha_tailscale()), "endereco": "https://" + dns if dns else "",
+                "grupos": srv.get("grupos") or [], "mudou": srv.get("mudou") or ""}
+    if acao == "servidor":
+        liga_servidor_grupo()
+        return {"ok": True}
+    if acao == "funnel":
+        liga_servidor_grupo()
+        return dict(liga_funnel(), ok=True)
+    if acao == "criar":
+        end = str(d.get("endereco") or "").strip().rstrip("/")
+        if not re.match(r"^https?://[^/\s#?]+$", end):
+            raise Erro("endereço do servidor inválido (ex.: https://notebook.tailXXXX.ts.net)")
+        liga_servidor_grupo()
+        r = grupo_pede(grupo_local(), "POST", "/dono/grupo", {"nome": d.get("nome")}, dono_token())
+        nome, av = nome_publico({"avatar": d.get("avatar")})   # o "nome" daqui é o do grupo; o do jogador vem do jogador.json
+        e = entra_grupo(grupo_local(), r["grupo"]["id"], r["convite"], nome, av, publico=end)
+        return dict(e, ok=True)
+    if acao == "restaurar":
+        return restaura_grupo(d)
+    if acao == "mudar":
+        return avisa_mudanca(str(d.get("endereco") or "").strip().rstrip("/"))
+    raise Erro("ação desconhecida")
+
+
+# ---------- mudar o servidor do grupo de computador (#91) ----------
+def restaura_grupo(d):
+    """{banco: o .db em base64, endereco}: no computador novo, troca o banco do servidor do grupo pela cópia do antigo. Os
+    grupos deste jogo que falam com o servidor daqui passam a usar o endereço público novo nos convites e mandam a temporada
+    de novo (a cópia pode ser mais velha do que o que já tinha chegado)."""
+    end = str(d.get("endereco") or "").strip().rstrip("/")
+    if end and not ENDERECO_GRUPO.match(end):
+        raise Erro("endereço público inválido (ex.: https://notebook.tailXXXX.ts.net)")
+    try:
+        banco = base64.b64decode(str(d.get("banco") or ""), validate=True)
+    except ValueError:
+        raise Erro("arquivo inválido")
+    liga_servidor_grupo()
+    r = grupo_pede(grupo_local(), "POST", "/dono/restaurar", token=dono_token(), tempo=120, arquivo=banco)
+    with lock:
+        lista, env_ = grupos(), ler_json("enviado.json", {})
+        for x in lista:
+            if x["url"] == grupo_local():
+                env_.pop(chave_grupo(x), None)
+                if end:
+                    x["publico"] = end
+        gravar_json("grupo.json", lista)
+        gravar_json("enviado.json", env_)
+    return dict(r, ok=True)
+
+
+def avisa_mudanca(end):
+    """No computador antigo: o servidor do grupo passa a responder aos membros com o endereço novo (vazio desfaz). Antes,
+    confere que lá já tem um servidor do grupo respondendo e que não é este mesmo (os membros ficariam dando voltas)."""
+    if end:
+        if not ENDERECO_GRUPO.match(end):
+            raise Erro("endereço inválido (ex.: https://notebook.tailXXXX.ts.net)")
+        dns = tailscale_nome()
+        if (dns and end.split("//", 1)[1].split(":")[0] == dns) or any(x.get("publico") == end for x in grupos() if x["url"] == grupo_local()):
+            raise Erro("esse é o endereço deste computador: use o endereço do computador novo")
+        try:
+            ok = grupo_pede(end, "GET", "/api/ping", tempo=15).get("app") == GRUPO_APP
+        except Erro:
+            ok = False
+        if not ok:
+            raise Erro(f"nenhum servidor do grupo respondeu em {end}: ligue-o no computador novo e restaure a cópia lá antes")
+    return dict(grupo_pede(grupo_local(), "POST", "/dono/mudar", {"endereco": end}, dono_token()), ok=True)
+
+
+def copia_grupo():
+    return grupo_pede(grupo_local(), "GET", "/dono/copia", token=dono_token(), tempo=60, bruto=True)
+
+
 # ---------- iniciar com o computador (opcional: liga e desliga na aba Configurações, ou com --instalar / --desinstalar) ----------
 SERVICO = APP
 EXEC = {"fundo": False, "porta": 8642, "srv": None, "passou": False, "systemd": None}
@@ -1642,8 +2462,9 @@ def arquivo_auto(nome=SERVICO):
     return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "autostart" / f"{nome}.desktop"
 
 
-def conteudo_auto(f):
-    cmd = comando_fundo()
+def conteudo_auto(f, cmd=None, nome=SERVICO, desc="Ganbatte (servidor local do jogo)"):
+    """cmd e nome: outro serviço com o mesmo esquema (o ganbatte-grupo, do servidor do grupo)."""
+    cmd = cmd or comando_fundo()
     if f.suffix == ".vbs":
         linha = " ".join('""' + x + '""' for x in cmd)
         return f'CreateObject("WScript.Shell").Run "{linha}", 0, False\r\n'
@@ -1651,14 +2472,14 @@ def conteudo_auto(f):
         from xml.sax.saxutils import escape
         args = "".join(f"<string>{escape(x)}</string>" for x in cmd)
         return ('<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
-                f'<plist version="1.0"><dict><key>Label</key><string>com.{SERVICO}.servidor</string><key>ProgramArguments</key><array>{args}</array>'
+                f'<plist version="1.0"><dict><key>Label</key><string>com.{nome}.servidor</string><key>ProgramArguments</key><array>{args}</array>'
                 '<key>RunAtLoad</key><true/><key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict></dict></plist>\n')
     aspas = lambda x: '"' + re.sub(r'(["\\`$])', r"\\\1", x).replace("%", "%%") + '"'
     exec_ = " ".join(aspas(x) for x in cmd)
     if f.suffix == ".service":
-        return (f"[Unit]\nDescription=Ganbatte (servidor local do jogo)\n\n[Service]\nExecStart={exec_}\nRestart=on-failure\nRestartSec=10\n\n"
+        return (f"[Unit]\nDescription={desc}\n\n[Service]\nExecStart={exec_}\nRestart=on-failure\nRestartSec=10\n\n"
                 "[Install]\nWantedBy=default.target\n")
-    return f"[Desktop Entry]\nType=Application\nName=Ganbatte\nExec={exec_}\nNoDisplay=true\nX-GNOME-Autostart-enabled=true\n"
+    return f"[Desktop Entry]\nType=Application\nName={desc.split(' (')[0]}\nExec={exec_}\nNoDisplay=true\nX-GNOME-Autostart-enabled=true\n"
 
 
 def systemctl(*args):
@@ -1671,10 +2492,10 @@ def auto_ligado():
     return arquivo_auto().exists()
 
 
-def auto_ligar():
-    f = arquivo_auto()
+def auto_ligar(nome=SERVICO, cmd=None, desc="Ganbatte (servidor local do jogo)"):
+    f = arquivo_auto(nome)
     f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(conteudo_auto(f), encoding="utf-8")
+    f.write_text(conteudo_auto(f, cmd, nome, desc), encoding="utf-8")
     if f.suffix == ".service":
         systemctl("daemon-reload")
         systemctl("enable", f.name)
@@ -1725,9 +2546,10 @@ def migra_servico():
         log("não consegui trocar o início automático:", e)
 
 
-def iniciar_fundo():
-    """Liga o servidor em segundo plano agora (a porta precisa estar livre)."""
-    f = arquivo_auto()
+def iniciar_fundo(nome=SERVICO, cmd=None):
+    """Liga o servidor em segundo plano agora (a porta precisa estar livre). nome e cmd: outro serviço (ganbatte-grupo)."""
+    f = arquivo_auto(nome)
+    cmd = cmd or comando_fundo()
     if f.suffix == ".service":
         return systemctl("start", "--no-block", f.name)
     if f.suffix == ".plist":
@@ -1735,9 +2557,9 @@ def iniciar_fundo():
         return
     nulo = subprocess.DEVNULL
     if sistema() == "windows":
-        subprocess.Popen(comando_fundo(), creationflags=0x00000008 | 0x00000200, close_fds=True, stdin=nulo, stdout=nulo, stderr=nulo)
+        subprocess.Popen(cmd, creationflags=0x00000008 | 0x00000200, close_fds=True, stdin=nulo, stdout=nulo, stderr=nulo)
     else:
-        subprocess.Popen(comando_fundo(), start_new_session=True, stdin=nulo, stdout=nulo, stderr=nulo)
+        subprocess.Popen(cmd, start_new_session=True, stdin=nulo, stdout=nulo, stderr=nulo)
 
 
 def passar_para_fundo():
@@ -1762,16 +2584,19 @@ def api_autostart(d):
 
 ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/reabre": api_reabre, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
-         "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
-         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada}
-LIMITE = {"/api/temporada": 3_000_000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000}
+         "/api/cf/mao": api_cf_mao, "/api/contrib": api_contrib, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
+         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada, "/api/colecao": api_colecao,
+         "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
+         "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
+         "/api/grupo/frase": api_grupo_frase}
+LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000, "/api/grupo/host": 140_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),
              "/ia.js": ("ia.js", "text/javascript; charset=utf-8"), "/conquistas.js": ("conquistas.js", "text/javascript; charset=utf-8"),
              "/novidades.js": ("novidades.js", "text/javascript; charset=utf-8"), "/expedicoes.js": ("expedicoes.js", "text/javascript; charset=utf-8"),
              "/feedback.js": ("feedback.js", "text/javascript; charset=utf-8"), "/temporadas.js": ("temporadas.js", "text/javascript; charset=utf-8"),
-             "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8")}
+             "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8"), "/grupo.js": ("grupo.js", "text/javascript; charset=utf-8")}
 
 
 class H(BaseHTTPRequestHandler):
@@ -1816,6 +2641,12 @@ class H(BaseHTTPRequestHandler):
             if (WEB / "a" / caminho[3:]).is_file():
                 return self._arquivo(WEB / "a" / caminho[3:], "image/png", "max-age=3600")
             return self._json(404, {"ok": False, "error": "foto não encontrada"})
+        m = re.match(r"^/(chefoes|colecao)/([A-Za-z0-9_-][A-Za-z0-9_.-]{0,99})\.png$", caminho)
+        if m:   # retratos dos chefões (web/chefoes/) e as imagens da coleção permanente (colecao/arquivos/ da pasta de dados)
+            pasta = WEB / "chefoes" if m.group(1) == "chefoes" else DADOS / "colecao" / "arquivos"
+            if (pasta / (m.group(2) + ".png")).is_file():
+                return self._arquivo(pasta / (m.group(2) + ".png"), "image/png", "max-age=3600")
+            return self._json(404, {"ok": False, "error": "imagem não encontrada"})
         if caminho == "/api/ping":
             return self._json(200, {"ok": True, "app": APP, "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
         if caminho == "/api/backup":
@@ -1827,6 +2658,20 @@ class H(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/zip")
             self.send_header("Content-Disposition", f'attachment; filename="{APP}-dados-{hoje().isoformat()}.zip"')
+            self.send_header("Content-Length", str(len(corpo)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            return self.wfile.write(corpo)
+        if caminho == "/api/grupo":
+            return self._json(200, api_grupo_get())
+        if caminho == "/api/grupo/copia":
+            try:
+                corpo = copia_grupo()
+            except Erro as e:
+                return self._json(e.code, {"ok": False, "error": str(e)})
+            self.send_response(200)
+            self.send_header("Content-Type", "application/vnd.sqlite3")
+            self.send_header("Content-Disposition", f'attachment; filename="{GRUPO_APP}-{hoje().isoformat()}.db"')
             self.send_header("Content-Length", str(len(corpo)))
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
