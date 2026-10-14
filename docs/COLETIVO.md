@@ -203,6 +203,10 @@ histórico fica com o #68.
 - Duas moedas porque o XP pessoal é subjetivo: o visual público só pode vir de pontos balanceados.
 - **Avatares vão para a loja pública.** O avatar é **do jogador**, em camadas (corpo, roupa, arma): o mesmo em todos os
   grupos e também no jogo pessoal, customizado só pela loja pública (#70).
+- **O comprado é do jogador** (decidido em 14/10/2026, #33): o que se compra na loja pública entra na coleção permanente
+  do jogo local (`colecao/`, `origem: "grupo"`), como as compras da Masadora. Quem está em vários grupos não compra o
+  mesmo item de novo (o id do item é o mesmo em qualquer grupo; item só de um grupo leva o grupo no id), e trocar a
+  temporada ou os itens do grupo não tira nada de ninguém.
 - Avatares novos são decididos **antes de cada temporada**. Nesta primeira, o **host (Caio)** adiciona durante a temporada.
 - **IDs de item independentes do tema** (`av.killua`, `pal.simples`). Tema e temporada são atributos, para as compras continuarem valendo quando o tema mudar, como no Fortnite.
 - **Itens únicos:** só 1 no grupo, com o dono registrado no servidor. ⏳ como se conquistam.

@@ -48,7 +48,7 @@ decisão final de desenho é do Caio (veja "Quando parar e perguntar").
 ### Fase 2: fazer (só depois do ok)
 
 1. Marque-se na issue: `gh issue edit N --add-assignee @me`.
-2. Branch a partir da base atualizada. A base é a `beta`; issue com o label `grupo` usa a `grupo`.
+2. Branch a partir da base atualizada. A base é a `beta`, também para as issues com o label `grupo`.
    ```
    git fetch origin
    git switch -c issue-N origin/beta
@@ -92,7 +92,7 @@ Só o Caio mexe nisto, ao lançar a versão (assim duas pessoas nunca criam a me
 - `VERSAO_PAGINA` no `web/index.html`;
 - as entradas de versão no `web/novidades.js` (o rascunho vai no texto do PR);
 - a tabela "Versões" do `README.md`;
-- labels das issues, merge, tags e qualquer push na `beta`, na `main` ou na `grupo`.
+- labels das issues, merge, tags e qualquer push na `beta` ou na `main`.
 
 Fora isso, pode atualizar o README (a parte "Como funciona por dentro") e o `docs/PENDENCIAS.md` quando o PR muda o
 que eles descrevem.
@@ -121,6 +121,11 @@ que eles descrevem.
   Nunca rode o código em teste com a pasta de dados real.
 - **Navegador automático:** `node ferramentas/navegador.mjs URL roteiro.json` (Firefox headless; detalhes no
   `docs/PENDENCIAS.md`, "Como testar").
+- **Formulário de tarefas:** configure um jogador no servidor de teste e rode
+  `node tests/test_formulario.mjs http://127.0.0.1:8799/`. O teste fecha o tutorial aberto e grava os tutoriais como vistos
+  antes de recarregar os dados. Confere os atalhos N/C, os cadastros seguidos de tarefas e caçadas, o fechamento,
+  a confirmação de dois segundos, os envios repetidos e as falhas de gravação. Cria tarefas e caçadas e marca os tutoriais
+  como vistos na pasta de teste.
 - **Balanceamento:** mexeu em XP ou Jenny? Rode `node ferramentas/simulador.mjs` e ponha o antes e o depois no PR.
 - **Mexeu em `web/`?** Rode `python3 ferramentas/standalone.py` (gera o modo demonstração, que não vai para o git) e
   confira se ele abre.
@@ -142,6 +147,5 @@ Fica aqui para consulta; quem contribui não faz.
    `prioridade`.
 3. Usar de verdade por 1 ou 2 dias. Depois, merge da `beta` na `main` como `X.Y.Z` (uma entrada só no `novidades.js`),
    tag `vX.Y.Z`, `fixes #N` no commit, e as issues perdem o `no beta`.
-4. A `grupo` recebe merge da `beta` a cada versão, sempre com uma `0.9.0-betaN` nova.
 
 Detalhes no `docs/PENDENCIAS.md` ("Branches" e "Nome das versões").

@@ -13,10 +13,53 @@
  * e o "no seu jogo" de cada uma; a linha do tempo da aba continua com os "itens" da própria versão.
  * Versão grande (0.7): "cap" troca a linha de cima da janela, "visual": true põe a escolha Nen/clássico nela e "obrigado":
  * {"t", "d", "quem": [{"n": usuário do GitHub (vazio = sem link), "o": o que a pessoa fez}]} agradece no fim.
+ * Versão épica (0.9.0-beta2): "epica": {"chave", "cap", "lema", "chips", "fatos", "mais", "pontos": {"t", "d", "itens"}, "ajustes",
+ * "ir": {"aba", "t"}} abre a janela com efeitos (janelaEpica), uma vez, com a marca tour["nv:" + chave]. A mesma marca da versão
+ * grande de mesmo número (0.9), então quem viu na beta não vê de novo na main. Os destaques vão em ordem de impacto: o
+ * primeiro dos "itens" é o principal, os outros "itens" os destaques, depois "mais", os pontos e os "ajustes", cada vez menores.
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.0-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-14",
+   "resumo": "A maior atualização do Ganbatte: o modo em grupo chega para todos da beta, com a Torre Trick, a licença hunter e os placares. E também retratos para os chefões, uma coleção que nunca se perde e a Jenny de cada tarefa à vista.",
+   "itens": [
+     {"ic": "tower", "t": "A Torre Trick", "d": "O modo em grupo chegou. Um amigo vira o servidor, manda um convite, e a aba Torre Trick vira o placar de vocês: cada dia vale até 1 andar descido (o seu XP até o teto do grupo, que é a mediana do mês anterior), cada hábito do grupo cumprido vale 0,2, e superar a sua própria média rende andares extras quando o período fecha. Ninguém vê o XP nem as tarefas de ninguém: do seu computador só saem os andares e se você jogou no dia (#38, #42, #67)."},
+     {"ic": "card", "t": "Licença hunter", "d": "Cada jogador tem a sua licença, que vira com um clique: na frente, a posição e os andares; no verso, a posição em cada placar e a superação em curso. Clique no nome de alguém para abrir a licença da pessoa (#67)."},
+     {"ic": "crown", "t": "Placares e evolução", "d": "Além do placar geral com pódio, cada hábito do grupo, o Codeforces e a superação ganham placar próprio, com quem lidera cada um. A sua posição semana a semana aparece num gráfico, com o líder em dourado (#42, #67)."},
+     {"ic": "scroll", "t": "Frase do líder", "d": "Quem liderar a semana escreve a frase que fica no topo do placar até a próxima semana fechar. Uma vez só, até 80 letras: escolha bem (#76)."},
+     {"ic": "flame", "t": "Hábitos do grupo", "d": "Os admins montam a lista em Torre Trick → administrar. O Codeforces vem sozinho; os outros (Digitação, Duolingo...) cada um liga a um hábito seu em Configurações → grupo, e o grupo vê só se você cumpriu no dia (#41)."},
+     {"ic": "antenna", "t": "Convite e servidor em casa", "d": "Sem conta e sem senha: o admin gera um link de uso único e você cola em Configurações → grupo. Quem cria o grupo liga o servidor no próprio computador, aberto pela internet com o Tailscale Funnel (grátis). Sem internet, a aba mostra o último placar e o seu jogo segue igual (#38, #39, #40)."}
+   ],
+   "epica": {"chave": "0.9", "cap": "a maior atualização do Ganbatte",
+    "lema": "O Ganbatte deixa de ser só seu. Junte os amigos, desçam a Torre Trick andar por andar e vejam quem lidera cada placar, sem ninguém ver as tarefas de ninguém.",
+    "chips": ["modo em grupo", "Torre Trick", "licença hunter", "placares", "retratos dos chefões", "coleção permanente"],
+    "fatos": [{"n": "1", "t": "andar por dia, no máximo"}, {"n": "0,2", "t": "andar por hábito do grupo"}, {"n": "+", "t": "andares por superar a si mesmo"}],
+    "mais": [
+     {"ic": "spider", "t": "Retratos dos chefões", "d": "15 retratos na Loja, em Aparência, para pôr no lugar do ícone de cada chefão. Derrote o chefão que está com um retrato e ele vira foto de perfil, de graça (#33)."},
+     {"ic": "bag", "t": "Coleção permanente", "d": "Tudo o que você compra fica guardado na pasta colecao/ dos seus dados e numa aba Comprados na Loja. Trocar de temporada ou atualizar o jogo não tira nada (#33)."},
+     {"ic": "coin", "t": "Jenny de cada tarefa", "d": "Ao lado do XP, cada tarefa mostra quanto Jenny rende ao concluir, também ao criar e ao editar, já com os bônus que valem hoje (#57)."},
+     {"ic": "antenna", "t": "Antigravity na IA", "d": "O Google parou de aceitar o Gemini CLI com conta gratuita. No lugar, o jogo agora usa o Antigravity CLI (agy): instale, entre na conta pelo terminal e escolha-o em Configurações → IA (#60)."}
+    ],
+    "pontos": {"t": "O que muda nos pontos", "d": "O seu XP, a sua Jenny e tudo o que você já ganhou continuam exatamente iguais.",
+     "itens": [
+      {"ic": "tower", "t": "Andares são pontos novos", "d": "Existem só na Torre Trick, para quem está num grupo. Ninguém perde nada: é a primeira vez que eles existem."},
+      {"ic": "card", "t": "Desafios da IA mais exigentes", "d": "As cartas novas pedem tarefas em vários dias, sequências mais longas, semanas completas de XP e notas com peso na disciplina. As recompensas continuam 800, 1.500, 3.000 e 6.000 J, e as cartas que você já aceitou mantêm as regras delas (#75)."}
+     ]},
+    "ajustes": [
+     {"t": "Cadastros seguidos", "d": "as janelas de tarefa (N) e caçada (C) confirmam o envio e continuam abertas para a próxima; Enter vazio, Esc ou clique fora fecham, e na caçada Shift+Enter separa as etapas (#59)."},
+     {"t": "Um aviso por vez", "d": "ao provar um item da Loja, segurar uma tecla mostra só um aviso de bloqueio, não uma pilha deles (#58)."},
+     {"t": "Gemini CLI", "d": "roda numa pasta temporária sem pedir confiança, e os erros dele aparecem em português (#60)."},
+     {"t": "Versão Grupo agora é a Beta", "d": "em Configurações → servidor ficam só Estável e Beta. Quem estava na Grupo passa para a Beta sozinho no próximo atualizar."}
+    ],
+    "ir": {"aba": "tt", "t": "descer a Torre Trick"}},
+   "obrigado": {"t": "Obrigado a quem jogou junto",
+    "d": "Metade desta versão nasceu de issues e PRs de quem joga. A outra metade, de quem testou a 0.9.0-beta1 no grupo e disse o que queria ver no placar.",
+    "quem": [
+      {"n": "luy121314", "o": "5 issues e 4 PRs: os retratos dos chefões, a Jenny de cada tarefa, os desafios da IA mais justos, as janelas de cadastro e o aviso único ao provar"},
+      {"n": "Caduyz", "o": "achou o erro do Gemini CLI que trouxe o Antigravity para o jogo"},
+      {"n": "", "o": "quem testou a primeira versão do grupo e opinou sobre os placares, a licença e a frase do líder"}
+    ]}},
   {"versao": "0.9.0-beta1", "nome": "atualização do grupo", "data": "2026-10-14",
    "resumo": "Primeiro teste do modo em grupo: um amigo vira o servidor, manda um convite, e a aba Grupo mostra quem jogou em cada dia. Por enquanto são só fatos; os pontos da Torre Trick entram depois, calibrados com o uso de vocês.",
    "itens": [
@@ -24,6 +67,14 @@ window.GB_NOVIDADES = /*NOVIDADES*/[
      {"ic": "scroll", "t": "Convite por link", "d": "Sem conta e sem senha: o admin do grupo gera um link de uso único (vale 7 dias), e você cola em Configurações → grupo. Dá para estar em mais de um grupo, sair quando quiser e, se trocar de computador, pedir um reconvite que volta com o seu histórico (#39)."},
      {"ic": "antenna", "t": "Seu computador como servidor", "d": "Em Configurações → grupo → criar um grupo, o jogo liga o servidor do grupo e tenta abrir o acesso pela internet com o Tailscale Funnel (grátis). Os admins convidam, cancelam convites e cuidam dos membros e das datas da temporada na aba Grupo → administrar (#38)."},
      {"ic": "esp", "t": "Funciona offline", "d": "Sem internet, ou com o servidor do grupo desligado, a aba mostra o último placar recebido e o seu jogo segue igual. O que você fizer nesse tempo vai junto na próxima vez que o jogo conseguir falar com o servidor (#40)."}
+   ]},
+  {"versao": "0.7.1-beta1", "nome": "atualização do Ganbatte", "data": "2026-10-14",
+   "resumo": "Retratos para os chefões, uma aba Comprados na loja e tudo o que você compra guardado para sempre, numa pasta só sua.",
+   "itens": [
+     {"ic": "spider", "t": "Retratos dos chefões", "d": "15 retratos na Loja, em Aparência, para pôr no lugar do ícone de cada chefão. O retrato vai sozinho para o chefão de mesmo nome, e em Comprados dá para trocar. O card de chefões da Lista também ganhou o ícone. Ideia de #33."},
+     {"ic": "crown", "t": "Derrotou, ganhou", "d": "Derrote o chefão que está com um retrato e ele vira foto de perfil, de graça. Depois da derrota, a imagem desse chefão fica para sempre, mesmo que uma nota corrigida o traga de volta. Cada retrato fica em um chefão por vez."},
+     {"ic": "bag", "t": "Aba Comprados", "d": "O que é seu sai da vitrine e fica numa aba própria da Loja, junto com o que vem com o jogo (o emblema, a paleta Simples e as fotos grátis)."},
+     {"ic": "scroll", "t": "Coleção permanente", "d": "Tudo o que você compra fica guardado na pasta colecao/ dos seus dados, separado da loja: trocar de temporada ou atualizar o jogo não tira nada. O que você já tinha vai para lá sozinho na primeira vez que abrir esta versão."}
    ]},
   {"versao": "0.7", "nome": "atualização do Ganbatte", "data": "2026-10-13", "visual": true,
    "cap": "nova série · o Hunter.todo agora é Ganbatte",
@@ -410,6 +461,73 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .nv-seu b{font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--amb)} .nv-seu span{font-size:15px} .nv-seu strong{color:var(--ink)}
 .nv-seu.ok{border-color:var(--grn);background:color-mix(in srgb,var(--grn) 8%,var(--panel2))} .nv-seu.ok b{color:var(--grn)}
 .gnav .nv-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amb);margin-left:4px;vertical-align:top}
+.nv-v.epica{border-color:color-mix(in srgb,var(--volt) 45%,var(--hair))}
+.nv-v.epica > .nv-itens .nv-it:first-child{grid-column:1/-1;border-color:color-mix(in srgb,var(--volt) 55%,var(--hair));background:color-mix(in srgb,var(--volt) 8%,var(--panel2))}
+.nv-v.epica > .nv-itens .nv-it:first-child b{font-size:17px}
+.nv-tier{margin:14px 0 8px;font:600 11.5px var(--f-mono);color:var(--soft);text-transform:uppercase;letter-spacing:.12em}
+.nv-itens.mini .nv-it{padding:9px 11px} .nv-itens.mini .nv-it .ic{font-size:18px}
+.nv-pts{margin-top:12px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--amb) 50%,var(--hair));border-radius:12px;background:color-mix(in srgb,var(--amb) 6%,var(--panel2))}
+.nv-pts > b{font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--amb)} .nv-pts > p{margin:4px 0 8px;font-size:13.5px}
+.nv-pts ul,.nv-aj{margin:0;padding-left:18px;font-size:13px;color:var(--soft)} .nv-pts li,.nv-aj li{margin:3px 0} .nv-pts li b,.nv-aj li b{color:var(--ink);font-weight:600}
+.nv-v.epica .rever{margin-top:12px}
+/* janela épica (0.9.0-beta2): só nesta janela, fora do visual seco do resto do jogo */
+.nv-ep{padding:0;background:color-mix(in srgb,var(--bg) 70%,#000);backdrop-filter:blur(8px);overflow:hidden}
+.ep-fundo{position:absolute;inset:0;display:block;pointer-events:none;overflow:hidden}
+.nv-ep .nv-it:first-child{grid-column:auto;border-color:var(--hair);background:var(--panel2)}
+.ep-fundo::before{content:"";position:absolute;inset:-100% 0 0;background:repeating-linear-gradient(0deg,transparent 0 58px,color-mix(in srgb,var(--volt) 16%,transparent) 58px 60px);animation:ep-desce 2.4s linear infinite;mask-image:linear-gradient(90deg,transparent,#000 30%,#000 70%,transparent)}
+.ep-fundo::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 50% 0%,color-mix(in srgb,var(--aura) 30%,transparent),transparent 70%),radial-gradient(40% 40% at 50% 100%,color-mix(in srgb,var(--volt) 18%,transparent),transparent 70%);animation:ep-pulsa 4s ease-in-out infinite}
+.ep-fundo i{position:absolute;bottom:-12px;width:4px;height:4px;border-radius:50%;background:var(--volt);box-shadow:0 0 10px 2px var(--volt);opacity:0;animation:ep-sobe var(--d,7s) linear var(--a,0s) infinite}
+@keyframes ep-desce{to{transform:translateY(60px)}}
+@keyframes ep-pulsa{50%{opacity:.55}}
+@keyframes ep-sobe{10%{opacity:.9}80%{opacity:.5}to{transform:translate(var(--x,0),-105vh);opacity:0}}
+.nv-ep > .ep-caixa{position:relative;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--volt) 40%,transparent) transparent;width:min(980px,100%);max-height:calc(100vh - 32px);overflow:auto;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--volt);border-radius:20px;box-shadow:0 0 0 1px color-mix(in srgb,var(--volt) 25%,transparent),0 0 80px -10px color-mix(in srgb,var(--volt) 45%,transparent),0 40px 120px -40px #000;animation:ep-entra .7s cubic-bezier(.2,.9,.2,1.1) both}
+@keyframes ep-entra{from{opacity:0;transform:translateY(40px) scale(.94)}}
+.ep-cab{position:relative;padding:34px 34px 22px;text-align:center;overflow:hidden;background:radial-gradient(80% 120% at 50% 0%,color-mix(in srgb,var(--volt) 20%,transparent),transparent 70%)}
+.ep-cab::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,color-mix(in srgb,#fff 14%,transparent),transparent);transform:skewX(-20deg);animation:ep-brilho 1.4s ease-out 1.1s both}
+@keyframes ep-brilho{from{left:-60%}to{left:130%}}
+.ep-selo{width:92px;height:92px;margin:0 auto 6px;animation:ep-gira 1.1s cubic-bezier(.2,.9,.2,1) .15s both}
+.ep-selo svg{width:100%;height:100%;overflow:visible}
+.ep-selo .hx{fill:none;stroke:var(--volt);stroke-width:2.5;stroke-dasharray:240;stroke-dashoffset:240;animation:ep-traco 1.2s ease-out .2s forwards;filter:drop-shadow(0 0 6px var(--volt))}
+.ep-selo .hx2{fill:color-mix(in srgb,var(--volt) 12%,transparent);stroke:none;animation:ep-pulsa 2.4s ease-in-out infinite}
+.ep-selo text{font:800 30px var(--f-hud);fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+@keyframes ep-traco{to{stroke-dashoffset:0}}
+@keyframes ep-gira{from{opacity:0;transform:rotate(-90deg) scale(.4)}}
+.ep-cap{margin:0;font:700 12px var(--f-mono);color:var(--volt);text-transform:uppercase;letter-spacing:.32em;animation:ep-sobeT .6s ease-out .5s both}
+.ep-num{margin:4px 0 0;font:800 clamp(64px,13vw,128px)/.95 var(--f-hud);letter-spacing:-.04em;color:var(--ink);text-shadow:0 0 30px color-mix(in srgb,var(--volt) 55%,transparent);animation:ep-num .9s cubic-bezier(.2,.9,.2,1.15) .65s both}
+.ep-num span{color:var(--volt)}
+@keyframes ep-num{from{opacity:0;transform:scale(1.6);filter:blur(12px);letter-spacing:.3em}}
+.ep-nome{font:700 clamp(17px,2.6vw,22px) var(--f-hud);color:var(--soft);text-transform:lowercase;animation:ep-sobeT .6s ease-out 1s both}
+.ep-lema{margin:14px auto 0;max-width:60ch;font-size:15.5px;line-height:1.5;animation:ep-sobeT .6s ease-out 1.15s both}
+.ep-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.ep-chips span{padding:4px 11px;border:1px solid color-mix(in srgb,var(--volt) 45%,var(--hair));border-radius:99px;font:600 12px var(--f-mono);color:var(--ink);background:color-mix(in srgb,var(--volt) 8%,transparent);animation:ep-sobeT .45s ease-out both}
+@keyframes ep-sobeT{from{opacity:0;transform:translateY(14px)}}
+.ep-sec{margin:22px 34px 10px;display:flex;align-items:center;gap:12px;font:700 11.5px var(--f-mono);color:var(--soft);text-transform:uppercase;letter-spacing:.16em}
+.ep-sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--hair),transparent)}
+.ep-pri{margin:6px 34px 0;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);border:1px solid var(--volt);border-radius:16px;overflow:hidden;background:linear-gradient(135deg,color-mix(in srgb,var(--volt) 12%,var(--panel2)),var(--panel2) 60%);animation:ep-sobeT .6s ease-out 1.3s both}
+.ep-pri > div{padding:22px 24px}
+.ep-pri h3{margin:0 0 8px;display:flex;gap:10px;align-items:center;font:800 26px var(--f-hud)} .ep-pri h3 .ic{color:var(--volt);font-size:30px}
+.ep-pri p{margin:0;font-size:14.5px;line-height:1.55;color:var(--soft)}
+.ep-fatos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.ep-fatos div{padding:10px 8px;border:1px solid var(--hair);border-radius:10px;background:var(--panel);text-align:center}
+.ep-fatos b{display:block;font:800 26px var(--f-hud);color:var(--volt)} .ep-fatos span{font-size:12px;color:var(--soft)}
+.ep-torre{position:relative;border-left:1px solid var(--hair);display:flex;flex-direction:column;justify-content:center;gap:5px;background:repeating-linear-gradient(90deg,transparent 0 22px,color-mix(in srgb,var(--hair) 50%,transparent) 22px 23px)}
+.ep-torre div{display:flex;align-items:center;gap:10px;font:600 11.5px var(--f-mono);color:var(--faint)}
+.ep-torre div::after{content:"";flex:1;height:8px;border-radius:3px;background:var(--track);border:1px solid var(--hair)}
+.ep-torre div.vc{color:var(--volt)} .ep-torre div.vc::after{background:color-mix(in srgb,var(--volt) 55%,transparent);border-color:var(--volt);box-shadow:0 0 14px color-mix(in srgb,var(--volt) 60%,transparent)}
+.ep-dest{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;padding:0 34px}
+.ep-dest .nv-it{padding:16px;border-radius:14px;transition:transform .2s,border-color .2s;animation:ep-sobeT .5s ease-out both}
+.ep-dest .nv-it:hover{transform:translateY(-3px);border-color:var(--volt)}
+.ep-dest .nv-it .ic{font-size:26px} .ep-dest .nv-it b{font-size:16px}
+.ep-mais{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;padding:0 34px}
+.ep-mais .nv-it{grid-template-columns:24px minmax(0,1fr);padding:10px 12px;animation:ep-sobeT .5s ease-out both} .ep-mais .nv-it .ic{font-size:18px;color:var(--soft)} .ep-mais .nv-it b{font-size:13.5px} .ep-mais .nv-it span{font-size:12.5px}
+.nv-ep .nv-pts{margin:18px 34px 0}
+.nv-ep .nv-aj{margin:0 34px;padding-left:18px;font-size:12.5px;color:var(--faint)} .nv-ep .nv-aj li b{color:var(--soft)}
+.nv-ep .nv-obg{margin:22px 34px 4px}
+.nv-ep .pe{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:20px 34px 26px} .nv-ep .pe .sp{flex:1}
+.nv-ep .ir{padding:12px 22px;font:800 15px var(--f-hud);border-radius:12px;box-shadow:0 0 24px -4px color-mix(in srgb,var(--volt) 70%,transparent);animation:ep-chama 2.2s ease-in-out 2s infinite}
+@keyframes ep-chama{50%{box-shadow:0 0 34px 2px color-mix(in srgb,var(--volt) 80%,transparent)}}
+@media (prefers-reduced-motion:reduce){ .nv-ep *,.nv-ep *::before,.nv-ep *::after{animation:none!important;transition:none!important} .ep-selo .hx{stroke-dashoffset:0} .ep-fundo i{display:none} }
+@media (max-width:820px){ .ep-cab{padding:26px 18px 18px} .ep-pri{margin:6px 18px 0;grid-template-columns:minmax(0,1fr)} .ep-torre{display:none} .ep-sec{margin-left:18px;margin-right:18px} .ep-dest,.ep-mais{padding:0 18px} .nv-ep .nv-pts,.nv-ep .nv-obg{margin-left:18px;margin-right:18px} .nv-ep .nv-aj{margin:0 18px} .nv-ep .pe{padding:18px} }
 @media (max-width:820px){ .nv-big .nv-marca{width:56px;height:56px} .nv-big .cab,.nv-big .nv-itens,.nv-big .pe{padding-left:18px;padding-right:18px} .nv-vis,.nv-obg{margin-left:18px;margin-right:18px} .nv-hero{grid-template-columns:minmax(0,1fr)} .nv-st{border-left:0;border-top:1px solid var(--hair)} .nv-ver .num{font-size:52px} }
 </style>`);
 
@@ -455,12 +573,22 @@ function subHTML(v){
     ${L.map(x => `<div class="nv-mi"><div class="topo"><b>${esc(x.versao)}</b><span>${esc(curta(x.data))}</span>${x.versao === VERSAO_PAGINA ? '<em class="tua">a sua</em>' : ''}</div>
       ${x.resumo ? `<p>${esc(x.resumo)}</p>` : ''}${(x.itens || []).length ? `<ul>${x.itens.map(t => `<li><b>${esc(t.t)}</b>: ${esc(t.d)}</li>`).join('')}</ul>` : ''}</div>`).join('')}</details>`;
 }
+/* versão épica na linha do tempo: o principal e os destaques grandes, depois "mais", os pontos e os ajustes, cada vez menores */
+const ajHTML = L => `<ul class="nv-aj">${L.map(x => `<li><b>${esc(x.t)}</b>: ${esc(x.d)}</li>`).join('')}</ul>`;
+const ptsHTML = P => `<div class="nv-pts"><b>${ic('coin')} ${esc(P.t)}</b>${P.d ? `<p>${esc(P.d)}</p>` : ''}<ul>${(P.itens || []).map(x => `<li><b>${esc(x.t)}</b>: ${esc(x.d)}</li>`).join('')}</ul></div>`;
+function epicaHTML(v){
+  const E = v.epica;
+  return `${(E.mais || []).length ? `<p class="nv-tier">também nesta versão</p><div class="nv-itens mini">${itensHTML({itens: E.mais})}</div>` : ''}
+    ${E.pontos ? ptsHTML(E.pontos) : ''}${(E.ajustes || []).length ? `<p class="nv-tier">ajustes</p>${ajHTML(E.ajustes)}` : ''}
+    ${v.futura ? '' : '<button type="button" class="btn rever" data-nvep>rever a apresentação</button>'}`;
+}
 function versaoHTML(v, i, velha){
   const tua = v.versao === VERSAO_PAGINA;
-  return `<article class="card nv-v${i === 0 ? ' ultima' : ''}${velha ? ' velha' : ''}">
+  velha = velha && !v.epica;
+  return `<article class="card nv-v${i === 0 ? ' ultima' : ''}${velha ? ' velha' : ''}${v.epica ? ' epica' : ''}">
     <div class="topo"><b>${esc(v.versao)}</b>${v.nome ? `<span>${esc(v.nome)}</span>` : ''}<span>${esc(curta(v.data))}</span>${tua ? `<em class="tua">a sua</em>` : ''}${tua && naoVista() ? '<em>nova</em>' : ''}</div>
     ${v.resumo ? `<p>${esc(v.resumo)}</p>` : ''}
-    <div class="nv-itens">${itensHTML(v)}</div>${subHTML(v)}</article>`;
+    <div class="nv-itens">${itensHTML(v)}</div>${v.epica ? epicaHTML(v) : ''}${subHTML(v)}</article>`;
 }
 function rNV(){
   const v = NOV.find(x => x.versao === VERSAO_PAGINA) || NOV[0], [a, b] = String(v.versao).split(/\.(.*)/s);
@@ -496,17 +624,19 @@ RENDER.nv = rNV;
 document.addEventListener('click', e => {
   if(e.target.closest('[data-nvconfere]')){ confere(true); return; }
   if(e.target.closest('[data-nvatualiza]')){ atualiza(); return; }
+  const ep = e.target.closest('[data-nvep]'); if(ep && !document.getElementById('nv-big')){ const v = NOV.find(x => x.epica); if(v) janelaEpica(v); return; }
 });
 /* quem acabou de atualizar vê o aviso uma vez; quem está começando agora (sem nada feito) não.
    A janela da última versão grande tem marca própria: a página volta na aba Novidades depois de atualizar, e ela marca o visto */
 let VISTO0 = null;   // o visto de quando a página abriu (a aba Novidades o preenche antes de boasNovas rodar)
-const chaveG = g => g.aviso ? 'nv:aviso:' + g.aviso : 'nv:' + g.versao, viuG = g => !!(EST.tour || {})[chaveG(g)];
+const chaveG = g => g.aviso ? 'nv:aviso:' + g.aviso : 'nv:' + (g.epica ? g.epica.chave : g.versao), viuG = g => !!(EST.tour || {})[chaveG(g)];
 function marcaG(g){ if(g) EST.tour = Object.assign({}, EST.tour, {[chaveG(g)]:1}); }
 function boasNovas(){
   if(!CTX || !(CTX.JOG && CTX.JOG.configurado)) return;
-  const g = NOV.find(grande), av = NOV.find(x => x.aviso);
-  if(!VISTO0 && !D.feitas.length){ EST.visto = VERSAO_PAGINA; marcaG(g); marcaG(av); salvaUI(); return; }
+  const g = NOV.find(grande), av = NOV.find(x => x.aviso), ep = NOV.find(x => x.epica && x.versao === VERSAO_PAGINA);
+  if(!VISTO0 && !D.feitas.length){ EST.visto = VERSAO_PAGINA; marcaG(g); marcaG(av); marcaG(ep); salvaUI(); return; }
   if(av && !viuG(av) && !document.getElementById('nv-big')){ janelaGrande(av); return; }   // aviso de pontos primeiro
+  if(ep && !viuG(ep) && !document.getElementById('nv-big')){ janelaEpica(ep); return; }
   if(g && !viuG(g) && !document.getElementById('nv-big')){ janelaGrande(g); return; }
   if(!naoVista()) return;
   const v = NOV.find(x => x.versao === VERSAO_PAGINA); if(!v) return;
@@ -553,6 +683,29 @@ function janelaGrande(v){
   </div></div>`);
   document.querySelector('#nv-big [data-nvbig]').focus({preventScroll:true});   // o foco no botão do pé não rola a janela: o topo (e o "no seu jogo") aparece primeiro
 }
+/* 0.9.0-beta2: a janela épica, com os efeitos só nela. A torre ao lado do principal desce um andar por vez */
+function janelaEpica(v){
+  const E = v.epica, [a, b] = String(E.chave).split(/\.(.*)/s), [pri, ...dest] = v.itens || [];
+  const fundo = Array.from({length: 26}, () => `<i style="left:${(Math.random() * 100).toFixed(1)}%;--d:${(5 + Math.random() * 6).toFixed(1)}s;--a:${(Math.random() * 6).toFixed(1)}s;--x:${(Math.random() * 80 - 40).toFixed(0)}px"></i>`).join('');
+  const atraso = (i, base) => ` style="animation-delay:${(base + i * .08).toFixed(2)}s"`;
+  document.body.insertAdjacentHTML('beforeend', `<div class="nv-big nv-ep" id="nv-big" data-chave="${esc(chaveG(v))}" role="dialog" aria-modal="true" aria-labelledby="nv-big-t"><span class="ep-fundo" aria-hidden="true">${fundo}</span><div class="ep-caixa">
+    <header class="ep-cab"><div class="ep-selo" aria-hidden="true"><svg viewBox="0 0 100 100"><path class="hx2" d="M50 6 88 28v44L50 94 12 72V28z"/><path class="hx" d="M50 6 88 28v44L50 94 12 72V28z"/><text x="50" y="52">念</text></svg></div>
+      <p class="ep-cap">${esc(E.cap || 'o jogo foi atualizado')}</p><h2 class="ep-num" id="nv-big-t">${esc(a)}<span>.${esc(b || '0')}</span></h2><div class="ep-nome">${esc(v.nome || '')} · ${esc(v.versao)}</div>
+      ${E.lema ? `<p class="ep-lema">${esc(E.lema)}</p>` : ''}${(E.chips || []).length ? `<div class="ep-chips">${E.chips.map((c, i) => `<span${atraso(i, 1.3)}>${esc(c)}</span>`).join('')}</div>` : ''}</header>
+    ${pri ? `<section class="ep-pri"><div><h3>${ic(pri.ic || 'tower')}${esc(pri.t)}</h3><p>${esc(pri.d)}</p>${(E.fatos || []).length ? `<div class="ep-fatos">${E.fatos.map(f => `<div><b>${esc(f.n)}</b><span>${esc(f.t)}</span></div>`).join('')}</div>` : ''}</div>
+      <div class="ep-torre" aria-hidden="true">${Array.from({length: 9}, (_, i) => `<div data-andar="${i}">${String(i + 1).padStart(2, '0')}F</div>`).join('')}</div></section>` : ''}
+    ${dest.length ? `<p class="ep-sec">os destaques</p><div class="ep-dest">${dest.map((x, i) => `<div class="nv-it"${atraso(i, 1.5)}>${ic(x.ic || 'scroll')}<b>${esc(x.t)}</b><span>${esc(x.d)}</span></div>`).join('')}</div>` : ''}
+    ${(E.mais || []).length ? `<p class="ep-sec">também nesta versão</p><div class="ep-mais">${E.mais.map((x, i) => `<div class="nv-it"${atraso(i, 1.9)}>${ic(x.ic || 'scroll')}<b>${esc(x.t)}</b><span>${esc(x.d)}</span></div>`).join('')}</div>` : ''}
+    ${E.pontos ? ptsHTML(E.pontos) : ''}
+    ${(E.ajustes || []).length ? `<p class="ep-sec">e uns ajustes</p>${ajHTML(E.ajustes)}` : ''}
+    ${v.obrigado ? obrigadoHTML(v.obrigado) : ''}
+    <div class="pe">${E.ir && RENDER[E.ir.aba] ? `<button type="button" class="btn v ir" data-nvbig="${esc(E.ir.aba)}">${ic('tower')} ${esc(E.ir.t)}</button>` : ''}<button type="button" class="btn grande" data-nvbig="nv">ver tudo o que mudou</button><span class="sp"></span><button type="button" class="btn" data-nvbig="">fechar</button></div>
+  </div></div>`);
+  let andar = 0; const torre = document.querySelectorAll('#nv-big .ep-torre div');
+  const desce = () => { if(!document.getElementById('nv-big')) return clearInterval(t); torre.forEach((d, i) => d.classList.toggle('vc', i <= andar)); andar = (andar + 1) % (torre.length + 2); };
+  const t = torre.length ? setInterval(desce, 420) : 0; desce();
+  document.querySelector('#nv-big [data-nvbig]').focus({preventScroll:true});
+}
 function fechaGrande(ir){
   const el = document.getElementById('nv-big'); if(!el) return;
   el.remove(); EST.visto = VERSAO_PAGINA; EST.tour = Object.assign({}, EST.tour, {[el.dataset.chave]:1}); salvaUI();
@@ -560,7 +713,7 @@ function fechaGrande(ir){
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-nvbig]'); if(b){ fechaGrande(b.dataset.nvbig); return; }
-  if(e.target.id === 'nv-big') fechaGrande('');
+  if(e.target.id === 'nv-big' || e.target.classList.contains('ep-fundo')) fechaGrande('');
 });
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.getElementById('nv-big')) fechaGrande(''); });
 window.GB_NOV = {confere, canal: () => AT && AT.canal};

@@ -10,6 +10,8 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   jogador.json              nome, tags, hábitos, disciplinas e Codeforces (o assistente da primeira entrada grava)
   avaliacoes.txt, notas.txt plano de avaliação das disciplinas e notas lançadas
   estado.json               loja, carteira, o que está equipado e os prêmios reais do jogador
+  colecao/                  coleção permanente (#33): o que o jogador comprou, com uma cópia de cada item e da imagem dele;
+                            só cresce, e nem a temporada nova nem uma versão nova do jogo mexem nela
   ajustes.txt, narradas.json caixa de entrada e cartas narradas (opcionais)
   conquistas.json           conquistas criadas pela IA (200 em diante) e o que foi resgatado
   planos/                   planos de ensino (PDF, HTML...) que a IA lê
@@ -32,15 +34,16 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/jogo/narrada {carta}         carta narrada colada da IA (aba Book) em narradas.json
   POST /api/jogo/planos {avaliacoes, notas} editor do chefão: grava os dois arquivos (o anterior fica em .bak)
   POST /api/jogo/nota {disc, aval, nota, parcial?} · /api/jogo/ajuste {texto} ou {quando, texto, aplicado} · /api/jogo/estado {estado}
+  POST /api/colecao {itens}               guarda na coleção permanente os itens comprados que ainda não estão nela (#33)
   POST /api/cf/mao {menos?}               +1 problema do Codeforces hoje, marcado à mão (ITMO, grupo privado); menos = desfaz
   GET  /api/ia                            agentes de terminal achados, a escolha do jogador e os planos de ensino da pasta planos/
-  POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini) ou volta ao copiar e colar (chat)
+  POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini | agy) ou volta ao copiar e colar (chat)
   POST /api/ia/rodar {pedido, anexo?, leve?} roda o agente com o pedido da página → {id}; GET /api/ia/rodar?id= até ficar pronto
   POST /api/ia/plano {nome, base64}       guarda um plano de ensino em planos/
   POST /api/conquistas {acao, ...}        conquistas da IA: criar {itens} | resgatar {no, como, j|k} | descartar {no}
   GET  /api/atualizacao[?agora]           versão instalada e as mais novas publicadas no GitHub (confere a cada 6 h; ?agora = na hora)
   POST /api/atualizar {}                  baixa a versão nova (git pull ou ZIP do GitHub) e reinicia o servidor
-  POST /api/canal {canal}                 troca entre a versão normal (main) e as de teste (beta, grupo), só em cópia git, e reinicia
+  POST /api/canal {canal}                 troca entre a versão normal (main) e a de teste (beta), só em cópia git, e reinicia
   GET  /api/grupo                         modo em grupo: os grupos do jogador e o último placar de cada um (sem os tokens)
   POST /api/grupo/entrar {link}           entra com o link do convite (https://endereco/g/ID#CODIGO)
   POST /api/grupo/sair {chave}            sai do grupo
@@ -81,8 +84,8 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.9.0-beta1"
-VERSAO_NOME = "atualização do grupo"   # nome da série 0.9 (aparece em Configurações → servidor)
+VERSAO = "0.9.0-beta2"
+VERSAO_NOME = "atualização da Torre Trick"   # nome da série 0.9 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
 DADOS = Path()   # definido em main()
@@ -975,7 +978,7 @@ def api_jogo_get():
     return {"ok": True, "hoje": hoje().isoformat(), "todo": todo, "done": done, "avaliacoes": ler_txt("avaliacoes.txt"),
             "notas": ler_txt("notas.txt"), "ajustes": ler_txt("ajustes.txt"), "estado": estado if isinstance(estado, dict) else {},
             "cf": cf, "duo": duo, "contrib": contrib, "avatares": avatares(), "narradas": narradas if isinstance(narradas, list) else [], "jogador": j,
-            "conquistas": conquistas if isinstance(conquistas, list) else [], "temporadas": temporadas(),
+            "conquistas": conquistas if isinstance(conquistas, list) else [], "temporadas": temporadas(), "colecao": colecao(),
             "servidor": {"versao": VERSAO, "nome": VERSAO_NOME, "sistema": sistema(), "auto": auto_ligado(), "fundo": EXEC["fundo"], "dados": str(DADOS),
                          "canal": canal(), "metodo": metodo_atualizar()}}
 
@@ -1082,7 +1085,7 @@ def devolve_filtra(e):
         e["bought"][sem] = [k for k in e["bought"][sem] if k not in fe]
 
 
-RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas e expedições (web/motor.js)
+RECIBOS = ("notasJ", "furias", "acertos", "xpDias", "cacadas", "expedicoes", "travas")   # bônus de nota, fúria, acertos, XP dos dias fechados, caçadas, expedições e a imagem travada dos chefões derrotados (#33)
 
 
 def api_jogo_estado(d):
@@ -1092,7 +1095,7 @@ def api_jogo_estado(d):
     ok = {"spent": (int, float), "cofreUsado": (int, float), "own": list, "resg": list, "bought": dict, "usados": dict, "usos": list,
           "equip": dict, "tour": dict, "premios": list, "cofreMes": (int, float), "visto": str,
           "notasJ": dict, "furias": dict, "acertos": dict, "xpDias": dict, "cacadas": dict, "expedicoes": dict, "compras": list,
-          "migra": dict, "tenRec": (int, float), "devolve": dict}   # acerto da 0.6.4 (web/motor.js: rec.migra, rec.tenRec) e a devolução (#51)
+          "migra": dict, "tenRec": (int, float), "devolve": dict, "travas": dict}   # acerto da 0.6.4 (web/motor.js: rec.migra, rec.tenRec) e a devolução (#51)
     for k, v in e.items():
         if k not in ok or not isinstance(v, ok[k]):
             raise Erro(f"campo inválido no estado: {k}")
@@ -1102,6 +1105,8 @@ def api_jogo_estado(d):
             raise Erro("prêmio inválido: precisa de nome (até 80 letras) e preço")
     if len(e.get("premios", [])) > 60 or e.get("cofreMes", 0) < 0:
         raise Erro("prêmios demais (máx. 60) ou cofre negativo")
+    if not all(isinstance(v, str) and len(k) <= 60 and len(v) <= 60 for k, v in e.get("travas", {}).items()):   # "TEMPORADA:SIGLA": id do retrato ou "" (o ícone padrão)
+        raise Erro("trava de chefão inválida")
     for c in e.get("compras", []):   # registro de compras (relatório de balanceamento): {d, h, tipo, id, j}
         if not (isinstance(c, dict) and re.fullmatch(r"\d{4}-\d\d-\d\d", str(c.get("d", ""))) and isinstance(c.get("h", ""), str)
                 and c.get("tipo") in ("cos", "feitico", "premio") and isinstance(c.get("id"), str) and len(c["id"]) <= 60
@@ -1111,7 +1116,7 @@ def api_jogo_estado(d):
         antigo = ler_json("estado.json", {})
         for k in RECIBOS:   # recibos da carteira: uma aba antiga aberta não apaga o que outra já gravou
             if isinstance(antigo, dict) and isinstance(antigo.get(k), dict):
-                e[k] = {**antigo[k], **e.get(k, {})}
+                e[k] = {**e.get(k, {}), **antigo[k]} if k == "travas" else {**antigo[k], **e.get(k, {})}   # trava de chefão: vale a primeira
                 if k == "xpDias":   # XP de um dia fechado só sobe
                     e[k] = {d: max(v, antigo[k][d]) if isinstance(v, (int, float)) and isinstance(antigo[k].get(d), (int, float)) else v
                             for d, v in e[k].items()}
@@ -1172,10 +1177,93 @@ def api_temporada(d):
     return {"ok": True, "guardada": True}
 
 
+# ---------- coleção permanente (#33) ----------
+# O que o jogador compra fica em colecao/ da pasta de dados, separado da loja: colecao.json com uma cópia de cada item (nome,
+# categoria, como equipar, de onde veio e quando) e colecao/arquivos/ com a imagem dele (foto de perfil, retrato de chefão).
+# Só acrescenta: nada aqui é apagado ou trocado. Assim, trocar de temporada, tirar um item da loja numa versão nova ou comprar
+# na loja do grupo (origem "grupo", #43; a loja pública segue a mesma regra) não mexe no que já é do jogador. O estado.json
+# continua com o own (compatibilidade). Rastreio: cada item tem um uid e um histórico (hist) que só cresce, com como ele chegou
+# (compra, chefao = foto liberada ao derrotar um chefão, migracao = já era do jogador antes da coleção), de onde, a temporada e
+# a Jenny. Ainda não há troca nem venda; o hist está pronto para receber esses eventos (ex.: trocado pelo grupo).
+COLECAO_CATS = {"avatar", "pal", "tex", "fx", "frame", "title", "font", "som", "full", "px", "chefe"}
+COLECAO_ORIGENS = {"masadora", "grupo"}
+COLECAO_COMO = {"compra", "chefao", "migracao"}
+COLECAO_CAMPOS = {"id": str, "cat": str, "n": str, "d": str, "p": (int, float), "origem": str, "quando": str, "img": str,
+                  "eq": dict, "fx": str, "fxs": list, "parts": list, "skin": list, "ev": (bool, int), "sw": list,
+                  "chefao": str, "como": str, "temporada": str}
+COLECAO_MAX = 2000
+ID_ITEM = re.compile(r"^[A-Za-z0-9_.-]{1,60}$")
+IMG_ITEM = re.compile(r"^(a|chefoes)/([A-Za-z0-9_-][A-Za-z0-9_.-]{0,79})\.png$")
+
+
+def colecao():
+    c = ler_json("colecao/colecao.json", {})
+    itens = c.get("itens") if isinstance(c, dict) else None
+    return {"itens": itens if isinstance(itens, dict) else {}}
+
+
+def colecao_item(x):
+    """Confere um item mandado pela página e devolve só os campos conhecidos."""
+    if not isinstance(x, dict) or not ID_ITEM.match(str(x.get("id", ""))) or x.get("cat") not in COLECAO_CATS:
+        raise Erro("item inválido na coleção")
+    it = {k: v for k, v in x.items() if k in COLECAO_CAMPOS and isinstance(v, COLECAO_CAMPOS[k])}
+    if not 0 < len(it.get("n", "")) <= 80 or len(it.get("d", "")) > 300 or it.get("origem", "masadora") not in COLECAO_ORIGENS:
+        raise Erro("item inválido na coleção: nome, descrição ou origem")
+    if "quando" in it and not DIA.match(it["quando"]):
+        raise Erro("item inválido na coleção: data")
+    if it.get("como", "compra") not in COLECAO_COMO or len(it.get("temporada", "")) > 40:
+        raise Erro("item inválido na coleção: como ou temporada")
+    if "img" in it and not IMG_ITEM.match(it["img"]):
+        del it["img"]
+    if len(json.dumps(it, ensure_ascii=False)) > 3000:
+        raise Erro("item grande demais na coleção")
+    return it
+
+
+def api_colecao(d):
+    """Guarda na coleção os itens que ainda não estão nela, com a imagem copiada de web/. Quem já está fica como está."""
+    itens = d.get("itens")
+    if not isinstance(itens, list) or len(itens) > 400:
+        raise Erro("lista de itens inválida")
+    novos = [colecao_item(x) for x in itens]
+    with lock:
+        c = colecao()
+        for it in novos:
+            if it["id"] in c["itens"] or len(c["itens"]) >= COLECAO_MAX:
+                continue
+            it.setdefault("origem", "masadora")
+            it.setdefault("quando", hoje().isoformat())
+            it.setdefault("como", "compra")
+            it["uid"] = os.urandom(6).hex()
+            it["hist"] = [{k: it[k] for k in ("quando", "como", "origem", "temporada", "p") if k in it}]
+            m = IMG_ITEM.match(it.get("img", ""))
+            if m and (WEB / it["img"]).is_file():
+                arq = f"{m.group(1)}-{m.group(2)}.png"
+                (DADOS / "colecao" / "arquivos").mkdir(parents=True, exist_ok=True)
+                if not (DADOS / "colecao" / "arquivos" / arq).is_file():
+                    shutil.copyfile(WEB / it["img"], DADOS / "colecao" / "arquivos" / arq)
+                it["arquivo"] = arq
+            c["itens"][it["id"]] = it
+        (DADOS / "colecao").mkdir(parents=True, exist_ok=True)
+        gravar_json("colecao/colecao.json", c)
+    return {"ok": True, "colecao": c}
+
+
 CONQ_REGRAS = {"contagem", "sequencia", "nota", "constancia", "semana"}
 CONQ_VAGAS = {"D": 4, "C": 3, "B": 2, "A": 1}   # abertas (não resgatadas) por rank: fácil, média, difícil, lendária (o mesmo do motor.js)
 CONQ_MAX = sum(CONQ_VAGAS.values())
 CONQ_RANKS = {"D", "C", "B", "A"}
+CONQ_METAS = {"D": (7, 14, 2, 2, 8), "C": (14, 35, 4, 4, 9), "B": (30, 90, 6, 8, 9.5), "A": (60, 180, 8, 12, 10)}
+
+
+def conq_alvo(c):
+    if c.get("regra") == "contagem":
+        return ("contagem", c.get("palavra", ""), c.get("disc", ""), c.get("tipo", ""), bool(c.get("prazo")))
+    if c.get("regra") == "sequencia":
+        return ("sequencia", c.get("hab"))
+    if c.get("regra") == "nota":
+        return ("nota", c.get("disc"))
+    return (c.get("regra"),)
 
 
 def conq_item(p):
@@ -1205,6 +1293,29 @@ def conq_item(p):
         raise Erro("a conquista precisa de nome (até 60 letras) e texto de até 400")
     if p.get("rk") not in CONQ_RANKS:
         raise Erro("rank inválido")
+    if "versao" in p:
+        if type(p["versao"]) is not int or p["versao"] != 2:
+            raise Erro("versão de conquista inválida")
+        dias, tarefas, semanas, semanas_hab, nota = CONQ_METAS[p["rk"]]
+        if c["regra"] == "contagem":
+            if type(p.get("diasMin")) is not int or p["diasMin"] != dias or c.get("n", 0) < tarefas:
+                raise Erro("meta de tarefas insuficiente para esse rank")
+            c["diasMin"] = dias
+            if not any(c.get(k) for k in ("palavra", "disc", "tipo", "prazo")):
+                raise Erro("escolha pelo menos um filtro de tarefas")
+        if c["regra"] in ("sequencia", "constancia"):
+            habitos = ler_json("jogador.json", {}).get("habitos", [])
+            semanal = c["regra"] == "sequencia" and any(h.get("id") == c.get("hab") and h.get("semana") for h in habitos)
+            if type(c.get("n")) is not int or c["n"] < (semanas_hab if semanal else dias):
+                raise Erro("sequência insuficiente para esse rank")
+        if c["regra"] == "nota" and (c.get("nota") or c.get("media") or 0) < nota:
+            raise Erro("nota insuficiente para esse rank")
+        if c["regra"] == "semana":
+            if type(p.get("semanas")) is not int or not semanas <= p["semanas"] <= 20:
+                raise Erro("meta de semanas insuficiente para esse rank")
+            c["semanas"] = p["semanas"]
+        c["versao"] = 2
+        c["inicio"] = (hoje() if c["regra"] == "nota" else hoje() + timedelta(days=1)).isoformat()
     return {**c, "nome": nome, "texto": texto, "ic": p.get("ic") if p.get("ic") in ICONES else "card", "rk": p["rk"],
             "temporada": str(p.get("temporada", ""))[:40]}
 
@@ -1227,7 +1338,10 @@ def api_conquistas(d):
             prox = max([int(x["no"]) for x in lista if str(x.get("no", "")).isdigit()] + [199]) + 1
             novas = []
             for i, p in enumerate(itens):
-                novas.append({"no": str(prox + i), **conq_item(p), "criada": hoje().isoformat()})
+                c = conq_item(p)
+                if c.get("versao") == 2 and any(conq_alvo(x) == conq_alvo(c) for x in abertas + novas):
+                    raise Erro("já existe uma conquista aberta para esse alvo")
+                novas.append({"no": str(prox + i), **c, "criada": hoje().isoformat()})
             gravar_json("conquistas.json", lista + novas)
             return {"ok": True, "nos": [c["no"] for c in novas]}
         c = next((x for x in lista if x.get("no") == str(d.get("no", ""))), None)
@@ -1256,19 +1370,25 @@ GITHUB = "https://github.com/CaioParanaiba/ganbatte"
 RAW = env("RAW")   # GANBATTE_RAW: outro endereço, para testar; vazio = a branch do canal
 
 
-CANAIS = ("main", "beta", "grupo")   # estável, versões de teste e o modo em grupo (0.9.0-betaN)
+CANAIS = ("main", "beta")   # estável e versões de teste
+ANTIGOS = {"grupo": "beta"}   # canal que acabou → o que a cópia passa a seguir (a grupo entrou na beta na 0.9.0-beta2)
 
 
-def canal():
-    """Branch que esta cópia segue: a branch atual de uma cópia git, se for um dos CANAIS; senão (ZIP, outra branch) "main"."""
+def branch_atual():
+    """A branch atual de uma cópia git; "" no ZIP ou se o git falhar."""
     if metodo_atualizar() == "git":
         try:
             r = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, timeout=10)
-            if r.stdout.strip() in CANAIS:
-                return r.stdout.strip()
+            return r.stdout.strip()
         except (OSError, subprocess.SubprocessError):
             pass
-    return "main"
+    return ""
+
+
+def canal():
+    """Branch que esta cópia segue: a branch atual, se for um dos CANAIS (ou um dos ANTIGOS, que segue o novo); senão (ZIP, outra branch) "main"."""
+    b = branch_atual()
+    return b if b in CANAIS else ANTIGOS.get(b, "main")
 ATUAL = {"quando": 0.0, "remota": None, "erro": ""}
 atual_lock = threading.Lock()
 
@@ -1338,7 +1458,9 @@ def baixa_zip():
 def api_atualizar(_):
     if ia_lock.locked():
         raise Erro("a IA está trabalhando num pedido: espere terminar e tente de novo")
-    if metodo_atualizar() == "git":
+    if branch_atual() in ANTIGOS:   # a branch dela acabou: troca para a que segue agora (mesma conta do trocar canal)
+        troca_branch(canal())
+    elif metodo_atualizar() == "git":
         # sem terminal: o git não pode parar pedindo senha; e o servidor sobe sem o agente SSH,
         # então se o remoto for SSH e falhar, puxa a mesma branch pelo HTTPS público
         env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": "ssh -o BatchMode=yes"}
@@ -1364,17 +1486,8 @@ def api_atualizar(_):
     return {"ok": True}
 
 
-def api_canal(d):
-    """Versões de teste: troca a cópia git para outro dos CANAIS (main, beta, grupo) e reinicia com o código dela."""
-    alvo = d.get("canal")
-    if alvo not in CANAIS:
-        raise Erro("canal deve ser " + ", ".join(CANAIS))
-    if metodo_atualizar() != "git":
-        raise Erro("só dá para trocar de canal num jogo instalado com git; o instalado pelo ZIP fica na versão normal")
-    if ia_lock.locked():
-        raise Erro("a IA está trabalhando num pedido: espere terminar e tente de novo")
-    if canal() == alvo:
-        return {"ok": True, "igual": True}
+def troca_branch(alvo):
+    """Troca a cópia git para a branch alvo (buscando no GitHub antes), só andando para a frente."""
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": "ssh -o BatchMode=yes"}
     def git(*args, tempo=30):
         try:
@@ -1400,6 +1513,20 @@ def api_canal(d):
         raise Erro("o git não conseguiu trocar de canal" + (f" ({ult[-1]})" if ult else ""))
     with atual_lock:
         ATUAL.update(quando=0.0, remota=None, erro="")   # o próximo aviso de versão nova confere o canal novo
+
+
+def api_canal(d):
+    """Versões de teste: troca a cópia git para outro dos CANAIS (main, beta) e reinicia com o código dela."""
+    alvo = d.get("canal")
+    if alvo not in CANAIS:
+        raise Erro("canal deve ser " + ", ".join(CANAIS))
+    if metodo_atualizar() != "git":
+        raise Erro("só dá para trocar de canal num jogo instalado com git; o instalado pelo ZIP fica na versão normal")
+    if ia_lock.locked():
+        raise Erro("a IA está trabalhando num pedido: espere terminar e tente de novo")
+    if branch_atual() == alvo:
+        return {"ok": True, "igual": True}
+    troca_branch(alvo)
     log(f"canal trocado para {alvo} pela página: reiniciando")
     def reinicia():
         EXEC["recarregar"] = True
@@ -1429,7 +1556,9 @@ AGENTES = {
     "claude": {"nome": "Claude Code", "login": "claude   (na primeira vez ele pede o login)"},
     "codex": {"nome": "Codex", "login": "codex login"},
     "gemini": {"nome": "Gemini CLI", "login": "gemini   (na primeira vez ele pede o login)"},
+    "agy": {"nome": "Antigravity CLI", "login": "agy   (na primeira vez ele pede o login)"},
 }
+PEDIDO_ARQ = ".pedido.txt"   # o agy não lê a entrada padrão: o pedido vai num arquivo da pasta temporária
 IA_TEMPO = 600   # segundos por pedido
 PLANO_EXT = {".pdf", ".html", ".htm", ".txt", ".md", ".docx"}
 NOME_PLANO = re.compile(r"^[\w .()\-]{1,80}$")
@@ -1519,18 +1648,31 @@ def api_ia_config(d):
 
 
 def comando_agente(ag, exe, pasta, saida, leve=False):
-    """Linha de comando de cada agente, sem permissão de escrita. O pedido vai pela entrada padrão.
-    leve: pedido pequeno (tipo de uma tarefa), com o modelo mais barato e rápido de cada um."""
+    """Linha de comando de cada agente, sem permissão de escrita. O pedido vai pela entrada padrão (no agy, em PEDIDO_ARQ).
+    leve: pedido pequeno (tipo de uma tarefa), com o modelo mais barato e rápido de cada um (no agy, o modelo de sempre:
+    os nomes dele mudam a cada versão e um nome velho faz o pedido falhar)."""
     if ag == "claude":
         return [exe, "-p", "--tools", "Read", "--permission-mode", "dontAsk", "--no-session-persistence", "--strict-mcp-config"] + (["--model", "haiku"] if leve else [])
     if ag == "codex":
         return [exe, "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--color", "never", "--cd", pasta, "--output-last-message", saida]\
             + (["-c", 'model_reasoning_effort="low"'] if leve else []) + ["-"]
+    if ag == "agy":   # --mode plan: só lê (sem ele, o agy grava arquivos na pasta)
+        return [exe, "--mode", "plan", "-p", f"O pedido está no arquivo {PEDIDO_ARQ}, na pasta {pasta}. Leia-o inteiro e responda "
+                "seguindo as regras dele. Não rode comandos nem crie arquivos."]
     return [exe, "-p", "Responda ao pedido acima, seguindo as regras dele."] + (["-m", "gemini-2.5-flash"] if leve else [])
 
 
 def explica_erro(ag, saida):
-    s = " ".join(saida.split())[-400:]
+    tudo = " ".join(saida.split())
+    s = tudo[-400:]
+    if re.search(r"no longer supported|IneligibleTier|migrate to the Antigravity", tudo, re.I):   # vem antes do rastro de erro
+        return ("O Google não aceita mais o Gemini CLI com conta pessoal gratuita. Instale o Antigravity CLI (agy), entre na "
+                "conta rodando agy no terminal e escolha-o aqui em Configurações → IA.")
+    if re.search(r"not running in a trusted directory", tudo, re.I):
+        return ("O Gemini CLI recusou a pasta temporária do jogo (pasta não confiável). Atualize o Gemini CLI "
+                "(npm install -g @google/gemini-cli) e tente de novo. Mensagem: " + s)
+    if re.search(r"headless mode cannot prompt|denied_actions", tudo, re.I):
+        return f"O {AGENTES[ag]['nome']} tentou usar uma ferramenta sem permissão e parou sem responder. Tente de novo."
     if re.search(r"log ?in|logged|auth|credential|api key|401|403|unauthorized", s, re.I):
         return f"Parece que falta entrar na conta do {AGENTES[ag]['nome']}. Rode no terminal: {AGENTES[ag]['login']}. Mensagem: {s}"
     return s or "o agente terminou sem responder"
@@ -1548,7 +1690,11 @@ def ia_executa(tid, ag, exe, pedido, anexos, leve):
                 pedido += "\n\n" + (f"O arquivo {anexos[0]} está na pasta atual: leia-o." if len(anexos) == 1
                                      else "Os arquivos estão na pasta atual: " + ", ".join(anexos) + ". Leia-os.")
             saida = str(Path(pasta) / ".resposta.txt")
-            env = dict(os.environ, PATH=os.pathsep.join([str(Path(exe).parent), path_agentes()]))
+            if ag == "agy":
+                Path(pasta, PEDIDO_ARQ).write_text(pedido, encoding="utf-8")
+                pedido = ""
+            # GEMINI_CLI_TRUST_WORKSPACE: o Gemini CLI só roda sem perguntar em pasta confiável, e a temporária é nova a cada pedido
+            env = dict(os.environ, PATH=os.pathsep.join([str(Path(exe).parent), path_agentes()]), GEMINI_CLI_TRUST_WORKSPACE="true")
             r = subprocess.run(comando_agente(ag, exe, pasta, saida, leve), input=pedido, capture_output=True, text=True, encoding="utf-8",
                                errors="replace", cwd=pasta, env=env, timeout=IA_TEMPO)
             texto = Path(saida).read_text(encoding="utf-8") if ag == "codex" and Path(saida).exists() else r.stdout
@@ -2151,11 +2297,11 @@ def api_autostart(d):
 ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/reabre": api_reabre, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
          "/api/cf/mao": api_cf_mao, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
-         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada,
+         "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada, "/api/colecao": api_colecao,
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
          "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
          "/api/grupo/frase": api_grupo_frase}
-LIMITE = {"/api/temporada": 3_000_000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000}
+LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),
@@ -2207,6 +2353,12 @@ class H(BaseHTTPRequestHandler):
             if (WEB / "a" / caminho[3:]).is_file():
                 return self._arquivo(WEB / "a" / caminho[3:], "image/png", "max-age=3600")
             return self._json(404, {"ok": False, "error": "foto não encontrada"})
+        m = re.match(r"^/(chefoes|colecao)/([A-Za-z0-9_-][A-Za-z0-9_.-]{0,99})\.png$", caminho)
+        if m:   # retratos dos chefões (web/chefoes/) e as imagens da coleção permanente (colecao/arquivos/ da pasta de dados)
+            pasta = WEB / "chefoes" if m.group(1) == "chefoes" else DADOS / "colecao" / "arquivos"
+            if (pasta / (m.group(2) + ".png")).is_file():
+                return self._arquivo(pasta / (m.group(2) + ".png"), "image/png", "max-age=3600")
+            return self._json(404, {"ok": False, "error": "imagem não encontrada"})
         if caminho == "/api/ping":
             return self._json(200, {"ok": True, "app": APP, "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
         if caminho == "/api/backup":

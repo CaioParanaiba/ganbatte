@@ -8,7 +8,7 @@ Há três jeitos de usar:
 
 | Jeito | Exemplos | Como funciona |
 |---|---|---|
-| **IA ligada no jogo** (recomendado) | Codex, Claude Code, Gemini CLI instalados no computador | Aba **Configurações → IA**: o jogo acha a IA instalada e você liga com um clique. Os botões do jogo chamam a IA sozinhos. |
+| **IA ligada no jogo** (recomendado) | Codex, Claude Code, Antigravity CLI (`agy`), Gemini CLI instalados no computador | Aba **Configurações → IA**: o jogo acha a IA instalada e você liga com um clique. Os botões do jogo chamam a IA sozinhos. |
 | **IA de chat** (só conversa) | ChatGPT, Claude, Gemini no navegador | O jogo monta o pedido, você cola na IA e cola a resposta de volta. |
 | **Conversar com a IA de terminal** | os mesmos da primeira linha | Abra-a na pasta do jogo e peça coisas soltas: *"adie a lista para sexta"*, *"tirei 4 de 5 na P1 de CALC2"*. |
 
@@ -371,33 +371,44 @@ DADOS
 **Como usar:** no Book, aba *Desafios da IA*, clique em *copiar pedido* e cole numa IA. Cole a resposta (a lista JSON)
 no mesmo bloco e clique em *conferir resposta*. O jogo confere cada proposta: recusa a que não usa uma regra conhecida,
 a que já está cumprida, a repetida e a que passa do possível. Para as outras, mostra a regra em palavras, o rank e a
-recompensa, que saem do jogo pela estimativa de dias, nunca da IA:
+recompensa, que saem dos mínimos de esforço conferidos pelo jogo, nunca da IA:
 
-| Rank | Estimativa | Recompensa (à escolha, ao conquistar) |
-|---|---|---|
-| D · fácil | até 7 dias | 800 J ou o feitiço Zetsu |
-| C · média | até 14 dias | 1.500 J ou Gyo |
-| B · difícil | até 30 dias | 3.000 J ou Ko |
-| A · lendária | mais de 30 dias | 6.000 J ou um feitiço à escolha |
+| Rank | Dias de atividade / sequência diária | Hábito semanal | Semanas de XP | Nota / peso mínimo | Recompensa |
+|---|---|---|---|---|---|
+| D · fácil | 7 | 2 semanas | 2, +10% sobre o recorde | 8 / 25% | 800 J ou Zetsu |
+| C · média | 14 | 4 semanas | 4, +20% | 9 / 40% | 1.500 J ou Gyo |
+| B · difícil | 30 | 8 semanas | 6, +35% | 9,5 / 60% | 3.000 J ou Ko |
+| A · lendária | 60 | 12 semanas | 8, +50% | 10 / 80% | 6.000 J ou feitiço à escolha |
+
+Contagem exige também pelo menos 14/35/90/180 tarefas (D/C/B/A), ou 25% a mais que o volume do ritmo filtrado em
+7/14/30/60 dias, o que for maior; o ritmo tem piso de uma tarefa por dia. A constância exige tarefa feita em cada dia;
+folgas não contam e férias vazias pausam. O XP usa a melhor semana completa das últimas oito, com piso de 100 XP.
+Para média final, o peso mínimo precisa ainda estar em aberto; para uma prova, é o peso dela normalizado na disciplina.
+Histórico curto não aumenta o rank. O prazo estimado precisa caber até o fim da temporada.
 
 Marque as que quiser e clique em *aceitar*. São 10 vagas para abertas (não resgatadas): 4 de rank D, 3 de C, 2 de B e 1 de
-A. Ficam numeradas de 200 em diante, e cada uma conta a partir do dia em que foi aceita. Ao conquistar, os botões de Jenny e
+A. Ficam numeradas de 200 em diante. Novas cartas contam atividades a partir do dia seguinte à aceitação; notas podem contar no mesmo dia. Cartas já aceitas conservam suas regras. Ao conquistar, os botões de Jenny e
 do feitiço aparecem embaixo da carta; depois de escolher, ela fica *resgatada*, vai para Book → *Conquistas* e a vaga abre. Dá para descartar uma conquista aberta para liberar a vaga.
 
 ```text
-Proponha {N} conquistas (desafios) para o meu jogo de tarefas (Ganbatte, tema Hunter x Hunter), difíceis mas possíveis no meu ritmo, contadas a partir de hoje. Os dados estão no fim.
+Proponha {N} conquistas (desafios) para o meu jogo de tarefas (Ganbatte, tema Hunter x Hunter), difíceis mas possíveis no meu ritmo, com os mínimos de esforço abaixo. Os dados estão no fim.
 Responda SÓ com uma lista JSON, sem texto antes ou depois e sem markdown:
-[{"regra": "...", ...campos da regra..., "nome": "...", "texto": "...", "ic": "..."}]
+[{"regra": "...", "rk": "D|C|B|A", ...campos da regra..., "nome": "...", "texto": "...", "ic": "..."}]
 
 Regras que o jogo sabe conferir (use só estas, com estes campos):
-- contagem: {"regra": "contagem", "n": 10, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, fac faculdade, tre treino e projetos, vid vida), prazo (true = feitas até o prazo).
+- contagem: {"regra": "contagem", "n": 35, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, fac faculdade, tre treino e projetos, vid vida), prazo (true = feitas até o prazo).
 - sequencia: {"regra": "sequencia", "hab": "ID", "n": 14} = o hábito em n dias seguidos (hábito semanal: n semanas seguidas com a meta da semana). hab é o id da lista de hábitos (cf = Codeforces, duo = Duolingo).
-- nota: {"regra": "nota", "disc": "BD", "media": 8} = garantir media×10 pontos na disciplina; ou {"regra": "nota", "disc": "BD", "aval": "P2", "nota": 8} = tirar 8 ou mais numa avaliação que ainda não tem nota.
-- constancia: {"regra": "constancia", "n": 21} = Ten de n dias seguidos.
-- semana: {"regra": "semana", "xp": 400} = uma semana (seg a dom) com xp ou mais, até o dobro da melhor semana.
+- nota: {"regra": "nota", "disc": "BD", "media": 8} = garantir média final 8 na disciplina; ou {"regra": "nota", "disc": "BD", "aval": "P2", "nota": 8} = tirar 8 ou mais numa avaliação que ainda não tem nota.
+- constancia: {"regra": "constancia", "n": 21} = n dias seguidos com tarefa feita; folgas não contam, férias vazias pausam.
+- semana: {"regra": "semana", "xp": 400, "semanas": 4} = semanas completas seguidas (seg a dom), cada uma com xp ou mais. Só entram semanas que começam depois da aceitação e já terminaram.
 - nome: curto e no tema (até 60 letras). texto: uma ou duas frases no tema, sem inventar fatos (até 300 letras).
 - ic: um destes ícones: int tra con esp man emi spider tower card flame moon island crown scroll.
-- Dificuldade: quero {quantas de cada: fácil (até 7 dias no meu ritmo), média (8 a 14), difícil (15 a 30), lendária (mais de 30, até o fim da temporada)}. O jogo mede a dificuldade pelo meu ritmo das últimas 4 semanas.
+- Dificuldade: quero {quantas de cada: D fácil, C média, B difícil, A lendária}. Informe rk; o jogo exige os mínimos de esforço da tabela acima. Histórico insuficiente não promove o rank.
+- Contagem: D/C/B/A exigem 14/35/90/180 tarefas e 7/14/30/60 dias distintos; o volume também precisa superar em 25% o ritmo filtrado nesses dias, com piso de 1 tarefa/dia.
+- Sequência diária e constância: 7/14/30/60 dias. Hábito semanal: 2/4/8/12 semanas.
+- XP semanal: 2/4/6/8 semanas completas seguidas, cada uma com +10%/+20%/+35%/+50% sobre a melhor semana completa das últimas 8 (piso 100 XP).
+- Nota: 8/9/9,5/10, com peso mínimo de 25%/40%/60%/80%; para média final, esse peso deve estar ainda em aberto.
+- Não repita o mesmo alvo com números diferentes. Se uma vaga não tiver meta possível até o fim da temporada, deixe-a vazia.
 - Varie as regras e os alvos. Nada que já esteja cumprido ou que repita uma conquista aberta. Tem que dar para cumprir até o fim da temporada.
 - A recompensa e a dificuldade quem decide é o jogo: não fale de prêmio.
 

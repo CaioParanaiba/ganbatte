@@ -48,8 +48,9 @@ const RKS = [['D', 'fáceis', 'fácil'], ['C', 'médias', 'média'], ['B', 'dif�
 const nomeF = k => spell(k).n;
 const recTxt = c => `${fmt(c.j)} J ou o feitiço ${nomeF(c.f)}`;
 const progTxt = c => { const at = Math.min(c.at, c.meta);
+  if(c.diasMin) return `${fmt(at)} de ${fmt(c.meta)} tarefas · ${fmt(c.diasFeitos)} de ${fmt(c.diasMin)} dias`;
   return c.rg === 'nota' ? `${GB.numBR(at).toFixed(1).replace('.', ',')} de ${String(c.meta).replace('.', ',')}` : `${fmt(at)} de ${fmt(c.meta)}`; };
-const pct = c => Math.max(0, Math.min(100, c.meta ? c.at / c.meta * 100 : 0));
+const pct = c => Math.max(0, Math.min(100, c.meta ? c.at / c.meta * 100 : 0, c.diasMin ? c.diasFeitos / c.diasMin * 100 : 100));
 let PROP = null;   // propostas em revisão: {itens:[{p, v, sel}], erro}
 
 /* ---------- aba Book → Conquistas da IA ---------- */
@@ -77,7 +78,7 @@ function detHTML(c){
   return `<div class="face cq-face${c.on ? ' on' : ''}" style="color:var(--grn);border-color:${c.on ? 'var(--amb)' : 'var(--grn)'}">${ic(c.ic)}</div>
     <p class="cap">Nº ${esc(c.no)} · rank ${c.rk} · ${esc(c.dif)} · criada pela IA${c.criada ? ` em ${ddmm(c.criada)}` : ''}</p><h3>${esc(c.n)}</h3>
     ${c.d ? `<p style="white-space:pre-line">${esc(c.d)}</p>` : ''}
-    <p class="cq-regra"><b>regra:</b> ${esc(c.regra)} Conta a partir de ${ddmm(c.criada || HOJE)}.</p>
+    <p class="cq-regra"><b>regra:</b> ${esc(c.regra)} Conta a partir de ${ddmm(c.inicio || c.criada || HOJE)}.</p>
     ${c.resgate ? '' : `<div class="cq-prog"><span class="sub">${c.on ? 'cumprida' : 'progresso'} · ${progTxt(c)}</span><div class="cqbar"><i style="width:${c.on ? 100 : pct(c)}%;${c.on ? 'background:var(--amb)' : ''}"></i></div></div>`}
     ${rec}`;
 }
@@ -110,7 +111,7 @@ function revisaHTML(vg){
 const ini28 = () => GB.addD(HOJE, -27), desde = () => D.feitas.map(t => t.done).filter(Boolean).sort()[0] || HOJE;
 function pedido(cia){
   const S = estado(), J = CTX.JOG, de = ini28(), n = Math.max(1, vagas(cia)), vr = vagasRk(cia);
-  const faixas = [['D', 'fácil (dá para cumprir em até 7 dias no meu ritmo)'], ['C', 'média (8 a 14 dias)'], ['B', 'difícil (15 a 30 dias)'], ['A', 'lendária (mais de 30 dias, até o fim da temporada)']]
+  const faixas = [['D', 'fácil (rank D)'], ['C', 'média (rank C)'], ['B', 'difícil (rank B)'], ['A', 'lendária (rank A)']]
     .filter(([rk]) => vr[rk] > 0).map(([rk, t]) => `${vr[rk]} ${t}`).join(', ');
   const feitas = D.feitas.filter(t => t.done && t.done >= de && !GB.isRec(t));
   const tipos = Object.entries(GB.CONQ_TIPOS).map(([k, nome]) => `${nome} (${k}): ${feitas.filter(t => GB.tipoDe(t) === k).length}`).join(', ');
@@ -139,18 +140,22 @@ function pedido(cia){
   L.push('', 'Palavras que mais aparecem nas tarefas dos últimos 60 dias (vezes):', pal.length ? pal.map(([w, k]) => `${w} (${k})`).join(', ') : '(poucas tarefas ainda)');
   const abertas = cia.filter(c => !c.resgate);
   if(abertas.length) L.push('', 'Conquistas da IA que já estão abertas (não repita):', ...abertas.map(c => `- ${c.n}: ${c.regra}`));
-  return [`Proponha ${n === 1 ? '1 conquista' : `${n} conquistas`} (desafios) para o meu jogo de tarefas (Ganbatte, tema Hunter x Hunter), difíceis mas possíveis no meu ritmo, contadas a partir de hoje. Os dados estão no fim.`,
+  return [`Proponha ${n === 1 ? '1 conquista' : `${n} conquistas`} (desafios) para o meu jogo de tarefas (Ganbatte, tema Hunter x Hunter), difíceis mas possíveis no meu ritmo, com os mínimos de esforço abaixo. Os dados estão no fim.`,
     'Responda SÓ com uma lista JSON, sem texto antes ou depois e sem markdown:',
-    '[{"regra": "...", ...campos da regra..., "nome": "...", "texto": "...", "ic": "..."}]', '',
+    '[{"regra": "...", "rk": "D|C|B|A", ...campos da regra..., "nome": "...", "texto": "...", "ic": "..."}]', '',
     'Regras que o jogo sabe conferir (use só estas, com estes campos):',
-    '- contagem: {"regra": "contagem", "n": 10, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, fac faculdade, tre treino e projetos, vid vida), prazo (true = feitas até o prazo).',
+    '- contagem: {"regra": "contagem", "n": 35, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, fac faculdade, tre treino e projetos, vid vida), prazo (true = feitas até o prazo).',
     '- sequencia: {"regra": "sequencia", "hab": "ID", "n": 14} = o hábito em n dias seguidos (hábito semanal: n semanas seguidas com a meta da semana). hab é o id da lista de hábitos (cf = Codeforces, duo = Duolingo).',
-    '- nota: {"regra": "nota", "disc": "BD", "media": 8} = garantir media×10 pontos na disciplina; ou {"regra": "nota", "disc": "BD", "aval": "P2", "nota": 8} = tirar 8 ou mais numa avaliação que ainda não tem nota.',
-    '- constancia: {"regra": "constancia", "n": 21} = Ten de n dias seguidos.',
-    '- semana: {"regra": "semana", "xp": 400} = uma semana (seg a dom) com xp ou mais, até o dobro da melhor semana.',
+    '- nota: {"regra": "nota", "disc": "BD", "media": 8} = garantir média final 8 na disciplina; ou {"regra": "nota", "disc": "BD", "aval": "P2", "nota": 8} = tirar 8 ou mais numa avaliação que ainda não tem nota.',
+    '- constancia: {"regra": "constancia", "n": 21} = n dias seguidos com tarefa feita; folgas não contam, férias vazias pausam.',
+    '- semana: {"regra": "semana", "xp": 400, "semanas": 4} = semanas completas seguidas (seg a dom), cada uma com xp ou mais. Só entram semanas que começam depois da aceitação e já terminaram.',
     '- nome: curto e no tema (até 60 letras). texto: uma ou duas frases no tema, sem inventar fatos (até 300 letras).',
     `- ic: um destes ícones: ${GB.CONQ_ICS.join(' ')}.`,
-    `- Dificuldade: quero ${faixas || '1 de qualquer dificuldade'}. O jogo mede a dificuldade pelo meu ritmo das últimas 4 semanas.`,
+    `- Dificuldade: quero ${faixas || '1 de qualquer dificuldade'}. Informe rk; o jogo exige os mínimos abaixo, não promove pela falta de histórico.`,
+    ...GB.metasConq(CTX, S).map(m => `- Rank ${m.rk}: contagem pelo menos ${GB.CONQ_METAS.find(x => x.rk === m.rk).tarefas} tarefas E ${m.dias} dias diferentes; sequência diária e constância ${m.dias} dias; hábito semanal ${m.semanasHab} semanas; XP ${m.semanasXP} semanas seguidas de no mínimo ${m.xp} XP; nota ${m.nota} em avaliação com peso de no mínimo ${m.peso}% ou média final ${m.nota} com pelo menos ${m.peso}% do peso ainda em aberto.`),
+    '- Contagem exige também 25% a mais que o volume do ritmo filtrado em 7/14/30/60 dias (D/C/B/A), com piso de 1 tarefa/dia. Escolha pelo menos um filtro.',
+    ...Object.keys(GB.CONQ_TIPOS).map(tipo => `- Contagem do tipo ${tipo}: mínimos D/C/B/A = ${GB.metasConq(CTX, S, {tipo}).map(m => m.tarefas).join('/')}. Outros filtros podem mudar esses mínimos.`),
+    '- Atividades contam a partir de amanhã; notas podem contar hoje. Não repita o mesmo alvo com números diferentes. Se uma vaga não tiver meta possível até o fim da temporada, deixe-a vazia.',
     '- Varie as regras e os alvos. Nada que já esteja cumprido ou que repita uma conquista aberta. Tem que dar para cumprir até o fim da temporada.',
     '- A recompensa e a dificuldade quem decide é o jogo: não fale de prêmio.', '', 'DADOS', ...L].join('\n');
 }
@@ -161,7 +166,7 @@ function confere(txt){
   const vistos = new Set();
   PROP = {itens: lista.slice(0, GB.CONQ_MAX).filter(p => p && typeof p === 'object').map(p => { let v = GB.avaliaConq(p, CTX, S);
     if(!v.erro && !(String(p.nome || '').trim())) v = {erro:'sem nome'};
-    const chave = v.erro ? '' : JSON.stringify(v.r); if(chave && vistos.has(chave)) v = {erro:'repetida'}; vistos.add(chave);
+    const chave = v.erro ? '' : GB.alvoConq(v.r); if(chave && vistos.has(chave)) v = {erro:'repetida'}; vistos.add(chave);
     return {p, v, sel:false}; })};
   const vr = vagasRk(GB.conqIA(CTX, S)); for(const it of PROP.itens) if(!it.v.erro && vr[it.v.rk] > 0){ it.sel = true; vr[it.v.rk]--; }
 }

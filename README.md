@@ -87,6 +87,7 @@ Tudo o que é seu fica numa pasta separada do código:
 | `conquistas.json` | conquistas criadas pela IA (Book, 200 em diante) e o que você resgatou |
 | `estado.json` | loja, Jenny gasta (com o registro de compras, desde a 0.6.3-beta2) e o que está equipado |
 | `cf.json`, `duo.json`, `contrib.json` | o que o jogo leu do Codeforces, do Duolingo e das suas issues no GitHub |
+| `colecao/` | coleção permanente (#33): `colecao.json` com uma cópia de cada item comprado (nome, categoria, como equipar, origem e dia) e `arquivos/` com a imagem dele. Só cresce; a temporada nova e as versões novas do jogo não mexem nela |
 | `temporadas/` | cada temporada que acabou (`2026-2/`...): `resumo.json` com os números finais congelados e uma cópia dos arquivos daquele momento |
 | `servidor.log` | o que o servidor anotou quando roda em segundo plano |
 
@@ -105,14 +106,14 @@ explica o que mudou em cada versão.
 
 Atualizar nunca mexe nos seus dados, porque eles ficam fora da pasta do código.
 
-### Versões de teste (beta e grupo)
+### Versão de teste (beta)
 
-As novidades saem primeiro na branch `beta` e passam para a `main` (a versão normal) depois de testadas. O modo em grupo
-(0.9) é construído na branch `grupo`, que recebe também tudo o que sai na versão normal. Em **Configurações → servidor**,
-**Versão** escolhe entre **Estável** (`main`), **Beta** e **Grupo**; o aviso de versão nova e o **atualizar agora** seguem
-a escolhida.
+As novidades saem primeiro na branch `beta` e passam para a `main` (a versão normal) depois de testadas. Em
+**Configurações → servidor**, **Versão** escolhe entre **Estável** (`main`) e **Beta**; o aviso de versão nova e o
+**atualizar agora** seguem a escolhida. O modo em grupo (0.9) nasceu na branch `grupo`, que entrou na `beta` na
+0.9.0-beta2 e ficou parada; quem ainda está nela passa para a `beta` no próximo **atualizar agora**.
 
-Pelo terminal é o mesmo: `git -C ~/ganbatte switch beta` (ou `grupo`; `switch main` para voltar). Só funciona no jogo instalado
+Pelo terminal é o mesmo: `git -C ~/ganbatte switch beta` (`switch main` para voltar). Só funciona no jogo instalado
 com git; o instalado pelo ZIP fica sempre na versão normal.
 
 A beta pode ter erros que ainda não foram corrigidos. Os dados continuam na mesma pasta, mas uma versão de teste pode
@@ -135,7 +136,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 - **Aviso amarelo "o servidor do jogo ainda está na versão...":** o servidor antigo continua ligado. Rode o instalador de
   novo ou reinicie o computador (Linux: `systemctl --user restart ganbatte`) e recarregue a página.
 - **A IA não aparece em Configurações → IA:** instale e entre na conta da IA pelo terminal (`codex login`, `claude`,
-  `gemini`) e clique em **procurar de novo**. O jogo procura no PATH do seu terminal e nas pastas comuns (npm, nvm, ~/.local/bin).
+  `agy`, `gemini`) e clique em **procurar de novo**. O jogo procura no PATH do seu terminal e nas pastas comuns (npm, nvm, ~/.local/bin).
 - **Esqueci de marcar um hábito ontem:** no card "hábitos de hoje", clique em **esqueci de marcar ontem**. Ele conta
   para ontem (XP, nível do hábito e heatmap). Só vale para o dia anterior.
 - **Codeforces não conta:** confira o handle na aba Configurações. A contagem atualiza a cada 10 minutos e precisa de internet.
@@ -156,7 +157,10 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   e consulta o Codeforces e o Duolingo. Só aceita conexões do próprio computador.
 - `web/index.html`: a página do jogo. `web/motor.js`: todas as regras e contas. `web/guia.js`: assistente e tutorial.
   `web/chefes.js`: editor de avaliações e notas. `web/ia.js`: pedidos para a IA e a IA ligada. `web/conquistas.js`:
-  conquistas criadas pela IA (as regras ficam no motor). `web/novidades.js`: aba Novidades, com a lista de versões que o
+  conquistas criadas pela IA (as regras ficam no motor). Novas cartas exigem mínimos de volume e dias de atividade,
+  sequências, semanas completas de XP e nota com peso mínimo, sem promover o rank pela falta de histórico (#75).
+  `node tests/test_conquistas.mjs` confere as regras; `node ferramentas/simulador-conquistas.mjs --antes REF`
+  simula os resgates dia a dia e compara com uma revisão anterior. Cartas antigas conservam suas regras. `web/novidades.js`: aba Novidades, com a lista de versões que o
   servidor lê do GitHub para avisar de versão nova (ao lançar uma, ponha-a no topo). `web/feedback.js`: bug, ideia ou
   dúvida vira uma issue preenchida pelos formulários de `.github/ISSUE_TEMPLATE/`. `web/temporadas.js`: guarda a temporada que acabou em `temporadas/NOME/` (a cápsula é `GB.capsula` no motor; `TEMA` no motor
   tem os nomes temáticos das funções). `web/efeitos.js`: o que os itens
@@ -165,17 +169,21 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   letras, números, `-`, `_` ou `.`) vira um item da Masadora por 1.000 J (os grátis ficam no `AV_GRATIS` do motor). O
   jogador não envia fotos: quem desenvolve põe aqui, e só imagens que podem ser distribuídas. Não renomeie uma foto que já
   saiu: o nome é o id do item comprado e equipado.
-- **Modo em grupo** (branch `grupo`, 0.9): `grupo/servidor_grupo.py` é o servidor do grupo (Associação), separado do
+  `web/chefoes/`: as fotos marcadas como chefão (#33), 256×256 (`RETRATOS` no motor). Cada uma é vendida como retrato de
+  chefão; o ícone do `avaliacoes.txt` continua o padrão, e o retrato escolhido fica em `estado.json` → `equip.chefes`
+  (sigla → item, um chefão por retrato). A versão de perfil só vem ao derrotar o chefão que está com ela, e a imagem dele
+  trava (`travas`). A origem de cada imagem fica no [`CREDITOS.md`](CREDITOS.md).
+- **Modo em grupo** (0.9): `grupo/servidor_grupo.py` é o servidor do grupo (Associação), separado do
   jogo: SQLite, porta 8643, dados em `~/.ganbatte-grupo/`, serviço `ganbatte-grupo`; `grupo/torre.py` faz as contas da
   Torre Trick (andares, placares específicos, títulos, evolução) a partir dos fatos. `web/grupo.js` faz a aba do grupo
-  (placar só de fatos e *administrar*) e o card *grupo* em Configurações; o `servidor.py` (rotas `/api/grupo/*`) guarda o
+  (sub-abas *placar*, *placares* e *jogadores*, com a licença hunter, e *administrar*) e o card *grupo* em Configurações; o `servidor.py` (rotas `/api/grupo/*`) guarda o
   token e manda ao servidor do grupo só os dias que mudaram. Desenho e decisões em `docs/COLETIVO.md`.
 - **Testes:** `python3 -m unittest discover tests` (pasta de dados temporária e a internet simulada; ver `tests/test_servidor.py`
   e, do modo em grupo, `tests/test_grupo.py`).
 - **Balanceamento:** `node ferramentas/simulador.mjs` joga uma temporada com três jogadores inventados pelo `web/motor.js` e
   mostra XP, andar, Jenny e quanto da loja cada um compra; `--comparar relatorio.json` põe ao lado o relatório de um
   jogador de verdade (Configurações → balanceamento). Os perfis ficam no topo do arquivo.
-- **IA opcional.** O jogo funciona sem IA. Com uma IA de terminal instalada (Claude Code, Codex ou Gemini CLI), ligue-a
+- **IA opcional.** O jogo funciona sem IA. Com uma IA de terminal instalada (Claude Code, Codex, Antigravity CLI ou Gemini CLI), ligue-a
   em **Configurações → IA**: o jogo passa a ler os planos de ensino (pasta `~/.ganbatte/planos/`), aplicar a caixa de entrada
   e escrever as cartas do Book sozinho, e propõe conquistas feitas para você (no Book); você confere antes de salvar. Sem ela, o jogo monta os pedidos e você cola
   numa IA de chat. Veja [`IA.md`](IA.md).
@@ -184,7 +192,9 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.9.0-beta2 | atualização da Torre Trick | **A grupo entra na beta.** Junta a branch `grupo` (0.9.0-beta1, #41, #42, #67, #76) com a beta (0.7.1-beta1, #57, #59, #60, #75): modo em grupo, Torre Trick e a aba dela para todos da beta. O canal `grupo` some de `CANAIS`: a cópia que ainda está nela passa para a `beta` ao atualizar (`api_atualizar`). Novidades com a janela grande da 0.9. |
 | 0.9.0-beta1 | atualização do grupo | Só na branch `grupo`. **Modo em grupo, estrutura** (#38, #39, #40): `grupo/servidor_grupo.py` (serviço `ganbatte-grupo`, porta 8643, SQLite em `~/.ganbatte-grupo/`, tokens só com hash, `dono.token`, fechamento às 6h no fuso do grupo com 12h ligado, cópia diária), rotas `/api/grupo/*` no `servidor.py` (`grupo.json`, `enviado.json`, `grupo/`), `web/grupo.js` (aba Grupo com o placar só de fatos e *administrar*; card *grupo* em Configurações com o Funnel em modo misto). Pontos da Torre Trick ficam para a #42 |
+| 0.7.1-beta1 | atualização do Ganbatte | Retratos dos chefões e coleção permanente (#33): fotos marcadas como chefão (`RETRATOS` no motor, `web/chefoes/`, créditos no `CREDITOS.md`) vendidas como retrato (`ch-SLUG`, 1.500 J, um dono por retrato, `equip.chefes`); o chefão derrotado trava a imagem (`travas`) e libera a foto de perfil (`av-ch-SLUG`). Loja → Comprados: o que é do jogador sai da vitrine. `colecao/` nos dados (`POST /api/colecao`): cópia de cada item comprado e da imagem, com `uid` e `hist`, só cresce |
 | **0.7** | **atualização do Ganbatte** | **Junta a 0.6.6-beta1 a beta3** (as linhas abaixo): o nome Ganbatte com os links novos (repositório `CaioParanaiba/ganbatte`, Pages em `caioparanaiba.github.io/ganbatte`; o GitHub redireciona o git, o ZIP e o raw do nome antigo, então as cópias instaladas continuam atualizando), o visual Nen, os nomes base das abas, prazo da caçada, tarefa vira caçada e cofre opcional. Janela grande com `"cap"`, a escolha do visual (`"visual"`, Nen ou clássico na hora) e o agradecimento a quem contribuiu (`"obrigado"`) |
 | 0.6.6-beta3 | atualização das expedições | Visual Nen como padrão (bloco `gb-visual` com `:where(.vis-nen)`, clássico em Configurações → configurações deste computador, `localStorage` → `gb-visual`), marca do jogo (`MARCA`) no cabeçalho, no favicon e no assistente, XP sempre na ponta da linha da Lista e o modo demonstração esperando os scripts de baixo |
 | 0.6.6-beta2 | atualização das expedições | **Nome Ganbatte** (#15): pasta de dados `~/.ganbatte` (`migra_pasta()` move a `~/.hunter-todo` na primeira vez e deixa um atalho; outra pasta escolhida fica onde está), variáveis `GANBATTE_*` (as `HUNTER_*` valem por um tempo, `env()`), início automático `ganbatte` (`migra_servico()` grava o novo e apaga o `hunter-todo`; o servidor que está rodando continua até o próximo login), `/api/ping` com `"app": "ganbatte"` (o `ping()` aceita os dois), instalador em `~/ganbatte` (quem tem `~/todo-engine` continua nela), prefixos `GB`/`GB_`/`GBx` e `gb-` no código (o `localStorage` copia os `hj-`). Nomes base das abas (`NOMES` no motor, `ABA` na página): o menu usa Progresso, Projetos, Calendário, Conquistas, Loja e Grupo, e o nome do `TEMA` fica no `title`. O repositório ainda é `todo-engine` |

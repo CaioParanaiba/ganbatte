@@ -361,7 +361,7 @@ const TOURS = {
       ['#ms-root .lay7 > div:first-child','Feitiços','Cartas de efeito (cada uma explicada no Book). Na loja dá para comprar 1 de cada por semana; o comprado vai para a bolsa e se usa pelo <b>Book → Feitiços</b>.', 0, vai({cat:'feiticos'})],
       ['#ms-root .side7','Carteira','Quanto você tem e de onde veio, o cofre do mês, o que está usando agora e os prêmios já resgatados.']],
   cfg:[['#cfg','Seu jogo','Mude o básico sem refazer nada: nome, nickname, <b>hábitos</b> (adicionar ou remover), o <b>Codeforces</b>, o <b>Duolingo</b> e o nome das tags. Clique em salvar.'],
-       ['#cfg-ia','IA (opcional)','Se você tem uma IA de terminal (Claude Code, Codex, Gemini CLI), ligue aqui: o jogo passa a usá-la sozinho. Depois de ligar, o botão <b>tutorial da IA</b> mostra tudo o que ela faz.'],
+       ['#cfg-ia','IA (opcional)','Se você tem uma IA de terminal (Claude Code, Codex, Antigravity CLI), ligue aqui: o jogo passa a usá-la sozinho. Depois de ligar, o botão <b>tutorial da IA</b> mostra tudo o que ela faz.'],
        ['#cfg-srv','Servidor','O programa que guarda as suas tarefas. Ligado com o computador, você só abre o endereço do jogo.'],
        ['#cfg-root > .card:last-child','Backup','Um ZIP com todos os seus dados, para guardar ou levar para outro computador.']],
   nv:[['#nv-hero','Sua versão','O número da versão instalada e, ao lado, se saiu uma mais nova. O jogo confere no GitHub sozinho, no máximo a cada 6 horas. Quando sai versão nova, o botão <b>atualizar agora</b> baixa e reinicia o jogo, sem mexer nos seus dados.'],
@@ -494,7 +494,6 @@ function srvHTML(){
 const CANAIS = {
   main: {nome:'Estável', curto:'normal', entra:'voltar para a normal', sobre:'A versão normal, a mesma de todo mundo.'},
   beta: {nome:'Beta', curto:'beta', entra:'entrar na beta', sobre:'As novidades chegam aqui antes da versão normal, mas ainda em teste: às vezes vêm com erros que só são corrigidos depois.'},
-  grupo: {nome:'Grupo', curto:'do grupo', entra:'entrar no grupo', sobre:'O modo em grupo (0.9) em construção, para quem testa com os amigos. Recebe também tudo o que sai na versão normal.'},
 };
 let BETA = null;   // null | {alvo} (pergunta) | {alvo, trocando}
 function betaHTML(s){
@@ -508,7 +507,7 @@ function betaHTML(s){
   const alvo = BETA.alvo, nome = CANAIS[alvo].curto;
   if(BETA.trocando) return linha + `<p class="sub" style="margin:10px 0 0">${ic('antenna')} Trocando para a versão ${nome} e reiniciando o jogo...</p>`;
   const texto = alvo === 'main'
-    ? 'Voltar para a versão normal. Ela pode ser mais antiga que a de teste que você usa agora e não conhecer algo que a versão de teste já gravou nos seus dados.' + (atual === 'grupo' ? ' A aba do grupo some; os dados do grupo ficam guardados na pasta, sem uso.' : '')
+    ? 'Voltar para a versão normal. Ela pode ser mais antiga que a de teste que você usa agora e não conhecer algo que a versão de teste já gravou nos seus dados.'
     : `Entrar na versão ${nome}. Os seus dados não mudam de pasta, mas uma versão de teste pode gravar coisas novas neles, e voltar depois para a normal nem sempre fica perfeito.`;
   return linha + `<div style="margin-top:10px;padding:12px 14px;border:1px solid var(--hair);border-radius:12px">
       <p style="margin:0 0 8px;font-size:14px">${texto} Baixe os seus dados antes, para poder restaurar se algo sair errado.</p>
