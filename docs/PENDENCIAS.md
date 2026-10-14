@@ -433,6 +433,10 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
    - conferir datas de prova na agenda do Google.
 6. **Peles na loja (#17).** O visual Nen seco virou o padrão na 0.6.6-beta3; duas peles testadas junto ficaram guardadas
    em `docs/peles/` (Licença Hunter e Nen com aura), com o passo a passo para virarem itens da Masadora.
+7. **Versão para celular: muito no futuro** (decidido em 14/10/2026). O jogo é pensado para o computador. Algumas telas já
+   dobram em telas estreitas (a janela épica da 0.9.0-beta2, a aba Torre Trick por container query), mas ninguém testou em
+   celular de verdade e não há plano para isso agora. Quando for a hora, é um projeto próprio (layout, toque, o servidor
+   rodando no computador e o celular acessando), não um ajuste solto em cada PR.
 
 ## Técnico
 
