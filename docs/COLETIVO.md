@@ -64,7 +64,14 @@ Tema: **HxH para todos** nesta temporada.
 ### A. XP do dia com teto
 - Por dia conta `min(XP do dia, teto)`. Ex.: com teto 75: 100 → 75, 50 → 50, 300 → 75.
 - **Teto = mediana do XP diário de todos os jogadores no mês anterior, contando todos os dias** (inclusive os dias com 0).
-- 1º mês (sem histórico): teto provisório ⏳.
+- **1º mês** (sem histórico): o teto é a mediana dos dias que já chegaram **no próprio mês**, recalculada até o mês fechar;
+  os andares do 1º mês aparecem como **provisórios**. Quando o mês fecha, a regra normal assume sozinha (decidido em 14/10, #42).
+
+### Calibração automática (decidido em 14/10, #42)
+- Tudo que não é o XP do dia é medido em **dias de teto** (os multiplicadores abaixo). Como o teto acompanha o XP do grupo,
+  a escala se ajusta sozinha: não precisa esperar dados para lançar, e os números da 0.9 já são os de verdade.
+- Os **multiplicadores** (e o +50% e a base mínima do CF) ficam em **Grupo → administrar → calibração**, com os valores daqui
+  como padrão: o admin ajusta sem lançar versão. Mudar um número recalcula os períodos abertos; os fechados ficam como estão (#40).
 
 ### B. Hábitos coletivos
 - **Codeforces:** verificado pela API do CF. O placar mostra o **heatmap do Codeforces** de cada jogador.
@@ -73,10 +80,10 @@ Tema: **HxH para todos** nesta temporada.
   um hábito pessoal ao do grupo em Configurações → grupo (o Duolingo entra assim, como hábito pessoal). O público recebe só
   **fez / não fez** por dia, e o nome do hábito pessoal nunca sai da máquina. Hábito novo conta a partir do dia em que foi
   criado; remover arquiva.
-- ⏳ pontos por hábito (#42).
+- **Pontos por hábito:** cada dia cumprido de um hábito do grupo vale **0,2× o teto** (decidido em 14/10, #42).
 
 ### C. Missão da semana
-- Cumprir a missão (3 dias no atributo mais fraco) dá pontos ⏳.
+- Cumprir a missão (3 dias no atributo mais fraco) dá pontos. **Fica para depois da 0.9** (decidido em 14/10, #42).
 
 ### D. Superação
 - `base` = o maior valor entre a média dos períodos anteriores e a média da temporada.
@@ -85,16 +92,18 @@ Tema: **HxH para todos** nesta temporada.
 - **S = o prêmio máximo.** Cada 1% acima da própria média vale 2% do S, e +50% leva o S inteiro.
   "Contínuo" quer dizer sem degraus, não quer dizer pouco.
   Ex. com S = 1000: +10% → 200 · +25% → 500 · +50% ou mais → 1000.
-- O S **não precisa ser enorme**. O XP com teto continua sendo o principal. ⏳ valor.
-- Dimensões (cada uma com o próprio S ⏳):
+- O S **não precisa ser enorme**. O XP com teto continua sendo o principal.
+- Dimensões, cada uma com o próprio S em dias de teto (decidido em 14/10, #42):
 
-| Dimensão | Período | Base |
-|---|---|---|
-| XP (sem teto, contra si mesmo) | **mês**: projeção visível durante o mês e bônus creditado no dia 1º como "descida especial" | últimos 3 meses / temporada |
-| Codeforces (problemas distintos) | **semana**, para ver o resultado logo | últimas 4 semanas / temporada |
-| Hábitos (dias cumpridos) | mês ⏳ | últimos 3 meses / temporada |
+| Dimensão | Período | Base | S |
+|---|---|---|---|
+| XP (**sem teto**, contra si mesmo) | **mês**: projeção visível durante o mês e bônus creditado no dia 1º como "descida especial" | últimos 3 meses / temporada | **5× o teto** |
+| Codeforces (problemas distintos) | **semana**, para ver o resultado logo | últimas 4 semanas / temporada, com **base mínima de 3** | **1× o teto** |
+| Hábitos (dias cumpridos) | **mês** (na semana, um hábito vai de 0 a 7 e um dia a mais já daria o bônus inteiro) | últimos 3 meses / temporada | **3× o teto** |
 
 - Primeiro período do jogador: sem bônus (ele vira a base).
+- **Hábito mantido em 100%** conta como superação máxima, como a nota 10 mantida: quem já faz todo dia não tem como passar da
+  própria média e não pode ficar sem o bônus por isso.
 - ⏳ Risco: inflar o XP de um mês para pegar o bônus. As proteções já previstas são a base pela média da temporada e o r limitado a 1,5. Se não bastar, a dimensão XP passa a usar o XP com teto.
 
 ### E. Notas, pela evolução (nunca pela nota em si)
@@ -162,8 +171,17 @@ placar só aparece com 2 ou mais participantes.
 | **Superação de notas** | o ganho de E. Respeita a exposição: `privado` não entra, `evolucao` mostra só a porcentagem |
 | **Superação total** | a média das superações de cada dimensão de que a pessoa participa (XP, cada hábito, notas), todas em 0–100%: quem não tem CF não perde por isso |
 
+**Período de cada placar** (padrão): volume na semana; constância na sequência atual; superação na semana no CF e no mês nos
+outros; constância de hábito, hábitos, notas e superação total na temporada. O admin **liga, desliga e muda o período** de
+cada placar em Grupo → administrar, sem lançar versão.
+
 **Recompensas:** as posições dão **medalhas e títulos**, nunca andares (andar por posição, estilo F1, amplificaria quem já
-domina). Trick Coin por posição, períodos e como os títulos aparecem: #69.
+domina). **Na 0.9 só os títulos** (quem lidera agora); medalhas, conquistas e Trick Coin por posição ficam para depois (#69).
+
+**Frase do líder da semana** (#76, decidido em 14/10): o 1º do geral na **última semana fechada** escreve **uma frase**, **uma
+vez só** (não dá para mudar), até **80 caracteres**; fica embaixo do pódio até o fim da semana. Sem frase, o card mostra "o
+líder da semana ainda não escreveu". O admin pode apagar uma frase. O servidor guarda as frases antigas desde já; mostrar o
+histórico fica com o #68.
 
 ## Lojas
 
@@ -197,13 +215,10 @@ domina). Trick Coin por posição, períodos e como os títulos aparecem: #69.
 
 ## Pendências (⏳)
 
-1. Teto do 1º mês
-2. Pontos por hábito (a lista virou o catálogo do #41)
-3. Pontos da missão
-4. S de cada dimensão da superação · XP com ou sem teto na superação · período dos hábitos
-5. k das notas · referência do 1º semestre
-6. Metas e recompensas do chefão do grupo
-7. Itens únicos
-8. O que mais a IA do servidor decide
-9. Todas as pontuações: calibrar com dados reais
-10. Base mínima da superação nos placares · recompensas dos placares (#69)
+1. Pontos da missão (depois da 0.9)
+2. k das notas · referência do 1º semestre
+3. Metas e recompensas do chefão do grupo
+4. Itens únicos
+5. O que mais a IA do servidor decide
+6. Conferir os multiplicadores com o uso real (ajuste no administrar, sem versão nova)
+7. Recompensas dos placares: medalhas, conquistas e Trick Coin por posição (#69)
