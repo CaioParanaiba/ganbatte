@@ -70,9 +70,15 @@ Tema: **HxH para todos** nesta temporada.
 - **Codeforces:** verificado pela API do CF. O placar mostra o **heatmap do Codeforces** de cada jogador.
 - **Catálogo por grupo** (#41, decidido em 14/10): os admins editam em Grupo → administrar. O **Codeforces** é o único
   automático (o jogo mede sozinho) e já vem no grupo novo; o host pode tirá-lo. Os outros são de **vínculo**: o jogador liga
-  um hábito pessoal ao do grupo em Configurações → grupo (o Duolingo entra assim, como hábito pessoal). O público recebe só
+  um hábito pessoal ao do grupo (o Duolingo entra assim, como hábito pessoal). O público recebe só
   **fez / não fez** por dia, e o nome do hábito pessoal nunca sai da máquina. Hábito novo conta a partir do dia em que foi
   criado; remover arquiva.
+- **Os admins decidem o catálogo** (14/10): o grupo nasce só com o Codeforces; o admin acrescenta o que quiser (Duolingo,
+  digitação...) e pode tirar qualquer um, inclusive o Codeforces.
+- **Vínculo dentro do grupo** (decidido em 14/10): cada jogador liga os seus hábitos aos do grupo numa **configuração do
+  jogador dentro da própria aba do grupo** (ex.: "meus hábitos no grupo"), por grupo, com cada hábito do grupo e o seletor
+  do hábito pessoal ao lado. Assim, ao ver um hábito novo no placar, ele liga ali mesmo, sem ir a Configurações. Hoje
+  (beta2) o seletor está em Configurações → grupo; muda junto com o layout da aba (#67, ver "A aba Torre Trick").
 - ⏳ pontos por hábito (#42).
 
 ### C. Missão da semana
@@ -139,6 +145,9 @@ placar só aparece com 2 ou mais participantes.
 | **Hábitos** (todos juntos) | a **soma da constância de cada hábito**: 3 hábitos a 70% = 2,1 > 1 a 100% = 1,0 > 3 a 20% = 0,6 |
 | **Superação de notas** | o ganho de E. Respeita a exposição: `privado` não entra, `evolucao` mostra só a porcentagem |
 | **Superação total** | a média das superações de cada dimensão de que a pessoa participa (XP, cada hábito, notas), todas em 0–100%: quem não tem CF não perde por isso |
+
+**Configuração do jogador no grupo:** a aba tem um lugar do próprio jogador (todos veem, não só admin) para ligar os
+hábitos pessoais aos do grupo (seção B, "Vínculo dentro do grupo"). Hábito do grupo sem vínculo aparece ali como pendente.
 
 **Recompensas:** as posições dão **medalhas e títulos**, nunca andares (andar por posição, estilo F1, amplificaria quem já
 domina). Trick Coin por posição, períodos e como os títulos aparecem: #69.
