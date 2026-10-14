@@ -177,8 +177,10 @@ Com um segundo dev, a recompensa de bug/ideia separa **quem relata** de **quem f
 - **Tarefa de dev** (`dev_tarefas()` no servidor): issue com o jogador como responsável vira `Issue #N: título +ganbatte
   gh:N esf:…` no todo.txt, concluída sozinha quando entra no beta. Vale pelo label de esforço (`ESF_XP` no motor: rápido 10,
   médio 15, demorado 25 XP, as faixas de vida, estudo e entrega); o servidor guarda o último esforço visto em
-  `contrib.json` → `dev`, porque o label sai na ida para o beta, e sem nenhum visto conta médio. Apagada pelo jogador não
-  volta; responsável trocado ou issue recusada antes do beta tira a tarefa aberta.
+  `contrib.json` → `dev` (vale mesmo se o label sair) e sem nenhum visto conta médio. Apagada pelo jogador não volta;
+  responsável trocado ou issue recusada antes do beta tira a tarefa aberta.
+- **Labels (0.9.0-beta3):** o `no beta` entra no merge de cada PR, não no lançamento da versão (senão os pagamentos se juntam
+  no lançamento), e o `esforço` fica até a `main` (`CONTRIBUINDO.md`, "Só para o dono").
 - **Esforço sempre no label:** a IA que avalia ou pega uma issue põe o label e troca se a issue complicar
   (`CONTRIBUINDO.md`).
 - **Só daqui para a frente:** `CONTRIB_LEGADO` lista as issues que já estavam no beta ou resolvidas em 14/10/2026: o autor
