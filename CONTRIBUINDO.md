@@ -148,11 +148,13 @@ que eles descrevem.
 
 Fica aqui para consulta; quem contribui não faz.
 
-1. Juntar os PRs na `beta`.
+1. **Ao juntar cada PR na `beta`**, a issue ganha o label `no beta` na hora: é ele que paga a recompensa de quem relatou e
+   conclui a tarefa de dev (#96, #97). Esperar a versão para pôr o label junta todos os pagamentos no lançamento. Confira
+   também se o responsável da issue é o autor do PR. A issue perde `pronto pra fazer`, `precisa decidir` e `prioridade`,
+   mas **fica com o `esforço`** até a `main`: o jogo de quem fez lê o esforço para pagar a tarefa.
 2. Versão `X.Y.Z-betaN`: `VERSAO` (servidor.py), `VERSAO_PAGINA` (web/index.html), topo do `web/novidades.js` e tabela do
-   README. Issues que entraram ganham o label `no beta` e perdem `esforço`, `pronto pra fazer`, `precisa decidir` e
-   `prioridade`.
+   README. As issues já estão com `no beta` desde o merge.
 3. Usar de verdade por 1 ou 2 dias. Depois, merge da `beta` na `main` como `X.Y.Z` (uma entrada só no `novidades.js`),
-   tag `vX.Y.Z`, `fixes #N` no commit, e as issues perdem o `no beta`.
+   tag `vX.Y.Z`, `fixes #N` no commit, e as issues perdem o `no beta` e o `esforço`.
 
 Detalhes no `docs/PENDENCIAS.md` ("Branches" e "Nome das versões").

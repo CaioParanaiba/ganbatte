@@ -17,10 +17,55 @@
  * "ir": {"aba", "t"}} abre a janela com efeitos (janelaEpica), uma vez, com a marca tour["nv:" + chave]. A mesma marca da versão
  * grande de mesmo número (0.9), então quem viu na beta não vê de novo na main. Os destaques vão em ordem de impacto: o
  * primeiro dos "itens" é o principal, os outros "itens" os destaques, depois "mais", os pontos e os "ajustes", cada vez menores.
+ * "marca" (0.9.0-beta3): a marca do tour, quando não é a "chave" (que é o número mostrado na janela). A beta3 traz a janela
+ * definitiva da 0.9 com a marca "0.9-final": quem viu a da beta2 vê de novo, e a main usa a mesma marca, então não repete.
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.0-beta3", "nome": "atualização da Torre Trick", "data": "2026-10-14",
+   "resumo": "A 0.9 como vai chegar na versão normal: o modo em grupo com a Torre Trick, caçadas dentro de caçadas, retratos dos chefões, uma coleção que nunca se perde e, para quem contribui, a recompensa assim que a correção entra no beta.",
+   "itens": [
+     {"ic": "tower", "t": "A Torre Trick", "d": "O modo em grupo chegou. Um amigo vira o servidor, manda um convite, e a aba Torre Trick vira o placar de vocês: cada dia vale até 1 andar descido (o seu XP até o teto do grupo, que é a mediana do mês anterior), cada hábito do grupo cumprido vale 0,2, e superar a sua própria média rende andares extras quando o período fecha. Ninguém vê o XP nem as tarefas de ninguém: do seu computador só saem os andares e se você jogou no dia (#38, #42, #67)."},
+     {"ic": "card", "t": "Licença hunter", "d": "Cada jogador tem a sua licença, que vira com um clique: na frente, a posição e os andares; no verso, a posição em cada placar e a superação em curso. Clique no nome de alguém para abrir a licença da pessoa (#67)."},
+     {"ic": "crown", "t": "Placares e evolução", "d": "Além do placar geral com pódio, cada hábito do grupo, o Codeforces e a superação ganham placar próprio, com quem lidera cada um. A sua posição semana a semana aparece num gráfico, com o líder em dourado (#42, #67)."},
+     {"ic": "alvo", "t": "Caçadas dentro de caçadas", "d": "Uma caçada grande (a v1.0 de um projeto, um semestre inteiro) pode ter outras dentro. Escolha em \"dentro da caçada\" ao criar ou no ✎, ou use \"+ caçada dentro\". Cada uma fecha com o bônus das próprias etapas, e a de cima só fecha depois das de dentro (#92)."},
+     {"ic": "flame", "t": "Hábitos do grupo", "d": "Os admins montam a lista em Torre Trick → administrar. O Codeforces vem sozinho; os outros (Digitação, Duolingo...) cada um liga a um hábito seu em Configurações → grupo, e o grupo vê só se você cumpriu no dia (#41)."},
+     {"ic": "antenna", "t": "Convite e servidor em casa", "d": "Sem conta e sem senha: o admin gera um link de uso único e você cola na própria aba Torre Trick. Quem cria o grupo liga o servidor no próprio computador, aberto pela internet com o Tailscale Funnel (grátis), e pode levá-lo para outra máquina sem ninguém perder um dia. Sem internet, a aba mostra o último placar e o seu jogo segue igual (#38, #39, #40, #84, #91)."}
+   ],
+   "epica": {"chave": "0.9", "marca": "0.9-final", "cap": "a maior atualização do Ganbatte",
+    "lema": "O Ganbatte deixa de ser só seu. Junte os amigos, desçam a Torre Trick andar por andar e vejam quem lidera cada placar, sem ninguém ver as tarefas de ninguém.",
+    "chips": ["modo em grupo", "Torre Trick", "licença hunter", "placares", "caçadas dentro de caçadas", "retratos dos chefões", "coleção permanente", "contribuição no beta"],
+    "fatos": [{"n": "1", "t": "andar por dia, no máximo"}, {"n": "0,2", "t": "andar por hábito do grupo"}, {"n": "+", "t": "andares por superar a si mesmo"}],
+    "mais": [
+     {"ic": "spider", "t": "Retratos dos chefões", "d": "15 retratos na Loja, em Aparência, para pôr no lugar do ícone de cada chefão. Derrote o chefão que está com um retrato e ele vira foto de perfil, de graça (#33)."},
+     {"ic": "bag", "t": "Coleção permanente", "d": "Tudo o que você compra fica guardado na pasta colecao/ dos seus dados e numa aba Comprados na Loja. Trocar de temporada ou atualizar o jogo não tira nada (#33)."},
+     {"ic": "coin", "t": "Jenny de cada tarefa", "d": "Ao lado do XP, cada tarefa mostra quanto Jenny rende ao concluir, também ao criar e ao editar, já com os bônus que valem hoje (#57)."},
+     {"ic": "scroll", "t": "Frase do líder", "d": "Quem liderar a semana escreve a frase que fica no topo do placar até a próxima semana fechar. Uma vez só, até 80 letras: escolha bem (#76)."},
+     {"ic": "antenna", "t": "Antigravity na IA", "d": "O Google parou de aceitar o Gemini CLI com conta gratuita. No lugar, o jogo agora usa o Antigravity CLI (agy): instale, entre na conta pelo terminal e escolha-o em Configurações → IA (#60)."}
+    ],
+    "pontos": {"t": "O que muda nos pontos", "d": "O seu XP, a sua Jenny e tudo o que você já ganhou continuam exatamente iguais. O que muda é o que vem daqui para a frente.",
+     "itens": [
+      {"ic": "tower", "t": "Andares são pontos novos", "d": "Existem só na Torre Trick, para quem está num grupo. Ninguém perde nada: é a primeira vez que eles existem."},
+      {"ic": "card", "t": "Desafios da IA mais exigentes", "d": "As cartas novas pedem tarefas em vários dias, sequências mais longas, semanas completas de XP e notas com peso na disciplina. As recompensas continuam 800, 1.500, 3.000 e 6.000 J, e as cartas que você já aceitou mantêm as regras delas (#75)."},
+      {"ic": "bug", "t": "Contribuição paga no beta", "d": "Bug corrigido (+15 XP e +150 J) ou ideia feita (+10 XP e +50 J) que você abriu no GitHub rende assim que entra no beta, sem esperar a versão normal. Quem joga na versão normal recebe um aviso de que a correção já está a caminho, e em Configurações o botão \"conferir agora\" busca na hora (#96)."},
+      {"ic": "scroll", "t": "Para quem desenvolve", "d": "A issue em que você é o responsável vira tarefa na Lista e se conclui sozinha quando entra no beta, valendo pelo esforço: 10, 15 ou 25 XP. Quem abriu e fez a própria issue ganha pela tarefa, não pela recompensa de relatar (#97)."}
+     ]},
+    "ajustes": [
+     {"t": "Cadastros seguidos", "d": "as janelas de tarefa (N) e caçada (C) confirmam o envio e continuam abertas para a próxima; Enter vazio, Esc ou clique fora fecham, e na caçada Shift+Enter separa as etapas (#59)."},
+     {"t": "Um aviso por vez", "d": "ao provar um item da Loja, segurar uma tecla mostra só um aviso de bloqueio, não uma pilha deles (#58)."},
+     {"t": "Gemini CLI", "d": "roda numa pasta temporária sem pedir confiança, e os erros dele aparecem em português (#60)."},
+     {"t": "GitHub a cada hora", "d": "as suas contribuições são conferidas a cada 1 h, não mais a cada 6 h (#96)."},
+     {"t": "Versão Grupo agora é a Beta", "d": "em Configurações → servidor ficam só Estável e Beta. Quem estava na Grupo passa para a Beta sozinho no próximo atualizar."}
+    ],
+    "ir": {"aba": "tt", "t": "descer a Torre Trick"}},
+   "obrigado": {"t": "Obrigado a quem jogou junto",
+    "d": "Metade desta versão nasceu de issues e PRs de quem joga. A outra metade, de quem testou as primeiras versões do grupo e disse o que queria ver no placar.",
+    "quem": [
+      {"n": "luy121314", "o": "5 issues e 4 PRs: os retratos dos chefões, a Jenny de cada tarefa, os desafios da IA mais justos, as janelas de cadastro e o aviso único ao provar. E agora o segundo dev do Ganbatte"},
+      {"n": "Caduyz", "o": "achou o erro do Gemini CLI que trouxe o Antigravity para o jogo"},
+      {"n": "", "o": "quem testou a primeira versão do grupo e opinou sobre os placares, a licença e a frase do líder"}
+    ]}},
   {"versao": "0.9.0-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-14",
    "resumo": "A maior atualização do Ganbatte: o modo em grupo chega para todos da beta, com a Torre Trick, a licença hunter e os placares. E também retratos para os chefões, uma coleção que nunca se perde e a Jenny de cada tarefa à vista.",
    "itens": [
@@ -30,36 +75,7 @@ window.GB_NOVIDADES = /*NOVIDADES*/[
      {"ic": "scroll", "t": "Frase do líder", "d": "Quem liderar a semana escreve a frase que fica no topo do placar até a próxima semana fechar. Uma vez só, até 80 letras: escolha bem (#76)."},
      {"ic": "flame", "t": "Hábitos do grupo", "d": "Os admins montam a lista em Torre Trick → administrar. O Codeforces vem sozinho; os outros (Digitação, Duolingo...) cada um liga a um hábito seu em Configurações → grupo, e o grupo vê só se você cumpriu no dia (#41)."},
      {"ic": "antenna", "t": "Convite e servidor em casa", "d": "Sem conta e sem senha: o admin gera um link de uso único e você cola em Configurações → grupo. Quem cria o grupo liga o servidor no próprio computador, aberto pela internet com o Tailscale Funnel (grátis). Sem internet, a aba mostra o último placar e o seu jogo segue igual (#38, #39, #40)."}
-   ],
-   "epica": {"chave": "0.9", "cap": "a maior atualização do Ganbatte",
-    "lema": "O Ganbatte deixa de ser só seu. Junte os amigos, desçam a Torre Trick andar por andar e vejam quem lidera cada placar, sem ninguém ver as tarefas de ninguém.",
-    "chips": ["modo em grupo", "Torre Trick", "licença hunter", "placares", "retratos dos chefões", "coleção permanente"],
-    "fatos": [{"n": "1", "t": "andar por dia, no máximo"}, {"n": "0,2", "t": "andar por hábito do grupo"}, {"n": "+", "t": "andares por superar a si mesmo"}],
-    "mais": [
-     {"ic": "spider", "t": "Retratos dos chefões", "d": "15 retratos na Loja, em Aparência, para pôr no lugar do ícone de cada chefão. Derrote o chefão que está com um retrato e ele vira foto de perfil, de graça (#33)."},
-     {"ic": "bag", "t": "Coleção permanente", "d": "Tudo o que você compra fica guardado na pasta colecao/ dos seus dados e numa aba Comprados na Loja. Trocar de temporada ou atualizar o jogo não tira nada (#33)."},
-     {"ic": "coin", "t": "Jenny de cada tarefa", "d": "Ao lado do XP, cada tarefa mostra quanto Jenny rende ao concluir, também ao criar e ao editar, já com os bônus que valem hoje (#57)."},
-     {"ic": "antenna", "t": "Antigravity na IA", "d": "O Google parou de aceitar o Gemini CLI com conta gratuita. No lugar, o jogo agora usa o Antigravity CLI (agy): instale, entre na conta pelo terminal e escolha-o em Configurações → IA (#60)."}
-    ],
-    "pontos": {"t": "O que muda nos pontos", "d": "O seu XP, a sua Jenny e tudo o que você já ganhou continuam exatamente iguais.",
-     "itens": [
-      {"ic": "tower", "t": "Andares são pontos novos", "d": "Existem só na Torre Trick, para quem está num grupo. Ninguém perde nada: é a primeira vez que eles existem."},
-      {"ic": "card", "t": "Desafios da IA mais exigentes", "d": "As cartas novas pedem tarefas em vários dias, sequências mais longas, semanas completas de XP e notas com peso na disciplina. As recompensas continuam 800, 1.500, 3.000 e 6.000 J, e as cartas que você já aceitou mantêm as regras delas (#75)."}
-     ]},
-    "ajustes": [
-     {"t": "Cadastros seguidos", "d": "as janelas de tarefa (N) e caçada (C) confirmam o envio e continuam abertas para a próxima; Enter vazio, Esc ou clique fora fecham, e na caçada Shift+Enter separa as etapas (#59)."},
-     {"t": "Um aviso por vez", "d": "ao provar um item da Loja, segurar uma tecla mostra só um aviso de bloqueio, não uma pilha deles (#58)."},
-     {"t": "Gemini CLI", "d": "roda numa pasta temporária sem pedir confiança, e os erros dele aparecem em português (#60)."},
-     {"t": "Versão Grupo agora é a Beta", "d": "em Configurações → servidor ficam só Estável e Beta. Quem estava na Grupo passa para a Beta sozinho no próximo atualizar."}
-    ],
-    "ir": {"aba": "tt", "t": "descer a Torre Trick"}},
-   "obrigado": {"t": "Obrigado a quem jogou junto",
-    "d": "Metade desta versão nasceu de issues e PRs de quem joga. A outra metade, de quem testou a 0.9.0-beta1 no grupo e disse o que queria ver no placar.",
-    "quem": [
-      {"n": "luy121314", "o": "5 issues e 4 PRs: os retratos dos chefões, a Jenny de cada tarefa, os desafios da IA mais justos, as janelas de cadastro e o aviso único ao provar"},
-      {"n": "Caduyz", "o": "achou o erro do Gemini CLI que trouxe o Antigravity para o jogo"},
-      {"n": "", "o": "quem testou a primeira versão do grupo e opinou sobre os placares, a licença e a frase do líder"}
-    ]}},
+   ]},
   {"versao": "0.9.0-beta1", "nome": "atualização do grupo", "data": "2026-10-14",
    "resumo": "Primeiro teste do modo em grupo: um amigo vira o servidor, manda um convite, e a aba Grupo mostra quem jogou em cada dia. Por enquanto são só fatos; os pontos da Torre Trick entram depois, calibrados com o uso de vocês.",
    "itens": [
@@ -629,7 +645,7 @@ document.addEventListener('click', e => {
 /* quem acabou de atualizar vê o aviso uma vez; quem está começando agora (sem nada feito) não.
    A janela da última versão grande tem marca própria: a página volta na aba Novidades depois de atualizar, e ela marca o visto */
 let VISTO0 = null;   // o visto de quando a página abriu (a aba Novidades o preenche antes de boasNovas rodar)
-const chaveG = g => g.aviso ? 'nv:aviso:' + g.aviso : 'nv:' + (g.epica ? g.epica.chave : g.versao), viuG = g => !!(EST.tour || {})[chaveG(g)];
+const chaveG = g => g.aviso ? 'nv:aviso:' + g.aviso : 'nv:' + (g.epica ? g.epica.marca || g.epica.chave : g.versao), viuG = g => !!(EST.tour || {})[chaveG(g)];
 function marcaG(g){ if(g) EST.tour = Object.assign({}, EST.tour, {[chaveG(g)]:1}); }
 function boasNovas(){
   if(!CTX || !(CTX.JOG && CTX.JOG.configurado)) return;
