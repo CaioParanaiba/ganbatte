@@ -19,13 +19,14 @@
  * primeiro dos "itens" é o principal, os outros "itens" os destaques, depois "mais", os pontos e os "ajustes", cada vez menores.
  * "marca" (0.9.0-beta3): a marca do tour, quando não é a "chave" (que é o número mostrado na janela). A beta3 traz a janela
  * definitiva da 0.9 com a marca "0.9-final": quem viu a da beta2 vê de novo, e a main usa a mesma marca, então não repete.
- * A janela abre só na entrada da versão instalada: a beta4 a herdou (mesma marca), para quem pulou a beta3 não perder.
+ * A janela abre só na entrada da versão instalada: a beta4 a herdou (mesma marca), para quem pulou a beta3 não perder, e a
+ * 0.9 da main também, com as betas em "versoes".
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
-  {"versao": "0.9.0-beta4", "nome": "atualização da Torre Trick", "data": "2026-10-14",
-   "resumo": "A 0.9 como vai chegar na versão normal: o modo em grupo com a Torre Trick, caçadas dentro de caçadas, retratos dos chefões, uma coleção que nunca se perde e, para quem contribui, a recompensa assim que a correção entra no beta.",
+  {"versao": "0.9", "nome": "atualização da Torre Trick", "data": "2026-10-14",
+   "resumo": "A maior atualização do Ganbatte: o modo em grupo com a Torre Trick, caçadas dentro de caçadas, retratos dos chefões, uma coleção que nunca se perde e, para quem contribui, a recompensa assim que a correção entra no beta. O seu XP, a sua Jenny e tudo o que você já ganhou continuam exatamente iguais.",
    "itens": [
      {"ic": "tower", "t": "A Torre Trick", "d": "O modo em grupo chegou. Um amigo vira o servidor, manda um convite, e a aba Torre Trick vira o placar de vocês: cada dia vale até 1 andar descido (o seu XP até o teto do grupo, que é a mediana do mês anterior), cada hábito do grupo cumprido vale 0,2, e superar a sua própria média rende andares extras quando o período fecha. Ninguém vê o XP nem as tarefas de ninguém: do seu computador só saem os andares e se você jogou no dia (#38, #42, #67)."},
      {"ic": "card", "t": "Licença hunter", "d": "Cada jogador tem a sua licença, que vira com um clique: na frente, a posição e os andares; no verso, a posição em cada placar e a superação em curso. Clique no nome de alguém para abrir a licença da pessoa (#67)."},
@@ -67,40 +68,47 @@ window.GB_NOVIDADES = /*NOVIDADES*/[
       {"n": "luy121314", "o": "5 issues e 4 PRs: os retratos dos chefões, a Jenny de cada tarefa, os desafios da IA mais justos, as janelas de cadastro e o aviso único ao provar. E agora o segundo dev do Ganbatte"},
       {"n": "Caduyz", "o": "achou o erro do Gemini CLI que trouxe o Antigravity para o jogo"},
       {"n": "", "o": "quem testou a primeira versão do grupo e opinou sobre os placares, a licença e a frase do líder"}
-    ]}},
-  {"versao": "0.9.0-beta3", "nome": "atualização da Torre Trick", "data": "2026-10-14",
-   "resumo": "Caçadas dentro de caçadas, o convite colado na própria aba Torre Trick, o servidor do grupo que muda de computador e a contribuição paga assim que entra no beta.",
-   "itens": [
-     {"ic": "alvo", "t": "Caçadas dentro de caçadas", "d": "Uma caçada grande pode ter outras dentro: escolha em \"dentro da caçada\" ao criar ou no ✎, ou use \"+ caçada dentro\". Cada uma fecha com o bônus das próprias etapas, e a de cima só fecha depois das de dentro (#92)."},
-     {"ic": "tower", "t": "Entrar pela Torre Trick", "d": "O convite agora se cola na própria aba Torre Trick, tanto no primeiro grupo quanto em outro depois, pelo + entrar em outro grupo (#84)."},
-     {"ic": "antenna", "t": "Mudar o grupo de computador", "d": "Quem é o servidor do grupo pode levá-lo para outra máquina: baixe a cópia, restaure no computador novo e avise os membros. O jogo de cada um troca de endereço sozinho, sem perder nenhum dia (#91)."},
-     {"ic": "bug", "t": "Contribuição paga no beta", "d": "Bug corrigido ou ideia feita rende assim que entra no beta. Para quem desenvolve, a issue em que é o responsável vira tarefa e se conclui sozinha, valendo pelo esforço (#96, #97)."}
-   ]},
-  {"versao": "0.9.0-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-14",
-   "resumo": "A maior atualização do Ganbatte: o modo em grupo chega para todos da beta, com a Torre Trick, a licença hunter e os placares. E também retratos para os chefões, uma coleção que nunca se perde e a Jenny de cada tarefa à vista.",
-   "itens": [
-     {"ic": "tower", "t": "A Torre Trick", "d": "O modo em grupo chegou. Um amigo vira o servidor, manda um convite, e a aba Torre Trick vira o placar de vocês: cada dia vale até 1 andar descido (o seu XP até o teto do grupo, que é a mediana do mês anterior), cada hábito do grupo cumprido vale 0,2, e superar a sua própria média rende andares extras quando o período fecha. Ninguém vê o XP nem as tarefas de ninguém: do seu computador só saem os andares e se você jogou no dia (#38, #42, #67)."},
-     {"ic": "card", "t": "Licença hunter", "d": "Cada jogador tem a sua licença, que vira com um clique: na frente, a posição e os andares; no verso, a posição em cada placar e a superação em curso. Clique no nome de alguém para abrir a licença da pessoa (#67)."},
-     {"ic": "crown", "t": "Placares e evolução", "d": "Além do placar geral com pódio, cada hábito do grupo, o Codeforces e a superação ganham placar próprio, com quem lidera cada um. A sua posição semana a semana aparece num gráfico, com o líder em dourado (#42, #67)."},
-     {"ic": "scroll", "t": "Frase do líder", "d": "Quem liderar a semana escreve a frase que fica no topo do placar até a próxima semana fechar. Uma vez só, até 80 letras: escolha bem (#76)."},
-     {"ic": "flame", "t": "Hábitos do grupo", "d": "Os admins montam a lista em Torre Trick → administrar. O Codeforces vem sozinho; os outros (Digitação, Duolingo...) cada um liga a um hábito seu em Configurações → grupo, e o grupo vê só se você cumpriu no dia (#41)."},
-     {"ic": "antenna", "t": "Convite e servidor em casa", "d": "Sem conta e sem senha: o admin gera um link de uso único e você cola em Configurações → grupo. Quem cria o grupo liga o servidor no próprio computador, aberto pela internet com o Tailscale Funnel (grátis). Sem internet, a aba mostra o último placar e o seu jogo segue igual (#38, #39, #40)."}
-   ]},
-  {"versao": "0.9.0-beta1", "nome": "atualização do grupo", "data": "2026-10-14",
-   "resumo": "Primeiro teste do modo em grupo: um amigo vira o servidor, manda um convite, e a aba Grupo mostra quem jogou em cada dia. Por enquanto são só fatos; os pontos da Torre Trick entram depois, calibrados com o uso de vocês.",
-   "itens": [
-     {"ic": "tower", "t": "Aba Grupo", "d": "Um placar entre amigos com quem jogou em cada dia, a sequência de dias seguidos, o Codeforces e o Duolingo das últimas cinco semanas e quando cada um sincronizou. O seu XP e as suas tarefas não aparecem: o grupo vê só se você jogou no dia (#38, #40)."},
-     {"ic": "scroll", "t": "Convite por link", "d": "Sem conta e sem senha: o admin do grupo gera um link de uso único (vale 7 dias), e você cola em Configurações → grupo. Dá para estar em mais de um grupo, sair quando quiser e, se trocar de computador, pedir um reconvite que volta com o seu histórico (#39)."},
-     {"ic": "antenna", "t": "Seu computador como servidor", "d": "Em Configurações → grupo → criar um grupo, o jogo liga o servidor do grupo e tenta abrir o acesso pela internet com o Tailscale Funnel (grátis). Os admins convidam, cancelam convites e cuidam dos membros e das datas da temporada na aba Grupo → administrar (#38)."},
-     {"ic": "esp", "t": "Funciona offline", "d": "Sem internet, ou com o servidor do grupo desligado, a aba mostra o último placar recebido e o seu jogo segue igual. O que você fizer nesse tempo vai junto na próxima vez que o jogo conseguir falar com o servidor (#40)."}
-   ]},
-  {"versao": "0.7.1-beta1", "nome": "atualização do Ganbatte", "data": "2026-10-14",
-   "resumo": "Retratos para os chefões, uma aba Comprados na loja e tudo o que você compra guardado para sempre, numa pasta só sua.",
-   "itens": [
-     {"ic": "spider", "t": "Retratos dos chefões", "d": "15 retratos na Loja, em Aparência, para pôr no lugar do ícone de cada chefão. O retrato vai sozinho para o chefão de mesmo nome, e em Comprados dá para trocar. O card de chefões da Lista também ganhou o ícone. Ideia de #33."},
-     {"ic": "crown", "t": "Derrotou, ganhou", "d": "Derrote o chefão que está com um retrato e ele vira foto de perfil, de graça. Depois da derrota, a imagem desse chefão fica para sempre, mesmo que uma nota corrigida o traga de volta. Cada retrato fica em um chefão por vez."},
-     {"ic": "bag", "t": "Aba Comprados", "d": "O que é seu sai da vitrine e fica numa aba própria da Loja, junto com o que vem com o jogo (o emblema, a paleta Simples e as fotos grátis)."},
-     {"ic": "scroll", "t": "Coleção permanente", "d": "Tudo o que você compra fica guardado na pasta colecao/ dos seus dados, separado da loja: trocar de temporada ou atualizar o jogo não tira nada. O que você já tinha vai para lá sozinho na primeira vez que abrir esta versão."}
+    ]},
+   "versoes": [
+     {"versao": "0.9.0-beta4", "nome": "atualização da Torre Trick", "data": "2026-10-14",
+      "resumo": "A tarefa de dev entra na expedição Ganbatte, para todos os devs, e a janela da 0.9 como vai chegar na versão normal.",
+      "itens": [
+        {"ic": "scroll", "t": "Tarefa de dev no projeto certo", "d": "Para quem desenvolve: a tarefa da issue em que você é o responsável entra na sua expedição Ganbatte, se você tiver uma aberta, em vez de num projeto solto (PR #102)."}
+      ]},
+     {"versao": "0.9.0-beta3", "nome": "atualização da Torre Trick", "data": "2026-10-14",
+      "resumo": "Caçadas dentro de caçadas, o convite colado na própria aba Torre Trick, o servidor do grupo que muda de computador e a contribuição paga assim que entra no beta.",
+      "itens": [
+        {"ic": "alvo", "t": "Caçadas dentro de caçadas", "d": "Uma caçada grande pode ter outras dentro: escolha em \"dentro da caçada\" ao criar ou no ✎, ou use \"+ caçada dentro\". Cada uma fecha com o bônus das próprias etapas, e a de cima só fecha depois das de dentro (#92)."},
+        {"ic": "tower", "t": "Entrar pela Torre Trick", "d": "O convite agora se cola na própria aba Torre Trick, tanto no primeiro grupo quanto em outro depois, pelo + entrar em outro grupo (#84)."},
+        {"ic": "antenna", "t": "Mudar o grupo de computador", "d": "Quem é o servidor do grupo pode levá-lo para outra máquina: baixe a cópia, restaure no computador novo e avise os membros. O jogo de cada um troca de endereço sozinho, sem perder nenhum dia (#91)."},
+        {"ic": "bug", "t": "Contribuição paga no beta", "d": "Bug corrigido ou ideia feita rende assim que entra no beta. Para quem desenvolve, a issue em que é o responsável vira tarefa e se conclui sozinha, valendo pelo esforço (#96, #97)."}
+      ]},
+     {"versao": "0.9.0-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-14",
+      "resumo": "A maior atualização do Ganbatte: o modo em grupo chega para todos da beta, com a Torre Trick, a licença hunter e os placares. E também retratos para os chefões, uma coleção que nunca se perde e a Jenny de cada tarefa à vista.",
+      "itens": [
+        {"ic": "tower", "t": "A Torre Trick", "d": "O modo em grupo chegou. Um amigo vira o servidor, manda um convite, e a aba Torre Trick vira o placar de vocês: cada dia vale até 1 andar descido (o seu XP até o teto do grupo, que é a mediana do mês anterior), cada hábito do grupo cumprido vale 0,2, e superar a sua própria média rende andares extras quando o período fecha. Ninguém vê o XP nem as tarefas de ninguém: do seu computador só saem os andares e se você jogou no dia (#38, #42, #67)."},
+        {"ic": "card", "t": "Licença hunter", "d": "Cada jogador tem a sua licença, que vira com um clique: na frente, a posição e os andares; no verso, a posição em cada placar e a superação em curso. Clique no nome de alguém para abrir a licença da pessoa (#67)."},
+        {"ic": "crown", "t": "Placares e evolução", "d": "Além do placar geral com pódio, cada hábito do grupo, o Codeforces e a superação ganham placar próprio, com quem lidera cada um. A sua posição semana a semana aparece num gráfico, com o líder em dourado (#42, #67)."},
+        {"ic": "scroll", "t": "Frase do líder", "d": "Quem liderar a semana escreve a frase que fica no topo do placar até a próxima semana fechar. Uma vez só, até 80 letras: escolha bem (#76)."},
+        {"ic": "flame", "t": "Hábitos do grupo", "d": "Os admins montam a lista em Torre Trick → administrar. O Codeforces vem sozinho; os outros (Digitação, Duolingo...) cada um liga a um hábito seu em Configurações → grupo, e o grupo vê só se você cumpriu no dia (#41)."},
+        {"ic": "antenna", "t": "Convite e servidor em casa", "d": "Sem conta e sem senha: o admin gera um link de uso único e você cola em Configurações → grupo. Quem cria o grupo liga o servidor no próprio computador, aberto pela internet com o Tailscale Funnel (grátis). Sem internet, a aba mostra o último placar e o seu jogo segue igual (#38, #39, #40)."}
+      ]},
+     {"versao": "0.9.0-beta1", "nome": "atualização do grupo", "data": "2026-10-14",
+      "resumo": "Primeiro teste do modo em grupo: um amigo vira o servidor, manda um convite, e a aba Grupo mostra quem jogou em cada dia. Por enquanto são só fatos; os pontos da Torre Trick entram depois, calibrados com o uso de vocês.",
+      "itens": [
+        {"ic": "tower", "t": "Aba Grupo", "d": "Um placar entre amigos com quem jogou em cada dia, a sequência de dias seguidos, o Codeforces e o Duolingo das últimas cinco semanas e quando cada um sincronizou. O seu XP e as suas tarefas não aparecem: o grupo vê só se você jogou no dia (#38, #40)."},
+        {"ic": "scroll", "t": "Convite por link", "d": "Sem conta e sem senha: o admin do grupo gera um link de uso único (vale 7 dias), e você cola em Configurações → grupo. Dá para estar em mais de um grupo, sair quando quiser e, se trocar de computador, pedir um reconvite que volta com o seu histórico (#39)."},
+        {"ic": "antenna", "t": "Seu computador como servidor", "d": "Em Configurações → grupo → criar um grupo, o jogo liga o servidor do grupo e tenta abrir o acesso pela internet com o Tailscale Funnel (grátis). Os admins convidam, cancelam convites e cuidam dos membros e das datas da temporada na aba Grupo → administrar (#38)."},
+        {"ic": "esp", "t": "Funciona offline", "d": "Sem internet, ou com o servidor do grupo desligado, a aba mostra o último placar recebido e o seu jogo segue igual. O que você fizer nesse tempo vai junto na próxima vez que o jogo conseguir falar com o servidor (#40)."}
+      ]},
+     {"versao": "0.7.1-beta1", "nome": "atualização do Ganbatte", "data": "2026-10-14",
+      "resumo": "Retratos para os chefões, uma aba Comprados na loja e tudo o que você compra guardado para sempre, numa pasta só sua.",
+      "itens": [
+        {"ic": "spider", "t": "Retratos dos chefões", "d": "15 retratos na Loja, em Aparência, para pôr no lugar do ícone de cada chefão. O retrato vai sozinho para o chefão de mesmo nome, e em Comprados dá para trocar. O card de chefões da Lista também ganhou o ícone. Ideia de #33."},
+        {"ic": "crown", "t": "Derrotou, ganhou", "d": "Derrote o chefão que está com um retrato e ele vira foto de perfil, de graça. Depois da derrota, a imagem desse chefão fica para sempre, mesmo que uma nota corrigida o traga de volta. Cada retrato fica em um chefão por vez."},
+        {"ic": "bag", "t": "Aba Comprados", "d": "O que é seu sai da vitrine e fica numa aba própria da Loja, junto com o que vem com o jogo (o emblema, a paleta Simples e as fotos grátis)."},
+        {"ic": "scroll", "t": "Coleção permanente", "d": "Tudo o que você compra fica guardado na pasta colecao/ dos seus dados, separado da loja: trocar de temporada ou atualizar o jogo não tira nada. O que você já tinha vai para lá sozinho na primeira vez que abrir esta versão."}
+      ]}
    ]},
   {"versao": "0.7", "nome": "atualização do Ganbatte", "data": "2026-10-13", "visual": true,
    "cap": "nova série · o Hunter.todo agora é Ganbatte",
