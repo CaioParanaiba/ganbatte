@@ -8,10 +8,17 @@ O dono do repositório é o **Caio** (`CaioParanaiba`). Ele revisa e junta os PR
 
 ## Preparar uma vez
 
-1. **Uma pasta só para desenvolver**, clonada com git (a cópia do ZIP não serve):
-   `git clone git@github.com:CaioParanaiba/ganbatte.git ganbatte-dev`. Se você também joga, não use a cópia em que joga:
-   trocar de branch nela muda o seu jogo.
-2. **GitHub CLI** instalado e com login: `gh auth login`.
+1. **GitHub CLI** instalado e com login: `gh auth login`, e depois `gh auth setup-git` (o git passa a usar esse login
+   no `git push`, sem pedir senha).
+2. **Uma pasta só para desenvolver**, clonada com git (a cópia do ZIP não serve). Rode na sua pasta de usuário, fora da
+   pasta em que joga:
+   ```
+   cd ~
+   git clone https://github.com/CaioParanaiba/ganbatte.git ganbatte-dev
+   ```
+   Se você também joga, não use a cópia em que joga: trocar de branch nela muda o seu jogo. Já clonou pelo endereço
+   `git@github.com:...` e deu `Permission denied (publickey)`? Troque para o HTTPS dentro da pasta, sem clonar de novo:
+   `git remote set-url origin https://github.com/CaioParanaiba/ganbatte.git`.
 3. **Internet para a IA.** O `git push` e o `gh` saem para a internet; aprove quando a IA pedir, ou libere a rede nas
    configurações dela.
 4. Python 3.8+ (o servidor e os testes) e Node (o simulador e o navegador de teste, só se precisar).
