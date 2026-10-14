@@ -268,21 +268,24 @@ function depoisDeAdicionar(){
 const N = {};
 function abreN(cac){
   if(!CTX || document.getElementById('xn')) return;
+  limpaAdicionada();
   const f = document.getElementById('l-add'); N.foco = document.activeElement; N.det = UI.ldet; UI.ldet = true;
   if(cac !== undefined) UI.lcac = cac;
   const bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = 'xn';
-  bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa<small>Enter adiciona · vazio, Enter fecha · Esc fecha</small></h3><div id="xn-slot"></div></div><div class="wz-foot"><button type="button" class="btn" data-nfecha>fechar</button></div></div>`;
+  bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa<small>Enter adiciona · vazio, Enter fecha · Esc fecha · C cria uma caçada inteira</small></h3><div id="xn-slot"></div></div><div class="wz-foot"><button type="button" class="btn" data-nfecha>fechar</button></div></div>`;
   document.body.appendChild(bg); document.getElementById('xn-slot').appendChild(f); formL();
   document.getElementById('l-txt').focus();
 }
 function fechaN(){
   const bg = document.getElementById('xn'); if(!bg) return;
+  limpaAdicionada();
   // O painel da IA e os irmãos do formulário podem mudar enquanto a janela está aberta.
   document.getElementById('l-form').appendChild(document.getElementById('l-add')); UI.ldet = N.det; bg.remove(); formL();
   if(N.foco && N.foco.isConnected) N.foco.focus({preventScroll:true}); N.foco = null;
 }
 
 /* ---------- janelas: caçada nova (C), editar caçada, expedição nova ou editada ---------- */
+let C = null;
 function janela(id, titulo, corpo, ok){
   fechaJanela();
   const bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = id;
@@ -290,7 +293,12 @@ function janela(id, titulo, corpo, ok){
     <div class="wz-foot"><span class="err" role="alert" id="${id}-err"></span><span style="display:flex;gap:8px;margin-left:auto"><button type="button" class="btn" data-xfecha>cancelar</button><button type="button" class="btn v" data-xok>${ok}</button></span></div></div>`;
   document.body.appendChild(bg); const f = bg.querySelector('input,textarea,select'); if(f) f.focus();
 }
-function fechaJanela(){ document.querySelectorAll('#xc,#xe,#xx').forEach(x => x.remove()); }
+function fechaJanela(){ if(C){ clearTimeout(C.timer); C = null; } document.querySelectorAll('#xc,#xe,#xx').forEach(x => x.remove()); }
+function limpaAdicionadaC(c = C){
+  if(!c) return;
+  clearTimeout(c.timer); c.adicionada = false;
+  const btn = c.bg.querySelector('[data-xok]'); btn.classList.remove('salva'); btn.textContent = c.salvando ? 'criando…' : 'criar caçada';
+}
 const erro = (id, m) => { const el = document.getElementById(id + '-err'); if(el) el.textContent = m; };
 const expSelect = (id, v) => `<select id="${id}">${'<option value="">nenhuma (caçada avulsa)</option>' + ativas(estado()).map(e => `<option value="${esc(e.slug)}"${e.slug === v ? ' selected' : ''}>${esc(e.n)}</option>`).join('')}</select>`;
 function abreC(exp){
@@ -301,21 +309,44 @@ function abreC(exp){
       <label>tipo das etapas<select id="xc-t">${tipos.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></label>
       <label>disciplina<select id="xc-d"><option value="">nenhuma</option>${BOSSES.map(b => `<option>${esc(b.d)}</option>`).join('')}</select></label>
       <label>prazo da caçada (opcional)<input id="xc-p" type="date"><small class="h">Só organiza: o XP continua pelo prazo de cada etapa.</small></label></div>
-    <label>etapas, uma por linha<textarea id="xc-e" placeholder="Pesquisar o tema&#10;Escrever a introdução&#10;Montar os slides amanhã&#10;Revisar com ela 20/10"></textarea><small class="h">"hoje", "amanhã", "sexta" ou uma data no fim da linha viram o prazo da etapa. Ctrl+Enter cria.</small></label>`, 'criar caçada');
+    <label>etapas, uma por linha<textarea id="xc-e" placeholder="Pesquisar o tema&#10;Escrever a introdução&#10;Montar os slides amanhã&#10;Revisar com ela 20/10"></textarea><small class="h">"hoje", "amanhã", "sexta" ou uma data no fim da linha viram o prazo da etapa. Enter cria · etapas vazias, Enter fecha · Shift+Enter quebra a linha · Esc fecha. Ctrl+Enter também cria.</small></label>`, 'criar caçada');
+  C = {bg:document.getElementById('xc'), salvando:false, adicionada:false, timer:null, slug:'', enviadas:0, aviso:null};
+  C.bg.querySelector('[data-xfecha]').textContent = 'fechar';
 }
 async function criaC(){
-  const n = document.getElementById('xc-n').value.trim(), exp = document.getElementById('xc-x').value || null, tipo = document.getElementById('xc-t').value, disc = document.getElementById('xc-d').value;
-  const prazo = document.getElementById('xc-p').value || null;
-  const ls = document.getElementById('xc-e').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const c = C; if(!c || c.salvando || !c.bg.isConnected) return;
+  const nome = c.bg.querySelector('#xc-n'), etapas = c.bg.querySelector('#xc-e'), data = c.bg.querySelector('#xc-p');
+  const n = nome.value.trim(), exp = c.bg.querySelector('#xc-x').value || null, tipo = c.bg.querySelector('#xc-t').value, disc = c.bg.querySelector('#xc-d').value;
+  const prazo = data.value || null, ls = etapas.value.split('\n').map(s => s.trim()).filter(Boolean);
   if(!n) return erro('xc', 'Dê um nome para a caçada.');
   if(!ls.length) return erro('xc', 'Escreva pelo menos uma etapa.');
-  const slug = novoSlug(n, 'cacadas');
+  c.salvando = true; limpaAdicionadaC(c);
+  const btn = c.bg.querySelector('[data-xok]'), aviso = c.bg.querySelector('#xc-err'), campos = c.bg.querySelectorAll('input,select,textarea');
+  btn.disabled = true; aviso.textContent = ''; c.bg.setAttribute('aria-busy', 'true'); campos.forEach(el => el.disabled = true);
+  const slug = c.slug || (c.slug = novoSlug(n, 'cacadas'));
   try {
-    Object.assign(meta('cacadas', slug), {n:n.slice(0, 80), exp, criada:HOJE}, prazo ? {prazo} : {}); await salva();
-    for(const l of ls) await post('/api/add', {text: linhaEtapa(l, {grupo:'+cac.' + slug, tipo, disc})});
-    await recarrega();
-  } catch(err){ return erro('xc', 'Não criou: ' + err.message); }
-  fechaJanela(); render(); toast(`Caçada criada <small>${esc(n)} · ${ls.length} etapa${ls.length > 1 ? 's' : ''}${exp ? ' · marco novo' : ''}</small>`);
+    const m = meta('cacadas', slug); Object.assign(m, {n:n.slice(0, 80), exp, criada:m.criada || HOJE});
+    if(prazo) m.prazo = prazo; else delete m.prazo;
+    await salva();
+    for(let i = 0; i < ls.length; i++){
+      await post('/api/add', {text: linhaEtapa(ls[i], {grupo:'+cac.' + slug, tipo, disc})});
+      c.enviadas++; etapas.value = ls.slice(i + 1).join('\n');   // numa falha parcial, só as etapas restantes são reenviadas
+    }
+    const total = c.enviadas; c.slug = ''; c.enviadas = 0; c.adicionada = true;
+    nome.value = ''; data.value = '';
+    try { await recarrega(); render(); }
+    catch(err){ aviso.textContent = 'Caçada criada. Não deu para atualizar a Lista; recarregue a página.'; }
+    c.aviso?.remove(); c.aviso = toast(`Caçada criada <small>${esc(n)} · ${total} etapa${total > 1 ? 's' : ''}${exp ? ' · marco novo' : ''}</small>`, 2000);
+  } catch(err){
+    aviso.textContent = (c.enviadas ? 'Caçada criada em parte. Não adicionou as etapas restantes: ' : 'Não criou: ') + err.message;
+    if(c.enviadas){ try { await recarrega(); render(); } catch(e){} }
+  } finally {
+    c.salvando = false; btn.disabled = false; campos.forEach(el => el.disabled = false); c.bg.removeAttribute('aria-busy');
+    if(c.adicionada && c.bg.isConnected){
+      btn.textContent = '✓ caçada criada'; btn.classList.add('salva'); nome.focus({preventScroll:true});
+      c.timer = setTimeout(() => limpaAdicionadaC(c), 2000);
+    } else btn.textContent = 'criar caçada';
+  }
 }
 function abreEditC(slug){
   const c = g(estado()).cac[slug]; if(!c) return;
@@ -511,7 +542,7 @@ document.addEventListener('click', async ev => {
   if(['xc','xe','xx'].includes(ev.target.id)){ fechaJanela(); return; }
 });
 document.addEventListener('change', ev => { if(ev.target.id === 'l-cac'){ UI.lcac = ev.target.value; formCacadas(); prevL(); if(UI.lcac === '+nova') document.getElementById('l-cacn').focus(); } });
-document.addEventListener('input', ev => { if(ev.target.id === 'l-cacn') prevL(); });
+document.addEventListener('input', ev => { if(ev.target.id === 'l-cacn') prevL(); if(ev.target.closest('#xc') && C && !C.salvando) limpaAdicionadaC(); });
 document.addEventListener('submit', async ev => {
   const f = ev.target.closest('[data-xadd]'); if(!f) return;
   ev.preventDefault(); const inp = f.querySelector('input'), v = inp.value.trim(); if(!v) return;
@@ -526,7 +557,11 @@ document.addEventListener('keydown', ev => {
     if(!ev.target.value.trim()) fechaN(); else document.getElementById('l-add').requestSubmit();
     return;
   }
-  if(ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey) && document.getElementById('xc')){ ev.preventDefault(); criaC(); return; }
+  if(ev.key === 'Enter' && document.getElementById('xc') && (ev.ctrlKey || ev.metaKey || ['xc-n','xc-e'].includes(ev.target.id)) && !ev.altKey && !ev.shiftKey && !ev.isComposing){
+    ev.preventDefault(); if(C.salvando || ev.repeat) return;
+    if(!document.getElementById('xc-e').value.trim() && (ev.target.id === 'xc-e' || !document.getElementById('xc-n').value.trim())) fechaJanela(); else criaC();
+    return;
+  }
   if(ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
   const a = document.activeElement; if(a && (a.matches('input,textarea,select') || a.isContentEditable)) return;
   if(document.querySelector('.wz-bg, #tr-pop')) return;   // outra janela ou um tutorial aberto

@@ -22,6 +22,7 @@ async function verifica(){
     confere(el('l-add').parentNode === el('l-form'), 'O formulário não voltou para a Lista');
     confere(document.querySelectorAll('#l-add').length === 1, 'Formulário duplicado');
     confere(el('ia-lote').parentNode === el('l-form').parentNode, 'O painel da IA saiu da Lista');
+    confere(!el('l-btn').classList.contains('salva') && el('l-btn').textContent === '+ adicionar', 'Fechar manteve a confirmação de envio na Lista');
   };
   const envia = async () => { el('l-add').requestSubmit(); await espera(() => !LA.salvando); };
   const adicionou = () => {
@@ -31,17 +32,31 @@ async function verifica(){
     confere(el('l-btn').classList.contains('salva') && el('l-btn').textContent === '✓ adicionada', 'O botão não confirmou o envio');
     confere(getComputedStyle(el('l-btn')).opacity === '1', 'A confirmação está apagada');
   };
+  const confirmacaoSumiu = () => {
+    confere(!LA.adicionada && !el('l-btn').classList.contains('salva') && el('l-btn').textContent === '+ adicionar', 'O botão não voltou ao normal após dois segundos');
+    confere(![...document.querySelectorAll('.toast')].some(t => t.textContent.includes('Adicionada')), 'O aviso Adicionada não sumiu após dois segundos');
+  };
   const fechaVazia = () => { el('l-txt').focus(); tecla('Enter'); fechou(); };
   const nome = t => `Teste formulário ${Date.now()} ${t}`;
 
   await espera(() => !!CTX);
   confere(CTX.JOG.configurado, 'Configure o jogador de teste antes de executar');
-  EST.tour = Object.assign(EST.tour || {}, Object.fromEntries(TABS.map(t => [t, 1])));
   document.querySelector('#nv-big [data-nvbig]')?.click();
+  if(!el('tr-pop')) GB_GUIA.tutorial('l');
+  confere(el('tr-pop'), 'O tutorial não abriu para testar o preparo automático');
+  EST.tour = Object.assign(EST.tour || {}, Object.fromEntries(TABS.map(t => [t, 1])));
+  // A primeira visita pode já ter aberto (ou agendado) o tutorial da Lista.
+  await pausa(400);
+  document.querySelector('#tr-pop [data-tr="x"]')?.click();
+  await post('/api/jogo/estado', {estado:EST});
+  await recarrega(); render();
+  confere(TABS.every(t => EST.tour[t]), 'Os tutoriais de teste não ficaram gravados');
   confere(!document.querySelector('.wz-bg, #tr-pop'), 'Feche o assistente ou tutorial antes de executar');
+  passou.push('preparo automático dos tutoriais e estado preservado ao recarregar');
 
   // Atualizar a Lista removia o irmão que fechaN() usava em insertBefore().
   tab('l'); UI.ldet = false; abre();
+  confere(el('xn-t').textContent.includes('C cria uma caçada inteira'), 'A dica do atalho C não aparece na janela');
   const rascunho = nome('rascunho'); texto(rascunho);
   document.querySelector('#xn .wz-body').click(); confere(el('xn'), 'Clique dentro fechou a janela');
   render(); render();
@@ -151,10 +166,104 @@ async function verifica(){
   confere(await conta(direta) === 1 && !el('xn'), 'O formulário direto da Lista parou de funcionar');
   passou.push('caçada nova, validação e formulário direto da Lista');
 
+  confere(el('l-btn').textContent === '✓ adicionada', 'A Lista não confirmou o envio');
+  tab('b'); await pausa(2200); tab('l');
+  confirmacaoSumiu();
+  const anterior = nome('timer da Lista'); texto(anterior); await envia();
+  await pausa(1200);
+  abre(); texto(nome('confirmação da janela')); await envia(); adicionou();
+  await pausa(1000); adicionou();
+  confere([...document.querySelectorAll('.toast')].some(t => t.textContent.includes('Adicionada')), 'O timer anterior apagou o aviso da tarefa nova');
+  await pausa(1200); confirmacaoSumiu();
+  confere(el('xn') && document.activeElement === el('l-txt') && el('l-txt').value === '', 'O fim da confirmação fechou a janela ou tirou o foco');
+  tecla('Escape'); fechou();
+  passou.push('botão e aviso somem após dois segundos na Lista e na janela, sem interromper o próximo cadastro');
+
   document.querySelector('[data-l="edit"]').click(); confere(el('l-ed'), 'Edição não abriu');
   abre(); texto(nome('foco')); render();
   confere(document.activeElement === el('l-txt'), 'A edição atrás da janela roubou o foco');
-  tecla('Escape'); fechou(); UI.ledit = null; render();
+  tecla('Escape'); fechou();
+  document.activeElement.blur(); tecla('c'); el('xc-n').focus(); render();
+  confere(document.activeElement === el('xc-n'), 'A edição atrás da janela roubou o foco da caçada');
+  tecla('Escape'); UI.ledit = null; render();
+  const abreC = () => { document.activeElement.blur(); tecla('c'); confere(el('xc'), 'C não abriu a janela da caçada'); };
+  const textoC = (n, etapas) => {
+    el('xc-n').value = n; el('xc-n').dispatchEvent(new Event('input', {bubbles:true}));
+    el('xc-e').value = etapas; el('xc-e').dispatchEvent(new Event('input', {bubbles:true})); el('xc-e').focus();
+  };
+  const enviaC = async extra => { el('xc-e').focus(); tecla('Enter', extra); await espera(() => !el('xc')?.hasAttribute('aria-busy')); };
+  const criouC = () => {
+    confere(el('xc') && el('xc-n').value === '' && el('xc-e').value === '', 'Criar fechou a janela ou não limpou os campos da caçada');
+    confere(document.activeElement === el('xc-n'), 'O foco não voltou ao nome da próxima caçada');
+    confere(!el('xc').hasAttribute('aria-busy') && !el('xc-e').disabled, 'A janela da caçada continuou ocupada');
+    confere(el('xc').querySelector('[data-xok]').textContent === '✓ caçada criada', 'O botão não confirmou a criação da caçada');
+    const aviso = [...document.querySelectorAll('.toast')].find(t => t.textContent.includes('Caçada criada'));
+    confere(aviso && +getComputedStyle(aviso).zIndex > +getComputedStyle(el('xc')).zIndex, 'A confirmação da caçada ficou atrás da janela');
+  };
+  const projeto = 'teste-c-' + Date.now();
+  EST.expedicoes = {...EST.expedicoes, [projeto]:{n:'Projeto de teste do C', ic:'island', ini:HOJE}};
+  await post('/api/jogo/estado', {estado:EST}); await recarrega(); render();
+  abreC(); el('xc-x').value = projeto; el('xc-t').value = 'est';
+  const disciplina = el('xc-d').options[1].value; el('xc-d').value = disciplina;
+  for(let i = 0; i < 3; i++){
+    const n = nome('C sequência ' + i), etapa = nome('C etapa ' + i);
+    textoC(n, etapa); el('xc-p').value = HOJE;
+    if(i === 2){ el('xc').querySelector('[data-xok]').click(); await espera(() => !el('xc')?.hasAttribute('aria-busy')); }
+    else await enviaC(i === 1 ? {ctrlKey:true} : {});
+    criouC();
+    const j = await fetch('/api/jogo').then(r => r.json()), cs = Object.entries(j.estado.cacadas).filter(([s, c]) => c.n === n);
+    confere(cs.length === 1 && cs[0][1].exp === projeto && cs[0][1].prazo === HOJE, 'A caçada perdeu o projeto ou o prazo, ou foi duplicada');
+    confere(j.todo.filter(l => l.includes(etapa)).length === 1 && j.todo.some(l => l.includes(etapa) && l.includes('+cac.' + cs[0][0]) && l.includes('+fac.' + disciplina)), 'A etapa foi duplicada ou perdeu os vínculos');
+    confere(el('xc-x').value === projeto && el('xc-t').value === 'est' && el('xc-d').value === disciplina && el('xc-p').value === '', 'Os campos da próxima caçada não ficaram prontos');
+    tecla('Enter', {repeat:true}); confere(el('xc'), 'Enter repetido fechou a janela após criar a caçada');
+  }
+  await pausa(2200);
+  confere(el('xc').querySelector('[data-xok]').textContent === 'criar caçada' && !el('xc').querySelector('[data-xok]').classList.contains('salva'), 'O botão da caçada não voltou ao normal após dois segundos');
+  confere(![...document.querySelectorAll('.toast')].some(t => t.textContent.includes('Caçada criada')), 'O aviso da caçada não sumiu após dois segundos');
+  const antesC = (await fetch('/api/jogo').then(r => r.json())).todo.length;
+  el('xc-e').focus(); tecla('Enter'); confere(!el('xc'), 'Enter com etapas vazias não fechou a janela');
+  confere((await fetch('/api/jogo').then(r => r.json())).todo.length === antesC, 'Enter vazio criou uma etapa');
+  passou.push('C mantém a janela para três caçadas, Enter/Ctrl+Enter/botão, vínculos, confirmação de dois segundos e Enter vazio');
+
+  abreC(); const validacaoC = nome('C validação'); textoC('', validacaoC); await enviaC();
+  confere(el('xc') && el('xc-e').value === validacaoC && el('xc-err').textContent.includes('nome'), 'Caçada sem nome fechou ou perdeu o rascunho');
+  const shift = new KeyboardEvent('keydown', {key:'Enter', shiftKey:true, bubbles:true, cancelable:true});
+  el('xc-e').dispatchEvent(shift); confere(!shift.defaultPrevented && !el('xc').hasAttribute('aria-busy'), 'Shift+Enter foi tratado como envio');
+  tecla('Enter', {isComposing:true}); confere(!el('xc').hasAttribute('aria-busy'), 'Composição de texto enviou a caçada');
+  tecla('Escape'); confere(!el('xc'), 'Esc não fechou a janela da caçada');
+  abreC(); el('xc').querySelector('.wz-body').click(); confere(el('xc'), 'Clique dentro fechou a caçada');
+  el('xc').click(); confere(!el('xc'), 'Clique fora não fechou a caçada');
+  abreC(); el('xc').querySelector('[data-xfecha]').click(); confere(!el('xc'), 'Botão fechar não fechou a caçada');
+  abreC(); tecla('Enter'); confere(!el('xc'), 'Enter com nome e etapas vazios não fechou a caçada');
+  passou.push('C preserva a validação e o rascunho, Shift+Enter, composição de texto, Esc, clique fora e botão fechar');
+
+  try {
+    abreC(); const repetidaC = nome('C envio repetido'), etapaC = nome('C etapa única'); textoC(repetidaC, etapaC);
+    let pedidos = 0, libera;
+    window.fetch = (url, op) => {
+      if(url !== '/api/add') return fetch0(url, op);
+      pedidos++; return new Promise((ok, err) => { libera = () => fetch0(url, op).then(ok, err); });
+    };
+    el('xc').querySelector('[data-xok]').click(); await espera(() => !!libera);
+    for(let i = 0; i < 30; i++){ el('xc').querySelector('[data-xok]').dispatchEvent(new MouseEvent('click', {bubbles:true})); tecla('Enter', {ctrlKey:true}); }
+    confere(pedidos === 1 && el('xc').querySelector('[data-xok]').disabled && el('xc-e').disabled, 'C repetido duplicou o envio ou não bloqueou o formulário');
+    libera(); await espera(() => !el('xc').hasAttribute('aria-busy')); criouC();
+    confere(await conta(etapaC) === 1, 'C repetido duplicou a etapa'); tecla('Escape');
+    passou.push('C bloqueia 30 envios simultâneos sem duplicar a etapa');
+
+    abreC(); const parcialC = nome('C falha parcial'), primeira = nome('C primeira etapa'), segunda = nome('C segunda etapa'); textoC(parcialC, primeira + '\n' + segunda);
+    let enviadas = 0;
+    window.fetch = (url, op) => url === '/api/add' && ++enviadas === 2
+      ? Promise.resolve(new Response(JSON.stringify({ok:false, error:'Falha parcial de teste'}))) : fetch0(url, op);
+    await enviaC();
+    confere(el('xc') && el('xc-e').value === segunda && el('xc-n').value === parcialC && el('xc-err').textContent.includes('em parte'), 'A falha parcial não preservou só a etapa restante');
+    confere(await conta(primeira) === 1 && await conta(segunda) === 0, 'A falha parcial perdeu ou duplicou etapas');
+    window.fetch = fetch0; await enviaC(); criouC();
+    const j = await fetch('/api/jogo').then(r => r.json()), cs = Object.entries(j.estado.cacadas).filter(([s, c]) => c.n === parcialC);
+    confere(cs.length === 1 && j.todo.filter(l => l.includes('+cac.' + cs[0][0])).length === 2 && await conta(primeira) === 1 && await conta(segunda) === 1, 'Tentar de novo criou outra caçada ou duplicou a primeira etapa');
+    tecla('Enter'); confere(!el('xc'), 'Enter vazio após tentar novamente não fechou a caçada');
+    passou.push('C recupera falha parcial sem reenviar etapas já gravadas nem criar outra caçada');
+  } finally { window.fetch = fetch0; }
   confere(erros.length === 0, 'Erros no navegador: ' + erros.join('; '));
   passou.push('foco com edição aberta e ausência de erros no navegador');
   window.resultadoFormulario = passou;

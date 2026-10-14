@@ -1131,7 +1131,7 @@ a.btn{display:inline-block;text-decoration:none}
 .l-nk{font:11px var(--f-mono);color:var(--faint);white-space:nowrap}
 .l-line input::placeholder,.l-cacs input::placeholder{color:var(--faint)}
 .l-go:disabled{opacity:.45;cursor:not-allowed}
-.l-go.salva{opacity:1;color:var(--grn);border-color:var(--grn);animation:l-envio .2s ease-out}
+.l-go.salva,#xc [data-xok].salva{opacity:1;color:var(--grn);border-color:var(--grn);animation:l-envio .2s ease-out}
 @keyframes l-envio{50%{transform:translateY(2px)}}
 .toast.l-aviso{z-index:61}
 .l-opts{display:flex;gap:10px 18px;flex-wrap:wrap;margin-top:10px;align-items:center}
@@ -2163,6 +2163,8 @@ function ajudaL(){
     <p style="margin:8px 0 0">Na dúvida, pense em quem cobra: alguém espera a entrega → <b>entrega</b>; é para a prova → <b>estudo</b>; programação ou projeto seu → <b>treino/projeto</b>. O jogo sugere o tipo pelas palavras do texto${window.GB_IA && window.GB_IA.ligada() ? ', e o botão <b>IA?</b> pergunta à IA' : ''}; clicar num tipo troca a sugestão.</p>`;
 }
 function marcaTipo(){ document.querySelectorAll('[data-ltipo]').forEach(b => b.setAttribute('aria-pressed', b.dataset.ltipo === LA.tipo)); }
+let adicionadaTimer = null;
+function limpaAdicionada(){ clearTimeout(adicionadaTimer); LA.adicionada = false; }
 function prevL(){
   if(!CTX) return;
   if(LA.auto){ const sg = GBx.sugereTipo(document.getElementById('l-txt').value, !!document.getElementById('l-disc').value);
@@ -2232,7 +2234,7 @@ function rL(S){
   document.getElementById('l-groups').innerHTML = (G.length ? G.map(([n,c,l]) => `<section class="l-grp"><h3><span class="t ${c}">${n}</span><small>${l.length}</small><span class="sum">até +${l.reduce((s,t) => s + t.x, 0)} XP</span></h3><ul class="l-list">${l.map(t => t.h).join('')}</ul></section>`).join('')
       : '<div class="card l-empty">Nenhuma tarefa aberta. Escreva a primeira ali em cima: o tipo e o prazo mudam quanto ela vale.</div>')
     + (feitas.length ? `<details class="l-grp"${UI.ldone ? ' open' : ''} id="l-feitas"><summary><h3><span class="t ok">Concluídas hoje</span><small>${feitas.length}</small><span class="sum">+${xpF} XP</span></h3></summary><ul class="l-list">${feitas.map(t => rowL(t, S, xpDe2.get(t.raw) || 0)).join('')}</ul></details>` : '');
-  const ed = document.getElementById('l-ed'); if(ed && !document.getElementById('xn')){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
+  const ed = document.getElementById('l-ed'); if(ed && !document.querySelector('#xn,#xc')){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
   document.getElementById('l-golpes').innerHTML = S.golpes.slice(0,3).map(g => `<div class="l-g"><b>${esc(g.t.txt)}</b><small>${[discOf(g.t), g.t.due ? dueTxt(g.t.due) : '', g.fury ? 'fúria ×1,5' : '', g.bonus ? 'missão ×1,5' : ''].filter(Boolean).join(' · ')}</small><span class="l-xp">+${g.x}</span></div>`).join('') || '<p class="sub" style="margin:0">Nada aberto.</p>';
   document.getElementById('l-bosses').innerHTML = S.bs.map(b => `<button class="l-boss${b.dead ? ' dead' : ''}" data-go="b2" data-bsel="${b.d}"><span class="sig">${esc(b.d)}</span><span class="hp"><i style="width:${pct(b.rest,b.tot)}%"></i></span><span class="st${b.fury ? ' fury' : ''}">${b.dead ? 'DERROTADO' : b.fury ? 'FÚRIA' : Math.round(pct(b.rest,b.tot)) + '%'}</span><span class="nm">${esc(b.n)}${b.need != null && !b.dead ? ` · precisa de ${nf(Math.max(0,b.need))} no resto` : ''}</span></button>`).join('') || '<p class="sub" style="margin:0">Nenhuma disciplina cadastrada. Cadastre na aba Chefões.</p>';
   document.getElementById('l-exps').innerHTML = window.GB_EXP ? GB_EXP.lateral(S) : '';
@@ -2373,7 +2375,7 @@ async function cfMao(menos){
     document.body.appendChild(to); setTimeout(() => to.remove(), 6000); }
   catch(err){ toast('Não marcou: ' + esc(err.message)); }
 }
-function toastUndo(html){ document.querySelectorAll('.toast').forEach(t => t.remove()); const to = document.createElement('div'); to.className = 'toast' + (document.getElementById('xn') ? ' l-aviso' : ''); to.innerHTML = html + '<button class="l-undo" data-lundo>desfazer</button>'; document.body.appendChild(to); setTimeout(() => to.remove(), 6000); }
+function toastUndo(html, ms = 6000){ document.querySelectorAll('.toast').forEach(t => t.remove()); const to = document.createElement('div'); to.className = 'toast' + (document.getElementById('xn') ? ' l-aviso' : ''); to.innerHTML = html + '<button class="l-undo" data-lundo>desfazer</button>'; document.body.appendChild(to); setTimeout(() => to.remove(), ms); }
 async function acaoL(fn, msg){ try { await fn(); await recarrega(); render(); if(msg) toastUndo(msg); } catch(err){ toast('Não deu: ' + esc(err.message)); } }
 document.addEventListener('click', async e => {
   const q = s => e.target.closest(s);
@@ -2426,7 +2428,7 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape'){ UI.ledit = null; render(); }
 });
 document.addEventListener('input', e => {
-  if(e.target.id === 'l-txt'){ LA.adicionada = false; prevL(); }
+  if(e.target.id === 'l-txt'){ limpaAdicionada(); prevL(); }
   /* campos de data: dd/mm/aaaa, com as barras entrando sozinhas */
   if(e.target.classList.contains('dt') && e.inputType && !e.inputType.startsWith('delete')){
     const n = e.target.value.replace(/\D/g, '').slice(0, 8); e.target.value = n.length > 4 ? `${n.slice(0,2)}/${n.slice(2,4)}/${n.slice(4)}` : n.length > 2 ? `${n.slice(0,2)}/${n.slice(2)}` : n; }
@@ -2445,7 +2447,7 @@ document.getElementById('l-add').addEventListener('submit', async e => {
   e.preventDefault(); if(LA.salvando || !document.getElementById('l-txt').value.trim()) return;
   const S = estado(), linha = rascunho(), v = valeL(GBx.parseLinha(HOJE + ' ' + linha, 0), S), P = priL(linha, S);
   const f = e.currentTarget, campo = document.getElementById('l-txt'), erro = document.getElementById('l-erro');
-  LA.salvando = true; LA.adicionada = false; f.setAttribute('aria-busy', 'true'); campo.readOnly = true; erro.hidden = true; prevL();
+  LA.salvando = true; limpaAdicionada(); f.setAttribute('aria-busy', 'true'); campo.readOnly = true; erro.hidden = true; prevL();
   try {
     try { if(window.GB_EXP) await GB_EXP.antesDeAdicionar(); await post('/api/add', {text:(P.pri ? `(${P.pri}) ` : '') + linha}); }
     catch(err){ erro.textContent = 'Não adicionou: ' + err.message; erro.hidden = false; return; }
@@ -2453,10 +2455,11 @@ document.getElementById('l-add').addEventListener('submit', async e => {
     if(window.GB_EXP) GB_EXP.depoisDeAdicionar();
     try { await recarrega(); render(); }
     catch(err){ erro.textContent = 'Tarefa adicionada. Não deu para atualizar a Lista; recarregue a página.'; erro.hidden = false; return; }
-    toastUndo(`Adicionada${P.pri ? ` com prioridade ${P.pri}` : ''} <small>vale +${v.x} XP</small>`);
+    toastUndo(`Adicionada${P.pri ? ` com prioridade ${P.pri}` : ''} <small>vale +${v.x} XP</small>`, 2000);
   } finally {
     LA.salvando = false; campo.readOnly = false; f.removeAttribute('aria-busy'); prevL();
     if(LA.adicionada && (document.getElementById('xn') || cur === 'l')) campo.focus({preventScroll:true});
+    if(LA.adicionada) adicionadaTimer = setTimeout(() => { limpaAdicionada(); prevL(); }, 2000);
   }
 });
 
@@ -2476,7 +2479,7 @@ function tab(t){
   try { history.replaceState(null,'','#'+t); } catch(e){}
   render(); try { window.scrollTo({top:0}); } catch(e){}
 }
-function toast(html){ const to = document.createElement('div'); to.className = 'toast'; to.innerHTML = html; document.body.appendChild(to); setTimeout(() => to.remove(), 2600); }
+function toast(html, ms = 2600){ const to = document.createElement('div'); to.className = 'toast' + (document.querySelector('#xn,#xc') ? ' l-aviso' : ''); to.innerHTML = html; document.body.appendChild(to); setTimeout(() => to.remove(), ms); return to; }
 function floatAt(r, txt){ const f = document.createElement('div'); f.className = 'float'; f.textContent = txt; f.style.left = (r.left + r.width/2)+'px'; f.style.top = (r.top - 6)+'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 1200); }
 function confete(forcado){
   if(!forcado && window.GB_FX) GB_FX.festa();

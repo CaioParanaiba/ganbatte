@@ -122,8 +122,10 @@ que eles descrevem.
 - **Navegador automático:** `node ferramentas/navegador.mjs URL roteiro.json` (Firefox headless; detalhes no
   `docs/PENDENCIAS.md`, "Como testar").
 - **Formulário de tarefas:** configure um jogador no servidor de teste e rode
-  `node tests/test_formulario.mjs http://127.0.0.1:8799/`. Confere o atalho N, o fechamento, os envios repetidos e as
-  falhas de gravação. Cria tarefas na pasta de teste.
+  `node tests/test_formulario.mjs http://127.0.0.1:8799/`. O teste fecha o tutorial aberto e grava os tutoriais como vistos
+  antes de recarregar os dados. Confere os atalhos N/C, os cadastros seguidos de tarefas e caçadas, o fechamento,
+  a confirmação de dois segundos, os envios repetidos e as falhas de gravação. Cria tarefas e caçadas e marca os tutoriais
+  como vistos na pasta de teste.
 - **Balanceamento:** mexeu em XP ou Jenny? Rode `node ferramentas/simulador.mjs` e ponha o antes e o depois no PR.
 - **Mexeu em `web/`?** Rode `python3 ferramentas/standalone.py` (gera o modo demonstração, que não vai para o git) e
   confira se ele abre.
