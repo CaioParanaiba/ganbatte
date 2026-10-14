@@ -332,6 +332,31 @@ class Estado(Base):
         self.assertEqual((e["own"], e["tenRec"], e["acertos"]["0.6.4"]), (["fr-hunter"], 3, 500))
 
 
+class Colecao(Base):
+    """Coleção permanente (#33): o comprado fica em colecao/, com a imagem copiada, e nada sai de lá."""
+
+    def test_guarda_com_imagem_e_so_acrescenta(self):
+        r = s.api_colecao({"itens": [{"id": "ch-uvogin", "cat": "chefe", "n": "Uvogin", "p": 1500, "img": "chefoes/uvogin.png",
+                                      "quando": "2026-10-10", "lixo": "x"}]})
+        it = r["colecao"]["itens"]["ch-uvogin"]
+        self.assertEqual((it["origem"], it["quando"], it["arquivo"]), ("masadora", "2026-10-10", "chefoes-uvogin.png"))
+        self.assertNotIn("lixo", it)
+        self.assertTrue((s.DADOS / "colecao" / "arquivos" / "chefoes-uvogin.png").is_file())
+        s.api_colecao({"itens": [{"id": "ch-uvogin", "cat": "chefe", "n": "Outro nome"}, {"id": "pal-gon", "cat": "pal", "n": "Gon"}]})
+        c = s.colecao()["itens"]
+        self.assertEqual(c["ch-uvogin"]["n"], "Uvogin")   # quem já está não é trocado
+        self.assertEqual(c["pal-gon"]["quando"], HOJE.isoformat())
+        self.assertIn("colecao", s.api_jogo_get())
+
+    def test_recusa_item_estranho(self):
+        for x in ({"id": "../x", "cat": "pal", "n": "a"}, {"id": "a", "cat": "feitico", "n": "a"}, {"id": "a", "cat": "pal", "n": ""},
+                  {"id": "a", "cat": "pal", "n": "a", "origem": "outra"}):
+            with self.assertRaises(s.Erro):
+                s.api_colecao({"itens": [x]})
+        r = s.api_colecao({"itens": [{"id": "av-x", "cat": "avatar", "n": "X", "img": "../servidor.png"}]})
+        self.assertNotIn("arquivo", r["colecao"]["itens"]["av-x"])
+
+
 class Devolucao(Base):
     """#51: o que voltou para a loja na devolução não volta pela gravação de uma aba antiga; comprado de novo depois, fica."""
     DV = {"v": "2026-10-13", "em": "2026-10-13", "h": "12:00:00", "own": ["th-killua", "pal-killua"], "feiticos": ["ko"], "semana": "2026-W42", "j": 0}
