@@ -1,7 +1,7 @@
 /* Ganbatte · IA opcional. Dois jeitos, com os mesmos pedidos (prompt + os seus dados), explicados no IA.md (mantenha os
  * textos daqui e de lá iguais):
  *   copiar e colar: você cola o pedido numa IA qualquer (ChatGPT, Claude, Gemini...) e cola a resposta de volta;
- *   IA ligada (aba Configurações → IA): o servidor chama o agente de terminal do jogador (Claude Code, Codex, Gemini CLI) com o
+ *   IA ligada (aba Configurações → IA): o servidor chama o agente de terminal do jogador (Claude Code, Codex, Gemini CLI, Antigravity CLI) com o
  *   mesmo pedido e a resposta cai no mesmo lugar. O agente só devolve texto; quem confere e grava é o jogo.
  * Pedidos:
  *   plano de ensino → avaliações do chefão (o editor do chefão, em chefes.js, recebe a resposta)
@@ -179,7 +179,7 @@ async function addCarta(){
 let IAS = null, IA_RODA = null;   // GET /api/ia (agentes achados, planos); o pedido rodando agora
 const conf = () => Object.assign({agente:'chat', desde:'', cartas:true}, CTX.JOG.ia || {});
 const ligada = () => !!CTX.SRV && conf().agente !== 'chat';
-const nomeAg = () => ({claude:'Claude Code', codex:'Codex', gemini:'Gemini CLI'})[conf().agente] || conf().agente;
+const nomeAg = () => ({claude:'Claude Code', codex:'Codex', gemini:'Gemini CLI', agy:'Antigravity CLI'})[conf().agente] || conf().agente;
 const espera = ms => new Promise(r => setTimeout(r, ms));
 async function carregaIA(){
   try { const r = await fetch('/api/ia', {cache:'no-store'}); IAS = await r.json(); } catch(e){ IAS = {ok:false, error:SEM_SERVIDOR}; }
@@ -243,7 +243,7 @@ function iaHTML(){
         <label><input type="radio" name="ia-ag" data-iaag="chat"${c.agente === 'chat' ? ' checked' : ''}> <span><b>Copiar e colar</b> <small>sem IA instalada: o jogo monta o pedido e você cola numa IA de chat</small></span></label>
         ${ags.map(a => `<label${a.achado ? '' : ' class="off"'}><input type="radio" name="ia-ag" data-iaag="${a.id}"${c.agente === a.id ? ' checked' : ''}${a.achado ? '' : ' disabled'}> <span><b>${esc(a.nome)}</b> <small>${a.achado ? 'encontrado neste computador' : 'não encontrado'}</small></span>${a.achado && c.agente === a.id ? `<button type="button" class="btn" data-iatesta${IA_RODA ? ' disabled' : ''}>testar</button>` : ''}</label>`).join('')}
       </div>
-      ${achados.length ? '' : '<p class="sub">Nenhuma IA de terminal encontrada. Instale uma (Claude Code, Codex ou Gemini CLI), entre na conta pelo terminal e clique em <b>procurar de novo</b>.</p>'}
+      ${achados.length ? '' : '<p class="sub">Nenhuma IA de terminal encontrada. Instale uma (Claude Code, Codex ou Antigravity CLI), entre na conta pelo terminal e clique em <b>procurar de novo</b>.</p>'}
       ${teste ? `<p class="sub" role="status">${teste}</p>` : ''}
       <div class="linha"><label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink)"><input type="checkbox" data-iacartas${c.cartas ? ' checked' : ''}${c.agente === 'chat' ? ' disabled' : ''}> escrever sozinho as cartas do Book que faltam, ao abrir o jogo</label>
         <span style="display:flex;gap:8px;margin-left:auto">${c.agente !== 'chat' ? '<button type="button" class="btn" data-iatour>tutorial da IA</button>' : ''}<button type="button" class="btn" data-iaprocura>procurar de novo</button></span></div>

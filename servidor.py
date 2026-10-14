@@ -36,7 +36,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/colecao {itens}               guarda na coleção permanente os itens comprados que ainda não estão nela (#33)
   POST /api/cf/mao {menos?}               +1 problema do Codeforces hoje, marcado à mão (ITMO, grupo privado); menos = desfaz
   GET  /api/ia                            agentes de terminal achados, a escolha do jogador e os planos de ensino da pasta planos/
-  POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini) ou volta ao copiar e colar (chat)
+  POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini | agy) ou volta ao copiar e colar (chat)
   POST /api/ia/rodar {pedido, anexo?, leve?} roda o agente com o pedido da página → {id}; GET /api/ia/rodar?id= até ficar pronto
   POST /api/ia/plano {nome, base64}       guarda um plano de ensino em planos/
   POST /api/conquistas {acao, ...}        conquistas da IA: criar {itens} | resgatar {no, como, j|k} | descartar {no}
@@ -1494,7 +1494,9 @@ AGENTES = {
     "claude": {"nome": "Claude Code", "login": "claude   (na primeira vez ele pede o login)"},
     "codex": {"nome": "Codex", "login": "codex login"},
     "gemini": {"nome": "Gemini CLI", "login": "gemini   (na primeira vez ele pede o login)"},
+    "agy": {"nome": "Antigravity CLI", "login": "agy   (na primeira vez ele pede o login)"},
 }
+PEDIDO_ARQ = ".pedido.txt"   # o agy não lê a entrada padrão: o pedido vai num arquivo da pasta temporária
 IA_TEMPO = 600   # segundos por pedido
 PLANO_EXT = {".pdf", ".html", ".htm", ".txt", ".md", ".docx"}
 NOME_PLANO = re.compile(r"^[\w .()\-]{1,80}$")
@@ -1584,18 +1586,31 @@ def api_ia_config(d):
 
 
 def comando_agente(ag, exe, pasta, saida, leve=False):
-    """Linha de comando de cada agente, sem permissão de escrita. O pedido vai pela entrada padrão.
-    leve: pedido pequeno (tipo de uma tarefa), com o modelo mais barato e rápido de cada um."""
+    """Linha de comando de cada agente, sem permissão de escrita. O pedido vai pela entrada padrão (no agy, em PEDIDO_ARQ).
+    leve: pedido pequeno (tipo de uma tarefa), com o modelo mais barato e rápido de cada um (no agy, o modelo de sempre:
+    os nomes dele mudam a cada versão e um nome velho faz o pedido falhar)."""
     if ag == "claude":
         return [exe, "-p", "--tools", "Read", "--permission-mode", "dontAsk", "--no-session-persistence", "--strict-mcp-config"] + (["--model", "haiku"] if leve else [])
     if ag == "codex":
         return [exe, "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--color", "never", "--cd", pasta, "--output-last-message", saida]\
             + (["-c", 'model_reasoning_effort="low"'] if leve else []) + ["-"]
+    if ag == "agy":   # --mode plan: só lê (sem ele, o agy grava arquivos na pasta)
+        return [exe, "--mode", "plan", "-p", f"O pedido está no arquivo {PEDIDO_ARQ}, na pasta {pasta}. Leia-o inteiro e responda "
+                "seguindo as regras dele. Não rode comandos nem crie arquivos."]
     return [exe, "-p", "Responda ao pedido acima, seguindo as regras dele."] + (["-m", "gemini-2.5-flash"] if leve else [])
 
 
 def explica_erro(ag, saida):
-    s = " ".join(saida.split())[-400:]
+    tudo = " ".join(saida.split())
+    s = tudo[-400:]
+    if re.search(r"no longer supported|IneligibleTier|migrate to the Antigravity", tudo, re.I):   # vem antes do rastro de erro
+        return ("O Google não aceita mais o Gemini CLI com conta pessoal gratuita. Instale o Antigravity CLI (agy), entre na "
+                "conta rodando agy no terminal e escolha-o aqui em Configurações → IA.")
+    if re.search(r"not running in a trusted directory", tudo, re.I):
+        return ("O Gemini CLI recusou a pasta temporária do jogo (pasta não confiável). Atualize o Gemini CLI "
+                "(npm install -g @google/gemini-cli) e tente de novo. Mensagem: " + s)
+    if re.search(r"headless mode cannot prompt|denied_actions", tudo, re.I):
+        return f"O {AGENTES[ag]['nome']} tentou usar uma ferramenta sem permissão e parou sem responder. Tente de novo."
     if re.search(r"log ?in|logged|auth|credential|api key|401|403|unauthorized", s, re.I):
         return f"Parece que falta entrar na conta do {AGENTES[ag]['nome']}. Rode no terminal: {AGENTES[ag]['login']}. Mensagem: {s}"
     return s or "o agente terminou sem responder"
@@ -1613,7 +1628,11 @@ def ia_executa(tid, ag, exe, pedido, anexos, leve):
                 pedido += "\n\n" + (f"O arquivo {anexos[0]} está na pasta atual: leia-o." if len(anexos) == 1
                                      else "Os arquivos estão na pasta atual: " + ", ".join(anexos) + ". Leia-os.")
             saida = str(Path(pasta) / ".resposta.txt")
-            env = dict(os.environ, PATH=os.pathsep.join([str(Path(exe).parent), path_agentes()]))
+            if ag == "agy":
+                Path(pasta, PEDIDO_ARQ).write_text(pedido, encoding="utf-8")
+                pedido = ""
+            # GEMINI_CLI_TRUST_WORKSPACE: o Gemini CLI só roda sem perguntar em pasta confiável, e a temporária é nova a cada pedido
+            env = dict(os.environ, PATH=os.pathsep.join([str(Path(exe).parent), path_agentes()]), GEMINI_CLI_TRUST_WORKSPACE="true")
             r = subprocess.run(comando_agente(ag, exe, pasta, saida, leve), input=pedido, capture_output=True, text=True, encoding="utf-8",
                                errors="replace", cwd=pasta, env=env, timeout=IA_TEMPO)
             texto = Path(saida).read_text(encoding="utf-8") if ag == "codex" and Path(saida).exists() else r.stdout
