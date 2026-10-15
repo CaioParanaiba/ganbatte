@@ -286,6 +286,7 @@ async function verifica(){
 
 async function preparaEnter(opcao, vazio, semCacada = false){
   if(!document.getElementById('xn')) GB_EXP.abreN();
+  if(document.getElementById('l-det').hidden) document.getElementById('l-more').click();
   const campo = document.getElementById('l-txt');
   const controle = document.querySelector(opcao);
   let valor;
