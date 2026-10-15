@@ -2075,9 +2075,9 @@ function rSys(S){
     <div class="two">
       <div class="card">${tab(['tipo', 'XP', 'como o jogo reconhece'], [
         linha(`<span class="d" style="--c:${NC(5)}"></span>entrega`, '<b>25</b>', `<span class="mono">${esc(tagDe('ent') || '@entrega')}</span>`),
-        linha(`<span class="d" style="--c:${NC(0)}"></span>estudo`, '<b>15</b>', `<span class="mono">${esc(tagDe('est') || '@estudo')}</span>`),
-        linha(`<span class="d" style="--c:${NC(2)}"></span>faculdade`, '<b>15</b>', '<span class="mono">+fac.SIGLA</span>'),
-        linha(`<span class="d" style="--c:${NC(1)}"></span>treino e projetos`, '<b>10</b>', `<span class="mono">${esc(tagDe('tre') || '+treino')}</span>`),
+        linha(`<span class="d" style="--c:${NC(0)}"></span>estudo`, '<b>15</b>', `<span class="mono">${esc(tagDe('est') || '@estudo')}</span> ou só <span class="mono">+fac.SIGLA</span>`),
+        linha(`<span class="d" style="--c:${NC(1)}"></span>treino`, '<b>10</b>', `<span class="mono">${esc(tagDe('tre') || '+treino')}</span>`),
+        linha(`<span class="d" style="--c:${NC(2)}"></span>projeto`, '<b>10</b>', `<span class="mono">${esc(tagDe('pro') || '+projeto')}</span>`),
         linha(`<span class="d" style="--c:${NC(3)}"></span>vida`, '<b>10</b>', 'sem tag'),
         linha(`<span class="d" style="--c:${NC(4)}"></span>hábito`, '<b>3 a 12</b>', 'pelo nível do hábito (abaixo)')])}</div>
       <div class="card">${tab(['de fora das tarefas', 'XP', ''], [
@@ -2115,7 +2115,7 @@ function rSys(S){
 
     ${sec('ten', 'flame', 'Ten: dias seguidos', 'O dia acende com pelo menos uma tarefa que não seja hábito.')}
     <div class="three">
-      <div class="card rg-txt"><p><b>Acende:</b> uma tarefa concluída no dia (entrega, estudo, faculdade, treino ou vida). Hábito, Duolingo e Codeforces sozinhos não acendem.</p><p>Agora: <b>${S.ten.cur}</b> · recorde <b>${S.ten.max}</b>.</p></div>
+      <div class="card rg-txt"><p><b>Acende:</b> uma tarefa concluída no dia (entrega, estudo, treino, projeto ou vida). Hábito, Duolingo e Codeforces sozinhos não acendem.</p><p>Agora: <b>${S.ten.cur}</b> · recorde <b>${S.ten.max}</b>.</p></div>
       <div class="card rg-txt"><p><b>Zetsu (folga automática):</b> você começa com 1 e ganha outra a cada 7 dias acesos, até 2. Um dia vazio gasta uma sozinho, e o Ten segue.</p><p>Guardadas agora: <b>${S.ten.zet}</b>.</p></div>
       <div class="card rg-txt"><p><b>Carta Zetsu:</b> salva hoje ou ontem (só se ontem quebrou). Nas <b>férias</b>, dia vazio não derruba e não gasta folga.</p><p>Cartas do Ten no Book: 7, 14, 30 e 60 dias.</p></div>
     </div>
@@ -2171,10 +2171,10 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-rg]'
 
 /* ---------- Lista (tela inicial): adicionar, concluir, editar, remover; cada tarefa mostra quanto vale ---------- */
 const LTIPOS = [
-  {k:'ent', n:'entrega', c:5, d:'algo que você entrega para alguém, com prazo', ex:'Lista 3 de derivadas · Trabalho de BD · Relatório do lab'},
-  {k:'est', n:'estudo', c:0, d:'tempo de aprender para a matéria: ninguém cobra, mas prepara a prova', ex:'Revisar integrais · Ler o capítulo 4 · Refazer a P1'},
-  {k:'fac', n:'faculdade', c:2, d:'outras coisas da faculdade, ligadas a uma disciplina, que não são entrega nem estudo', ex:'Montar o grupo do projeto · Falar com o professor'},
-  {k:'tre', n:'treino/projeto', c:1, d:'treino e projetos: programação e projetos pessoais fora da matéria', ex:'Contest no Codeforces · Ajudar no desenvolvimento do Ganbatte · Meu site'},
+  {k:'ent', n:'entrega', c:5, d:'um trabalho seu que alguém cobra ou avalia (professor, chefe, cliente); ter prazo não basta', ex:'Entregar a lista 3 de derivadas · Trabalho de BD · Relatório do estágio'},
+  {k:'est', n:'estudo', c:0, d:'tempo de aprender: ninguém cobra, mas prepara a prova. Tarefa da disciplina que não é entrega é estudo', ex:'Revisar integrais · Fazer a lista 2 · Exercício de programação de POO'},
+  {k:'tre', n:'treino', c:1, d:'prática de programação fora da matéria', ex:'Contest no Codeforces · Upsolve · LeetCode'},
+  {k:'pro', n:'projeto', c:2, d:'criar algo seu, fora da matéria', ex:'Meu site · Um bot · Ajudar no desenvolvimento do Ganbatte'},
   {k:'hab', n:'hábito', c:4, d:'o que se repete: vale pelo nível do hábito (3 a 12 XP), mas sozinho não acende o Ten (os fixos ficam em Configurações)', ex:'Treino de digitação · 30 min de leitura'},
   {k:'vid', n:'vida', c:3, d:'todo o resto: casa, saúde, família, documentos, trabalho ou estágio (por enquanto)', ex:'Renovar a carteirinha · Consulta no dentista · Pagar o boleto'}];
 const LA = {tipo:'est', due:'', pri:'jogo', auto:true, por:'', salvando:false, adicionada:false};   // auto: o tipo segue a sugestão do texto até o jogador escolher um   // rascunho do formulário (pri: 'jogo' = o jogo decide, '' = sem, ou a letra)
@@ -2208,7 +2208,7 @@ function priL(linha, S){
    se perde; as datas dele ficam como no todo.txt */
 const LE = {txt:'', tipo:'vid', disc:'', due:'', pri:'', tipo0:'', tags0:[], cac:'', cacn:''};   // tipo0/tags0: como a linha veio, para voltar igual se o tipo não mudar
 function abreEd(t){
-  const tags = ['ent','est','tre','hab'].flatMap(k => [...GBx.TAGS[k].ctx.map(v => '@' + v), ...GBx.TAGS[k].proj.map(v => '+' + v)]);
+  const tags = ['ent','est','tre','pro','hab'].flatMap(k => [...GBx.TAGS[k].ctx.map(v => '@' + v), ...GBx.TAGS[k].proj.map(v => '+' + v)]);
   const ws = t.raw.replace(/^\([A-Z]\) /, '').replace(/^\d{4}-\d\d-\d\d /, '').split(/\s+/).filter(Boolean), tipo = (LTIPOS.find(x => x.c === nenDe(t)) || LTIPOS[5]).k;
   Object.assign(LE, {txt: ws.filter(w => !tags.includes(w.toLowerCase()) && !/^\+fac\./i.test(w) && !/^due:/i.test(w) && !/^\+cac\./i.test(w)).join(' '),
     tipo, tipo0: tipo, tags0: ws.filter(w => tags.includes(w.toLowerCase())), disc: discOf(t) || '', due: t.due || '', pri: t.pri || '', cac: GBx.cacDe(t) || '', cacn: ''});
@@ -2250,7 +2250,7 @@ function dataEd(){
 }
 function ajudaL(){
   return `<table><tbody>${LTIPOS.map(t => `<tr><td style="color:${NC(t.c)}">${t.n}</td><td>${esc(t.d)}.<br><i>${esc(t.ex)}</i></td></tr>`).join('')}</tbody></table>
-    <p style="margin:8px 0 0">Na dúvida, pense em quem cobra: alguém espera a entrega → <b>entrega</b>; é para a prova → <b>estudo</b>; programação ou projeto seu → <b>treino/projeto</b>. O jogo sugere o tipo pelas palavras do texto${window.GB_IA && window.GB_IA.ligada() ? ', e o botão <b>IA?</b> pergunta à IA' : ''}; clicar num tipo troca a sugestão.</p>`;
+    <p style="margin:8px 0 0">Na dúvida, pense em quem cobra: alguém espera a entrega → <b>entrega</b>; é para a matéria → <b>estudo</b>; prática de programação → <b>treino</b>; algo seu que você cria → <b>projeto</b>. O jogo sugere o tipo pelas palavras do texto${window.GB_IA && window.GB_IA.ligada() ? ', e o botão <b>IA?</b> pergunta à IA' : ''}; clicar num tipo troca a sugestão.</p>`;
 }
 function marcaTipo(){ document.querySelectorAll('[data-ltipo]').forEach(b => b.setAttribute('aria-pressed', b.dataset.ltipo === LA.tipo)); }
 let adicionadaTimer = null;
@@ -2258,7 +2258,7 @@ function limpaAdicionada(){ clearTimeout(adicionadaTimer); LA.adicionada = false
 function prevL(){
   if(!CTX) return;
   if(LA.auto){ const sg = GBx.sugereTipo(document.getElementById('l-txt').value, !!document.getElementById('l-disc').value);
-    if(sg){ if(LA.tipo !== sg.k){ LA.tipo = sg.k; marcaTipo(); } LA.por = `pela palavra "${sg.por}"`; } else LA.por = ''; }
+    if(sg){ if(LA.tipo !== sg.k){ LA.tipo = sg.k; marcaTipo(); } LA.por = sg.disc ? 'pela disciplina' : sg.por === '#' ? 'pelo número da issue' : `pela palavra "${sg.por}"`; } else LA.por = ''; }
   const S = estado(), linha = rascunho(), t = GBx.parseLinha(HOJE + ' ' + linha, 0), v = valeL(t, S), nen = NEN[nenDe(t)], P = priL(linha, S);
   const btn = document.getElementById('l-btn');
   btn.disabled = LA.salvando || !document.getElementById('l-txt').value.trim();
@@ -2329,7 +2329,7 @@ function rL(S){
   document.getElementById('l-bosses').innerHTML = S.bs.map(b => `<button class="l-boss${b.dead ? ' dead' : ''}" data-go="b2" data-bsel="${b.d}"><span class="sig">${avB(b)}${esc(b.d)}</span><span class="hp"><i style="width:${pct(b.rest,b.tot)}%"></i></span><span class="st${b.fury ? ' fury' : ''}">${b.dead ? 'DERROTADO' : b.fury ? 'FÚRIA' : Math.round(pct(b.rest,b.tot)) + '%'}</span><span class="nm">${esc(b.n)}${b.need != null && !b.dead ? ` · precisa de ${nf(Math.max(0,b.need))} no resto` : ''}</span></button>`).join('') || '<p class="sub" style="margin:0">Nenhuma disciplina cadastrada. Cadastre na aba Chefões.</p>';
   document.getElementById('l-exps').innerHTML = window.GB_EXP ? GB_EXP.lateral(S) : '';
   habitosL(S);
-  document.getElementById('l-vale').innerHTML = [['ent',5,25],['est',0,15],['fac',2,15],['tre',1,10],['vid',3,10],['hab',4,'3–12']].map(([k,c,x]) => `<tr><td><span class="d" style="--c:${NC(c)}"></span>${LTIPOS.find(t => t.k === k).n} <span style="color:var(--faint)">${k === 'fac' ? '+fac.SIGLA' : k === 'vid' ? 'sem tag' : esc(tagDe(k))}</span></td><td>${x}</td></tr>`).join('')
+  document.getElementById('l-vale').innerHTML = [['ent',5,25],['est',0,15],['tre',1,10],['pro',2,10],['vid',3,10],['hab',4,'3–12']].map(([k,c,x]) => `<tr><td><span class="d" style="--c:${NC(c)}"></span>${LTIPOS.find(t => t.k === k).n} <span style="color:var(--faint)">${k === 'vid' ? 'sem tag' : esc(tagDe(k))}</span></td><td>${x}</td></tr>`).join('')
     + '<tr class="x"><td>no prazo · missão · fúria</td><td>×1,5 cada</td></tr>';
 }
 
@@ -2439,7 +2439,7 @@ async function tipoIA(btn){
     ...LTIPOS.map(t => `${t.k}: ${t.d}. Ex.: ${t.ex}`), '', `Disciplina escolhida: ${document.getElementById('l-disc').value || 'nenhuma'}`, `Tarefa: ${txt}`].join('\n');
   btn.disabled = true;
   try {
-    const r = await window.GB_IA.rodaIA(pedido, 'tipo da tarefa', '', true), m = r.match(/\b(ent|est|fac|tre|hab|vid)\b\s*\|?\s*(.*)/);
+    const r = await window.GB_IA.rodaIA(pedido, 'tipo da tarefa', '', true), m = r.match(/\b(ent|est|tre|pro|hab|vid)\b\s*\|?\s*(.*)/);
     if(!m) throw new Error('resposta fora do formato: ' + r.slice(0, 80));
     LA.tipo = m[1]; LA.auto = false; LA.por = 'pela IA: ' + m[2].trim().slice(0, 90); marcaTipo(); prevL();
   } catch(err){ toast('A IA não respondeu: ' + esc(err.message)); }
@@ -2472,7 +2472,7 @@ document.addEventListener('click', async e => {
   if(q('[data-lajuda]')){ const a = document.getElementById('l-ajuda'), b = q('[data-lajuda]'); a.hidden = !a.hidden; b.setAttribute('aria-expanded', !a.hidden); if(!a.hidden) a.innerHTML = ajudaL(); return; }
   if(q('[data-ltipoia]')){ tipoIA(q('[data-ltipoia]')); return; }
   const tp = q('[data-ltipo]'); if(tp){ LA.tipo = tp.dataset.ltipo; LA.auto = false; LA.por = 'escolhido por você'; marcaTipo();
-    if(LA.tipo === 'fac' && !document.getElementById('l-disc').value && BOSSES[0]) document.getElementById('l-disc').value = BOSSES[0].d; prevL(); return; }
+    prevL(); return; }
   const pr = q('[data-lpri]'); if(pr){ LA.pri = pr.dataset.lpri; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b === pr)); prevL(); return; }
   const du = q('[data-ldue]'); if(du){ LA.due = du.dataset.ldue; document.getElementById('l-date').value = ''; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === du)); prevL(); return; }
   const oa = q('[data-ontemabre]'); if(oa){ UI.ontem = oa.dataset.ontemabre === '1'; render(); return; }
@@ -2485,7 +2485,7 @@ document.addEventListener('click', async e => {
   if(q('[data-lundo]')){ q('[data-lundo]').closest('.toast').remove(); acaoL(() => post('/api/undo', {}), ''); return; }
   if(q('#l-feitas summary')){ UI.ldone = !document.getElementById('l-feitas').open; return; }
   const le = q('[data-le]'); if(le){ const [k, v] = le.dataset.le.split(/:(.*)/);
-    if(k === 'tipo'){ LE.tipo = v; if(v === 'fac' && !LE.disc && BOSSES[0]) LE.disc = BOSSES[0].d; if(v === 'vid') LE.disc = ''; }
+    if(k === 'tipo'){ LE.tipo = v; if(v === 'vid') LE.disc = ''; }
     else LE[k] = v;
     redesenhaEd(); return; }
   const b = q('[data-l]'); if(!b) return;
@@ -2527,7 +2527,7 @@ document.addEventListener('change', e => {
   if(e.target.id === 'l-disc') prevL();
   if(e.target.matches('[data-cofrev]')){ const v = numIn(e.target.value); if(isNaN(v) || v < 0){ toast('Valor do cofre inválido'); return; } EST.cofreMes = Math.round(v*100)/100; salvaUI(); render(); toast(v > 0 ? `Cofre do mês: R$ ${fmt(EST.cofreMes)} por mês` : 'Cofre do mês desligado'); }
   if(e.target.id === 'l-edcac'){ LE.cac = e.target.value; redesenhaEd(); }
-  if(e.target.id === 'l-eddisc'){ LE.disc = e.target.value; if(!LE.disc && LE.tipo === 'fac') LE.tipo = 'vid'; redesenhaEd(); }
+  if(e.target.id === 'l-eddisc'){ LE.disc = e.target.value; if(LE.disc && LE.tipo === 'vid') LE.tipo = 'est'; redesenhaEd(); }
   if(e.target.id === 'l-eddate'){ const iso = GBx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(GBx.dataRuim('')); return; }
     LE.due = iso || ''; dataEd(); }
   if(e.target.id === 'l-date'){ const iso = GBx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(GBx.dataRuim('')); return; }

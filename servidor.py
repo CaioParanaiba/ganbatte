@@ -1429,7 +1429,7 @@ def conq_item(p):
             if not isinstance(p[k], (int, float)) or not 0 < p[k] <= 10:
                 raise Erro(f"nota inválida na conquista: {k}")
             c[k] = p[k]
-    for k, rx in (("palavra", r"^[^|\n]{2,30}$"), ("disc", r"^[A-Z0-9]{1,8}$"), ("tipo", r"^(ent|est|fac|tre|vid)$"), ("hab", r"^[\w-]{1,30}$"), ("aval", r"^[A-Za-z0-9]{1,8}$")):
+    for k, rx in (("palavra", r"^[^|\n]{2,30}$"), ("disc", r"^[A-Z0-9]{1,8}$"), ("tipo", r"^(ent|est|tre|pro|vid)$"), ("hab", r"^[\w-]{1,30}$"), ("aval", r"^[A-Za-z0-9]{1,8}$")):
         if p.get(k):
             if not isinstance(p[k], str) or not re.match(rx, p[k]):
                 raise Erro(f"campo inválido na conquista: {k}")

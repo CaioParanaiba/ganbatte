@@ -354,6 +354,12 @@ class ConquistasIA(Base):
             with self.assertRaises(s.Erro):
                 s.conq_item({**item, "semanas": semanas})
 
+    def test_tipo_projeto_entra_e_faculdade_sai(self):
+        """#121: o tipo projeto existe; faculdade saiu e não se cria mais conquista com ele."""
+        self.assertEqual(s.conq_item({**self.item("D"), "tipo": "pro"})["tipo"], "pro")
+        with self.assertRaises(s.Erro):
+            s.conq_item({**self.item("D"), "tipo": "fac"})
+
     def test_nao_grava_lote_com_alvos_repetidos_ou_dias_insuficientes(self):
         item = {**self.item("D", 14), "versao": 2, "diasMin": 7}
         with self.assertRaises(s.Erro):

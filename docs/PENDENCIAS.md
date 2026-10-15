@@ -52,7 +52,9 @@ soltas no topo até a próxima versão grande, quando entram no `versoes` dela.
    texto passa na frente dos botões). "O jogo decide" usa `sugerePri()` em `web/motor.js`: avaliação ligada chegando
    (até 3 dias 50, até 7 dias 35, até 14 dias 15), prazo (até 1 dia 50, até 3 dias 35, até 7 dias 15), chefão em fúria
    20, 2+ atrasadas na disciplina 15, entrega 10; 70+ = A, 40+ = B, 20+ = C. Na Lista, ▲ sobe e ▼ desce (do C, tira a
-   prioridade); cada seta some no limite. Pesos **a calibrar** com o uso.
+   prioridade); cada seta some no limite. **Trocado na #5:** cada fator importante (avaliação em até 14 dias, prazo em até
+   7, 2+ atrasadas, entrega) vale 2 e cada muito importante (avaliação em até 3 dias, prazo até amanhã ou vencido, fúria)
+   vale 3; 2+ = C, 4+ = B, 6+ = A (`PRI_IMP`, `PRI_SUPER`). Antes quase tudo com prazo caía em B.
 2. **IA integrada ao jogo** (seção abaixo), com *ler todos os planos* e nota em pontos (`4/5`).
 3. **Tipos das tarefas na linha do campo** (Lista). O tipo segue a sugestão do texto (`sugereTipo()` em `web/motor.js`,
    listas de palavras em `TIPO_PAL`, ordem entrega > treino e projetos > estudo > faculdade > vida) até o jogador clicar
@@ -60,7 +62,7 @@ soltas no topo até a próxima versão grande, quando entram no `versoes` dela.
    abre a tabela "o que encaixa em quê", e com a IA ligada o **IA?** pergunta à IA (`leve: true`: `--model haiku` no
    Claude Code, esforço baixo no Codex, `gemini-2.5-flash` no Gemini). **Treino** virou **treino e projetos**:
    programação e projetos pessoais fora da matéria (ex.: ajudar no desenvolvimento do Hunter.todo). Trabalho e estágio
-   continuam em vida, por enquanto.
+   continuam em vida, por enquanto. **Trocado na #121 e na #5** (ver abaixo).
 4. **Codeforces à mão** (ITMO Academy, grupos privados, que a API não enxerga): o ✋ discreto ao lado de "Codeforces" no
    heatmap pede confirmação e soma 1 problema hoje (`POST /api/cf/mao`; `manual` no `cf.json`, somado ao `por_dia` em
    `cf_soma()`). Sem limite nem conferência: vale a palavra do jogador. Conta igual para a meta do dia e o XP; o
@@ -223,10 +225,23 @@ que melhorar no Book (numeração, organização, validade dos desafios) está n
 2. Codeforces é hábito para o Ten (não acende sozinho). Confirmar com o uso se é o que se quer.
 3. Simulador: os perfis jogam bem mais que os jogadores reais (leve: 46 XP por dia jogado; o amigo: 14); ajustar os perfis.
 
+**Tipos das tarefas (#121).** O tipo diz o que se faz; a disciplina, de onde vem. Saiu **faculdade**; tarefa da disciplina
+sem tag é **estudo**. **Treino** (Codeforces, contest, prática) e **projeto** (`+projeto`, 10 XP, Conjuração: criar algo seu;
+as tarefas de dev das issues também) se separaram. **Entrega** é trabalho seu que alguém cobra, não ter prazo. Com
+disciplina, a tarefa é estudo ou entrega; sem disciplina, treino, projeto ou vida (um tipo por tarefa: vários atributos
+só se alguém abrir uma issue). O XP base não mudou (faculdade e estudo valiam 15). Os `+treino` criados antes de
+`TIPOS_DESDE` com palavra de projeto (`PRO_ANTIGO`) contam como projeto. O gráfico de atributos usa a regra nova em tudo;
+a missão da semana segue a antiga (`nenAntes`) até a semana em que o jogador abriu a versão (`estado.json` → `migra.tipos`:
+`{em, antes, depois}`, os atributos pela regra antiga e pela nova, para a janela), para XP, Jenny e feitiços das missões
+não mudarem. Conquista da IA de tipo `fac` não cumprida é descartada ao abrir (`conqCancelar`); a cumprida fica e aparece
+como de estudo. Sugestão (`sugereTipo`, #5): projeto > treino > entrega > estudo > vida, `#12` é projeto; com disciplina,
+treino e projeto não valem e, sem palavra, é estudo; sem disciplina, entrega vira vida. "lista" é estudo.
+
 ## Planejado para a v0.6
 
 1. Testar Codex e Gemini CLI com a IA ligada (e o Windows: `.cmd` do npm). Os nomes de modelo do pedido leve podem mudar.
-2. Calibrar as palavras de `TIPO_PAL`, os pesos do `sugerePri()` e o rank/recompensa das conquistas da IA (`CONQ_RK`) com o uso dos amigos.
+2. ~~Calibrar as palavras de `TIPO_PAL` e os pesos do `sugerePri()`~~ (feito na #5, junto com a #121). A recompensa das
+   conquistas da IA (`CONQ_RK`) ficou na #110.
 3. Conquistas da IA: confirmar o limite de 5 abertas e decidir a validade no fim da temporada (expiram com ela ou ficam).
 
 ## Arquivado (decidir depois, em outra temporada)
