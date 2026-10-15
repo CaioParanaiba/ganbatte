@@ -126,7 +126,7 @@ const TIPOS = [
   {k:'est', n:'Estudo',    c:0, pre:'@', ess:'tempo de <b>aprender</b>: revisar, ler, resumir, fazer exercícios. Ninguém cobra, mas é o que prepara a prova. Tarefa só com a disciplina já é estudo.', ex:'Revisar integrais por partes +fac.CALC2 {tag}', xp:15, no:'Entregar a lista não é estudo: alguém cobra, então é entrega.'},
   {k:'tre', n:'Treino', c:1, pre:'+', ess:'<b>prática de programação fora da matéria</b>: Codeforces, contest, LeetCode, upsolve.', ex:'Virtual contest no Codeforces {tag}', xp:10, no:'O trabalho prático de uma disciplina não é treino: é entrega.'},
   {k:'pro', n:'Projeto', c:2, pre:'+', ess:'<b>criar algo seu</b>, fora da matéria: o seu app, site ou bot, ajudar num projeto (como o próprio Ganbatte).', ex:'Fazer a página inicial do meu site {tag}', xp:10, no:'O projeto final de uma disciplina é entrega: alguém avalia.'},
-  {k:'hab', n:'Hábito',    c:4, pre:'+', ess:'o que se <b>repete todo dia</b>: digitação, leitura, exercício. Vale metade, mas mantém o Ten.', ex:'Treino de digitação {tag}', xp:5, no:'Tem data (aluguel todo dia 1)? Não é hábito: é uma tarefa que repete.'},
+  {k:'hab', n:'Hábito',    c:4, pre:'+', ess:'o que se <b>repete todo dia</b>: digitação, leitura, exercício.', ex:'Treino de digitação {tag}', xp:5, no:'Tem data (aluguel todo dia 1)? Não é hábito: é uma tarefa que repete.'},
   {k:'vid', n:'Vida',      c:3, pre:'',  ess:'<b>todo o resto</b>: casa, família, saúde, documentos. Sem tag nenhuma.', ex:'Renovar a carteirinha do RU', xp:10, fixo:'sem tag'},
 ];
 const RYODAN = [['Chrollo','crown','O líder: rouba a técnica dos outros.'],['Feitan','spider','Rápido e cruel nos detalhes.'],['Machi','thread','Costura tudo com fios de Nen.'],
@@ -183,7 +183,7 @@ function iniciaW(){
   /* a primeira entrada não pede disciplinas (#127): elas vão na aba Chefões; as que já existirem no jogador.json continuam */
   W.disc = (j.disciplinas || []).map(d => ({...d, n1: d.n1 || meio(ini, fim, .45), n2: d.n2 || meio(ini, fim, .95)}));
 }
-const PASSOS_1 = ['Quem é você', 'Como funciona', 'Os 6 tipos', 'Hábitos', 'Matérias', 'Licença'];
+const PASSOS_1 = ['Quem é você', 'Como funciona', 'Os 6 tipos', 'Tarefa, caçada, projeto', 'Hábitos', 'Matérias', 'Licença'];
 let PASSOS = PASSOS_1;
 const nHabs = () => W.habs.filter(Boolean).length + (W.cfOn ? 1 : 0) + (W.duoOn ? 1 : 0);
 /* a licença: monta-se ao vivo no passo 1 e volta carimbada no último */
@@ -215,9 +215,9 @@ function hexHTML(){
       <text x="${q[0].toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${an}">${esc(x.c)}</text></g>`; });
   const t = tipoNen(W.nen), n = NEN[W.nen];
   return `<div class="wz-hex">${s}</svg>
-    <div class="wz-tp" style="--c:${NC(W.nen)}"><header><h4>${n.n}</h4><span>${esc(n.c)}</span><em>${t.xp} XP</em></header>
+    <div class="wz-tp" style="--c:${NC(W.nen)}"><header><h4>${esc(n.c[0].toUpperCase() + n.c.slice(1))}</h4><span>${n.n}</span><em>${t.xp} XP</em></header>
       <p>${t.ess[0].toUpperCase() + t.ess.slice(1)}</p>${t.ex.map(e => `<code>${esc(e)}</code>`).join('')}${t.no ? `<p class="no">${t.no}</p>` : ''}</div></div>
-    <div class="wz-nens" role="group" aria-label="tipos de Nen">${NEN.map((x, i) => `<button type="button" data-wznen="${i}" aria-pressed="${i === W.nen}" style="--c:${NC(i)}">${x.n}</button>`).join('')}</div>`;
+    <div class="wz-nens" role="group" aria-label="tipos de Nen">${NEN.map((x, i) => `<button type="button" data-wznen="${i}" aria-pressed="${i === W.nen}" style="--c:${NC(i)}" title="${x.n}">${esc(x.c)}</button>`).join('')}</div>`;
 }
 function passoHTML(){
   if(W.editar) return discHTML();
@@ -231,7 +231,7 @@ function passoHTML(){
       </div>
       <label>Foto de perfil</label>
       <div class="wz-av">${['logo'].concat((CTX.AVATARES||[]).filter(a => GBx.catalogo([a]).slice(-1)[0].p === 0)).map(a => `<button type="button" data-wzav="${a}" aria-pressed="${W.av === a}" style="background-image:url('${(a === 'logo' ? LOGO : avSrc(a)).replace(/'/g, '%27')}')" title="${a === 'logo' ? 'Emblema' : esc(GBx.catalogo([a]).slice(-1)[0].n)}"></button>`).join('')}</div>
-      <p class="wz-sm">As outras fotos estão na Masadora, a loja do jogo.</p></div>
+      <p class="wz-sm">As outras fotos estão na Loja do jogo.</p></div>
     <div class="wz-col">${licHTML(false)}<p class="wz-sm">Ela é carimbada no último passo.</p></div></div>`;
   if(p === 1) return `<h3>Como o jogo funciona</h3>
     <div class="wz-loop">
@@ -245,14 +245,24 @@ function passoHTML(){
     <div class="wz-also">
       <div style="--c:${NC(3)}"><b>Ten</b>Dias seguidos com tarefa feita. Uma folga guardada (Zetsu) segura um dia vazio.</div>
       <div style="--c:var(--red)"><b>Chefões</b>Se você estuda, cada matéria vira um chefão, e a vida dele é a sua nota.</div>
-      <div style="--c:${NC(4)}"><b>Cartas</b>Conquistas viram cartas no Book, sem você precisar marcar nada.</div>
+      <div style="--c:${NC(4)}"><b>Cartas</b>Conquistas viram cartas na aba Conquistas, sem você precisar marcar nada.</div>
     </div>
     <p class="wz-sm">Nada pune: XP não se perde, e nota baixa vira bônus.</p>`;
   if(p === 2) return `<h3>Os 6 tipos de Nen</h3>
     <p>Cada tarefa treina um dos 6 tipos. O hexágono da Arena mostra o seu perfil, e o tipo mais fraco vira a <b>missão da semana</b>: as tarefas dele valem ×1,5. Clique num tipo.</p>
     ${hexHTML()}
     <p class="wz-sm">Na Lista você escolhe o tipo num botão, e o jogo sugere sozinho. As tags (${['ent','est','tre','pro'].map(k => `<span class="mono">${esc(W.tags[k])}</span>`).join(', ')}) dá para mudar em <b>Configurações</b>.</p>`;
-  if(p === 3) return `<h3>Hábitos</h3>
+  if(p === 3) return `<h3>Tarefa, caçada ou projeto?</h3>
+    <p>Tudo começa como tarefa. Quando ela cresce, você organiza assim:</p>
+    <div class="wz-loop">
+      <div class="wz-lp"><span class="wz-k">de uma vez</span><b>Tarefa</b><span>Uma coisa só. Ex.: <i>Entregar a lista 3</i>, <i>Pagar o boleto</i>.</span></div>
+      <span class="arr" aria-hidden="true">→</span>
+      <div class="wz-lp"><span class="wz-k">em etapas</span><b>Caçada</b><span>Uma tarefa grande dividida em partes, que ficam juntas na Lista. Ex.: <i>Trabalho em grupo</i>: pesquisar, escrever, montar os slides. Tecla <b>C</b>.</span></div>
+      <span class="arr" aria-hidden="true">→</span>
+      <div class="wz-lp"><span class="wz-k">semanas ou meses</span><b>Projeto</b><span>Várias caçadas (os <b>marcos</b>) na aba <b>Projetos</b>, com bônus por semana em que você trabalhou nele. Ex.: <i>TCC</i>, <i>meu app</i>.</span></div>
+    </div>
+    <p class="wz-sm">Cada etapa continua sendo uma tarefa normal, com o seu tipo e o seu XP. Não confunda com o <b>tipo</b> projeto do passo anterior: o tipo diz o que a tarefa treina; caçada e projeto só organizam.</p>`;
+  if(p === 4) return `<h3>Hábitos</h3>
     <div class="wz-hb"><div class="wz-col">
       <ul class="wz-pts"><li>O que você quer fazer <b>todo dia</b> ou <b>algumas vezes por semana</b>.</li>
         <li>Aparecem sozinhos na Lista; você marca quando fizer. Cada um sobe de <b>nível</b> com os dias seguidos (falhar desce um).</li>
@@ -267,7 +277,7 @@ function passoHTML(){
         ${W.duoOn ? `<label>Usuário do Duolingo<input id="wz-duou" value="${esc(W.duoU)}" placeholder="o nome do seu perfil" maxlength="40"></label>
         <span>Só o usuário, <b>sem senha</b>: o jogo lê a ofensiva e marca o hábito no dia em que você faz a lição.</span>` : ''}</div>
     </div></div>`;
-  if(p === 4) return `<h3>Você tem matérias neste semestre?</h3>
+  if(p === 5) return `<h3>Você tem matérias neste semestre?</h3>
     <p>Se você estuda, <b>cada matéria vira um chefão</b> do Genei Ryodan, e a vida dele é a sua nota. Não precisa cadastrar nada agora.</p>
     <div class="wz-opts">${[['depois','Sim, configuro depois','Na aba <b>Chefões</b>, com calma. Com uma IA ligada, ela lê o plano de ensino e monta as avaliações.'],
       ['agora','Sim, quero fazer agora','Ao terminar, a aba Chefões abre direto no cadastro das matérias.'],
@@ -310,7 +320,7 @@ function coleta(){
     return;
   }
   if(W.passo === 0){ W.nome = (v('wz-nome')||'').trim(); W.nick = (v('wz-nick')||'').trim().toLowerCase(); }
-  if(W.passo === 3){
+  if(W.passo === 4){
     W.habs = W.habs.map((h,i) => (v('wz-h-' + i) || '').trim()); W.hf = W.habs.map((h,i) => +(v('wz-hf-' + i) || 0));
     const cf = document.getElementById('wz-cf'); W.cfOn = !!(cf && cf.checked);
     if(v('wz-cfh') != null){ W.cfH = v('wz-cfh').trim(); W.cfM = parseInt(v('wz-cfm')) || 0; }   // desligado, os campos somem, mas o que foi digitado fica
@@ -333,7 +343,7 @@ function valida(){
     if(!W.nome) return 'Escreva o seu nome.';
     if(!/^[a-z0-9_]{2,20}$/.test(W.nick)) return 'O nickname precisa de 2 a 20 letras, números ou _.';
   }
-  if(W.passo === 3){
+  if(W.passo === 4){
     const hs = W.habs.filter(Boolean);
     if(new Set(hs.map(slug)).size !== hs.length) return 'Há dois hábitos com o mesmo nome.';
     if(W.cfOn && !HANDLE.test(W.cfH)) return 'Escreva o seu handle do Codeforces (3 a 24 letras, números, _ . -).';
@@ -365,7 +375,7 @@ function desenhaW(){
     <div class="wz-body">${passoHTML()}</div>
     <div class="wz-foot"><button type="button" class="btn" data-wznav="-1"${W.passo ? '' : ' hidden'}>← voltar</button><span class="err" role="alert">${esc(W.err)}</span>
       <span style="display:flex;gap:8px;margin-left:auto">${W.editar ? '<button type="button" class="btn" data-wzsair>cancelar</button><button type="button" class="btn v" data-wzdisc>salvar disciplinas</button>' : ult ? '<button type="button" class="btn" data-wzfim="0">começar sem tutorial</button><button type="button" class="btn v" data-wzfim="1">começar e ver o tutorial</button>' : '<button type="button" class="btn v" data-wznav="1">próximo →</button>'}</span></div></div>`;
-  const f = bg.querySelector('.wz-body input'); if(f && (W.editar || W.passo === 0 || W.passo === 3)) f.focus();
+  const f = bg.querySelector('.wz-body input'); if(f && (W.editar || W.passo === 0 || W.passo === 4)) f.focus();
 }
 function abreW(){ W.editar = false; PASSOS = PASSOS_1; iniciaW(); desenhaW(); }
 function abreDisciplinas(nova){   // nova = {d, n}: disciplina sugerida (ex.: um plano de ensino lido pela IA sem chefão)
@@ -430,68 +440,52 @@ document.addEventListener('input', e => {
 });
 
 /* ---------- tutorial: destaca cada bloco e explica o que ele quer dizer ---------- */
-/* passos: [seletor, título, texto, 1 = destaca o card inteiro, antes()]. antes() troca a sub-aba (Book, Masadora) antes do passo */
+/* passos: [seletor, título, texto, 1 = destaca o card inteiro, antes(), se()]. antes() troca a sub-aba (Conquistas, Loja) antes do
+   passo; se() = false pula o passo (ex.: chefões sem nenhuma matéria cadastrada) */
 const vai = o => () => { Object.assign(UI, o); render(); };
+const temChefe = () => (BOSSES || []).length > 0, iaLigada = () => !!(window.GB_IA && GB_IA.ligada());
 const TOURS = {
-  l:[['.gnav','Abas do jogo','A <b>Lista</b> é onde você trabalha. As outras abas mostram o jogo. O botão <b>? tutorial</b> repete esta explicação na aba em que você estiver.'],
-     ['#l-hud .l-me','Seu Hunter','Cada XP sobe a <b>Arena Celestial</b>: 251 andares, que zeram no fim do semestre. A barra mostra quanto falta para o próximo andar, e a meta do dia acompanha o seu ritmo.'],
-     ['#l-hud .l-ten','Ten','Dias seguidos com pelo menos uma tarefa feita; hábito sozinho não acende. Nas <b>férias</b>, dia vazio não derruba o Ten (e dia feito ainda soma). O <b>Zetsu</b> é uma folga guardada: um dia vazio não quebra a sequência. Você ganha outra a cada 7 dias ativos, e a carta Zetsu salva hoje ou ontem.'],
-     ['#l-hud .l-mis','Missão da semana','O seu tipo de Nen mais fraco na semana passada. As tarefas dele valem <b>×1,5</b> até domingo, e 3 dias com ele dão um feitiço.'],
-     ['#l-hud .l-jen','Jenny','A moeda da loja. Cada XP vale 10 J, e nota ≥ 6 dá bônus. Gastar não baixa o andar.'],
-     ['#l-add','Adicionar tarefa','Escreva o que é: o jogo sugere o <b>tipo</b> pelas palavras e mostra no campo quanto ela vale. Em <b>detalhes</b> ficam o tipo, a <b>disciplina</b>, o <b>prazo</b>, a <b>prioridade</b> (em "o jogo decide", ele sugere pela prova chegando, pelo prazo e pela fúria do chefão) e a <b>caçada</b>, para juntar as etapas de uma tarefa grande. A tecla <b>N</b> abre este formulário de qualquer aba; a <b>C</b> cria uma caçada inteira.'],
-     ['#l-groups','Suas tarefas','Separadas por prazo. O quadrado conclui; o número verde é o XP que ela dá agora. Passe o mouse para <b>adiar</b>, subir ou descer a <b>prioridade</b>, <b>editar</b> ou <b>remover</b>. Errou? O aviso embaixo tem "desfazer".'],
-     ['#l-golpes','Rende mais agora','As 3 tarefas que mais valem neste momento: prazo perto, missão, fúria, prioridade.', 1],
-     ['#l-bosses','Chefões','A barra vermelha é a <b>vida</b> do chefão, e ela só cai com nota. Clique para abrir o quadro e registrar notas.', 1],
-     ['#l-hab','Hábitos de hoje','Os hábitos aparecem sozinhos todo dia. Marque à mão quando fizer. O hábito semanal some quando a meta da semana é cumprida; se fizer mais, <b>fiz de novo</b> marca hoje e cada vez acima da meta vale <b>XP em dobro</b>. Para mudar a lista, use a aba <b>Configurações</b>. O que tem <b>data</b> (todo dia 1, a cada 3 meses) não é hábito: é tarefa que repete, em <b>detalhes → repete</b> no formulário; o botão <b>↻ recorrentes</b> mostra todas.', 1],
-     ['#l-hab .l-hb','Codeforces','Quem liga o Codeforces (Configurações, com o seu handle) não marca nada: o jogo conta sozinho os problemas aceitos no dia, e bater a meta conclui o hábito. O <b>✋</b> é para o que o site não mostra (<b>ITMO Academy</b>, contest de <b>grupo privado</b>): cada clique pede confirmação e soma 1 problema hoje, valendo igual para a meta e o XP. Também fica ao lado do Codeforces no heatmap. O <b>Duolingo</b> é igual: com o seu usuário, ele se marca sozinho no dia em que você faz a lição.', 0],
-     ['#l-heat','Constância','Heatmaps da temporada inteira (tracejados: os dias que ainda vêm; em verde, as férias), um quadrado por dia, e ao lado quanto você cumpre em cada dia da semana: o <b>Ten</b> (dia ativo ou salvo pelo Zetsu), os <b>hábitos</b> (quanto mais cheio, mais hábitos feitos) e o <b>Codeforces</b> (problemas no dia; a cor forte é a meta batida) e o <b>Duolingo</b> (dias com lição), se estiverem ligados.', 1],
-     ['#l-valec','Quanto vale','Clique no título para abrir: o XP de cada tipo e as tags que marcam cada um. Os bônus de ×1,5 se multiplicam. Todo card desta coluna abre e fecha pelo título, e o jogo lembra o que você deixou aberto. As contas completas ficam na aba <b>Regras</b>.']],
-  b:[['#b-tower','A torre','Seu andar na Arena Celestial e a <b>projeção</b> de onde você chega no fim do semestre, no ritmo atual. No topo (251) abre o Torneio contra a Guarda Real.'],
-     ['#b-sheet','Ficha e hexágono de Nen','Quanto você treinou cada tipo de Nen. O hexágono mostra o equilíbrio: o lado mais curto vira a missão da semana.'],
-     ['#b-bosses','Chefões','Resumo das disciplinas: vida restante, fúria e quanto falta de média.'],
-     ['#b-meta','Meta do dia','Os hábitos de hoje, com o que já foi feito.', 1],
-     ['#b-quests','Missões','As tarefas abertas que mais rendem, com o XP de cada uma.', 1],
-     ['#b-log','Últimas lutas','O que você concluiu por último e quanto rendeu.', 1]],
-  b2:[['#b2-cols','Um chefão por disciplina','A vida é a nota: cada avaliação tira <b>peso × nota/10</b> pontos, e passar de 60 derruba. Registre a nota aqui depois da prova. Nota baixa não pune: o chefão entra em <b>fúria</b> e as tarefas dele valem ×1,5.'],
-      ['#b2-cols .bd','Preparação','Cada tarefa da disciplina se liga a uma avaliação. Concluir todas antes da data dá <b>1 feitiço à escolha</b>, seja qual for a nota.'],
-      ['#b2-inbox','Anotações do plano','Mudou a data ou o peso de uma avaliação? Anote aqui. Fica em ajustes.txt até ser aplicado: no editor da disciplina, à mão ou com a IA ligada (aplicar lembretes com IA).'],
-      ['#b2-leg','Como ler','O resumo das regras dos chefões.']],
+  l:[['.gnav','Abas do jogo','A <b>Lista</b> é onde você anota e conclui. As outras abas mostram o resultado. O botão <b>? tutorial</b> repete a explicação da aba em que você estiver.'],
+     ['#l-hud .l-me','Seu andar','Cada tarefa concluída dá XP, e o XP sobe os andares da <b>Arena Celestial</b> (251, zeram no fim do semestre). O XP também vira <b>Jenny</b>, a moeda da Loja.'],
+     ['#l-hud .l-ten','Ten','Dias seguidos com pelo menos uma tarefa feita (hábito sozinho não conta). O <b>Zetsu</b> é uma folga guardada: segura um dia vazio.'],
+     ['#l-hud .l-mis','Missão da semana','O tipo que você menos treinou na semana passada. As tarefas dele valem <b>×1,5</b> até domingo.'],
+     ['#l-add','Adicionar tarefa','Escreva e aperte <b>Enter</b>. O jogo adivinha o tipo e mostra quanto ela vale. Em <b>detalhes</b> ficam o prazo, a matéria e a prioridade. A tecla <b>N</b> abre isto de qualquer aba.'],
+     ['#l-groups','Suas tarefas','Separadas por prazo. O quadrado conclui; o número verde é o XP de agora. Passe o mouse para adiar, editar ou remover. Errou? O aviso embaixo tem <b>desfazer</b>.'],
+     ['#l-expc','Tarefa, caçada ou projeto','<b>Tarefa</b>: uma coisa só. <b>Caçada</b>: uma tarefa grande dividida em etapas, que ficam juntas na Lista (tecla <b>C</b>). <b>Projeto</b>: semanas ou meses de caçadas, na aba <b>Projetos</b>.'],
+     ['#l-bosses .l-boss','Chefões','Cada matéria é um chefão, e a <b>vida</b> dele é a sua nota: só cai quando você registra uma nota. Clique para abrir.', 1],
+     ['#l-golpes .l-g','Rende mais agora','As 3 tarefas que mais valem agora: prazo perto, missão, fúria, prioridade.', 1],
+     ['#l-hab','Hábitos de hoje','Aparecem sozinhos; marque quando fizer. Dias seguidos sobem o nível e o XP. Para mudar a lista: <b>Configurações</b>. O que tem data (aluguel todo dia 1) é tarefa que repete: <b>detalhes → repete</b>.', 1],
+     ['#l-hab .l-hb:has(.l-auto)','Contam sozinhos','O Codeforces e o Duolingo se marcam sozinhos: o jogo confere o site. No Codeforces, o <b>✋</b> soma à mão o que o site não mostra (ITMO, grupo privado).']],
+  b:[['#b-tower','A torre','Seu andar e a <b>projeção</b> de onde você chega no fim do semestre, no ritmo de agora.'],
+     ['#b-sheet','Hexágono de Nen','Quanto você treinou cada tipo. O lado mais curto vira a missão da semana.'],
+     ['#b-bosses','Chefões','Vida, fúria e quanto falta de média em cada matéria.', 0, null, temChefe],
+     ['#b-quests','Missões','As tarefas abertas que mais rendem agora, com o XP de cada uma.', 1]],
+  b2:[['#b2-cols','Um chefão por matéria','A vida é a nota: cada avaliação tira <b>peso × nota/10</b>, e passar de 60 derruba. Registre a nota aqui depois da prova. Nota baixa não pune: o chefão entra em <b>fúria</b> e as tarefas dele valem ×1,5.', 0, null, temChefe],
+      ['#b2-cols .bd','Preparação','Cada tarefa da matéria prepara uma avaliação. Terminar todas antes da data dá <b>1 feitiço</b>, seja qual for a nota.'],
+      ['#b2-inbox','Anotações do plano','A prova mudou de data ou de peso? Anote aqui e aplique depois no editor da matéria, à mão ou com a IA.', 0, null, temChefe]],
   d2:[['#d2-months','O semestre inteiro','Cada quadradinho é um dia: azul com tarefas, roxo tracejado com Zetsu. Os anéis marcam as avaliações.'],
-      ['#d2-ladder','Escada da temporada','Os marcos do semestre e onde você está.', 1],
       ['#d2-next','Próximas avaliações','As provas que vêm aí, com a preparação de cada uma.', 1]],
-  bk:[['#bk-prog','Progresso do Book','Quantas cartas você já tem. Em <b>Conquistas</b> fica a coleção, conferida pelo jogo: as gerais, o Ten, três por hábito (nível 3, 6 e 10), quatro por disciplina e os desafios da IA que você conquistou. Os números de 000 a 099 lembram o fichário do Greed Island.', 0, vai({bk:'slot', bksel:'001'})],
-      ['#bk-tabs','Quatro tipos de carta','<b>Conquistas</b> (troféus por regra fixa), <b>conquistas da IA</b> (desafios feitos para você), <b>narradas</b> (a história da sua semana ou mês, escrita por IA se você usar; com a IA ligada em Configurações, sai sozinha) e <b>feitiços</b>. Só os feitiços se usam: o resto é coleção.'],
-      ['#bk-grid','Conquistas','Cada carta pede algo: dias seguidos, tarefas no prazo, uma disciplina vencida. Clique numa delas para ver a regra e quanto falta. As apagadas ainda não são suas.'],
-      ['#bk-det','Detalhe da carta','A regra e o seu progresso. As conquistas se marcam sozinhas: não precisa fazer nada além de jogar.'],
-      ['#bk-grid','Desafios da IA','Desafios propostos pela IA a partir do seu ritmo, das disciplinas e dos hábitos, numerados de 200 em diante. A IA só propõe: quem confere é o jogo, contando a partir do dia em que você aceitou. São 10 vagas: 4 fáceis, 3 médias, 2 difíceis e 1 lendária. Resgatado, o desafio vai para as Conquistas e a vaga abre.', 0, vai({bk:'ia', bksel:''})],
-      ['#cq-novas','Pedir conquistas','Com a IA ligada, <b>propor conquistas com IA</b> preenche as vagas livres; sem ela, copie o pedido para uma IA de chat e cole a resposta. Cada proposta mostra a regra, o rank e a recompensa, calculados pelo jogo. Marque as que quiser e clique em <b>aceitar</b>.'],
-      ['#bk-det','Resgatar','Conquistou? Embaixo da carta aparecem dois botões: <b>Jenny</b> ou um <b>feitiço</b>, maiores quanto mais difícil o desafio. Depois de escolher, a carta fica <b>resgatada</b>. Desafio que não serve mais pode ser descartado para abrir vaga.'],
-      ['#bk-grid','Feitiços: o que são','Cartas de efeito que você guarda na bolsa e usa quando quiser. O número em cada uma é quantas você tem.<br><b>Zetsu</b>: salva hoje ou ontem, o Ten ou um hábito · <b>Ko</b>: a próxima tarefa vale XP ×2 · <b>Acompanhar</b>: a próxima entrega vale ×2 · <b>Gyo</b>: você escolhe o atributo da missão da semana · <b>Ken</b>: adia um prazo em 1 dia sem perder o bônus · <b>Retorno</b>: conta a meta do Codeforces de ontem.', 0, vai({bk:'feit', bksel:'F:ko'})],
-      ['#bk-grid','De onde vêm','Três jeitos: <b>comprar</b> na Masadora (1 de cada por semana), fechar a <b>preparação completa</b> de uma avaliação antes da data e cumprir a <b>missão da semana</b>. Os dois últimos dão um <b>Feitiço à escolha</b>, que vira qualquer outro na hora de usar.'],
-      ['#bk-det','Como usar','Clique no feitiço e depois em <b>usar agora</b>. Alguns pedem uma escolha antes (o atributo do Gyo, a tarefa do Ken). O efeito vale a partir desse momento: o Ko dobra a próxima tarefa que você concluir. Os feitiços <b>expiram na volta às aulas</b> do próximo semestre, então não guarde demais.']],
-  ms:[['#ms-root .cats','Quatro seções','Aparência, mundo pixel, prêmios reais e feitiços. Tudo se paga com <b>Jenny</b>: cada XP vale 10 J, e nota ≥ 6 dá bônus. Gastar não baixa o seu andar.', 0, vai({cat:'aparencia', pedit:false})],
-      ['#ms-root .lay7 > div:first-child','Aparência','Fotos de perfil, paletas, fundos, efeitos, molduras e títulos. Comprou, é seu para sempre: <b>equipar</b> troca o que está usando sem pagar de novo. Alguns itens só abrem com uma conquista.'],
-      ['#ms-root .lay7 > div:first-child','Mundo pixel','O jogo em pixel art: mapa, ficha, Greed Island e uma Masadora pixel. Primeiro desbloqueie o mundo; depois compre peles para cada tela.', 0, vai({cat:'pixel'})],
-      ['#ms-root .lay7 > div:first-child','Prêmios reais','Recompensas da vida real que você se dá com Jenny: tempo livre, um jogo, um livro. Os que vêm com o jogo são só <b>exemplos</b>. Resgatou, a Jenny sai da carteira e o prêmio fica registrado.', 0, vai({cat:'premios', pedit:false})],
-      ['[data-pedit]','Personalize os seus','Aqui você troca os exemplos pela <b>sua lista</b>: nome, preço em Jenny e, se custar dinheiro, quanto sai do <b>cofre</b> (R$ por mês, que acumula). Também dá para mudar o valor do cofre ou voltar aos prêmios padrão.'],
-      ['#ms-root .lay7 > div:first-child > .sec7:last-child','Quanto vale cada preço','A régua usa o seu ritmo: quanto rende um dia produtivo, uma semana boa e um mês. Cada prêmio mostra o esforço que custa, para o preço não ficar fácil ou difícil demais.'],
-      ['#ms-root .lay7 > div:first-child','Feitiços','Cartas de efeito (cada uma explicada no Book). Na loja dá para comprar 1 de cada por semana; o comprado vai para a bolsa e se usa pelo <b>Book → Feitiços</b>.', 0, vai({cat:'feiticos'})],
-      ['#ms-root .side7','Carteira','Quanto você tem e de onde veio, o cofre do mês, o que está usando agora e os prêmios já resgatados.']],
-  cfg:[['#cfg','Seu jogo','Mude o básico sem refazer nada: nome, nickname, <b>hábitos</b> (adicionar ou remover), o <b>Codeforces</b>, o <b>Duolingo</b> e o nome das tags. Clique em salvar.'],
-       ['#cfg-ia','IA (opcional)','Se você tem uma IA de terminal (Claude Code, Codex, Antigravity CLI), ligue aqui: o jogo passa a usá-la sozinho. Depois de ligar, o botão <b>tutorial da IA</b> mostra tudo o que ela faz.'],
-       ['#cfg-srv','Servidor','O programa que guarda as suas tarefas. Ligado com o computador, você só abre o endereço do jogo.'],
+  bk:[['#bk-tabs','Quatro tipos de carta','<b>Conquistas</b>: troféus que o jogo marca sozinho. <b>IA</b>: desafios feitos para você. <b>Narradas</b>: a história da sua semana ou mês. <b>Feitiços</b>: as únicas que se usam.', 0, vai({bk:'slot', bksel:'001'})],
+      ['#bk-grid','Conquistas','Cada carta pede algo: dias seguidos, tarefas no prazo, uma matéria vencida. Clique numa para ver a regra e quanto falta; as apagadas ainda não são suas.'],
+      ['#bk-grid','Desafios da IA','A IA propõe desafios pelo seu ritmo, e o jogo confere. São 10 vagas, do fácil ao lendário. Conquistou? Resgate em Jenny ou num feitiço. Sem IA ligada, copie o pedido para uma IA de chat e cole a resposta.', 0, vai({bk:'ia', bksel:''})],
+      ['#bk-grid','Feitiços','Cartas de efeito que você usa quando quiser: o <b>Zetsu</b> salva um dia, o <b>Ko</b> dobra a próxima tarefa, o <b>Ken</b> adia um prazo. Vêm da Loja, da preparação completa de uma prova e da missão da semana. Clique e <b>usar agora</b>; expiram na volta às aulas.', 0, vai({bk:'feit', bksel:'F:ko'})]],
+  ms:[['#ms-root .cats','Quatro seções','Aparência, mundo pixel, prêmios reais e feitiços. Tudo se paga com <b>Jenny</b>, e gastar não baixa o seu andar.', 0, vai({cat:'aparencia', pedit:false})],
+      ['#ms-root .lay7 > div:first-child','Aparência','Fotos, paletas, fundos e molduras. Comprou, é seu: <b>equipar</b> troca o que está usando sem pagar de novo.'],
+      ['#ms-root .lay7 > div:first-child','Prêmios reais','Recompensas da vida real que você se dá com Jenny: um episódio, um jogo, um lanche. Os que vêm com o jogo são exemplos: troque pelos seus.', 0, vai({cat:'premios', pedit:false})],
+      ['#ms-root .side7','Carteira','Quanto você tem, de onde veio e o que já resgatou.']],
+  cfg:[['#cfg','Seu jogo','Nome, nickname, <b>hábitos</b>, Codeforces, Duolingo e o nome das tags. Mude e clique em salvar.'],
+       ['#cfg-ia','IA (opcional)','Tem uma IA de terminal (Claude Code, Codex, Antigravity CLI)? Ligue aqui e o jogo passa a usá-la sozinho: lê planos de ensino, escreve cartas, propõe desafios.'],
        ['#cfg-root > .card:last-child','Backup','Um ZIP com todos os seus dados, para guardar ou levar para outro computador.']],
-  nv:[['#nv-hero','Sua versão','O número da versão instalada e, ao lado, se saiu uma mais nova. O jogo confere no GitHub sozinho, no máximo a cada 6 horas. Quando sai versão nova, o botão <b>atualizar agora</b> baixa e reinicia o jogo, sem mexer nos seus dados.'],
-       ['#nv-lista','O que mudou','Cada versão explicada em poucas linhas, da mais nova para a mais antiga. Depois de atualizar, o jogo avisa uma vez e o ponto amarelo na aba Novidades some quando você passa por aqui.']],
-  /* Expedições: cada visão mostra blocos diferentes; o passo sem bloco na visão escolhida é pulado */
-  x:[['#x-root .x-head','Expedições','Projetos que duram semanas ou meses e não são de uma disciplina: o TCC, um app seu, a iniciação científica, o estágio. As tarefas deles também aparecem na <b>Lista</b>, com a etiqueta da expedição.'],
-     ['#x-root .x-vis','Formas de ver','A mesma expedição desenhada de cinco jeitos; troque quando quiser, nada muda nos dados. <b>Cards</b>: todas lado a lado. <b>Trilha</b>: os marcos como paradas de um caminho. <b>Quadro</b>: uma coluna por marco, com as etapas em cartões. <b>Foco</b>: só o próximo passo de cada uma. <b>Cronograma</b>: os marcos no calendário. A escolha fica guardada neste navegador.'],
-     ['#x-root [data-xnova]','Nova expedição','Dê um nome, um ícone e, se quiser, uma frase do que é. Depois acrescente os marcos.'],
-     ['#x-root [data-xmarconovo]','Marcos','Cada marco é uma <b>caçada</b>: uma parte do projeto com as suas etapas ("Versão 1.0", "Capítulo 2"). Cada etapa vale o XP normal, e fechar o marco dá mais ' + GB.MARCO_ETAPA + ' XP por etapa (até 12) e ' + GB.MARCO_DIA + ' XP por dia diferente em que você fez etapa dele (até 10). A tecla <b>C</b> cria um marco inteiro, uma etapa por linha.'],
-     ['#x-root [data-xadd^="exp:"]','Tarefas soltas','O que é da expedição mas não cabe num marco. Vale o XP normal e conta como semana ativa.', 1],
-     ['#x-root .x-sem','Semanas ativas','Cada quadrado é uma semana: aceso quando você fez pelo menos uma tarefa da expedição. É isso que paga o fim, então trabalhar um pouco toda semana rende mais que tudo de uma vez.'],
-     ['#x-root [data-xfim]','Concluir','Projeto entregue? Concluir dá <b>+' + GB.EXP_SEMANA + ' XP por semana ativa</b> (até 20) e pede pelo menos um marco fechado. A expedição vai para as concluídas, de onde dá para reabrir.', 1]],
-  sys:[['#sys-root > .card:first-child','Regras','Tudo o que o jogo considera: XP, Ten, torre, chefões, Jenny. A fonte de verdade é o motor.js. Nome, hábitos, IA e backup ficam em <b>Configurações</b>.']],
+  nv:[['#nv-hero','Sua versão','A versão instalada e se saiu uma nova. <b>Atualizar agora</b> baixa e reinicia o jogo, sem mexer nos seus dados.'],
+      ['#nv-lista','O que mudou','Cada versão em poucas linhas, da mais nova para a mais antiga.']],
+  /* Projetos (expedições): cada visão mostra blocos diferentes; o passo sem bloco na visão escolhida é pulado */
+  x:[['#x-root .x-head','Projetos','Algo de semanas ou meses que não é de uma matéria: o TCC, um app seu, a iniciação científica. O jogo também chama de <b>expedição</b>. Cada um se divide em <b>marcos</b>, e cada marco é uma <b>caçada</b> com as suas etapas.'],
+     ['#x-root .x-vis','Formas de ver','Cinco desenhos do mesmo projeto: cards, trilha, quadro, foco e cronograma. Trocar não muda nada nos dados.'],
+     ['#x-root [data-xnova]','Novo projeto','Dê um nome e um ícone; depois acrescente os marcos.'],
+     ['#x-root [data-xmarconovo]','Marcos','Cada etapa vale o XP normal. Fechar o marco dá +' + GB.MARCO_ETAPA + ' XP por etapa (até 12) e +' + GB.MARCO_DIA + ' por dia diferente em que você trabalhou nele (até 10). A tecla <b>C</b> cria um marco inteiro.'],
+     ['#x-root .x-sem','Semanas ativas','Cada quadrado é uma semana com pelo menos uma tarefa do projeto. É isso que paga no fim: um pouco toda semana rende mais que tudo de uma vez.'],
+     ['#x-root [data-xfim]','Concluir','Projeto entregue? Concluir dá <b>+' + GB.EXP_SEMANA + ' XP por semana ativa</b> (até 20) e pede pelo menos um marco fechado.', 1]],
+  sys:[['#sys-root > .card:first-child','Regras','Tudo o que o jogo considera: XP, Ten, torre, chefões, Jenny. Nome, hábitos, IA e backup ficam em <b>Configurações</b>.']],
   /* tutorial da IA: aparece ao ligar uma IA (ou pelo botão "tutorial da IA" em Configurações); troca de aba a cada passo */
   ia:[['#cfg-ia','IA ligada','A partir de agora o jogo chama a IA sozinho. Ela <b>só devolve texto</b>: quem confere e grava é o jogo, e planos e lembretes você revisa antes de salvar.', 0, () => tab('cfg')],
       ['#ia-planos','Planos de ensino','Ponha os PDFs na pasta <b>planos</b> (ou use <b>enviar arquivo</b> no editor de um chefão) e clique em <b>ler todos os planos</b>: a IA liga cada arquivo à disciplina e monta as avaliações. Você revisa e salva cada uma; disciplina que ainda não existe vira o botão <b>cadastrar</b>.', 0, () => tab('b2')],
@@ -501,7 +495,7 @@ const TOURS = {
 };
 let TR = null;
 function tutorial(aba){
-  const t = TOURS[aba] || [], troca = t.some(p => p[4]);
+  const t = (TOURS[aba] || []).filter(p => !p[5] || p[5]()), troca = t.some(p => p[4]);
   const passos = troca ? t : t.filter(p => document.querySelector(p[0]));   // com troca de sub-aba, o passo sem bloco é pulado na hora
   if(!passos.length) return;
   fecha();

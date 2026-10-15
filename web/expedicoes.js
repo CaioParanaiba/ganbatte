@@ -331,7 +331,7 @@ const erro = (id, m) => { const el = document.getElementById(id + '-err'); if(el
 const expSelect = (id, v) => `<select id="${id}">${'<option value="">nenhuma (caçada avulsa)</option>' + ativas(estado()).map(e => `<option value="${esc(e.slug)}"${e.slug === v ? ' selected' : ''}>${esc(e.n)}</option>`).join('')}</select>`;
 function abreC(exp, pai){
   if(!CTX) return;
-  const tipos = [['','o jogo decide'], ['ent','entrega'], ['est','estudo'], ['tre','treino e projetos'], ['vid','vida']];
+  const tipos = [['','o jogo decide'], ['ent','entrega'], ['est','estudo'], ['tre','treino'], ['pro','projeto'], ['vid','vida']];
   janela('xc', 'Nova caçada', `<p>Uma tarefa grande dividida em etapas. Na Lista, as etapas ficam juntas, com uma barra de quantas faltam; cada uma vale o XP normal dela. Numa expedição, a caçada vira um <b>marco</b>, e fechá-la dá bônus.</p>
     <div class="wz-f"><label>nome<input id="xc-n" maxlength="80" placeholder="ex.: Trabalho da mãe"></label><label>expedição${expSelect('xc-x', exp || '')}</label><label>dentro da caçada${paiSelect('xc-c', pai || '')}<small class="h">Fica na expedição da caçada de cima.</small></label>
       <label>tipo das etapas<select id="xc-t">${tipos.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></label>
