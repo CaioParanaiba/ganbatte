@@ -592,10 +592,18 @@ document.addEventListener('submit', async ev => {
   catch(err){ inp.disabled = false; toast('Não adicionou: ' + esc(err.message)); }
 });
 document.addEventListener('keydown', ev => {
+  // Enter e Esc no seletor aberto pertencem à escolha, não ao envio da tarefa.
+  if(document.getElementById('xn') && ev.target.matches('select') && CSS.supports('selector(:open)') && ev.target.matches(':open')) return;
   if(ev.key === 'Escape'){ if(document.getElementById('xn')){ fechaN(); return; } if(document.querySelector('#xc,#xe,#xx')){ fechaJanela(); return; } }
-  if(ev.key === 'Enter' && ev.target.id === 'l-txt' && document.getElementById('xn') && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.isComposing){
+  const n = document.getElementById('xn');
+  if(ev.key === 'Enter' && n && (ev.target === document.body || n.contains(ev.target)) && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.isComposing){
+    if(document.querySelector('#wz,#tr-pop,#nv-big,#nv-pon')) return;
+    const b = ev.target.closest('button');
+    if(b && !b.matches('#l-btn,[data-ltipo],[data-ldue],[data-lpri]')) return;
     ev.preventDefault(); if(LA.salvando || ev.repeat) return;
-    if(!ev.target.value.trim()) fechaN(); else document.getElementById('l-add').requestSubmit();
+    const campo = document.getElementById('l-txt');
+    if(campo.value.trim()){ campo.focus({preventScroll:true}); document.getElementById('l-add').requestSubmit(); }
+    else if(ev.target === campo) fechaN();
     return;
   }
   if(ev.key === 'Enter' && document.getElementById('xc') && (ev.ctrlKey || ev.metaKey || ['xc-n','xc-e'].includes(ev.target.id)) && !ev.altKey && !ev.shiftKey && !ev.isComposing){
