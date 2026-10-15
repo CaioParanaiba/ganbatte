@@ -66,7 +66,13 @@ async function verifica(){
   abre(); render(); tecla('Escape'); fechou();
   abre(); render(); document.querySelector('[data-nfecha]').click(); fechou();
   UI.ldet = true; abre(); tecla('Escape'); confere(UI.ldet, 'Detalhes abertos foram fechados');
-  passou.push('atualização, clique fora, Esc, botão fechar e rascunho');
+  // #111: a janela abre recolhida e lembra o que a pessoa escolheu nela, sem mexer nos detalhes da Lista.
+  localStorage.removeItem('gb-ndet'); UI.ldet = false; abre(); confere(el('l-det').hidden, 'A janela do N não abriu recolhida');
+  el('l-more').click(); confere(!el('l-det').hidden, 'Detalhes não abriram na janela'); tecla('Escape'); fechou();
+  confere(!UI.ldet, 'Abrir detalhes na janela mudou a Lista');
+  abre(); confere(!el('l-det').hidden, 'A janela não lembrou os detalhes abertos');
+  el('l-more').click(); tecla('Escape'); fechou(); abre(); confere(el('l-det').hidden, 'A janela não lembrou os detalhes fechados'); tecla('Escape'); fechou();
+  passou.push('atualização, clique fora, Esc, botão fechar, rascunho e detalhes lembrados na janela');
 
   for(const t of TABS){ tab(t); abre(); render(); tecla('Escape'); fechou(); }
   passou.push('N em todas as abas');
