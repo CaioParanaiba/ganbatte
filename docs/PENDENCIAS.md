@@ -438,7 +438,8 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
   que fecharam (`somaG` em `estado()`). Números **a calibrar**.
 - **Aba Expedições** em `web/expedicoes.js`, com cinco formas de ver (cards, trilha, quadro, foco, cronograma;
   `localStorage` `hj-expv`). Decidido na 0.5.9-beta2 (#25): **ficam as cinco**, como formas de visualização.
-- **Registrar:** campo limpo (o resto em "detalhes"), tecla N (o mesmo `#l-add` numa janela), tecla C (caçada com uma
+- **Registrar:** campo limpo (o resto em "detalhes"), tecla N (o mesmo `#l-add` numa janela, que abre recolhida e lembra os detalhes abertos ou fechados
+  no `localStorage` `gb-ndet`, #111), tecla C (caçada com uma
   etapa por linha). Topo da Lista num bloco só, com a missão da semana no canto.
 - Tutorial da aba Expedições na 0.5.9-beta2 (#26, `TOURS.x` em `web/guia.js`). Editar o ícone de uma caçada não existe (é sempre o alvo, de propósito).
 - **Caçada dentro de caçada** (#92): `estado.json` → `cacadas[NOME].pai`, **só dois níveis** (o pai não pode ter pai).

@@ -289,12 +289,14 @@ function depoisDeAdicionar(){
   formL();
 }
 
-/* ---------- tecla N: o mesmo formulário da Lista, com os detalhes abertos, numa janela ---------- */
+/* ---------- tecla N: o mesmo formulário da Lista, numa janela ---------- */
+/* Abre recolhida; abrir ou fechar os detalhes nela fica lembrado para o próximo N (por navegador, #111). */
 const N = {};
+const nDetLe = () => { try { return localStorage.getItem('gb-ndet') === '1'; } catch(e){ return false; } };
 function abreN(cac){
   if(!CTX || document.getElementById('xn')) return;
   limpaAdicionada();
-  const f = document.getElementById('l-add'); N.foco = document.activeElement; N.det = UI.ldet; UI.ldet = true;
+  const f = document.getElementById('l-add'); N.foco = document.activeElement; N.det = UI.ldet; UI.ldet = nDetLe() || cac !== undefined;
   if(cac !== undefined) UI.lcac = cac;
   const bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = 'xn';
   bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa<small>Enter adiciona · vazio, Enter fecha · Esc fecha · C cria uma caçada inteira</small></h3><div id="xn-slot"></div></div><div class="wz-foot"><button type="button" class="btn" data-nfecha>fechar</button></div></div>`;
@@ -305,6 +307,7 @@ function fechaN(){
   const bg = document.getElementById('xn'); if(!bg) return;
   limpaAdicionada();
   // O painel da IA e os irmãos do formulário podem mudar enquanto a janela está aberta.
+  try { localStorage.setItem('gb-ndet', UI.ldet ? '1' : '0'); } catch(e){}
   document.getElementById('l-form').appendChild(document.getElementById('l-add')); UI.ldet = N.det; bg.remove(); formL();
   if(N.foco && N.foco.isConnected) N.foco.focus({preventScroll:true}); N.foco = null;
 }
