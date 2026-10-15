@@ -274,6 +274,60 @@ function isoData(br, hoje){   // "9/10/2026", "09/10/26" ou "9/10" (ano de hoje)
 /* hábitos semanais: {id, n, semana:N} = N vezes por semana (seg a dom); sem "semana" = todo dia */
 const semanalDe = (jog, id) => { const h = ((jog && jog.habitos) || []).find(x => x.id === id); return h && h.semana ? +h.semana : 0; };
 
+/* ---------- tarefas recorrentes (#113): rep:REGRA, as mesmas regras do servidor.py ----------
+   fixa (calendário): sem-seg, mes-1, 6mes-1, ano-12-25; depois de concluir: +10d, +2sem, +3mes. Uma aberta por vez: concluir
+   cria a próxima (o servidor). Ela fica guardada (fora da Lista, só na janela ↻ recorrentes) até alguns dias antes do prazo. */
+const SEM_REP = ['seg','ter','qua','qui','sex','sab','dom'], SEM_NOME = ['segunda','terça','quarta','quinta','sexta','sábado','domingo'];
+const diasMes = (a, m) => new Date(Date.UTC(a, m, 0)).getUTCDate();   // m de 1 a 12
+const diaDoMes = (a, m, d) => `${a}-${String(m).padStart(2,'0')}-${String(Math.min(d, diasMes(a, m))).padStart(2,'0')}`;   // dia 31 em novembro vira 30: sempre para baixo
+const somaMeses = (iso, n, dia) => { const m = +iso.slice(5,7) - 1 + n; return diaDoMes(+iso.slice(0,4) + Math.floor(m / 12), m % 12 + 1, dia || +iso.slice(8,10)); };
+function repRegra(s){
+  s = String(s || '').toLowerCase(); let m;
+  if((m = s.match(/^sem-(seg|ter|qua|qui|sex|sab|dom)$/))) return {tipo:'sem', dia:SEM_REP.indexOf(m[1])};
+  if((m = s.match(/^(\d{0,2})mes-(\d{1,2})$/)) && +(m[1] || 1) >= 1 && +(m[1] || 1) <= 12 && +m[2] >= 1 && +m[2] <= 31) return {tipo:'mes', n:+(m[1] || 1), dia:+m[2]};
+  if((m = s.match(/^ano-(\d\d)-(\d\d)$/)) && +m[1] >= 1 && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= diasMes(2000, +m[1])) return {tipo:'ano', mes:+m[1], dia:+m[2]};
+  if((m = s.match(/^\+(\d{1,3})(d|sem|mes)$/)) && +m[1] >= 1) return {tipo:'depois', n:+m[1], un:m[2]};
+  return null;
+}
+/* a primeira data da regra fixa depois do dia d */
+function repPasso(r, d){
+  if(r.tipo === 'sem') return addD(d, ((r.dia - dow(d) - 1) % 7 + 7) % 7 + 1);
+  const a = +d.slice(0,4);
+  if(r.tipo === 'mes'){ const x = diaDoMes(a, +d.slice(5,7), r.dia); return x > d ? x : somaMeses(d, r.n, r.dia); }
+  const x = diaDoMes(a, r.mes, r.dia); return x > d ? x : diaDoMes(a + 1, r.mes, r.dia);
+}
+/* o prazo da próxima vez: a fixa conta do prazo, a de depois de concluir conta do dia da conclusão */
+function repProxima(r, due, feita){
+  if(r.tipo === 'depois') return r.un === 'mes' ? somaMeses(feita, r.n) : addD(feita, r.n * (r.un === 'sem' ? 7 : 1));
+  let x = repPasso(r, due || feita); while(x <= feita) x = repPasso(r, x); return x;
+}
+/* a linha da próxima vez (o modo demonstração usa; o jogo de verdade, o servidor) */
+function repSucessora(l, feita){
+  const m = l.match(/(?:^|\s)rep:(\S+)/), r = m && repRegra(m[1]); if(!r) return null;
+  const d = l.match(/(?:^|\s)due:(\d{4}-\d\d-\d\d)/), prox = repProxima(r, d ? d[1] : feita, feita);
+  return (d ? l.replace(/((?:^|\s)due:)\d{4}-\d\d-\d\d/, '$1' + prox) : `${l} due:${prox}`).replace(/^(\([A-Z]\) )?\d{4}-\d\d-\d\d /, (x, p) => (p || '') + feita + ' ');
+}
+/* fixa atrasada: quantas datas da regra já chegaram desde o prazo, contando ele (2 = "#2"; só visual, um concluir quita tudo) */
+function repAcum(t, HOJE){
+  const r = repRegra(t.rep); if(!r || r.tipo === 'depois' || !t.due || t.due >= HOJE) return 1;
+  let n = 1, x = repPasso(r, t.due); while(x <= HOJE && n < 99){ n++; x = repPasso(r, x); } return n;
+}
+/* quantos dias antes do prazo ela entra na Lista: 1 (semanal), 3 (mensal), 7 (até 3 meses), 14 (semestral, anual) */
+function repAntes(r){
+  const p = r.tipo === 'sem' ? 7 : r.tipo === 'mes' ? 30 * r.n : r.tipo === 'ano' ? 365 : r.n * (r.un === 'd' ? 1 : r.un === 'sem' ? 7 : 30);
+  return p <= 7 ? 1 : p <= 31 ? 3 : p <= 92 ? 7 : 14;
+}
+const repVisivel = (t, HOJE) => { const r = t.rep && repRegra(t.rep); return !r || !t.due || dias(HOJE, t.due) <= repAntes(r); };
+const repEntra = t => { const r = repRegra(t.rep); return r && t.due ? addD(t.due, -repAntes(r)) : ''; };   // o dia em que ela aparece na Lista
+function repFrase(rep){
+  const r = repRegra(rep); if(!r) return '';
+  if(r.tipo === 'sem') return `${r.dia >= 5 ? 'todo' : 'toda'} ${SEM_NOME[r.dia]}`;
+  if(r.tipo === 'mes') return r.n === 1 ? `todo mês no dia ${r.dia}` : `a cada ${r.n} meses no dia ${r.dia}`;
+  if(r.tipo === 'ano') return `todo ano em ${curta(diaDoMes(2000, r.mes, r.dia))}`;
+  const un = r.un === 'd' ? ['dia','dias'] : r.un === 'sem' ? ['semana','semanas'] : ['mês','meses'];
+  return `${r.n} ${un[r.n === 1 ? 0 : 1]} depois de concluir`;
+}
+
 /* ---------- leitura dos arquivos ---------- */
 function parseLinha(raw, n){
   const t = {n, raw}; let s = raw.trim(), m;
@@ -281,7 +335,7 @@ function parseLinha(raw, n){
   else { if((m = s.match(/^\(([A-Z])\) (.*)$/))){ t.pri = m[1]; s = m[2]; } if((m = s.match(/^(\d{4}-\d\d-\d\d) (.*)$/))){ t.cri = m[1]; s = m[2]; } }
   t.proj = (s.match(/(?:^|\s)\+(\S+)/g)||[]).map(x => x.trim().slice(1).toLowerCase());
   t.ctx = (s.match(/(?:^|\s)@(\S+)/g)||[]).map(x => x.trim().slice(1).toLowerCase());
-  for(const k of ['est','due','prova','rec','aula','av','gh','esf']){ const r = s.match(new RegExp('(?:^|\\s)'+k+':(\\S+)')); if(r) t[k] = r[1]; }
+  for(const k of ['est','due','prova','rec','aula','av','gh','esf','rep']){ const r = s.match(new RegExp('(?:^|\\s)'+k+':(\\S+)')); if(r) t[k] = r[1]; }
   t.txt = s.replace(/\s(?:\+|@|\w+:)\S+/g,'').replace(/^\(([A-Z])\) /,'').trim();
   return t;
 }
@@ -321,14 +375,15 @@ function carregar(api){
   configura(api.jogador && api.jogador.tags);
   const todo = (api.todo||[]).map((l,i) => ({l, n:i+1})).filter(o => o.l.trim());
   const feitas = (api.done||[]).filter(l => l.trim()).map(l => parseLinha(l, 0)).concat(todo.filter(o => o.l.startsWith('x ')).map(o => parseLinha(o.l, o.n)));
-  const abertas = todo.filter(o => !o.l.startsWith('x ')).map(o => parseLinha(o.l, o.n));
+  const hoje = api.hoje || new Date().toISOString().slice(0,10);
+  const todas = todo.filter(o => !o.l.startsWith('x ')).map(o => parseLinha(o.l, o.n));
+  const abertas = todas.filter(t => repVisivel(t, hoje)), guardadas = todas.filter(t => !repVisivel(t, hoje));   // recorrentes longe do prazo (#113)
   const av = parseAvaliacoes(api.avaliacoes), nt = parseNotas(api.notas);
   const est = Object.assign({spent:0, cofreUsado:0, own:[], resg:[], bought:{}, equip:{}}, api.estado||{});
   est.own = [...new Set((est.own||[]).map(k => k.startsWith('av-') && AV_ANTIGO[k.slice(3)] ? 'av-' + AV_ANTIGO[k.slice(3)] : k))];
   if(est.equip && AV_ANTIGO[est.equip.avatar]) est.equip = Object.assign({}, est.equip, {avatar: AV_ANTIGO[est.equip.avatar]});
   est.equip = Object.assign({theme:'simples', fx:[], bg:'', frame:'', title:'', avatar:'logo', lic:'l2', hud:'logo', chefes:{}, skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}}, est.equip||{});
-  const hoje = api.hoje || new Date().toISOString().slice(0,10);
-  return {D:{feitas, abertas, cf:api.cf||null, duo:api.duo||null, contrib:api.contrib||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
+  return {D:{feitas, abertas, guardadas, cf:api.cf||null, duo:api.duo||null, contrib:api.contrib||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
     BOSSES: av.bosses, AVAL: av.aval, COLECAO: api.colecao && api.colecao.itens && typeof api.colecao.itens === 'object' ? api.colecao : {itens:{}}, NOTAS: nt.NOTAS, PARC: nt.PARC, NDATA: nt.NDATA, INBOX: parseAjustes(api.ajustes), EST: est, AVATARES: api.avatares||[],
     NARRADAS: Array.isArray(api.narradas) ? api.narradas : [], TEMPORADAS: Array.isArray(api.temporadas) ? api.temporadas : [], CONQ: Array.isArray(api.conquistas) ? api.conquistas : [], JOG: Object.assign({nome:'Hunter'}, api.jogador||{}), SRV: api.servidor||null, AV_TXT: String(api.avaliacoes||''), NT_TXT: String(api.notas||''), dif:'normal'};
 }
@@ -1193,6 +1248,7 @@ function resumoGrupo(C, S, pessoais){
 }
 
 window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+  repRegra, repPasso, repProxima, repSucessora, repAcum, repAntes, repVisivel, repEntra, repFrase, SEM_REP,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
   CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_METAS, metasConq, alvoConq, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, conqCancelar, tipoDe, isPro, TIPOS_DESDE,

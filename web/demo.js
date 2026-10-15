@@ -70,6 +70,8 @@ let todo = [
   `${D(-2)} Pipeline: resumo dos hazards +fac.ARQ @estudo due:${D(11)}`,
   `${D(-1)} Ler 20 páginas do livro de algoritmos @estudo`,
   `${D(-3)} Renovar a carteirinha do RU due:${D(9)}`,
+  `${D(-6)} Trocar a roupa de cama rep:+7d due:${D(1)}`,   // recorrentes (#113): uma na Lista, outra guardada até perto do prazo
+  `${D(-9)} Pagar a conta de luz rep:mes-${+D(20).slice(8)} due:${D(20)}`,
   `(A) ${HOJE} Codeforces 3 questões +rotina rec:cf:${HOJE}`,
   `x ${HOJE} ${HOJE} Duolingo +rotina rec:duo:${HOJE}`,
   `(B) ${HOJE} Treino de digitação +rotina rec:h-a:${HOJE}`,
@@ -124,7 +126,9 @@ function rota(url, body){
   if(url === '/api/act'){
     const i = todo.indexOf(body.raw); if(i < 0) throw new Error('a linha mudou no todo.txt; recarregue');
     if(body.action === 'delete'){ const antes = todo.splice(i, 1)[0]; undo.push({from:antes, to:null}); return {ok:true}; }
-    const nova = transformar(todo[i], body.action, body.value); undo.push({from:todo[i], to:nova}); todo[i] = nova; return {ok:true};
+    if(body.action === 'pular'){ const nova = DONE_RE.test(todo[i]) ? null : window.GB.repSucessora(todo[i], HOJE); if(!nova) throw new Error('só uma tarefa recorrente aberta pode ser pulada'); undo.push({from:todo[i], to:nova}); todo[i] = nova; return {ok:true}; }
+    const nova = transformar(todo[i], body.action, body.value), prox = body.action === 'done' ? window.GB.repSucessora(todo[i], HOJE) : null;   // recorrente (#113): concluir cria a próxima
+    undo.push({from:todo[i], to:nova, mais:prox}); todo[i] = nova; if(prox && !todo.includes(prox)) todo.splice(todo.length - 1, 0, prox); return {ok:true};
   }
   if(url === '/api/add'){ const t = String(body.text||'').trim(); if(!t) throw new Error('texto vazio'); const p = t.match(/^\(([A-Za-z])\)\s+/), l = (p ? `(${p[1].toUpperCase()}) ` : '') + HOJE + ' ' + (p ? t.slice(p[0].length) : t); todo.splice(todo.length - 1, 0, l); undo.push({from:null, to:l}); return {ok:true}; }
   if(url === '/api/reabre'){ const i = done.indexOf(body.raw); if(i < 0) throw new Error('a linha mudou no done.txt; recarregue');
@@ -135,6 +139,7 @@ function rota(url, body){
     if(op.reabre){ const i = todo.indexOf(op.to); if(i >= 0) todo.splice(i, 1); done.push(op.from); return {ok:true}; }
     if(op.done){ const i = done.indexOf(op.to); if(i >= 0) done.splice(i, 1); return {ok:true}; }
     if(op.to === null) todo.splice(todo.length - 1, 0, op.from); else { const i = todo.indexOf(op.to); if(i < 0) throw new Error('a linha mudou'); if(op.from === null) todo.splice(i, 1); else todo[i] = op.from; }
+    if(op.mais && todo.includes(op.mais)) todo.splice(todo.indexOf(op.mais), 1);
     return {ok:true}; }
   if(url === '/api/config'){
     /* o assistente mandou o jogador e o avaliacoes.txt: as tarefas de exemplo passam a usar as disciplinas e as tags dele */

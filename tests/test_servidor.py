@@ -139,6 +139,75 @@ class Tarefas(Base):
             s.api_jogo_estado({"estado": {"compras": [{"d": "ontem", "tipo": "cos", "id": "x", "j": 1}]}})
 
 
+class Recorrentes(Base):
+    """#113: tarefa com rep: (hoje = segunda, 12/10/2026). Concluir cria a próxima; a fixa conta do prazo, a outra da conclusão."""
+
+    def concluir(self, linha):
+        s.gravar([linha, ""])
+        s.api_act({"raw": linha, "action": "done"})
+        return [l for l in self.todo() if not l.startswith("x ")]
+
+    def test_sem_prazo_ganha_a_primeira_data(self):
+        s.api_add({"text": "Pagar aluguel rep:MES-1"})
+        s.api_add({"text": "Ligar para a avó rep:sem-seg"})
+        s.api_add({"text": "Trocar a escova rep:+3mes"})
+        self.assertEqual(self.todo(), ["2026-10-12 Pagar aluguel rep:mes-1 due:2026-11-01",
+                                       "2026-10-12 Ligar para a avó rep:sem-seg due:2026-10-12",
+                                       "2026-10-12 Trocar a escova rep:+3mes due:2026-10-12"])
+        for ruim in ("X rep:mes-32", "X rep:+0d", "X rep:ano-02-30", "X rep:mes-1 rep:mes-2", "X rep:todo-dia"):
+            with self.assertRaises(s.Erro):
+                s.api_add({"text": ruim})
+
+    def test_fixa_conta_do_prazo(self):
+        """Atrasada: a próxima é a data seguinte da regra; antes do prazo: a seguinte ao prazo, não a de hoje."""
+        self.assertEqual(self.concluir("(A) 2026-09-20 Aluguel rep:mes-1 due:2026-10-01"), ["(A) 2026-10-12 Aluguel rep:mes-1 due:2026-11-01"])
+        self.assertEqual(self.concluir("2026-10-01 Aluguel rep:mes-1 due:2026-11-01"), ["2026-10-12 Aluguel rep:mes-1 due:2026-12-01"])
+        self.assertEqual(self.concluir("2026-08-20 Aluguel rep:mes-1 due:2026-09-01"), ["2026-10-12 Aluguel rep:mes-1 due:2026-11-01"])
+        self.assertEqual(self.concluir("2026-09-20 Dentista rep:6mes-1 due:2026-10-01"), ["2026-10-12 Dentista rep:6mes-1 due:2027-04-01"])
+        self.assertEqual(self.concluir("2026-10-01 Lixo rep:sem-seg due:2026-10-12"), ["2026-10-12 Lixo rep:sem-seg due:2026-10-19"])
+
+    def test_depois_de_concluir_conta_da_conclusao(self):
+        self.assertEqual(self.concluir("2026-09-20 Regar rep:+10d due:2026-10-05"), ["2026-10-12 Regar rep:+10d due:2026-10-22"])
+        self.assertEqual(self.concluir("2026-09-20 Regar rep:+2sem due:2026-10-20"), ["2026-10-12 Regar rep:+2sem due:2026-10-26"])
+
+    def test_dia_que_nao_existe_vai_para_baixo(self):
+        r = s.rep_regra("mes-31")
+        self.assertEqual(s.rep_passo(r, date(2026, 10, 31)), date(2026, 11, 30))
+        self.assertEqual(s.rep_passo(r, date(2026, 11, 30)), date(2026, 12, 31))
+        self.assertEqual(s.rep_passo(s.rep_regra("ano-02-29"), date(2026, 3, 1)), date(2027, 2, 28))
+        self.assertEqual(s.rep_proxima(s.rep_regra("+1mes"), None, date(2027, 1, 31)), date(2027, 2, 28))
+
+    def test_desfazer_e_reabrir_tiram_a_proxima(self):
+        linha = "2026-09-20 Aluguel rep:mes-1 due:2026-10-01"
+        self.concluir(linha)
+        s.api_undo({})
+        self.assertEqual(self.todo(), [linha])
+        self.concluir(linha)
+        s.api_act({"raw": "x 2026-10-12 2026-09-20 Aluguel rep:mes-1 due:2026-10-01", "action": "reopen"})
+        self.assertEqual(self.todo(), [linha])
+        s.api_undo({})
+        self.assertEqual(sorted(self.todo()), sorted(["x 2026-10-12 2026-09-20 Aluguel rep:mes-1 due:2026-10-01",
+                                                      "2026-10-12 Aluguel rep:mes-1 due:2026-11-01"]))
+
+    def test_reabrir_do_done_tira_a_proxima(self):
+        raw = "x 2026-10-05 2026-09-20 Regar rep:+10d due:2026-10-04"
+        s.gravar_txt("done.txt", raw + "\n")
+        s.gravar(["2026-10-05 Regar rep:+10d due:2026-10-15", ""])
+        s.api_reabre({"raw": raw})
+        self.assertEqual(self.todo(), ["2026-09-20 Regar rep:+10d due:2026-10-04"])
+        s.api_undo({})
+        self.assertEqual(self.todo(), ["2026-10-05 Regar rep:+10d due:2026-10-15"])
+
+    def test_pular_vira_a_proxima(self):
+        linha = "2026-09-20 Aluguel rep:mes-1 due:2026-10-01"
+        s.gravar([linha, ""])
+        s.api_act({"raw": linha, "action": "pular"})
+        self.assertEqual(self.todo(), ["2026-10-12 Aluguel rep:mes-1 due:2026-11-01"])
+        s.gravar(["2026-09-20 Tarefa solta", ""])
+        with self.assertRaises(s.Erro):
+            s.api_act({"raw": "2026-09-20 Tarefa solta", "action": "pular"})
+
+
 class Temporada(Base):
     def test_inicio_pela_linha(self):
         self.assertEqual(s.inicio_temporada(), date(2026, 10, 1))
