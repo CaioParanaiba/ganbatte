@@ -27,16 +27,9 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
-  {"versao": "0.9.1-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-15",
-   "resumo": "Uma primeira entrada nova para quem chega e um tutorial mais curto, que só mostra o que você já tem. O seu XP, a sua Jenny e tudo o que você já ganhou continuam iguais.",
-   "itens": [
-     {"ic": "card", "t": "Primeira entrada nova", "d": "Quem chega agora monta a licença hunter enquanto escreve o nome, conhece os 6 tipos num hexágono e aprende a diferença entre tarefa, caçada e projeto. Não precisa cadastrar matéria nenhuma: elas ficam para a aba Chefões, à mão ou com a IA, quando der (#127)."},
-     {"ic": "scroll", "t": "Tutorial mais curto", "d": "O tutorial de cada aba ficou com menos passos e textos de uma ou duas frases, e pula o que você ainda não tem (chefões sem matéria, Codeforces desligado). A dica do Codeforces não aparece mais em cima do hábito errado."},
-     {"ic": "alvo", "t": "Caçada com o tipo projeto", "d": "Na janela de nova caçada, o tipo das etapas agora separa treino de projeto, como no resto do jogo."}
-   ]},
-  {"versao": "0.9.1-beta1", "nome": "atualização da Torre Trick", "data": "2026-10-15", "aviso": "0.9.1-beta1",
+  {"versao": "0.9.1", "nome": "atualização da Torre Trick", "data": "2026-10-15", "aviso": "0.9.1-beta1",
    "cap": "tipos novos · o seu hexágono de Nen foi refeito",
-   "resumo": "Os tipos das tarefas ficaram mais claros: faculdade saiu, treino e projeto se separaram, e o seu hexágono de Nen foi refeito com a regra nova. O seu XP, a sua Jenny e os feitiços continuam exatamente iguais. E chegaram as tarefas que repetem.",
+   "resumo": "Os tipos das tarefas ficaram mais claros: faculdade saiu, treino e projeto se separaram, e o seu hexágono de Nen foi refeito com a regra nova. Chegaram as tarefas que repetem, e quem começa agora tem uma primeira entrada nova e um tutorial mais curto. O seu XP, a sua Jenny e os feitiços continuam exatamente iguais.",
    "atributos": {"t": "Conjuração agora é projeto", "d": "Conjuração deixou de ser \"outras coisas da faculdade\" e passou a ser criar algo seu: um app, um site, as issues do Ganbatte. O que era faculdade virou estudo (Intensificação), e o treino (Transmutação) ficou só com Codeforces e prática. O XP de cada tarefa é o mesmo; só mudou em que tipo ele cai. A missão da semana segue a regra antiga até domingo, para o ×1,5 e os feitiços que você já ganhou não mudarem, e passa para a nova na segunda.",
     "troca": {"i": 2, "de": "criação", "para": "projeto"}},
    "itens": [
@@ -44,7 +37,31 @@ window.GB_NOVIDADES = /*NOVIDADES*/[
      {"ic": "copy", "t": "Tarefas que repetem", "d": "Pagar o aluguel todo dia 1, trocar a escova a cada 3 meses: em detalhes → repete, a tarefa volta sozinha quando você conclui. A que está longe do prazo fica guardada em ↻ recorrentes e só entra na Lista perto da data. Se atrasar, ela continua uma só e mostra #2, #3; um concluir quita tudo (#113)."},
      {"ic": "alvo", "t": "O jogo decide mais justo", "d": "A prioridade sugerida conta motivos: um dá C, dois dão B, três (ou dois muito urgentes) dão A. Antes quase tudo com prazo virava B. A sugestão de tipo também melhorou: lista é estudo, #12 é projeto e, numa disciplina, o jogo sugere estudo (#5)."},
      {"ic": "scroll", "t": "Janela do N mais enxuta", "d": "N abre só com o texto e quanto vale; tipo, prazo e caçada ficam em detalhes, e a janela lembra se você os deixou abertos. Enter adiciona a tarefa mesmo depois de mexer nas opções (#111, #112)."},
-     {"ic": "card", "t": "Foto nova no grupo", "d": "Trocou a foto de perfil? Ela aparece no grupo e na Torre Trick na próxima atualização do placar (#109)."}
+     {"ic": "card", "t": "Foto nova no grupo", "d": "Trocou a foto de perfil? Ela aparece no grupo e na Torre Trick na próxima atualização do placar (#109)."},
+     {"ic": "card", "t": "Primeira entrada nova", "d": "Quem chega agora monta a licença hunter enquanto escreve o nome, conhece os 6 tipos num hexágono e aprende a diferença entre tarefa, caçada e projeto. Não precisa cadastrar matéria nenhuma: elas ficam para a aba Chefões, à mão ou com a IA, quando der (#127)."},
+     {"ic": "scroll", "t": "Tutorial mais curto", "d": "O tutorial de cada aba ficou com menos passos e textos de uma ou duas frases, e pula o que você ainda não tem (chefões sem matéria, Codeforces desligado). A dica do Codeforces não aparece mais em cima do hábito errado."},
+     {"ic": "alvo", "t": "Caçada com o tipo projeto", "d": "Na janela de nova caçada, o tipo das etapas agora separa treino de projeto, como no resto do jogo."}
+   ],
+   "versoes": [
+      {"versao": "0.9.1-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-15",
+       "resumo": "Uma primeira entrada nova para quem chega e um tutorial mais curto, que só mostra o que você já tem. O seu XP, a sua Jenny e tudo o que você já ganhou continuam iguais.",
+       "itens": [
+         {"ic": "card", "t": "Primeira entrada nova", "d": "Quem chega agora monta a licença hunter enquanto escreve o nome, conhece os 6 tipos num hexágono e aprende a diferença entre tarefa, caçada e projeto. Não precisa cadastrar matéria nenhuma: elas ficam para a aba Chefões, à mão ou com a IA, quando der (#127)."},
+         {"ic": "scroll", "t": "Tutorial mais curto", "d": "O tutorial de cada aba ficou com menos passos e textos de uma ou duas frases, e pula o que você ainda não tem (chefões sem matéria, Codeforces desligado). A dica do Codeforces não aparece mais em cima do hábito errado."},
+         {"ic": "alvo", "t": "Caçada com o tipo projeto", "d": "Na janela de nova caçada, o tipo das etapas agora separa treino de projeto, como no resto do jogo."}
+       ]},
+      {"versao": "0.9.1-beta1", "nome": "atualização da Torre Trick", "data": "2026-10-15", "aviso": "0.9.1-beta1",
+       "cap": "tipos novos · o seu hexágono de Nen foi refeito",
+       "resumo": "Os tipos das tarefas ficaram mais claros: faculdade saiu, treino e projeto se separaram, e o seu hexágono de Nen foi refeito com a regra nova. O seu XP, a sua Jenny e os feitiços continuam exatamente iguais. E chegaram as tarefas que repetem.",
+       "atributos": {"t": "Conjuração agora é projeto", "d": "Conjuração deixou de ser \"outras coisas da faculdade\" e passou a ser criar algo seu: um app, um site, as issues do Ganbatte. O que era faculdade virou estudo (Intensificação), e o treino (Transmutação) ficou só com Codeforces e prática. O XP de cada tarefa é o mesmo; só mudou em que tipo ele cai. A missão da semana segue a regra antiga até domingo, para o ×1,5 e os feitiços que você já ganhou não mudarem, e passa para a nova na segunda.",
+        "troca": {"i": 2, "de": "criação", "para": "projeto"}},
+       "itens": [
+         {"ic": "con", "t": "Tipos novos", "d": "O tipo diz o que você faz; a disciplina, de onde vem. Tarefa da disciplina sem tag agora é estudo (os mesmos 15 XP). Treino é Codeforces e prática; projeto, com +projeto, é criar algo seu (10 XP). Entrega é trabalho que alguém cobra ou avalia: ter prazo não basta. Conquista da IA de tipo faculdade ainda não cumprida foi descartada, e a vaga abriu (#121)."},
+         {"ic": "copy", "t": "Tarefas que repetem", "d": "Pagar o aluguel todo dia 1, trocar a escova a cada 3 meses: em detalhes → repete, a tarefa volta sozinha quando você conclui. A que está longe do prazo fica guardada em ↻ recorrentes e só entra na Lista perto da data. Se atrasar, ela continua uma só e mostra #2, #3; um concluir quita tudo (#113)."},
+         {"ic": "alvo", "t": "O jogo decide mais justo", "d": "A prioridade sugerida conta motivos: um dá C, dois dão B, três (ou dois muito urgentes) dão A. Antes quase tudo com prazo virava B. A sugestão de tipo também melhorou: lista é estudo, #12 é projeto e, numa disciplina, o jogo sugere estudo (#5)."},
+         {"ic": "scroll", "t": "Janela do N mais enxuta", "d": "N abre só com o texto e quanto vale; tipo, prazo e caçada ficam em detalhes, e a janela lembra se você os deixou abertos. Enter adiciona a tarefa mesmo depois de mexer nas opções (#111, #112)."},
+         {"ic": "card", "t": "Foto nova no grupo", "d": "Trocou a foto de perfil? Ela aparece no grupo e na Torre Trick na próxima atualização do placar (#109)."}
+       ]}
    ]},
   {"versao": "0.9", "nome": "atualização da Torre Trick", "data": "2026-10-14",
    "resumo": "A maior atualização do Ganbatte: o modo em grupo com a Torre Trick, caçadas dentro de caçadas, retratos dos chefões, uma coleção que nunca se perde e, para quem contribui, a recompensa assim que a correção entra no beta. O seu XP, a sua Jenny e tudo o que você já ganhou continuam exatamente iguais.",
