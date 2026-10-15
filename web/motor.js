@@ -51,6 +51,10 @@ const PALS = {
   abismo:  ['dark','#05080C','#0A1016','#0F1720','#DDF3F2','#86A6A8','#4D6668','#162229','#121C23','#3EE6D0','#FF5D7A','#E7C46A','#3EE6A0','#3EE6D0','#7B6CFF','#FF5D7A','#3EC9E6','#3EE6A0','#FF9F5A','#9B8CFF','#E7C46A'],
   aurora:  ['dark','#070914','#0D1020','#13172C','#EEF0FF','#A4A9CC','#61678C','#21264A','#1A1F3C','#7CF5C4','#FF6FA8','#FFD27A','#7CF5C4','#8FB8FF','#C58BFF','#FF6FA8','#8FB8FF','#7CF5C4','#FFB27A','#C58BFF','#FFD27A'],
   pergaminho:['light','#EFE6D2','#FBF5E6','#F3EAD5','#2B1D14','#6B5544','#A08B76','#DCCDB0','#E5D8BC','#8A4B1F','#B3362F','#A8741A','#4F7A3A','#2F6A8A','#7A4E9C','#B3362F','#2F6A8A','#4F7A3A','#B4521E','#7A4E9C','#A8741A'],
+  grafite: ['dark','#141414','#1C1C1C','#232323','#EDEDED','#A0A0A0','#666666','#2E2E2E','#262626','#D0D0D0','#E06C6C','#D8B36A','#7CC08F','#C8C8C8','#B0B0B0','#E06C6C','#9CC4E0','#7CC08F','#D99A6A','#B5A5D6','#D8B36A'],
+  sepia:   ['dark','#1A140F','#231B14','#2C2219','#F1E6D6','#BBA88F','#7D6B56','#3A2E22','#30261C','#D9A86A','#D9705A','#D9A86A','#93B07A','#E0C08A','#C99A6A','#D9705A','#A8B8C0','#93B07A','#D98A5A','#B49AB0','#D9A86A'],
+  contraste:['dark','#000000','#0A0A0A','#141414','#FFFFFF','#E0E0E0','#9A9A9A','#3A3A3A','#262626','#FFE600','#FF4D4D','#FFE600','#3DFF8A','#00E5FF','#FFFFFF','#FF4D4D','#00E5FF','#3DFF8A','#FF9A3D','#C78BFF','#FFE600'],
+  nevoa:   ['light','#E9ECEF','#F7F8F9','#EEF0F2','#22262B','#5E6670','#98A0A8','#D5DAE0','#DDE2E7','#4A6A8A','#C0505A','#A88440','#4A8A64','#4A7FB0','#6A62B8','#C0505A','#3E8AB0','#4A8A64','#C07040','#7A62B0','#A88440'],
   claro:   ['light','#F4F5F9','#FFFFFF','#F3F4FA','#1B1E2E','#5B6180','#989EB6','#E1E4EE','#E8EAF2','#2F5FD0','#D6455D','#B7812A','#2F8A55','#1F78C8','#6B4FD8','#D6455D','#1F86B8','#2F8A55','#D0661F','#7E57C2','#B7812A'],
 };
 const palStyle = k => { const p = PALS[k] || PALS.painel; return TK.map((t,i) => `--${t}:${p[i+1]}`).join(';') + `;color-scheme:${p[0]}`; };
@@ -63,14 +67,14 @@ const COS = [
   {id:'pal-kurapika', cat:'pal', n:'Kurapika', d:'Olhos escarlates e correntes de ouro.', p:1000, eq:{theme:'kurapika'}},
   {id:'pal-netero', cat:'pal', n:'Netero', d:'Laranja e marfim do presidente da Associação.', p:1100, eq:{theme:'netero'}},
   {id:'pal-killua', cat:'pal', n:'Killua', d:'Azul elétrico. Só a paleta, sem efeitos.', p:1200, eq:{theme:'killua'}},
-  {id:'pal-hisoka', cat:'pal', n:'Hisoka', d:'Rosa e amarelo. Só vem no Tema Hisoka.', p:0, excl:'th-hisoka', eq:{theme:'hisoka'}},
-  {id:'pal-meruem', cat:'pal', n:'Meruem', d:'Verde-escuro e ouro real. Só vem no Tema Meruem.', p:0, excl:'th-meruem', eq:{theme:'meruem'}},
+  {id:'pal-hisoka', cat:'pal', n:'Hisoka', d:'Rosa e amarelo. Só vem no pacote Hisoka.', p:0, excl:'th-hisoka', eq:{theme:'hisoka'}},
+  {id:'pal-meruem', cat:'pal', n:'Meruem', d:'Verde-escuro e ouro real. Só vem no pacote Meruem.', p:0, excl:'th-meruem', eq:{theme:'meruem'}},
   {id:'pal-pergaminho', cat:'pal', n:'Pergaminho', d:'Papel envelhecido e tinta sépia. Clara, para estudar de dia.', p:1100, eq:{theme:'pergaminho'}},
   {id:'pal-zoldyck', cat:'pal', n:'Zoldyck', d:'Roxo-noite e prata da mansão, com olhos azul-gelo.', p:1300, eq:{theme:'zoldyck'}},
   {id:'pal-ryodan', cat:'pal', n:'Genei Ryodan', d:'Preto e vermelho-sangue. A aranha de doze patas.', p:1400, eq:{theme:'ryodan'}},
   {id:'pal-greed', cat:'pal', n:'Greed Island', d:'Verde de cartão e o dourado do console Joystation.', p:1400, eq:{theme:'greed'}},
   {id:'pal-abismo', cat:'pal', n:'Continente Negro', d:'Preto abissal com turquesa bioluminescente.', p:1600, eq:{theme:'abismo'}},
-  {id:'pal-aurora', cat:'pal', n:'Aurora', d:'Índigo profundo com verde e rosa de aurora. Só vem no tema Ascensão.', p:0, excl:'th-ascensao', eq:{theme:'aurora'}},
+  {id:'pal-aurora', cat:'pal', n:'Aurora', d:'Índigo profundo com verde e rosa de aurora. Só vem no pacote Ascensão.', p:0, excl:'th-ascensao', eq:{theme:'aurora'}},
   {id:'tx-manga', cat:'tex', n:'Retícula de mangá', d:'Pontinhos de retícula no fundo de todas as telas.', p:2000, eq:{bg:'manga'}},
   {id:'tx-arena', cat:'tex', n:'Ladrilhos da Arena', d:'O piso quadriculado do ringue, bem discreto.', p:2200, eq:{bg:'arena'}},
   {id:'tx-ceu', cat:'tex', n:'Céu da Arena', d:'Um clarão no topo, como o céu visto do andar 200.', p:2500, eq:{bg:'ceu'}},
@@ -79,40 +83,40 @@ const COS = [
   {id:'tx-grao', cat:'tex', n:'Papel antigo', d:'Grão fino de papel em todas as telas. Fica ótimo com o Pergaminho.', p:2000, eq:{bg:'grao'}},
   {id:'tx-hex', cat:'tex', n:'Colmeia das Quimeras', d:'Favos hexagonais do ninho das Formigas Quimera.', p:2400, eq:{bg:'hex'}},
   {id:'tx-teia', cat:'tex', n:'Teia da Aranha', d:'Uma teia enorme saindo do canto da tela.', p:2800, eq:{bg:'teia'}},
-  {id:'tx-cartas', cat:'tex', n:'Baralho', d:'Losangos de baralho no fundo. Só vem no Tema Hisoka.', p:0, excl:'th-hisoka', eq:{bg:'cartas'}},
+  {id:'tx-cartas', cat:'tex', n:'Baralho', d:'Losangos de baralho no fundo. Só vem no pacote Hisoka.', p:0, excl:'th-hisoka', eq:{bg:'cartas'}},
   {id:'fx-shake', cat:'fx', n:'Fúria visível', d:'O chefão em fúria treme de raiva.', p:1000, fx:'shake'},
   {id:'fx-shim', cat:'fx', n:'Barra elétrica', d:'A barra de XP corre como eletricidade.', p:1200, fx:'shim'},
-  {id:'fx-aura', cat:'fx', n:'Aura do avatar', d:'O seu avatar pulsa com a aura.', p:1500, fx:'aura'},
+  {id:'fx-aura', cat:'fx', n:'Aura do avatar', d:'O seu avatar pulsa com a aura.', p:1500, fx:'aura', grupo:1},
   {id:'fx-zap', cat:'fx', n:'Raio no aviso', d:'Os avisos chegam com um clarão.', p:2000, fx:'zap'},
   {id:'fx-drift', cat:'fx', n:'Aura ambiente', d:'Uma névoa de Nen passeia devagar no fundo.', p:3000, fx:'drift'},
   {id:'fx-digita', cat:'fx', n:'Terminal vivo', d:'Ao trocar de aba, os títulos aparecem digitados, letra por letra.', p:1500, fx:'digita'},
   {id:'fx-corrente', cat:'fx', n:'Corrente de Kurapika', d:'A barra de XP vira uma corrente de elos dourados correndo.', p:1800, fx:'corrente'},
-  {id:'fx-gyo', cat:'fx', n:'Gyo', d:'Os cards acendem com aura exatamente onde o mouse passa.', p:2800, fx:'gyo'},
+  {id:'fx-gyo', cat:'fx', sec:'hover', n:'Gyo', d:'Os cards acendem com aura exatamente onde o mouse passa.', p:2800, fx:'gyo'},
   {id:'fx-estrelas', cat:'fx', n:'Poeira de Nen', d:'Partículas de aura sobem devagar pelo fundo de todas as telas.', p:3200, fx:'estrelas'},
   {id:'fx-rastro', cat:'fx', n:'Rastro de aura', d:'O cursor deixa um rastro de aura por onde passa.', p:3500, fx:'rastro'},
-  {id:'fx-ascensao', cat:'fx', n:'Ascensão', d:'Uma aurora gira devagar atrás da página inteira. Só vem no tema Ascensão.', p:0, excl:'th-ascensao', fx:'ascensao'},
+  {id:'fx-ascensao', cat:'fx', n:'Ascensão', d:'Uma aurora gira devagar atrás da página inteira. Só vem no pacote Ascensão.', p:0, excl:'th-ascensao', fx:'ascensao'},
   {id:'fx-jajanken', cat:'fx', ev:1, n:'Jajanken', d:'Concluiu? PEDRA! em letra de mangá, com onda de choque.', p:2000, fx:'jajanken'},
   {id:'fx-baralho', cat:'fx', ev:1, n:'Cartas do Hisoka', d:'Cada tarefa concluída solta um leque de cartas de baralho girando.', p:2200, fx:'baralho'},
   {id:'fx-confete', cat:'fx', ev:1, n:'Confete no andar novo', d:'Subiu de andar ou derrotou um chefão? Chove confete.', p:2500, fx:'confete'},
   {id:'fx-fogos', cat:'fx', ev:1, n:'Fogos no andar novo', d:'Subiu de andar ou derrotou um chefão? Fogos de artifício na tela toda.', p:2800, fx:'fogos'},
   {id:'fx-godspeed', cat:'fx', ev:1, n:'Godspeed', d:'Cada tarefa concluída dispara um raio azul que corta a tela, com clarão.', p:3000, fx:'godspeed'},
-  {id:'fr-hunter', cat:'frame', n:'Moldura Hunter ★', d:'Aro dourado de quem tem licença.', p:500, eq:{frame:'hunter'}},
+  {id:'fr-hunter', cat:'frame', n:'Moldura Hunter ★', d:'Aro dourado de quem tem licença.', p:500, eq:{frame:'hunter'}, grupo:1},
   {id:'fr-volt', cat:'frame', n:'Moldura elétrica', d:'Aro tracejado com brilho azul.', p:900, eq:{frame:'volt'}},
   {id:'fr-nen', cat:'frame', n:'Moldura de aura', d:'O aro ganha a cor do seu tipo de Nen.', p:1200, eq:{frame:'nen'}},
-  {id:'fr-carta', cat:'frame', n:'Carta de Greed Island', d:'O avatar vira uma carta: cantos retos e borda dourada dupla.', p:1600, eq:{frame:'carta'}},
-  {id:'fr-escarlate', cat:'frame', n:'Olhos escarlates', d:'Um brilho vermelho que pulsa devagar, como a raiva do Kurapika.', p:2000, eq:{frame:'escarlate'}},
-  {id:'fr-giro', cat:'frame', n:'Anel de aura', d:'Um anel com as cores da paleta gira sem parar em volta do avatar.', p:3500, eq:{frame:'giro'}},
-  {id:'fr-aranha', cat:'frame', n:'Moldura da Aranha', d:'Aro duplo vermelho. Só depois de derrotar um chefão.', p:1500, eq:{frame:'aranha'}, lock:S => !S.bs.some(b => b.dead), why:'derrote um chefão'},
+  {id:'fr-carta', cat:'frame', n:'Carta de Greed Island', d:'O avatar vira uma carta: cantos retos e borda dourada dupla.', p:1600, eq:{frame:'carta'}, grupo:1},
+  {id:'fr-escarlate', cat:'frame', n:'Olhos escarlates', d:'Um brilho vermelho que pulsa devagar, como a raiva do Kurapika.', p:2000, eq:{frame:'escarlate'}, grupo:1},
+  {id:'fr-giro', cat:'frame', n:'Anel de aura', d:'Um anel com as cores da paleta gira sem parar em volta do avatar.', p:3500, eq:{frame:'giro'}, grupo:1},
+  {id:'fr-aranha', cat:'frame', n:'Moldura da Aranha', d:'Aro duplo vermelho. Só depois de derrotar um chefão.', p:1500, eq:{frame:'aranha'}, grupo:1, lock:S => !S.bs.some(b => b.dead), why:'derrote um chefão'},
   {id:'tt-transm', cat:'title', n:'Título: Transmutador', d:'Aparece embaixo do seu andar.', p:300, eq:{title:'Transmutador'}},
   {id:'tt-cacador', cat:'title', n:'Título: Caçador de Aranhas', d:'Para a temporada do Genei Ryodan.', p:300, eq:{title:'Caçador de Aranhas'}},
   {id:'tt-zetsu', cat:'title', n:'Título: Mestre do Zetsu', d:'Para quem sabe descansar sem perder o ritmo.', p:500, eq:{title:'Mestre do Zetsu'}},
-  {id:'tt-godspeed', cat:'title', n:'Título: Segunda Natureza', d:'Só para quem tem a carta Segunda natureza (um hábito em 30 dias).', p:600, eq:{title:'Segunda Natureza'}, lock:S => S.hab.max < 30, why:'carta Segunda natureza'},
+  {id:'tt-godspeed', cat:'title', n:'Título: Segunda Natureza', d:'Grátis para quem tem a carta Segunda natureza (um hábito em 30 dias).', p:0, eq:{title:'Segunda Natureza'}, lock:S => S.hab.max < 30, why:'carta Segunda natureza'},
   {id:'tt-silencio', cat:'title', n:'Título: Passos Silenciosos', d:'Para quem estuda sem fazer barulho.', p:400, eq:{title:'Passos Silenciosos'}},
   {id:'tt-guarda', cat:'title', n:'Título: Guarda Real', d:'Leal ao próprio plano de estudos.', p:600, eq:{title:'Guarda Real'}},
-  {id:'tt-ten', cat:'title', n:'Título: Ten Inabalável', d:'Só para quem já manteve o Ten por 21 dias.', p:900, eq:{title:'Ten Inabalável'}, lock:S => S.ten.max < 21, why:'Ten de 21 dias'},
-  {id:'tt-estrela2', cat:'title', n:'Título: Hunter Duas Estrelas', d:'Só para quem derrotou dois chefões na temporada.', p:1500, eq:{title:'Hunter ★★'}, lock:S => S.bs.filter(b => b.dead).length < 2, why:'derrote 2 chefões'},
-  {id:'tt-mestre', cat:'title', n:'Título: Mestre de Nen', d:'Só para quem chegou ao andar 100.', p:2000, eq:{title:'Mestre de Nen'}, lock:S => S.a.n < 100, why:'chegue ao andar 100'},
-  {id:'tt-floor', cat:'title', n:'Título: Floor Master', d:'Só para quem chegou ao andar 200.', p:800, eq:{title:'Floor Master'}, lock:S => S.a.n < 200, why:'chegue ao andar 200'},
+  {id:'tt-ten', cat:'title', n:'Título: Ten Inabalável', d:'Grátis para quem já manteve o Ten por 21 dias.', p:0, eq:{title:'Ten Inabalável'}, lock:S => S.ten.max < 21, why:'Ten de 21 dias'},
+  {id:'tt-estrela2', cat:'title', n:'Título: Hunter Duas Estrelas', d:'Grátis para quem derrotou dois chefões na temporada.', p:0, eq:{title:'Hunter ★★'}, lock:S => S.bs.filter(b => b.dead).length < 2, why:'derrote 2 chefões'},
+  {id:'tt-mestre', cat:'title', n:'Título: Mestre de Nen', d:'Grátis para quem chegou ao andar 100.', p:0, eq:{title:'Mestre de Nen'}, lock:S => S.a.n < 100, why:'chegue ao andar 100'},
+  {id:'tt-floor', cat:'title', n:'Título: Floor Master', d:'Grátis para quem chegou ao andar 200.', p:0, eq:{title:'Floor Master'}, lock:S => S.a.n < 200, why:'chegue ao andar 200'},
   {id:'ft-maquina', cat:'font', n:'Máquina de escrever', d:'A página inteira em letra de terminal. Modo hacker.', p:900, eq:{font:'maquina'}},
   {id:'ft-manga', cat:'font', n:'Mangá', d:'Títulos em letra de capa de mangá e números de onomatopeia.', p:1200, eq:{font:'manga'}},
   {id:'ft-pixel', cat:'font', n:'Pixel', d:'Títulos e números em letra de videogame antigo.', p:1500, eq:{font:'pixel'}},
@@ -121,14 +125,13 @@ const COS = [
   {id:'sm-golpe', cat:'som', n:'Golpe', d:'Um soco seco a cada tarefa; dois golpes no andar novo.', p:1200, eq:{som:'golpe'}},
   {id:'sm-sino', cat:'som', n:'Sino do templo', d:'Um sino longo e calmo, como no treino com a Biscuit.', p:1400, eq:{som:'sino'}},
   {id:'sm-fanfarra', cat:'som', n:'Fanfarra 8-bit', d:'Blips de videogame a cada tarefa e uma fanfarra inteira no andar novo.', p:2500, eq:{som:'fanfarra'}},
-  {id:'th-killua', cat:'full', n:'Tema Killua completo', d:'Paleta Killua + céu da Arena + barra elétrica + aura do avatar.', p:6000, eq:{theme:'killua', bg:'ceu'}, fxs:['shim','aura'], parts:['pal-killua','tx-ceu','fx-shim','fx-aura']},
-  {id:'th-hisoka', cat:'full', n:'Tema Hisoka', d:'Rosa e amarelo, losangos de baralho no fundo, fúria que treme e avisos com clarão.', p:8000, eq:{theme:'hisoka', bg:'cartas'}, fxs:['shake','zap'], parts:['pal-hisoka','tx-cartas','fx-shake','fx-zap']},
-  {id:'th-meruem', cat:'full', n:'Tema Meruem', d:'Verde-escuro e ouro real, névoa de Nen e aura ambiente.', p:10000, eq:{theme:'meruem', bg:'nen'}, fxs:['aura','drift'], parts:['pal-meruem','tx-nen','fx-aura','fx-drift']},
-  {id:'th-ryodan', cat:'full', n:'Tema Genei Ryodan', d:'Preto e vermelho, a teia no canto, cartas a cada tarefa e o Gyo nos cards.', p:8500, eq:{theme:'ryodan', bg:'teia'}, fxs:['baralho','gyo'], parts:['pal-ryodan','tx-teia','fx-baralho','fx-gyo']},
-  {id:'th-greed', cat:'full', n:'Tema Greed Island', d:'Verde de cartão, tela de fliperama, letra de arcade, terminal vivo e poeira de Nen.', p:8800, eq:{theme:'greed', bg:'scan', font:'arcade'}, fxs:['digita','estrelas'], parts:['pal-greed','tx-scan','ft-arcade','fx-digita','fx-estrelas']},
-  {id:'th-zoldyck', cat:'full', n:'Tema Zoldyck', d:'Roxo e prata, papel antigo, Godspeed a cada tarefa e o rastro de aura no cursor.', p:9000, eq:{theme:'zoldyck', bg:'grao'}, fxs:['godspeed','rastro'], parts:['pal-zoldyck','tx-grao','fx-godspeed','fx-rastro']},
-  {id:'th-ascensao', cat:'full', n:'Ascensão · tema lendário', d:'Paleta Aurora e a aurora girando atrás de tudo (só aqui), poeira de Nen, fogos, anel de aura e o sino do templo.', p:25000, eq:{theme:'aurora', bg:'', frame:'giro', som:'sino'}, fxs:['ascensao','estrelas','fogos'], parts:['pal-aurora','fx-ascensao','fx-estrelas','fx-fogos','fr-giro','sm-sino']},
-  {id:'th-lenda', cat:'full', n:'Lendário · tema exclusivo', d:'Desenhado só para você: paleta, fundo e efeito próprios.', p:20000, lend:true},
+  {id:'th-killua', cat:'full', n:'Pacote Killua', d:'Paleta Killua, céu da Arena e barra elétrica.', p:6000, eq:{theme:'killua', bg:'ceu'}, fxs:['shim'], parts:['pal-killua','tx-ceu','fx-shim'], antes:['fx-aura']},
+  {id:'th-hisoka', cat:'full', n:'Pacote Hisoka', d:'Rosa e amarelo, losangos de baralho no fundo, fúria que treme e avisos com clarão.', p:8000, eq:{theme:'hisoka', bg:'cartas'}, fxs:['shake','zap'], parts:['pal-hisoka','tx-cartas','fx-shake','fx-zap']},
+  {id:'th-meruem', cat:'full', n:'Pacote Meruem', d:'Verde-escuro e ouro real, névoa de Nen e aura ambiente.', p:10000, eq:{theme:'meruem', bg:'nen'}, fxs:['drift'], parts:['pal-meruem','tx-nen','fx-drift'], antes:['fx-aura']},
+  {id:'th-ryodan', cat:'full', n:'Pacote Genei Ryodan', d:'Preto e vermelho, a teia no canto, cartas a cada tarefa e o Gyo nos cards.', p:8500, eq:{theme:'ryodan', bg:'teia'}, fxs:['baralho','gyo'], parts:['pal-ryodan','tx-teia','fx-baralho','fx-gyo']},
+  {id:'th-greed', cat:'full', n:'Pacote Greed Island', d:'Verde de cartão, tela de fliperama, letra de arcade, terminal vivo e poeira de Nen.', p:8800, eq:{theme:'greed', bg:'scan', font:'arcade'}, fxs:['digita','estrelas'], parts:['pal-greed','tx-scan','ft-arcade','fx-digita','fx-estrelas']},
+  {id:'th-zoldyck', cat:'full', n:'Pacote Zoldyck', d:'Roxo e prata, papel antigo, Godspeed a cada tarefa e o rastro de aura no cursor.', p:9000, eq:{theme:'zoldyck', bg:'grao'}, fxs:['godspeed','rastro'], parts:['pal-zoldyck','tx-grao','fx-godspeed','fx-rastro']},
+  {id:'th-ascensao', cat:'full', n:'Pacote Ascensão', d:'Paleta Aurora e a aurora girando atrás de tudo (só aqui), poeira de Nen, fogos e o sino do templo.', p:25000, eq:{theme:'aurora', bg:'', som:'sino'}, fxs:['ascensao','estrelas','fogos'], parts:['pal-aurora','fx-ascensao','fx-estrelas','fx-fogos','sm-sino'], antes:['fr-giro']},
   {id:'px-unlock', cat:'px', n:'Mundo pixel', d:'Abre o mapa, a ficha, o Greed Island e a Masadora pixel, com as peles padrão.', p:8000, sw:['#5FA35A','#3E7CC9','#F3E6C8','#EFEAF7','#2A2140']},
   {id:'px-map-tarde', cat:'px', n:'Mapa · Tarde', d:'Pele do mapa.', p:1500, need:'px-unlock', skin:['map','tarde'], sw:['#E8A35A','#C9974A','#C7517A','#F3D9A0','#2A1830']},
   {id:'px-map-noite', cat:'px', n:'Mapa · Noite', d:'Pele do mapa.', p:1500, need:'px-unlock', skin:['map','noite'], sw:['#1F3A3A','#14205A','#7C8BB8','#070A18','#FFD45E']},
@@ -137,6 +140,37 @@ const COS = [
   {id:'px-gi-joy', cat:'px', n:'Greed Island · Joystation', d:'Pele do Book pixel.', p:1500, need:'px-unlock', skin:['p3','joy'], sw:['#2B2346','#0F0E1A','#FF6FB5','#6FE3FF','#FFD166']},
   {id:'px-gi-noite', cat:'px', n:'Greed Island · Noite', d:'Pele do Book pixel.', p:1500, need:'px-unlock', skin:['p3','noite'], sw:['#0B1026','#141B3A','#FFB547','#7FD1FF','#C9A2FF']},
   {id:'px-ms-neon', cat:'px', n:'Masadora · Neon', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','neon'], sw:['#0E0B1F','#1D1840','#FF5FA2','#6FE3FF','#E9E6FF']},
+  /* itens novos (#135): só para provar até os preços da #77 */
+  {id:'pal-grafite', cat:'pal', prova:1, n:'Grafite', d:'Cinza puro, sem matiz.', p:0, eq:{theme:'grafite'}},
+  {id:'pal-sepia', cat:'pal', prova:1, n:'Sépia', d:'Marrom de fotografia antiga, escuro.', p:0, eq:{theme:'sepia'}},
+  {id:'pal-contraste', cat:'pal', prova:1, n:'Alto contraste', d:'Preto, branco e cores puras. Para ler sem esforço.', p:0, eq:{theme:'contraste'}},
+  {id:'pal-nevoa', cat:'pal', prova:1, n:'Névoa', d:'Cinza-claro frio, para o dia.', p:0, eq:{theme:'nevoa'}},
+  {id:'fr-fina', cat:'frame', prova:1, n:'Moldura fina', d:'Um aro fino na cor do texto.', p:0, eq:{frame:'fina'}},
+  {id:'fr-dupla', cat:'frame', prova:1, n:'Moldura dupla', d:'Aro duplo discreto.', p:0, eq:{frame:'dupla'}},
+  {id:'sm-clique', cat:'som', prova:1, n:'Clique', d:'Um clique seco de teclado a cada tarefa.', p:0, eq:{som:'clique'}},
+  {id:'sm-gota', cat:'som', prova:1, n:'Gota', d:'Uma gota d’água a cada tarefa.', p:0, eq:{som:'gota'}},
+  {id:'bd-dupla', cat:'borda', prova:1, n:'Borda dupla', d:'Os cards ganham borda dupla.', p:0, eq:{borda:'dupla'}},
+  {id:'bd-trac', cat:'borda', prova:1, n:'Borda tracejada', d:'Borda tracejada em todos os cards.', p:0, eq:{borda:'trac'}},
+  {id:'bd-cantos', cat:'borda', prova:1, n:'Cantos', d:'Só os cantos marcados, como um visor.', p:0, eq:{borda:'cantos'}},
+  {id:'bd-corrente', cat:'borda', prova:1, n:'Corrente do Kurapika', d:'A borda vira uma corrente de elos dourados.', p:0, eq:{borda:'corrente'}},
+  {id:'bd-teia', cat:'borda', prova:1, n:'Teia', d:'Uma teia no canto de cada card.', p:0, eq:{borda:'teia'}},
+  {id:'bd-naipes', cat:'borda', prova:1, n:'Carta de baralho', d:'Naipes nos cantos, como uma carta do Hisoka.', p:0, eq:{borda:'naipes'}},
+  {id:'bd-aura', cat:'borda', prova:1, n:'Borda de aura viva', d:'A borda respira na cor do seu tipo de Nen.', p:0, eq:{borda:'aura'}},
+  {id:'hv-contorno', cat:'hover', prova:1, n:'Contorno', d:'O card ganha contorno quando o mouse passa.', p:0, eq:{hover:'contorno'}},
+  {id:'hv-shu', cat:'hover', prova:1, n:'Shu', d:'O card se cobre de aura, como um objeto reforçado com Shu.', p:0, eq:{hover:'shu'}},
+  {id:'hv-vira', cat:'hover', prova:1, n:'Carta que vira', d:'O card dá uma volta, como uma carta de Greed Island.', p:0, eq:{hover:'vira'}},
+  {id:'hv-en', cat:'hover', prova:1, n:'En', d:'Um círculo de aura se espalha a partir do cursor.', p:0, eq:{hover:'en'}},
+  {id:'hv-bungee', cat:'hover', prova:1, n:'Bungee Gum', d:'O card estica e volta, como o chiclete do Hisoka.', p:0, eq:{hover:'bungee'}},
+  {id:'cr-ioio', cat:'cursor', prova:1, n:'Ioiô do Killua', d:'O cursor vira o ioiô.', p:0, eq:{cursor:'ioio'}},
+  {id:'cr-carta', cat:'cursor', prova:1, n:'Carta do Hisoka', d:'O cursor vira uma carta.', p:0, eq:{cursor:'carta'}},
+  {id:'cr-agulha', cat:'cursor', prova:1, n:'Agulha do Illumi', d:'O cursor vira uma agulha.', p:0, eq:{cursor:'agulha'}},
+  {id:'hp-corrente', cat:'hp', prova:1, n:'HP de corrente', d:'A vida do chefão vira uma corrente.', p:0, eq:{hp:'corrente'}},
+  {id:'hp-cristal', cat:'hp', prova:1, n:'HP de cristal', d:'A vida do chefão vira cristal.', p:0, eq:{hp:'cristal'}},
+  {id:'hm-cartas', cat:'heat', prova:1, n:'Constância em cartas', d:'Os quadradinhos do heatmap viram cartas.', p:0, eq:{heat:'cartas'}},
+  {id:'hm-pegadas', cat:'heat', prova:1, n:'Constância em pegadas', d:'Os quadradinhos viram pegadas.', p:0, eq:{heat:'pegadas'}},
+  {id:'hm-chamas', cat:'heat', prova:1, n:'Constância em chamas', d:'Os dias jogados viram chamas acesas.', p:0, eq:{heat:'chamas'}},
+  {id:'tr-deslizar', cat:'trans', prova:1, n:'Deslizar', d:'As abas deslizam ao trocar.', p:0, eq:{trans:'deslizar'}},
+  {id:'tr-glitch', cat:'trans', prova:1, n:'Glitch', d:'A tela falha por um instante ao trocar de aba.', p:0, eq:{trans:'glitch'}},
   {id:'px-ms-papel', cat:'px', n:'Masadora · Papel', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','papel'], sw:['#EFE6D2','#D8C7A3','#FFFBF1','#B4521E','#2B1D14']},
 ];
 /* fotos de perfil: cada PNG de web/a/ (o banco do repositório) vira um item da loja. Preço padrão 1.000 J; estas são grátis. */
@@ -156,21 +190,53 @@ const RETRATOS = [['chrollo','Chrollo Lucilfer','Chrollo'],['feitan','Feitan Por
   ['nobunaga','Nobunaga Hazama','Nobunaga'],['shalnark','Shalnark','Shalnark'],['phinks','Phinks Magcub','Phinks'],['pakunoda','Pakunoda','Pakunoda'],
   ['hisoka','Hisoka Morow','Hisoka'],['illumi','Illumi Zoldyck','Illumi'],['genthru','Genthru','Genthru'],['neferpitou','Neferpitou','Neferpitou'],
   ['shaiapouf','Shaiapouf','Shaiapouf'],['youpi','Menthuthuyoupi','Youpi'],['meruem','Meruem','Meruem']];
-const RETRATO_PRECO = 1500;
-COS.push(...RETRATOS.map(([s, n, alvo]) => ({id:'ch-'+s, cat:'chefe', n, d:'Retrato para o card de um chefão. Derrote esse chefão e ele vira foto de perfil.', p:RETRATO_PRECO, img:'chefoes/'+s+'.png', alvo})),
+const RETRATO_PRECO = 1500;   // até a 0.9.1; desde a #135 são grátis, e quem comprou recebe a Jenny de volta (retratosJ)
+COS.push(...RETRATOS.map(([s, n, alvo]) => ({id:'ch-'+s, cat:'chefe', n, d:'Retrato para o card de um chefão. Derrote esse chefão e ele vira foto de perfil.', p:0, img:'chefoes/'+s+'.png', alvo})),
   ...RETRATOS.map(([s, n]) => ({id:'av-ch-'+s, cat:'avatar', n, d:'Foto de perfil liberada ao derrotar o chefão que estava com este retrato.', p:0, eq:{avatar:'ch-'+s}, img:'chefoes/'+s+'.png', chefao:'ch-'+s})));
-/* tema completo = pacote: comprar o tema dá cada peça (paleta, textura, efeitos) para usar e misturar separado */
-function expandeOwn(own){ for(const it of COS) if(it.parts && own.has(it.id)) it.parts.forEach(p => own.add(p)); return own; }
+/* faixa (fa) e tema (hxh) de cada item da Masadora (#135, regra na #17). Comum: muda uma coisa só, sem animação. Raro: a tela
+   toda sem animação, ou um efeito pontual. Épico: animação contínua ou a cada tarefa. Lendário: exclusivo e marcante.
+   Os pacotes (cat full) e as peças que só vêm num pacote (excl) ficam sem faixa. HxH = o visual remete ao anime; nome com
+   Nen ou Arena não conta, porque esses nomes trocam com o tema. Os preços por faixa saem da #77 */
+const FAIXA = {
+  comum: 'pal-leorio pal-claro pal-gon pal-biscuit pal-kurapika pal-netero pal-pergaminho pal-killua pal-zoldyck pal-ryodan pal-greed pal-abismo pal-grafite pal-sepia pal-contraste pal-nevoa fx-shake fx-shim fx-zap fr-hunter fr-volt fr-nen fr-carta fr-fina fr-dupla tt-transm tt-cacador tt-silencio tt-zetsu tt-guarda sm-moeda sm-golpe sm-sino sm-clique sm-gota px-map-tarde px-map-noite px-p1-gb px-p1-noite px-gi-joy px-gi-noite px-ms-neon px-ms-papel bd-dupla bd-trac bd-cantos hv-contorno tr-deslizar',
+  raro: 'tx-scan tx-manga tx-grao tx-arena tx-hex tx-ceu tx-teia tx-nen fx-aura fx-digita fx-corrente fx-confete fx-drift fr-aranha fr-escarlate fr-giro tt-godspeed tt-floor tt-ten tt-estrela2 tt-mestre ft-maquina ft-manga ft-pixel ft-arcade sm-fanfarra bd-corrente bd-teia bd-naipes hv-shu hv-vira cr-ioio cr-carta cr-agulha hp-corrente hp-cristal hm-cartas hm-pegadas tr-glitch',
+  epico: 'fx-gyo fx-jajanken fx-baralho fx-fogos fx-godspeed fx-estrelas fx-rastro px-unlock bd-aura hv-en hv-bungee hm-chamas',
+};
+const HXH = new Set(('pal-leorio pal-gon pal-biscuit pal-kurapika pal-netero pal-killua pal-zoldyck pal-ryodan pal-greed pal-abismo pal-hisoka pal-meruem tx-hex tx-teia tx-cartas ' +
+  'fx-corrente fx-gyo fx-jajanken fx-baralho fx-godspeed fr-hunter fr-carta fr-aranha fr-escarlate tt-transm tt-cacador tt-silencio tt-zetsu tt-guarda tt-floor tt-ten tt-estrela2 tt-mestre ' +
+  'px-gi-joy px-gi-noite th-killua th-hisoka th-meruem th-ryodan th-greed th-zoldyck bd-corrente bd-teia bd-naipes hv-shu hv-vira hv-en hv-bungee cr-ioio cr-carta cr-agulha hp-corrente hm-cartas').split(' '));
+for(const [fa, ids] of Object.entries(FAIXA)) for(const id of ids.split(' ')){ const it = COS.find(i => i.id === id); if(it) it.fa = fa; }
+for(const it of COS){ if(it.cat === 'chefe'){ it.fa = 'raro'; it.hxh = 1; } else if(HXH.has(it.id)) it.hxh = 1; }
+const FAIXAS_LOJA = [['comum','Comum'],['raro','Raro'],['epico','Épico'],['lenda','Lendário']];
+/* pacote (ex-tema completo): comprar o pacote dá cada peça (paleta, textura, efeitos) para usar e misturar separado.
+   antes = peças que saíram do pacote (foram para a loja do grupo, #43): só quem comprou o pacote antes da #135 continua com
+   elas: a compra do pacote desde a #135 fica registrada com pacote:1 (estado.json → compras) */
+function expandeOwn(own, compras){
+  const novos = new Set((compras || []).filter(c => c && c.tipo === 'cos' && c.pacote).map(c => c.id));
+  for(const it of COS) if(it.parts && own.has(it.id)){ it.parts.forEach(p => own.add(p)); if(it.antes && !novos.has(it.id)) it.antes.forEach(p => own.add(p)); }
+  return own;
+}
+/* preço do pacote: sem nenhuma peça, o de hoje (it.p). Cada peça que o jogador já tem desconta na proporção do valor dela;
+   a peça exclusiva (só vem no pacote) vale a média das avulsas, e a que saiu do pacote (antes) conta como já descontada.
+   Até a #77 os pacotes mantêm o preço da 0.9.1; lá, o p de cada pacote vira a soma das peças com 20% de desconto */
+function pacote(it, own){
+  const todas = it.parts.concat(it.antes || []), item = id => COS.find(i => i.id === id) || {p:0};
+  const avulsas = todas.map(item).filter(i => i.p > 0), media = avulsas.reduce((s, i) => s + i.p, 0) / Math.max(1, avulsas.length);
+  const peso = id => { const i = item(id); return i.p > 0 ? i.p : media; }, total = todas.reduce((s, id) => s + peso(id), 0);
+  const faltam = it.parts.filter(id => !own.has(id)), tem = it.parts.length - faltam.length;
+  const p = own.has(it.id) || !faltam.length ? 0 : Math.round(it.p * faltam.reduce((s, id) => s + peso(id), 0) / total / 100) * 100;
+  return {p, tem, n:it.parts.length, completo:!faltam.length || own.has(it.id)};
+}
 /* a loja: os itens do jogo, as fotos de web/a/ e o que está na coleção permanente do jogador (colecao/ dos dados, #33) mas
    não está mais na loja desta versão (fora: continua dele, mesmo que a loja mude de temporada) */
 function catalogo(avatares, colecao){
-  const cat = COS.concat(['logo'].concat((avatares||[]).filter(f => f !== 'logo')).map(f => ({id:'av-'+f, cat:'avatar', n:avNome(f), d:'Foto de perfil das páginas do jogo.', p: AV_GRATIS.includes(f) ? 0 : 1000, eq:{avatar:f}, ...(f === 'logo' ? {} : {img:'a/'+f+'.png'})})));
+  const cat = COS.concat(['logo'].concat((avatares||[]).filter(f => f !== 'logo')).map(f => ({id:'av-'+f, cat:'avatar', n:avNome(f), d:'Foto de perfil das páginas do jogo.', p: AV_GRATIS.includes(f) ? 0 : 1000, eq:{avatar:f}, fa:'comum', ...(f === 'logo' ? {} : {hxh:1}), ...(f === 'logo' ? {} : {img:'a/'+f+'.png'})})));
   const ja = new Set(cat.map(i => i.id));
   for(const it of Object.values((colecao && colecao.itens) || {})) if(it && typeof it.id === 'string' && !ja.has(it.id)) cat.push({...it, fora:1});
   return cat;
 }
 /* item que vem com o jogo: grátis e sem trava (a Simples, as fotos grátis). Fica sempre em Comprados, nunca na vitrine */
-const padrao = it => !it.p && !it.excl && !it.lend && !it.fora && !it.chefao;
+const padrao = it => !it.p && !it.excl && !it.lend && !it.fora && !it.chefao && !it.lock && !it.prova && !it.grupo;
 /* a cópia do item que vai para a coleção permanente: só os campos que bastam para mostrar e equipar sem a loja, e de onde
    ele veio (como: compra | chefao | migracao; origem: masadora | grupo; temporada). O servidor dá a cada item um uid e
    começa o histórico dele (hist), para um dia dar para trocar ou vender itens pelo grupo */
@@ -806,9 +872,12 @@ function estado(C){
   // 0.6.4: se o acerto (Duolingo de antes, contribuições) deixar a carteira negativa, ela fica em zero
   if(rec.acertos[MIGRA] === undefined){ const a0 = Object.values(rec.acertos).reduce((s, j) => s + (+j || 0), 0);
     rec.acertos[MIGRA] = Math.max(0, (EST.spent||0) - (total*10 + bonusNotas + conqJ + contribJ + a0)); rec.mudou = true; }
+  // retratos de chefão (#135): a Jenny paga volta uma vez, gravada em acertos (o registro de compras perde as mais antigas)
+  if(rec.acertos[RETRATOS_K] === undefined){ rec.acertos[RETRATOS_K] = retratosJ(EST.compras); rec.mudou = true; }
+  const retJ = +rec.acertos[RETRATOS_K] || 0;
   // devolução (#51): os itens do dia voltaram para a loja sem tirar do gasto; a carteira recebe o que passou do perdão da 0.6.4
-  const acerto = Object.values(rec.acertos).reduce((s, j) => s + (+j || 0), 0) + (EST.devolve && +EST.devolve.j || 0);
-  let ganho = total*10 + bonusNotas + conqJ + contribJ + acerto;
+  const acerto = Object.entries(rec.acertos).reduce((s, [k, j]) => s + (k === RETRATOS_K ? 0 : +j || 0), 0) + (EST.devolve && +EST.devolve.j || 0);
+  let ganho = total*10 + bonusNotas + conqJ + contribJ + acerto + retJ;
   // nota corrigida para menos (0.5.3): tira no máximo o que há na carteira; o resto fica perdoado em acertos
   const corte = rec.cortes.reduce((s, c) => s + c.j, 0), falta = (EST.spent||0) - ganho;
   if(corte && falta > 0){ const p = Math.min(corte, falta), k = 'nota:' + rec.cortes.map(c => c.k).join(',') + ':' + HOJE;
@@ -828,7 +897,7 @@ function estado(C){
   const hab = Object.values(habDias).reduce((m,h) => h.d.size > m.max ? {max:h.d.size, nome:h.n} : m, {max:0, nome:''});
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
   return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:T, nv:NV.hoje, duoDe, hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
-    proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto)), rec, jenny: ganho - (EST.spent||0),
+    proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto + retJ)), retJ, rec, jenny: ganho - (EST.spent||0),
     inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, valeTarefa, grupos: G, gXP, fonteDia, missaoDias, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
 }
@@ -837,6 +906,10 @@ function estado(C){
    carteira recebe só o que passou do perdão (a parte paga com Jenny ganha jogando). Uma vez: estado.json → devolve.
    Prêmio real e feitiço já usado ficam. Peças de um tema devolvido saem junto, menos as compradas à parte */
 const DEVOLVE_DIA = '2026-10-13';
+/* retratos de chefão (#135): viraram grátis; a Jenny de cada compra registrada (estado.json → compras) volta para a
+   carteira, e o retrato continua do jogador. Conta uma vez só, na primeira abertura, e fica em acertos[RETRATOS_K] */
+const RETRATOS_K = 'retratos';
+const retratosJ = compras => (compras || []).filter(c => c && c.tipo === 'cos' && /^ch-/.test(c.id) && c.j > 0).reduce((s, c) => s + c.j, 0);
 function devolucao(C, S){
   const E = C.EST, F = +((S.rec.acertos || {})[MIGRA]) || 0;   // pelo estado calculado: a 0.6.4 não conseguia gravar o acerto (migra fora do servidor)
   if(E.devolve || !(F > 0)) return null;
@@ -1130,7 +1203,7 @@ function conqIA(C, S){
    (ferramentas/simulador.mjs) gera o mesmo relatório para jogadores inventados, para comparar um com o outro. */
 const FONTES = {hab:'hábitos', ent:'entregas', est:'estudo', tre:'treino', pro:'projetos', vid:'vida', cf:'Codeforces',
   exp:'caçadas e expedições', contrib:'contribuições', bonus:'multiplicadores', gravado:'dias fechados'};
-const lojaTotal = () => COS.filter(it => it.p > 0 && !it.lend && !it.excl).reduce((s, it) => s + it.p, 0);
+const lojaTotal = () => COS.filter(it => it.p > 0 && !it.lend && !it.excl && !it.grupo).reduce((s, it) => s + it.p, 0);
 function relatorio(C, S){
   const {HOJE, TEMP, EST} = C, E = esforco(S.xpDia, HOJE), r1 = x => Math.round(x*10)/10;
   const ini = [TEMP.ini, S.first].filter(d => d && d <= HOJE).sort()[0] || HOJE;
@@ -1247,7 +1320,7 @@ function resumoGrupo(C, S, pessoais){
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 
-window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.GB = {devolucao, FAIXAS_LOJA, pacote, retratosJ, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   repRegra, repPasso, repProxima, repSucessora, repAcum, repAntes, repVisivel, repEntra, repFrase, SEM_REP,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
