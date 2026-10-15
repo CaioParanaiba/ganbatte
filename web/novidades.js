@@ -27,6 +27,13 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.1-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-15",
+   "resumo": "Uma primeira entrada nova para quem chega e um tutorial mais curto, que só mostra o que você já tem. O seu XP, a sua Jenny e tudo o que você já ganhou continuam iguais.",
+   "itens": [
+     {"ic": "card", "t": "Primeira entrada nova", "d": "Quem chega agora monta a licença hunter enquanto escreve o nome, conhece os 6 tipos num hexágono e aprende a diferença entre tarefa, caçada e projeto. Não precisa cadastrar matéria nenhuma: elas ficam para a aba Chefões, à mão ou com a IA, quando der (#127)."},
+     {"ic": "scroll", "t": "Tutorial mais curto", "d": "O tutorial de cada aba ficou com menos passos e textos de uma ou duas frases, e pula o que você ainda não tem (chefões sem matéria, Codeforces desligado). A dica do Codeforces não aparece mais em cima do hábito errado."},
+     {"ic": "alvo", "t": "Caçada com o tipo projeto", "d": "Na janela de nova caçada, o tipo das etapas agora separa treino de projeto, como no resto do jogo."}
+   ]},
   {"versao": "0.9.1-beta1", "nome": "atualização da Torre Trick", "data": "2026-10-15", "aviso": "0.9.1-beta1",
    "cap": "tipos novos · o seu hexágono de Nen foi refeito",
    "resumo": "Os tipos das tarefas ficaram mais claros: faculdade saiu, treino e projeto se separaram, e o seu hexágono de Nen foi refeito com a regra nova. O seu XP, a sua Jenny e os feitiços continuam exatamente iguais. E chegaram as tarefas que repetem.",
