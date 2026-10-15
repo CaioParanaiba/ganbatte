@@ -14,12 +14,12 @@ const COFRE_MES = 150;                            // R$ por mês para prêmios q
 const ALLFX = ['shim','aura','shake','zap','drift','confete'];
 
 const NEN = [
-  {k:'int', n:'Intensificação', c:'estudo',   f:'@estudo',     s:'Força de base. Horas de estudo e revisão que deixam você pronto para as provas.'},
-  {k:'tra', n:'Transmutação',   c:'treino',   f:'+treino · Codeforces · projetos', s:'Transformar teoria em código rápido. É o tipo do Killua.'},
-  {k:'con', n:'Conjuração',     c:'criação',  f:'outras tarefas da faculdade',      s:'Criar do zero: códigos, projetos, roteiros, organizar a matéria.'},
-  {k:'esp', n:'Especialização', c:'vida',     f:'o resto (sem tag)', s:'O que é só seu: casa, família, saúde, pessoas.'},
-  {k:'man', n:'Manipulação',    c:'hábitos',  f:'+rotina',         s:'Controle de si: hábitos diários, como a digitação.'},
-  {k:'emi', n:'Emissão',        c:'entregas', f:'@entrega',              s:'Pôr para fora: listas, trabalhos e atividades entregues.'},
+  {k:'int', n:'Intensificação', c:'estudo',   f:'@estudo · disciplina sem tag', s:'Força de base: estudo e revisão, com ou sem disciplina. Tarefa de disciplina sem tag cai aqui.'},
+  {k:'tra', n:'Transmutação',   c:'treino',   f:'+treino · Codeforces',            s:'Prática e Codeforces: transformar teoria em código rápido.'},
+  {k:'con', n:'Conjuração',     c:'projeto',  f:'+projeto · issues do Ganbatte',   s:'Criar do zero: o seu app, site, bot ou projeto.'},
+  {k:'esp', n:'Especialização', c:'vida',     f:'o resto (sem tag nem disciplina)', s:'O que é só seu: casa, família, saúde, pessoas. Tarefa sem tag e sem disciplina cai aqui.'},
+  {k:'man', n:'Manipulação',    c:'hábitos',  f:'+rotina',         s:'Controle de si: os hábitos que você marca e repete todo dia ou toda semana.'},
+  {k:'emi', n:'Emissão',        c:'entregas', f:'@entrega',              s:'Pôr para fora: trabalho que alguém cobra ou avalia, como listas, trabalhos e relatórios.'},
 ];
 const GUARDA = [{ic:'cat',n:'Neferpitou',r:'Ten de 14 dias'},{ic:'wing',n:'Shaiapouf',r:'2 semanas sem atraso'},{ic:'horn',n:'Menthuthuyoupi',r:'uma semana acima de 300 XP'},{ic:'crown',n:'Meruem',r:'todos os chefões derrotados'}];
 const SPELLS = [
@@ -224,7 +224,7 @@ const mins = e => { if(!e) return 0; const m = String(e).match(/^(?:(\d+)h)?(?:(
 const has = (t,k,v) => (t[k]||[]).includes(v);
 /* tags de cada tipo: padrão do template + as do jogador (jogador.conf, seção [tags]; o servidor manda em api.jogador.tags).
    ctx = @contexto, proj = +projeto. Disciplina é sempre +fac.SIGLA. */
-const TAGS_PADRAO = {ent:'@entrega @teams @atividade', est:'@estudo @livro @caderno', tre:'+treino +mrt', hab:'+rotina'};
+const TAGS_PADRAO = {ent:'@entrega @teams @atividade', est:'@estudo @livro @caderno', tre:'+treino +mrt', pro:'+projeto', hab:'+rotina'};
 const TAGS = {};
 function configura(extra){
   for(const k in TAGS_PADRAO){
@@ -242,6 +242,11 @@ const isFac = t => (t.proj||[]).some(p => p.startsWith('fac.'));
 const isEst = t => tem(t,'est');
 const isEnt = t => tem(t,'ent');
 const isTre = t => tem(t,'tre');
+/* projeto (#121): a tag de projeto, a tarefa de dev de uma issue (gh) ou um +treino de antes da #121 com palavra de projeto
+   no texto (até a #121 treino e projeto eram um tipo só; criada a partir de TIPOS_DESDE, vale a tag que o jogador escolheu) */
+const TIPOS_DESDE = '2026-10-16', TIPOS_MIGRA = 'tipos';   // estado.json → migra.tipos: {em, antes, depois}
+const PRO_ANTIGO = /#\d|\b(issue|pr|beta|lan[cç]ar|publicar|vers[aã]o|ganbatte|hunter\.todo|todo-engine|app|site|bot|github|reposit[oó]rio|projeto|desenvolv\w*)\b/i;
+const isPro = t => !!t.gh || tem(t,'pro') || (isTre(t) && !(t.cri >= TIPOS_DESDE) && PRO_ANTIGO.test(t.txt || ''));
 const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 const addD = (iso,k) => { const d = new Date(iso+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+k); return d.toISOString().slice(0,10); };
 const dias = (a,b) => Math.round((new Date(b+'T12:00:00Z') - new Date(a+'T12:00:00Z'))/864e5);
@@ -269,6 +274,60 @@ function isoData(br, hoje){   // "9/10/2026", "09/10/26" ou "9/10" (ano de hoje)
 /* hábitos semanais: {id, n, semana:N} = N vezes por semana (seg a dom); sem "semana" = todo dia */
 const semanalDe = (jog, id) => { const h = ((jog && jog.habitos) || []).find(x => x.id === id); return h && h.semana ? +h.semana : 0; };
 
+/* ---------- tarefas recorrentes (#113): rep:REGRA, as mesmas regras do servidor.py ----------
+   fixa (calendário): sem-seg, mes-1, 6mes-1, ano-12-25; depois de concluir: +10d, +2sem, +3mes. Uma aberta por vez: concluir
+   cria a próxima (o servidor). Ela fica guardada (fora da Lista, só na janela ↻ recorrentes) até alguns dias antes do prazo. */
+const SEM_REP = ['seg','ter','qua','qui','sex','sab','dom'], SEM_NOME = ['segunda','terça','quarta','quinta','sexta','sábado','domingo'];
+const diasMes = (a, m) => new Date(Date.UTC(a, m, 0)).getUTCDate();   // m de 1 a 12
+const diaDoMes = (a, m, d) => `${a}-${String(m).padStart(2,'0')}-${String(Math.min(d, diasMes(a, m))).padStart(2,'0')}`;   // dia 31 em novembro vira 30: sempre para baixo
+const somaMeses = (iso, n, dia) => { const m = +iso.slice(5,7) - 1 + n; return diaDoMes(+iso.slice(0,4) + Math.floor(m / 12), m % 12 + 1, dia || +iso.slice(8,10)); };
+function repRegra(s){
+  s = String(s || '').toLowerCase(); let m;
+  if((m = s.match(/^sem-(seg|ter|qua|qui|sex|sab|dom)$/))) return {tipo:'sem', dia:SEM_REP.indexOf(m[1])};
+  if((m = s.match(/^(\d{0,2})mes-(\d{1,2})$/)) && +(m[1] || 1) >= 1 && +(m[1] || 1) <= 12 && +m[2] >= 1 && +m[2] <= 31) return {tipo:'mes', n:+(m[1] || 1), dia:+m[2]};
+  if((m = s.match(/^ano-(\d\d)-(\d\d)$/)) && +m[1] >= 1 && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= diasMes(2000, +m[1])) return {tipo:'ano', mes:+m[1], dia:+m[2]};
+  if((m = s.match(/^\+(\d{1,3})(d|sem|mes)$/)) && +m[1] >= 1) return {tipo:'depois', n:+m[1], un:m[2]};
+  return null;
+}
+/* a primeira data da regra fixa depois do dia d */
+function repPasso(r, d){
+  if(r.tipo === 'sem') return addD(d, ((r.dia - dow(d) - 1) % 7 + 7) % 7 + 1);
+  const a = +d.slice(0,4);
+  if(r.tipo === 'mes'){ const x = diaDoMes(a, +d.slice(5,7), r.dia); return x > d ? x : somaMeses(d, r.n, r.dia); }
+  const x = diaDoMes(a, r.mes, r.dia); return x > d ? x : diaDoMes(a + 1, r.mes, r.dia);
+}
+/* o prazo da próxima vez: a fixa conta do prazo, a de depois de concluir conta do dia da conclusão */
+function repProxima(r, due, feita){
+  if(r.tipo === 'depois') return r.un === 'mes' ? somaMeses(feita, r.n) : addD(feita, r.n * (r.un === 'sem' ? 7 : 1));
+  let x = repPasso(r, due || feita); while(x <= feita) x = repPasso(r, x); return x;
+}
+/* a linha da próxima vez (o modo demonstração usa; o jogo de verdade, o servidor) */
+function repSucessora(l, feita){
+  const m = l.match(/(?:^|\s)rep:(\S+)/), r = m && repRegra(m[1]); if(!r) return null;
+  const d = l.match(/(?:^|\s)due:(\d{4}-\d\d-\d\d)/), prox = repProxima(r, d ? d[1] : feita, feita);
+  return (d ? l.replace(/((?:^|\s)due:)\d{4}-\d\d-\d\d/, '$1' + prox) : `${l} due:${prox}`).replace(/^(\([A-Z]\) )?\d{4}-\d\d-\d\d /, (x, p) => (p || '') + feita + ' ');
+}
+/* fixa atrasada: quantas datas da regra já chegaram desde o prazo, contando ele (2 = "#2"; só visual, um concluir quita tudo) */
+function repAcum(t, HOJE){
+  const r = repRegra(t.rep); if(!r || r.tipo === 'depois' || !t.due || t.due >= HOJE) return 1;
+  let n = 1, x = repPasso(r, t.due); while(x <= HOJE && n < 99){ n++; x = repPasso(r, x); } return n;
+}
+/* quantos dias antes do prazo ela entra na Lista: 1 (semanal), 3 (mensal), 7 (até 3 meses), 14 (semestral, anual) */
+function repAntes(r){
+  const p = r.tipo === 'sem' ? 7 : r.tipo === 'mes' ? 30 * r.n : r.tipo === 'ano' ? 365 : r.n * (r.un === 'd' ? 1 : r.un === 'sem' ? 7 : 30);
+  return p <= 7 ? 1 : p <= 31 ? 3 : p <= 92 ? 7 : 14;
+}
+const repVisivel = (t, HOJE) => { const r = t.rep && repRegra(t.rep); return !r || !t.due || dias(HOJE, t.due) <= repAntes(r); };
+const repEntra = t => { const r = repRegra(t.rep); return r && t.due ? addD(t.due, -repAntes(r)) : ''; };   // o dia em que ela aparece na Lista
+function repFrase(rep){
+  const r = repRegra(rep); if(!r) return '';
+  if(r.tipo === 'sem') return `${r.dia >= 5 ? 'todo' : 'toda'} ${SEM_NOME[r.dia]}`;
+  if(r.tipo === 'mes') return r.n === 1 ? `todo mês no dia ${r.dia}` : `a cada ${r.n} meses no dia ${r.dia}`;
+  if(r.tipo === 'ano') return `todo ano em ${curta(diaDoMes(2000, r.mes, r.dia))}`;
+  const un = r.un === 'd' ? ['dia','dias'] : r.un === 'sem' ? ['semana','semanas'] : ['mês','meses'];
+  return `${r.n} ${un[r.n === 1 ? 0 : 1]} depois de concluir`;
+}
+
 /* ---------- leitura dos arquivos ---------- */
 function parseLinha(raw, n){
   const t = {n, raw}; let s = raw.trim(), m;
@@ -276,7 +335,7 @@ function parseLinha(raw, n){
   else { if((m = s.match(/^\(([A-Z])\) (.*)$/))){ t.pri = m[1]; s = m[2]; } if((m = s.match(/^(\d{4}-\d\d-\d\d) (.*)$/))){ t.cri = m[1]; s = m[2]; } }
   t.proj = (s.match(/(?:^|\s)\+(\S+)/g)||[]).map(x => x.trim().slice(1).toLowerCase());
   t.ctx = (s.match(/(?:^|\s)@(\S+)/g)||[]).map(x => x.trim().slice(1).toLowerCase());
-  for(const k of ['est','due','prova','rec','aula','av','gh','esf']){ const r = s.match(new RegExp('(?:^|\\s)'+k+':(\\S+)')); if(r) t[k] = r[1]; }
+  for(const k of ['est','due','prova','rec','aula','av','gh','esf','rep']){ const r = s.match(new RegExp('(?:^|\\s)'+k+':(\\S+)')); if(r) t[k] = r[1]; }
   t.txt = s.replace(/\s(?:\+|@|\w+:)\S+/g,'').replace(/^\(([A-Z])\) /,'').trim();
   return t;
 }
@@ -316,14 +375,15 @@ function carregar(api){
   configura(api.jogador && api.jogador.tags);
   const todo = (api.todo||[]).map((l,i) => ({l, n:i+1})).filter(o => o.l.trim());
   const feitas = (api.done||[]).filter(l => l.trim()).map(l => parseLinha(l, 0)).concat(todo.filter(o => o.l.startsWith('x ')).map(o => parseLinha(o.l, o.n)));
-  const abertas = todo.filter(o => !o.l.startsWith('x ')).map(o => parseLinha(o.l, o.n));
+  const hoje = api.hoje || new Date().toISOString().slice(0,10);
+  const todas = todo.filter(o => !o.l.startsWith('x ')).map(o => parseLinha(o.l, o.n));
+  const abertas = todas.filter(t => repVisivel(t, hoje)), guardadas = todas.filter(t => !repVisivel(t, hoje));   // recorrentes longe do prazo (#113)
   const av = parseAvaliacoes(api.avaliacoes), nt = parseNotas(api.notas);
   const est = Object.assign({spent:0, cofreUsado:0, own:[], resg:[], bought:{}, equip:{}}, api.estado||{});
   est.own = [...new Set((est.own||[]).map(k => k.startsWith('av-') && AV_ANTIGO[k.slice(3)] ? 'av-' + AV_ANTIGO[k.slice(3)] : k))];
   if(est.equip && AV_ANTIGO[est.equip.avatar]) est.equip = Object.assign({}, est.equip, {avatar: AV_ANTIGO[est.equip.avatar]});
   est.equip = Object.assign({theme:'simples', fx:[], bg:'', frame:'', title:'', avatar:'logo', lic:'l2', hud:'logo', chefes:{}, skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}}, est.equip||{});
-  const hoje = api.hoje || new Date().toISOString().slice(0,10);
-  return {D:{feitas, abertas, cf:api.cf||null, duo:api.duo||null, contrib:api.contrib||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
+  return {D:{feitas, abertas, guardadas, cf:api.cf||null, duo:api.duo||null, contrib:api.contrib||null}, HOJE:hoje, TEMP: av.temp || {nome:'Temporada', ini:addD(hoje,-60), fim:addD(hoje,60), volta:addD(hoje,120)},
     BOSSES: av.bosses, AVAL: av.aval, COLECAO: api.colecao && api.colecao.itens && typeof api.colecao.itens === 'object' ? api.colecao : {itens:{}}, NOTAS: nt.NOTAS, PARC: nt.PARC, NDATA: nt.NDATA, INBOX: parseAjustes(api.ajustes), EST: est, AVATARES: api.avatares||[],
     NARRADAS: Array.isArray(api.narradas) ? api.narradas : [], TEMPORADAS: Array.isArray(api.temporadas) ? api.temporadas : [], CONQ: Array.isArray(api.conquistas) ? api.conquistas : [], JOG: Object.assign({nome:'Hunter'}, api.jogador||{}), SRV: api.servidor||null, AV_TXT: String(api.avaliacoes||''), NT_TXT: String(api.notas||''), dif:'normal'};
 }
@@ -351,9 +411,13 @@ const habPede = (nv, sem) => (nv < 6 ? 1 : nv - 4) * (sem ? 1 : 7);
 const habXP = nv => nv + 2;
 const HAB_EXTRA = 2;   // hábito semanal feito acima da meta da semana: XP ×2 (a calibrar)
 function xpDe(t){ if((t.rec||'').startsWith('cf') && !(t.done && t.done < CF_DESDE)) return CF_BONUS; let x = t.gh ? ESF_XP[t.esf] || ESF_XP.medio : isRec(t) ? 10 : isEnt(t) ? 25 : isEst(t) ? 15 : isFac(t) ? 15 : 10; if(isRec(t)) x *= .5; if(t.due && t.done && t.done <= t.due) x *= 1.5; return Math.round(x); }
-/* tipo de Nen: treino → Transmutação; hábito → Manipulação; entrega → Emissão; estudo → Intensificação (com ou sem disciplina);
-   outra da faculdade → Conjuração; o resto → Especialização (vida) */
-function nenDe(t){ const r = t.rec || ''; if(r.startsWith('cf') || r.startsWith('atc') || isTre(t) || /codeforces|atcoder/i.test(t.txt)) return 1; if(isRec(t)) return 4; if(isEnt(t)) return 5; if(isEst(t)) return 0; if(isFac(t)) return 2; return 3; }
+/* tipo de Nen (#121): treino → Transmutação; projeto → Conjuração; hábito → Manipulação; entrega → Emissão; estudo →
+   Intensificação (com ou sem disciplina; tarefa da disciplina sem tag também é estudo); o resto → Especialização (vida) */
+function nenDe(t){ const r = t.rec || ''; if(r.startsWith('cf') || r.startsWith('atc') || /codeforces|atcoder/i.test(t.txt)) return 1; if(isPro(t)) return 2; if(isTre(t)) return 1;
+  if(isRec(t)) return 4; if(isEnt(t)) return 5; if(isEst(t) || isFac(t)) return 0; return 3; }
+/* a regra de antes da #121 (faculdade sem tag → Conjuração; projeto junto com treino): só para a missão das semanas que
+   começaram antes de o jogador abrir a versão nova, para o XP e a Jenny já ganhos não mudarem */
+function nenAntes(t){ const r = t.rec || ''; if(r.startsWith('cf') || r.startsWith('atc') || isTre(t) || /codeforces|atcoder/i.test(t.txt)) return 1; if(isRec(t)) return 4; if(isEnt(t)) return 5; if(isEst(t)) return 0; if(isFac(t)) return 2; return 3; }
 function discOf(t, C){
   const p = (t.proj||[]).find(p => p.startsWith('fac.')); if(!p) return null;
   const x = p.slice(4).toUpperCase(); const ds = (C && C.BOSSES || []).map(b => b.d);
@@ -440,37 +504,45 @@ function ligaCom(t, avs, ref){
   return [prox(provas) || prox(avs.filter(a => a.cont)) || provas[provas.length-1] || avs[avs.length-1], por];   // sem prova no plano: a contínua do período
 }
 const refDe = (t, HOJE) => t.done || (t.due && t.due > HOJE ? t.due : HOJE);
-/* "o jogo decide": prioridade sugerida para uma tarefa nova, com os motivos. Pontos: avaliação ligada chegando, prazo,
-   fúria do chefão, atrasadas da disciplina e entrega; 70+ = A, 40+ = B, 20+ = C, abaixo disso sem prioridade */
-/* tipo sugerido pelo texto da tarefa (formulário da Lista, "o jogo sugere"): palavras de cada tipo, na ordem
-   entrega > treino e projetos > estudo > faculdade > vida. Sem palavra conhecida, não sugere (fica o que estava). */
+/* tipo sugerido pelo texto da tarefa (formulário da Lista, "o jogo sugere"), #5 e #121: palavras de cada tipo, na ordem
+   projeto > treino > entrega > estudo > vida, e "#12" (número de issue) é projeto. Com disciplina, treino e projeto não valem
+   (a fronteira é a disciplina: o exercício de programação de POO é estudo) e, sem palavra, é estudo. Sem disciplina, entrega
+   vira vida (entregar a roupa para alguém não é trabalho cobrado) e, sem palavra, não sugere (fica o que estava).
+   "lista" é estudo: entrega é entregar o trabalho para alguém cobrar, não ter prazo. */
 const TIPO_PAL = [
-  ['ent', 'lista,trabalho,entrega,entregar,enviar,submeter,relatorio,atividade,apresentacao,seminario,artigo,tp,ep,lab,laboratorio,questionario'],
-  ['tre', 'codeforces,contest,leetcode,atcoder,cses,beecrowd,uri,maratona,icpc,obi,treino,treinar,upsolve,projeto pessoal,meu projeto,app,site,bot,github,repositorio,desenvolver,desenvolvimento,programar,ganbatte,hunter.todo,todo-engine'],
-  ['est', 'revisar,revisao,estudar,estudo,ler,leitura,resumo,resumir,exercicio,exercicios,refazer,prova,simulado,videoaula,assistir aula,capitulo,flashcard,anki'],
-  ['fac', 'grupo,professor,professora,monitoria,monitor,matricula,orientador,coordenacao,secretaria,ementa,horario,sala'],
-  ['vid', 'medico,consulta,dentista,exame de sangue,compras,comprar,mercado,farmacia,pagar,conta de,boleto,banco,documento,rg,cpf,carteirinha,limpar,lavar,arrumar,cozinhar,casa,familia,mae,pai,aniversario,presente,cabelo,academia,correr,viagem,passagem'],
+  ['pro', 'issue,pr,beta,lancar,publicar,versao,deploy,commit,branch,ganbatte,hunter.todo,todo-engine,app,site,bot,github,repositorio,desenvolver,desenvolvimento,projeto pessoal,meu projeto'],
+  ['tre', 'codeforces,contest,leetcode,atcoder,cses,beecrowd,uri,maratona,icpc,obi,treino,treinar,upsolve,programar'],
+  ['ent', 'entregar,entrega,enviar,submeter,trabalho,relatorio,atividade,apresentacao,seminario,artigo,tp,ep,questionario'],
+  ['est', 'lista,listas,revisar,revisao,estudar,estudo,ler,leitura,resumo,resumir,consolidar,mapear,caderno,slide,slides,cap,capitulo,aula,exercicio,exercicios,refazer,prova,simulado,videoaula,assistir aula,flashcard,anki'],
+  ['vid', 'medico,consulta,dentista,exame de sangue,compras,comprar,mercado,farmacia,pagar,conta de,boleto,banco,documento,rg,cpf,carteirinha,matricula,secretaria,coordenacao,limpar,lavar,arrumar,cozinhar,casa,familia,mae,pai,aniversario,presente,cabelo,academia,correr,viagem,passagem,igreja,missa,catequese,email,e-mail'],
 ].map(([k, ps]) => [k, ps.split(',')]);
 function sugereTipo(txt, temDisc){
+  if(!temDisc && /#\d/.test(txt)) return {k:'pro', por:'#'};
   const t = ' ' + norm(txt).replace(/[^a-z0-9.+-]+/g, ' ') + ' ';
   for(const [k, ps] of TIPO_PAL){
+    if(temDisc && (k === 'pro' || k === 'tre')) continue;
     const p = ps.find(p => t.includes(' ' + p + ' '));
-    if(p) return k === 'fac' && !temDisc ? {k:'vid', por:p} : {k, por:p};
+    if(p) return k === 'ent' && !temDisc ? {k:'vid', por:p} : {k, por:p};
   }
-  return null;
+  return temDisc && t.trim() ? {k:'est', por:'', disc:true} : null;
 }
+/* "o jogo decide" (#5): prioridade sugerida para uma tarefa nova, com os motivos. Cada fator importante vale 2 pontos e cada
+   fator muito importante, 3: um fator = C, dois = B, três (ou dois muito importantes) = A; nenhum = sem prioridade.
+   Muito importantes: avaliação ligada em até 3 dias, prazo até amanhã (ou vencido), chefão em fúria.
+   Importantes: avaliação ligada em até 14 dias, prazo em até 7 dias, 2+ atrasadas na disciplina, entrega. */
+const PRI_IMP = 2, PRI_SUPER = 3;
 function sugerePri(t, bs, HOJE, C){
   let sc = 0; const por = [], d = discOf(t, C), b = bs.find(b => b.d === d);
   if(b && b.avs.length){ const a = liga(t, b.avs, refDe(t, HOJE)), k = a && a.dt >= HOJE ? dias(HOJE, a.dt) : null;
-    const p = k == null ? 0 : k <= 3 ? 50 : k <= 7 ? 35 : k <= 14 ? 15 : 0;
+    const p = k == null ? 0 : k <= 3 ? PRI_SUPER : k <= 14 ? PRI_IMP : 0;
     if(p){ sc += p; por.push(`${a.k} ${k === 0 ? 'hoje' : k === 1 ? 'amanhã' : 'em ' + k + ' dias'}`); } }
-  if(t.due){ const k = dias(HOJE, t.due), p = k <= 1 ? 50 : k <= 3 ? 35 : k <= 7 ? 15 : 0;
+  if(t.due){ const k = dias(HOJE, t.due), p = k <= 1 ? PRI_SUPER : k <= 7 ? PRI_IMP : 0;
     if(p) { sc += p; por.push(k < 0 ? 'prazo vencido' : k === 0 ? 'prazo hoje' : k === 1 ? 'prazo amanhã' : `prazo em ${k} dias`); } }
-  if(b && b.fury){ sc += 20; por.push(`${b.d} em fúria`); }
+  if(b && b.fury){ sc += PRI_SUPER; por.push(`${b.d} em fúria`); }
   const atr = b ? b.open.filter(x => x.due && x.due < HOJE).length : 0;
-  if(atr >= 2){ sc += 15; por.push(`${atr} atrasadas em ${b.d}`); }
-  if(isEnt(t)){ sc += 10; por.push('entrega'); }
-  return {pri: sc >= 70 ? 'A' : sc >= 40 ? 'B' : sc >= 20 ? 'C' : null, sc, por};
+  if(atr >= 2){ sc += PRI_IMP; por.push(`${atr} atrasadas em ${b.d}`); }
+  if(isEnt(t)){ sc += PRI_IMP; por.push('entrega'); }
+  return {pri: sc >= 3*PRI_IMP ? 'A' : sc >= 2*PRI_IMP ? 'B' : sc >= PRI_IMP ? 'C' : null, sc, por};
 }
 const liga = (t, avs, ref) => ligaCom(t, avs, ref)[0];
 function chefoes(C, feitas, abertas){
@@ -623,11 +695,16 @@ function estado(C){
   const duoDe = duoDesde(C), NV = niveisHab(C, feitas, fer, F.salvoHab);
   const xpBase = (t, nv = NV, ef = F, prazo = true) => { if(duoAntes(t, duoDe)) return 0; if(nv.xp.has(t) && t.done >= HAB_DESDE) return nv.xp.get(t);
     const k = ef.ken.get(norm(t.txt)) || 0; return xpDe(!prazo ? {...t, due:null} : k && t.due ? {...t, due: addD(t.due, k)} : t); };
+  // tipos novos (#121): a missão até a semana em que o jogador abriu a versão segue a regra antiga (nenAntes),
+  // para o ×1,5 já dado e os feitiços das missões não mudarem; o gráfico de atributos usa a regra nova em tudo
+  const diaTipos = (EST.migra && EST.migra[TIPOS_MIGRA] && EST.migra[TIPOS_MIGRA].em) || HOJE, wsCorte = addD(diaTipos, -dow(diaTipos));
+  const nenNa = d => addD(d, -dow(d)) <= wsCorte ? nenAntes : nenDe;   // a regra da semana do dia d (a da troca ainda é a antiga)
   // missão da semana: o atributo mais fraco ANTES da semana começar (fixo durante a semana; Gyo escolhe outro)
   const fracoDa = ws => { if(F.gyo[semanaISO(ws)] !== undefined) return F.gyo[semanaISO(ws)];
-    const at = [0,0,0,0,0,0]; for(const t of feitas) if(t.done < ws) at[nenDe(t)] += xpBase(t); return at.indexOf(Math.min(...at)); };
+    const nen = nenNa(ws), at = [0,0,0,0,0,0]; for(const t of feitas) if(t.done < ws) at[nen(t)] += xpBase(t); return at.indexOf(Math.min(...at)); };
   const fracoCache = {}, fracoSem = d => { const ws = addD(d,-dow(d)); return fracoCache[ws] ?? (fracoCache[ws] = fracoDa(ws)); };
-  const porDia = {}, xpDia = {}, attr = [0,0,0,0,0,0], xs = [];
+  const naMissao = (t, d = t.done) => nenNa(d)(t) === fracoSem(d);
+  const porDia = {}, xpDia = {}, attr = [0,0,0,0,0,0], attrAntes = [0,0,0,0,0,0], xs = [];
   /* hábito semanal acima da meta ("fiz de novo"): da (meta+1)ª vez na semana em diante, pelo dia do hábito, vale ×2 */
   const metaSem = Object.fromEntries(((C.JOG && C.JOG.habitos) || []).filter(h => h.semana).map(h => [h.id, +h.semana]));
   const extrasHab = ts => { const extra = new Set(), contaSem = {};
@@ -641,7 +718,7 @@ function estado(C){
     const base = xpBase(t, nv, ef, false), ms = []; let x = xpBase(t, nv, ef);
     if(x !== base) ms.push('prazo');
     if(extra){ x *= HAB_EXTRA; ms.push('acima da meta'); }
-    if(!fer(t.done) && nenDe(t) === fracoSem(t.done)){ x *= 1.5; ms.push('missão'); }
+    if(!fer(t.done) && naMissao(t)){ x *= 1.5; ms.push('missão'); }
     const d = discOf(t,C); if(d && t.done && !fer(t.done) && naFuria(d, t.done)){ x *= 1.5; ms.push('fúria'); }
     if(ef.mult.has(i)){ x *= ef.mult.get(i); ms.push('feitiço'); }
     x = Math.round(x); return {x, j:x*10, base, ms};
@@ -658,15 +735,15 @@ function estado(C){
   // multiplicadores somaram (missão, fúria, Ko/Acompanhar, hábito acima da meta)
   const fonteDia = {}, somaF = (d, k, x) => { if(!d || !x) return; const f = fonteDia[d] = fonteDia[d] || {}; f[k] = (f[k]||0) + x; };
   feitas.forEach((t,i) => {
-    if(duoAntes(t, duoDe)){ let x = xpDe(t); if(!fer(t.done) && nenDe(t) === fracoSem(t.done)) x *= 1.5; duoAntesXP[t.done] = (duoAntesXP[t.done]||0) + Math.round(x); return; }
+    if(duoAntes(t, duoDe)){ let x = xpDe(t); if(!fer(t.done) && naMissao(t)) x *= 1.5; duoAntesXP[t.done] = (duoAntesXP[t.done]||0) + Math.round(x); return; }
     const {x} = valorFeita(t, i), base = xpBase(t);
     total += x; xs.push({t,x});
     somaF(t.done, (t.rec||'').startsWith('cf') ? 'cf' : isRec(t) ? 'hab' : tipoDe(t), base); somaF(t.done, 'bonus', x - base);
-    porDia[t.done] = (porDia[t.done]||0)+1; xpDia[t.done] = (xpDia[t.done]||0)+x; attr[nenDe(t)] += x;
+    porDia[t.done] = (porDia[t.done]||0)+1; xpDia[t.done] = (xpDia[t.done]||0)+x; attr[nenDe(t)] += x; attrAntes[nenAntes(t)] += x;
   });
   // Codeforces: 5 XP por problema do dia, até 6 (dados.json/codeforces.por_dia), a partir do início da temporada; missão da semana ×1,5
   const cfDia = (D.cf && D.cf.por_dia) || {}; let cfXP = 0;
-  for(const d in cfDia){ if(d < TEMP.ini || d > HOJE) continue; const e = Math.round(cfExtra(cfDia[d], d) * (d >= CF_DESDE && !fer(d) && fracoSem(d) === 1 ? 1.5 : 1)); if(e){ cfXP += e; total += e; xpDia[d] = (xpDia[d]||0)+e; attr[1] += e; somaF(d, 'cf', cfExtra(cfDia[d], d)); somaF(d, 'bonus', e - cfExtra(cfDia[d], d)); } }
+  for(const d in cfDia){ if(d < TEMP.ini || d > HOJE) continue; const e = Math.round(cfExtra(cfDia[d], d) * (d >= CF_DESDE && !fer(d) && fracoSem(d) === 1 ? 1.5 : 1)); if(e){ cfXP += e; total += e; xpDia[d] = (xpDia[d]||0)+e; attr[1] += e; attrAntes[1] += e; somaF(d, 'cf', cfExtra(cfDia[d], d)); somaF(d, 'bonus', e - cfExtra(cfDia[d], d)); } }
   // caçadas e expedições (0.5.8): marco fechado e expedição concluída somam o bônus gravado no dia em que fecharam
   const G = grupos(C, D.feitas, abertas), xpDe2 = new Map(xs.map(o => [o.t, o.x]));
   let gXP = 0;
@@ -694,6 +771,8 @@ function estado(C){
     rec.tenRec = Math.max(rec.tenRec, T0.max);
     rec.migra[MIGRA] = {xp:dXP, j:dJ, ten:T0.max, em:HOJE}; rec.mudou = true;
   }
+  // #121: o dia em que o jogador abriu os tipos novos e os atributos pela regra antiga e pela nova (para a janela da versão)
+  if(!rec.migra[TIPOS_MIGRA]){ rec.migra[TIPOS_MIGRA] = {em:HOJE, antes:attrAntes.map(Math.round), depois:attr.map(Math.round)}; rec.mudou = true; }
   for(const d of new Set([...Object.keys(xpDia), ...Object.keys(rec.xpDias)])){
     if(!(d < HOJE)) continue;
     const g = +rec.xpDias[d] || 0, x = xpDia[d] || 0;
@@ -702,11 +781,11 @@ function estado(C){
   const set = new Set(feitas.filter(t => t.done && !isRec(t)).map(t => t.done));   // Ten: só tarefa que não é hábito
   const T = ten(set, first, HOJE, F.zetsu, fer, F.salvoTen); T.max = Math.max(T.max, rec.tenRec);
   const ritmo = first ? total/Math.max(1, dias(first,HOJE)/7) : 0;
-  const fraco = fracoSem(HOJE), pausa = fer(HOJE), frAgora = pausa ? -1 : fraco;   // frAgora: o atributo que rende ×1,5 hoje (nenhum nas férias)
-  const ws = addD(HOJE,-dow(HOJE)); let missDias = 0; for(let i=0;i<7;i++){ const d = addD(ws,i); if(!fer(d) && feitas.some(t => t.done === d && nenDe(t) === fraco)) missDias++; }
+  const fraco = fracoSem(HOJE), pausa = fer(HOJE);   // nas férias nenhum atributo rende ×1,5
+  const ws = addD(HOJE,-dow(HOJE)); let missDias = 0; for(let i=0;i<7;i++){ const d = addD(ws,i); if(!fer(d) && feitas.some(t => t.done === d && naMissao(t))) missDias++; }
   // recompensa da missão: cada semana com 3+ dias do atributo da semana dá 1 feitiço à escolha
   let missoes = 0; const missaoDias = new Set();   // missaoDias: os dias que contaram para a missão da sua semana (resumo do grupo)
-  if(first) for(let w = addD(first,-dow(first)); w <= HOJE; w = addD(w,7)){ const fr = fracoSem(w); let k = 0; for(let i=0;i<7;i++){ const d = addD(w,i); if(d <= HOJE && !fer(d) && feitas.some(t => t.done === d && nenDe(t) === fr)){ k++; missaoDias.add(d); } } if(k >= 3) missoes++; }
+  if(first) for(let w = addD(first,-dow(first)); w <= HOJE; w = addD(w,7)){ const fr = fracoSem(w); let k = 0; for(let i=0;i<7;i++){ const d = addD(w,i); if(d <= HOJE && !fer(d) && feitas.some(t => t.done === d && naMissao(t))){ k++; missaoDias.add(d); } } if(k >= 3) missoes++; }
   const cfHoje = cfDia[HOJE] || 0;
   const rot = abertas.filter(isRec).map(t => ({...t, ok:false})).concat(feitas.filter(t => isRec(t) && t.done === HOJE && t.raw).map(t => ({...t, ok:true})));
   const golpes = abertas.filter(t => !isRec(t)).map(t => {
@@ -714,9 +793,10 @@ function estado(C){
     let sc = 0; if(t.prova === HOJE) sc += 150; else if(av && dias(HOJE,av.dt) >= 0 && dias(HOJE,av.dt) <= 7) sc += 60;
     if(t.due){ const k = dias(HOJE,t.due); sc += k <= 1 ? 60 : k <= 3 ? 40 : k <= 7 ? 20 : 0; }
     const fu = !pausa && !!(b && b.fury);
-    if(nenDe(t) === frAgora) sc += 15; if(fu) sc += 25; if(t.pri === 'A') sc += 10;
-    let x = xpBase({...t, done:HOJE}); if(nenDe(t) === frAgora) x *= 1.5; if(fu) x *= 1.5;
-    return {t, sc, x: Math.round(x), b, av, bonus: nenDe(t) === frAgora, fury: fu};
+    const mis = !pausa && naMissao(t, HOJE);
+    if(mis) sc += 15; if(fu) sc += 25; if(t.pri === 'A') sc += 10;
+    let x = xpBase({...t, done:HOJE}); if(mis) x *= 1.5; if(fu) x *= 1.5;
+    return {t, sc, x: Math.round(x), b, av, bonus: mis, fury: fu};
   }).sort((a,b) => b.sc - a.sc);
   const bonusNotas = Object.values(rec.notasJ).reduce((s, r) => s + (+r.j || 0), 0);   // pelos recibos: o peso do dia em que a nota entrou
   const resg = (C.CONQ || []).filter(c => c && c.resgate && !c.descartada);   // conquistas da IA resgatadas: Jenny ou um feitiço
@@ -900,11 +980,12 @@ function metasConq(C, S, filtro = {}){
 }
 const alvoConq = r => JSON.stringify(r.regra === 'contagem' ? [r.regra, r.palavra || '', r.disc || '', r.tipo || '', !!r.prazo]
   : r.regra === 'sequencia' ? [r.regra, r.hab] : r.regra === 'nota' ? [r.regra, r.disc] : [r.regra]);
-const CONQ_TIPOS = {ent:'entrega', est:'estudo', fac:'faculdade', tre:'treino e projetos', vid:'vida'};
+const CONQ_TIPOS = {ent:'entrega', est:'estudo', tre:'treino', pro:'projeto', vid:'vida'};
 const CONQ_ICS = 'int tra con esp man emi spider tower card flame moon island crown scroll'.split(' ');
-const tipoDe = t => isEnt(t) ? 'ent' : isEst(t) ? 'est' : isTre(t) ? 'tre' : isFac(t) ? 'fac' : 'vid';
+const tipoDe = t => isEnt(t) ? 'ent' : isEst(t) ? 'est' : isPro(t) ? 'pro' : isTre(t) ? 'tre' : isFac(t) ? 'est' : 'vid';
+const tipoAntes = t => isEnt(t) ? 'ent' : isEst(t) ? 'est' : isTre(t) ? 'tre' : isFac(t) ? 'fac' : 'vid';   // conquistas com tipo 'fac', de antes da #121
 const casaConq = (t, r, C) => !isRec(t) && (!r.palavra || palavra(norm(t.txt), norm(r.palavra))) && (!r.disc || discOf(t, C) === r.disc)
-  && (!r.tipo || tipoDe(t) === r.tipo) && (!r.prazo || !!(t.due && t.done <= t.due));
+  && (!r.tipo || (r.tipo === 'fac' ? tipoAntes(t) : tipoDe(t)) === r.tipo) && (!r.prazo || !!(t.due && t.done <= t.due));
 /* dias em que um hábito foi feito (pelo dia do rec:, que pode ser ontem no "esqueci de marcar"); 'cf' = dias com problema aceito */
 function diasHab(C, id){
   if(id === 'cf'){ const cf = (C.D.cf && C.D.cf.por_dia) || {}; return new Set(Object.keys(cf).filter(d => cf[d] > 0)); }
@@ -942,7 +1023,7 @@ function progConq(r, C, S, de){
 /* a regra em palavras, escrita pelo jogo (o texto da IA é só o tema) */
 function descConq(r, C){
   const nomeHab = id => id === 'cf' ? 'Codeforces (um problema aceito por dia)' : id === 'duo' ? 'Duolingo (lição feita no dia)' : (((C.JOG && C.JOG.habitos) || []).find(h => h.id === id) || {n:id}).n;
-  if(r.regra === 'contagem') return `${r.n} tarefa${r.n > 1 ? 's' : ''}` + (r.tipo ? ` de ${CONQ_TIPOS[r.tipo]}` : '') + (r.disc ? ` de ${r.disc}` : '')
+  if(r.regra === 'contagem') return `${r.n} tarefa${r.n > 1 ? 's' : ''}` + (r.tipo ? ` de ${CONQ_TIPOS[r.tipo === 'fac' ? 'est' : r.tipo]}` : '') + (r.disc ? ` de ${r.disc}` : '')
     + (r.palavra ? ` com a palavra "${r.palavra}"` : '') + (r.prazo ? ', feitas até o prazo' : '') + (r.diasMin ? `, em pelo menos ${r.diasMin} dias diferentes` : '') + '.';
   if(r.regra === 'sequencia') return semanalDe(C.JOG, r.hab) ? `${nomeHab(r.hab)}: ${r.n} semanas seguidas com a meta da semana cumprida.` : `${nomeHab(r.hab)} em ${r.n} dias seguidos.`;
   if(r.regra === 'nota' && r.versao === 2 && !r.aval) return `Garantir média final ${numTxt(r.media)} na disciplina ${r.disc}.`;
@@ -1030,8 +1111,13 @@ function avaliaConq(p, C, S){
   return {r, rk:t.rk, dias:est};
 }
 /* as conquistas da IA (sem as descartadas) com o progresso, no formato das cartas do Book */
+/* o tipo faculdade saiu na #121: a conquista de tipo 'fac' ainda não cumprida é cancelada (conqCancelar: a página descarta e a
+   vaga abre); a cumprida fica, contada pela regra antiga, e aparece como de estudo */
+const conqCancelar = (C, S) => (C.CONQ || []).filter(c => c && !c.descartada && c.regra && c.tipo === 'fac' && !c.resgate
+  && !progConq(c, C, S, c.inicio || c.criada || C.HOJE).on).map(c => c.no);
 function conqIA(C, S){
-  return (C.CONQ || []).filter(c => c && !c.descartada && c.regra).map(c => {
+  const cancela = new Set(conqCancelar(C, S));
+  return (C.CONQ || []).filter(c => c && !c.descartada && c.regra && !cancela.has(c.no)).map(c => {
     const p = progConq(c, C, S, c.inicio || c.criada || C.HOJE), rk = conqRk(c.rk);
     return {no:c.no, rk:rk.rk, o:'ia', rg:c.regra, n:c.nome, d:c.texto || '', regra:descConq(c, C), ic: CONQ_ICS.includes(c.ic) ? c.ic : 'card', on: p.on || !!c.resgate,
       at:p.at, meta:p.meta, diasFeitos:p.diasFeitos, diasMin:p.diasMin, inicio:c.inicio, criada:c.criada, resgate:c.resgate || null, dif:rk.n, j:rk.j, f:rk.f, temporada:c.temporada || ''};
@@ -1042,7 +1128,7 @@ function conqIA(C, S){
    O XP e a Jenny de cada dia, por origem, e o que foi gasto (estado.json → compras, gravado desde a 0.6.3-beta2; o gasto
    de antes fica em gastoSemData). Não leva texto de tarefa nem nome de prêmio: dá para anexar numa issue. O simulador
    (ferramentas/simulador.mjs) gera o mesmo relatório para jogadores inventados, para comparar um com o outro. */
-const FONTES = {hab:'hábitos', ent:'entregas', est:'estudo', fac:'faculdade', tre:'treino e projetos', vid:'vida', cf:'Codeforces',
+const FONTES = {hab:'hábitos', ent:'entregas', est:'estudo', tre:'treino', pro:'projetos', vid:'vida', cf:'Codeforces',
   exp:'caçadas e expedições', contrib:'contribuições', bonus:'multiplicadores', gravado:'dias fechados'};
 const lojaTotal = () => COS.filter(it => it.p > 0 && !it.lend && !it.excl).reduce((s, it) => s + it.p, 0);
 function relatorio(C, S){
@@ -1162,9 +1248,10 @@ function resumoGrupo(C, S, pessoais){
 }
 
 window.GB = {devolucao, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+  repRegra, repPasso, repProxima, repSucessora, repAcum, repAntes, repVisivel, repEntra, repFrase, SEM_REP,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
-  CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_METAS, metasConq, alvoConq, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, tipoDe,
+  CONQ_MAX, CONQ_VAGAS, CONQ_RK, CONQ_METAS, metasConq, alvoConq, CONQ_TIPOS, CONQ_ICS, conqRk, progConq, descConq, avaliaConq, conqIA, conqCancelar, tipoDe, isPro, TIPOS_DESDE,
   MARCO_ETAPA, MARCO_DIA, EXP_SEMANA, slugDe, nomeDeSlug, cacDe, expDe, bonusMarco, bonusExp, grupos, CONTRIB, ESF_XP, feriasDe,
   FONTES, lojaTotal, relatorio, relatorioCSV, TEMA, NOMES, nomeTemporada, fimTemporada, capsula, HAB_GRUPO, resumoGrupo};
 })();

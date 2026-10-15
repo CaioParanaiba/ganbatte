@@ -38,7 +38,7 @@ async function carrega(){
 async function sincroniza(){
   if(!CTX || !G.lista || !G.lista.length || G.ocupado) return;
   G.ocupado = true;
-  try { const j = await post('/api/grupo/sincronizar', {resumo: GBx.resumoGrupo(CTX, estado(), true)}); G.res = j.grupos; G.ultima = Date.now();
+  try { const j = await post('/api/grupo/sincronizar', {resumo: GBx.resumoGrupo(CTX, estado(), true), avatar: avatar()}); G.res = j.grupos; G.ultima = Date.now();
     if(Object.values(j.grupos).some(x => x.mudou)){ await carrega(); toast('O servidor do grupo mudou de computador <small>o seu jogo já passou para o endereço novo</small>'); } }
   catch(e){ /* o servidor do jogo caiu: a próxima tentativa resolve */ }
   G.ocupado = false; reRender();

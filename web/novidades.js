@@ -21,10 +21,49 @@
  * definitiva da 0.9 com a marca "0.9-final": quem viu a da beta2 vê de novo, e a main usa a mesma marca, então não repete.
  * A janela abre só na entrada da versão instalada: a beta4 a herdou (mesma marca), para quem pulou a beta3 não perder, e a
  * 0.9 da main também, com as betas em "versoes".
+ * "atributos" (0.9.1-beta1, #121): {"t", "d", "troca": {"i", "de", "para"}} põe na janela grande o hexágono de Nen de quem lê
+ * passando do antes para o depois (S.rec.migra.tipos), com o nome do vértice "i" trocado; "cap" troca também a linha do aviso.
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.1", "nome": "atualização da Torre Trick", "data": "2026-10-15", "aviso": "0.9.1-beta1",
+   "cap": "tipos novos · o seu hexágono de Nen foi refeito",
+   "resumo": "Os tipos das tarefas ficaram mais claros: faculdade saiu, treino e projeto se separaram, e o seu hexágono de Nen foi refeito com a regra nova. Chegaram as tarefas que repetem, e quem começa agora tem uma primeira entrada nova e um tutorial mais curto. O seu XP, a sua Jenny e os feitiços continuam exatamente iguais.",
+   "atributos": {"t": "Conjuração agora é projeto", "d": "Conjuração deixou de ser \"outras coisas da faculdade\" e passou a ser criar algo seu: um app, um site, as issues do Ganbatte. O que era faculdade virou estudo (Intensificação), e o treino (Transmutação) ficou só com Codeforces e prática. O XP de cada tarefa é o mesmo; só mudou em que tipo ele cai. A missão da semana segue a regra antiga até domingo, para o ×1,5 e os feitiços que você já ganhou não mudarem, e passa para a nova na segunda.",
+    "troca": {"i": 2, "de": "criação", "para": "projeto"}},
+   "itens": [
+     {"ic": "con", "t": "Tipos novos", "d": "O tipo diz o que você faz; a disciplina, de onde vem. Tarefa da disciplina sem tag agora é estudo (os mesmos 15 XP). Treino é Codeforces e prática; projeto, com +projeto, é criar algo seu (10 XP). Entrega é trabalho que alguém cobra ou avalia: ter prazo não basta. Conquista da IA de tipo faculdade ainda não cumprida foi descartada, e a vaga abriu (#121)."},
+     {"ic": "copy", "t": "Tarefas que repetem", "d": "Pagar o aluguel todo dia 1, trocar a escova a cada 3 meses: em detalhes → repete, a tarefa volta sozinha quando você conclui. A que está longe do prazo fica guardada em ↻ recorrentes e só entra na Lista perto da data. Se atrasar, ela continua uma só e mostra #2, #3; um concluir quita tudo (#113)."},
+     {"ic": "alvo", "t": "O jogo decide mais justo", "d": "A prioridade sugerida conta motivos: um dá C, dois dão B, três (ou dois muito urgentes) dão A. Antes quase tudo com prazo virava B. A sugestão de tipo também melhorou: lista é estudo, #12 é projeto e, numa disciplina, o jogo sugere estudo (#5)."},
+     {"ic": "scroll", "t": "Janela do N mais enxuta", "d": "N abre só com o texto e quanto vale; tipo, prazo e caçada ficam em detalhes, e a janela lembra se você os deixou abertos. Enter adiciona a tarefa mesmo depois de mexer nas opções (#111, #112)."},
+     {"ic": "card", "t": "Foto nova no grupo", "d": "Trocou a foto de perfil? Ela aparece no grupo e na Torre Trick na próxima atualização do placar (#109)."},
+     {"ic": "card", "t": "Primeira entrada nova", "d": "Quem chega agora monta a licença hunter enquanto escreve o nome, conhece os 6 tipos num hexágono e aprende a diferença entre tarefa, caçada e projeto. Não precisa cadastrar matéria nenhuma: elas ficam para a aba Chefões, à mão ou com a IA, quando der (#127)."},
+     {"ic": "scroll", "t": "Tutorial mais curto", "d": "O tutorial de cada aba ficou com menos passos e textos de uma ou duas frases, e pula o que você ainda não tem (chefões sem matéria, Codeforces desligado). A dica do Codeforces não aparece mais em cima do hábito errado."},
+     {"ic": "alvo", "t": "Caçada com o tipo projeto", "d": "Na janela de nova caçada, o tipo das etapas agora separa treino de projeto, como no resto do jogo."},
+     {"ic": "scroll", "t": "Tipos bem explicados", "d": "A frase de cada tipo de Nen, no Progresso e no Book, segue a regra nova: tarefa de disciplina sem tag é estudo, treino é prática e Codeforces, entrega é o que alguém cobra ou avalia (#131)."}
+   ],
+   "versoes": [
+      {"versao": "0.9.1-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-15",
+       "resumo": "Uma primeira entrada nova para quem chega e um tutorial mais curto, que só mostra o que você já tem. O seu XP, a sua Jenny e tudo o que você já ganhou continuam iguais.",
+       "itens": [
+         {"ic": "card", "t": "Primeira entrada nova", "d": "Quem chega agora monta a licença hunter enquanto escreve o nome, conhece os 6 tipos num hexágono e aprende a diferença entre tarefa, caçada e projeto. Não precisa cadastrar matéria nenhuma: elas ficam para a aba Chefões, à mão ou com a IA, quando der (#127)."},
+         {"ic": "scroll", "t": "Tutorial mais curto", "d": "O tutorial de cada aba ficou com menos passos e textos de uma ou duas frases, e pula o que você ainda não tem (chefões sem matéria, Codeforces desligado). A dica do Codeforces não aparece mais em cima do hábito errado."},
+         {"ic": "alvo", "t": "Caçada com o tipo projeto", "d": "Na janela de nova caçada, o tipo das etapas agora separa treino de projeto, como no resto do jogo."}
+       ]},
+      {"versao": "0.9.1-beta1", "nome": "atualização da Torre Trick", "data": "2026-10-15", "aviso": "0.9.1-beta1",
+       "cap": "tipos novos · o seu hexágono de Nen foi refeito",
+       "resumo": "Os tipos das tarefas ficaram mais claros: faculdade saiu, treino e projeto se separaram, e o seu hexágono de Nen foi refeito com a regra nova. O seu XP, a sua Jenny e os feitiços continuam exatamente iguais. E chegaram as tarefas que repetem.",
+       "atributos": {"t": "Conjuração agora é projeto", "d": "Conjuração deixou de ser \"outras coisas da faculdade\" e passou a ser criar algo seu: um app, um site, as issues do Ganbatte. O que era faculdade virou estudo (Intensificação), e o treino (Transmutação) ficou só com Codeforces e prática. O XP de cada tarefa é o mesmo; só mudou em que tipo ele cai. A missão da semana segue a regra antiga até domingo, para o ×1,5 e os feitiços que você já ganhou não mudarem, e passa para a nova na segunda.",
+        "troca": {"i": 2, "de": "criação", "para": "projeto"}},
+       "itens": [
+         {"ic": "con", "t": "Tipos novos", "d": "O tipo diz o que você faz; a disciplina, de onde vem. Tarefa da disciplina sem tag agora é estudo (os mesmos 15 XP). Treino é Codeforces e prática; projeto, com +projeto, é criar algo seu (10 XP). Entrega é trabalho que alguém cobra ou avalia: ter prazo não basta. Conquista da IA de tipo faculdade ainda não cumprida foi descartada, e a vaga abriu (#121)."},
+         {"ic": "copy", "t": "Tarefas que repetem", "d": "Pagar o aluguel todo dia 1, trocar a escova a cada 3 meses: em detalhes → repete, a tarefa volta sozinha quando você conclui. A que está longe do prazo fica guardada em ↻ recorrentes e só entra na Lista perto da data. Se atrasar, ela continua uma só e mostra #2, #3; um concluir quita tudo (#113)."},
+         {"ic": "alvo", "t": "O jogo decide mais justo", "d": "A prioridade sugerida conta motivos: um dá C, dois dão B, três (ou dois muito urgentes) dão A. Antes quase tudo com prazo virava B. A sugestão de tipo também melhorou: lista é estudo, #12 é projeto e, numa disciplina, o jogo sugere estudo (#5)."},
+         {"ic": "scroll", "t": "Janela do N mais enxuta", "d": "N abre só com o texto e quanto vale; tipo, prazo e caçada ficam em detalhes, e a janela lembra se você os deixou abertos. Enter adiciona a tarefa mesmo depois de mexer nas opções (#111, #112)."},
+         {"ic": "card", "t": "Foto nova no grupo", "d": "Trocou a foto de perfil? Ela aparece no grupo e na Torre Trick na próxima atualização do placar (#109)."}
+       ]}
+   ]},
   {"versao": "0.9", "nome": "atualização da Torre Trick", "data": "2026-10-14",
    "resumo": "A maior atualização do Ganbatte: o modo em grupo com a Torre Trick, caçadas dentro de caçadas, retratos dos chefões, uma coleção que nunca se perde e, para quem contribui, a recompensa assim que a correção entra no beta. O seu XP, a sua Jenny e tudo o que você já ganhou continuam exatamente iguais.",
    "itens": [
@@ -489,6 +528,16 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .nv-obg h3{margin:0 0 6px;font:700 19px var(--f-hud);display:flex;gap:8px;align-items:center;color:var(--amb)} .nv-obg p{margin:0 0 12px;font-size:14px;max-width:70ch}
 .nv-obg-l{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 .nv-obg-l > *{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border:1px solid var(--hair);border-radius:10px;background:var(--panel);color:var(--ink);text-decoration:none}
+.nv-nen{margin:6px 30px 4px;padding:16px 18px;border:1px solid var(--hair);border-radius:14px;background:var(--panel2);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:6px 22px;align-items:center}
+.nv-nen > header{grid-column:1/-1} .nv-nen h3{margin:0;font:700 19px var(--f-hud)} .nv-nen > header p{margin:4px 0 0;font-size:13.5px;color:var(--soft);max-width:72ch}
+.nv-nen .hx{display:block;max-width:380px;margin:0 auto} .nv-nen .hx .ant{fill:none;stroke:var(--faint);stroke-dasharray:3 3;opacity:0;transition:opacity .6s}
+.nv-nen.fim .hx .ant{opacity:1} .nv-nen .hx text.tr{transition:opacity .5s} .nv-nen .hx text.velho{text-decoration:line-through}
+.nv-nen .hx text.novo{opacity:0;fill:var(--volt);font-weight:700} .nv-nen.fim .hx text.velho{opacity:0} .nv-nen.fim .hx text.novo{opacity:1}
+.nv-nen-l{display:grid;gap:2px} .nv-nen-l > div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 10px;padding:5px 8px;border-radius:8px}
+.nv-nen-l b{font:700 13.5px var(--f-hud)} .nv-nen-l span{grid-row:2;font-size:12px;color:var(--faint)} .nv-nen-l em{grid-row:1/3;grid-column:2;align-self:center;font:600 12.5px var(--f-mono);font-style:normal;color:var(--soft)}
+.nv-nen-l em strong{color:var(--ink)} .nv-nen-l .tr{border:1px solid color-mix(in srgb,var(--volt) 55%,var(--hair));background:color-mix(in srgb,var(--volt) 8%,var(--panel))}
+.nv-nen-l .tr span s{color:var(--faint)} .nv-nen-l .tr span i{font-style:normal;font-weight:700;color:var(--volt)}
+.nv-nen-pe{grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--faint)} .nv-nen-pe .sp{flex:1}
 .nv-obg-l a:hover{border-color:var(--amb)} .nv-obg-l b{font:700 14px var(--f-mono);color:var(--amb)} .nv-obg-l span{font-size:13px;color:var(--soft)}
 .nv-big.aviso > div{border-color:var(--amb)} .nv-big.aviso .cab{background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--amb) 24%,transparent),transparent 60%)} .nv-big.aviso h2 span{color:var(--amb)}
 .nv-seu{margin-top:16px;display:grid;gap:4px;padding:14px 16px;border:1px solid var(--amb);border-radius:12px;background:color-mix(in srgb,var(--amb) 10%,var(--panel2));max-width:70ch}
@@ -562,7 +611,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 @keyframes ep-chama{50%{box-shadow:0 0 34px 2px color-mix(in srgb,var(--volt) 80%,transparent)}}
 @media (prefers-reduced-motion:reduce){ .nv-ep *,.nv-ep *::before,.nv-ep *::after{animation:none!important;transition:none!important} .ep-selo .hx{stroke-dashoffset:0} .ep-fundo i{display:none} }
 @media (max-width:820px){ .ep-cab{padding:26px 18px 18px} .ep-pri{margin:6px 18px 0;grid-template-columns:minmax(0,1fr)} .ep-torre{display:none} .ep-sec{margin-left:18px;margin-right:18px} .ep-dest,.ep-mais{padding:0 18px} .nv-ep .nv-pts,.nv-ep .nv-obg{margin-left:18px;margin-right:18px} .nv-ep .nv-aj{margin:0 18px} .nv-ep .pe{padding:18px} }
-@media (max-width:820px){ .nv-big .nv-marca{width:56px;height:56px} .nv-big .cab,.nv-big .nv-itens,.nv-big .pe{padding-left:18px;padding-right:18px} .nv-vis,.nv-obg{margin-left:18px;margin-right:18px} .nv-hero{grid-template-columns:minmax(0,1fr)} .nv-st{border-left:0;border-top:1px solid var(--hair)} .nv-ver .num{font-size:52px} }
+@media (max-width:820px){ .nv-big .nv-marca{width:56px;height:56px} .nv-big .cab,.nv-big .nv-itens,.nv-big .pe{padding-left:18px;padding-right:18px} .nv-vis,.nv-obg,.nv-nen{margin-left:18px;margin-right:18px} .nv-nen{grid-template-columns:minmax(0,1fr)} .nv-hero{grid-template-columns:minmax(0,1fr)} .nv-st{border-left:0;border-top:1px solid var(--hair)} .nv-ver .num{font-size:52px} }
 </style>`);
 
 let AT = null;   // GET /api/atualizacao: {versao, novas:[...], erro, metodo, conferido}; null = conferindo
@@ -622,7 +671,7 @@ function versaoHTML(v, i, velha){
   return `<article class="card nv-v${i === 0 ? ' ultima' : ''}${velha ? ' velha' : ''}${v.epica ? ' epica' : ''}">
     <div class="topo"><b>${esc(v.versao)}</b>${v.nome ? `<span>${esc(v.nome)}</span>` : ''}<span>${esc(curta(v.data))}</span>${tua ? `<em class="tua">a sua</em>` : ''}${tua && naoVista() ? '<em>nova</em>' : ''}</div>
     ${v.resumo ? `<p>${esc(v.resumo)}</p>` : ''}
-    <div class="nv-itens">${itensHTML(v)}</div>${v.epica ? epicaHTML(v) : ''}${subHTML(v)}</article>`;
+    <div class="nv-itens">${itensHTML(v)}</div>${v.epica ? epicaHTML(v) : ''}${v.atributos && !v.futura ? '<button type="button" class="btn rever" data-nvatr>ver o seu hexágono antes e depois</button>' : ''}${subHTML(v)}</article>`;
 }
 function rNV(){
   const v = NOV.find(x => x.versao === VERSAO_PAGINA) || NOV[0], [a, b] = String(v.versao).split(/\.(.*)/s);
@@ -658,6 +707,7 @@ RENDER.nv = rNV;
 document.addEventListener('click', e => {
   if(e.target.closest('[data-nvconfere]')){ confere(true); return; }
   if(e.target.closest('[data-nvatualiza]')){ atualiza(); return; }
+  if(e.target.closest('[data-nvatr]') && !document.getElementById('nv-big')){ const v = NOV.find(x => x.atributos); if(v) janelaGrande(v); return; }
   const ep = e.target.closest('[data-nvep]'); if(ep && !document.getElementById('nv-big')){ const v = NOV.find(x => x.epica); if(v) janelaEpica(v); return; }
 });
 /* quem acabou de atualizar vê o aviso uma vez; quem está começando agora (sem nada feito) não.
@@ -697,6 +747,48 @@ function seuAviso(v){
   const todas = partes.concat(ok); if(!todas.length) return '';
   return `<div class="nv-seu${partes.length ? '' : ' ok'}"><b>No seu jogo</b><span>${todas.map(t => t[0].toUpperCase() + t.slice(1)).join(' ')}</span></div>`;
 }
+/* 0.9.1-beta1 (#121): o hexágono de Nen de quem lê passando da regra antiga para a nova, com o nome trocado no vértice.
+   "atributos": {"t", "d", "troca": {"i", "de", "para"}}; os números vêm do motor (rec.migra.tipos = {em, antes, depois}).
+   Sem o antes e o depois gravados, o hexágono é o de agora e só o nome muda. O resto da janela é a do aviso. */
+const NEN_R = 88, nenPt = (i, k) => { const a = -Math.PI/2 + i*Math.PI/3; return [Math.cos(a)*NEN_R*k, Math.sin(a)*NEN_R*k]; };
+const nenKs = v => { const mx = Math.max(...v, 1); return v.map(x => .08 + .92*x/mx); };   // como o hex() da página: cada um pelo seu maior
+const nenPol = ks => ks.map((k, i) => nenPt(i, k).map(n => n.toFixed(1)).join(',')).join(' ');
+let NEN_AD = null;   // [antes, depois] da janela aberta
+function atributosHTML(A){
+  let r = null, S = null; try { S = estado(); r = S.rec; } catch(e){}
+  const m = r && (r.migra || {}).tipos, T = A.troca || {}, NEN = GBx.NEN;
+  const antes = m && m.antes ? m.antes : S ? S.attr.map(Math.round) : [0,0,0,0,0,0], depois = m && m.depois ? m.depois : antes;
+  NEN_AD = [antes, depois];
+  const W = NEN_R + 92, H = NEN_R + 44, n = x => (+x || 0).toLocaleString('pt-BR');
+  let s = `<svg class="hx" viewBox="${-W} ${-H} ${2*W} ${2*H}" width="100%" role="img" aria-label="hexágono de Nen antes e depois dos tipos novos">`;
+  for(const k of [.33,.66,1]) s += `<polygon class="g" points="${nenPol([k,k,k,k,k,k])}"/>`;
+  for(let i = 0; i < 6; i++){ const p = nenPt(i, 1); s += `<line class="g" x1="0" y1="0" x2="${p[0]}" y2="${p[1]}"/>`; }
+  s += `<polygon class="ant" points="${nenPol(nenKs(antes))}"/><polygon class="a" id="nv-nen-a" points="${nenPol(nenKs(antes))}"/>`;
+  nenKs(antes).forEach((k, i) => { const p = nenPt(i, k); s += `<circle class="p" data-i="${i}" cx="${p[0]}" cy="${p[1]}" r="2.6"/>`; });
+  NEN.forEach((l, i) => { const p = nenPt(i, 1.16), an = Math.abs(p[0]) < 4 ? 'middle' : p[0] > 0 ? 'start' : 'end', y = p[1] + (p[1] > 4 ? 10 : p[1] < -4 ? -12 : 0);
+    s += `<text x="${p[0]}" y="${y}" text-anchor="${an}">${esc(l.n)}</text>`;
+    s += i === T.i ? `<text class="s tr velho" x="${p[0]}" y="${y+11}" text-anchor="${an}">${esc(T.de)}</text><text class="s tr novo" x="${p[0]}" y="${y+11}" text-anchor="${an}">${esc(T.para)}</text>`
+      : `<text class="s" x="${p[0]}" y="${y+11}" text-anchor="${an}">${esc(l.c)}</text>`; });
+  s += '</svg>';
+  const linhas = NEN.map((l, i) => `<div${i === T.i ? ' class="tr"' : ''}><b>${esc(l.n)}</b><span>${i === T.i ? `<s>${esc(T.de)}</s> → <i>${esc(T.para)}</i>` : esc(l.c)}</span>
+    <em>${m ? (antes[i] === depois[i] ? n(depois[i]) : `${n(antes[i])} → <strong>${n(depois[i])}</strong>`) + ' XP' : ''}</em></div>`).join('');
+  return `<section class="nv-nen" id="nv-nen"><header><h3>${esc(A.t)}</h3>${A.d ? `<p>${esc(A.d)}</p>` : ''}</header>${s}<div class="nv-nen-l">${linhas}</div>
+    <div class="nv-nen-pe"><span>${m ? 'a linha tracejada é o seu hexágono de antes; o XP de cada tipo foi só redistribuído' : 'o nome muda; o seu hexágono continua o mesmo'}</span><span class="sp"></span><button type="button" class="btn" data-nvnen>ver de novo</button></div></section>`;
+}
+function animaNen(){
+  const el = document.getElementById('nv-nen'), pol = document.getElementById('nv-nen-a'); if(!el || !pol || !NEN_AD) return;
+  const [k0, k1] = NEN_AD.map(nenKs), pts = el.querySelectorAll('circle.p'), lento = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const poe = f => { const ks = k0.map((k, i) => k + (k1[i] - k)*f); pol.setAttribute('points', nenPol(ks));
+    pts.forEach((c, i) => { const p = nenPt(i, ks[i]); c.setAttribute('cx', p[0]); c.setAttribute('cy', p[1]); }); };
+  el.classList.remove('fim'); poe(0);
+  if(lento){ poe(1); el.classList.add('fim'); return; }
+  const dur = 1600, ini = performance.now() + 900, vez = el.dataset.vez = String(+(el.dataset.vez || 0) + 1);
+  const passo = t => { if(!el.isConnected || el.dataset.vez !== vez) return;
+    const f = Math.min(1, Math.max(0, (t - ini) / dur)), e = f < .5 ? 4*f*f*f : 1 - Math.pow(-2*f + 2, 3)/2;
+    poe(e); if(f >= .45) el.classList.add('fim'); if(f < 1) requestAnimationFrame(passo); };
+  requestAnimationFrame(passo);
+}
+document.addEventListener('click', e => { if(e.target.closest('#nv-big [data-nvnen]')) animaNen(); });
 /* versão grande e aviso de pontos: os destaques numa janela que cobre a tela, uma vez (fechar marca como vista) */
 /* 0.7: a escolha do visual dentro da janela (o clique em [data-visual] é tratado pela página) e o agradecimento */
 const visualHTML = () => { const nen = document.documentElement.classList.contains('vis-nen');
@@ -711,10 +803,11 @@ function janelaGrande(v){
   const [a, b] = String(v.versao).split(/\.(.*)/s), exp = !v.aviso && (v.itens || []).some(x => x.ic === 'island') && RENDER.x;
   const J = v.janela, w = J ? {...v, resumo: J.resumo || v.resumo, itens: J.itens || v.itens} : v;   // "janela": a janela junta outra versão (0.6.4 → 0.6.5)
   document.body.insertAdjacentHTML('beforeend', `<div class="nv-big${v.aviso ? ' aviso' : ''}" id="nv-big" data-chave="${esc(chaveG(v))}" role="dialog" aria-modal="true" aria-labelledby="nv-big-t"><div>
-    <div class="cab">${v.cap && typeof MARCA === 'string' ? `<img class="nv-marca" src="${MARCA}" alt="">` : ''}<p class="cap">${v.aviso ? 'mudança nos pontos · leia antes de jogar' : esc(v.cap || 'o jogo foi atualizado')}</p><h2 id="nv-big-t">${J && J.de ? `${esc(J.de)}<span> → ${esc(v.versao)}</span>` : `${esc(a)}<span>.${esc(b)}</span>`}</h2><div class="nome">${esc(v.nome || '')}</div>${w.resumo ? `<p>${esc(w.resumo)}</p>` : ''}${v.aviso ? seuAviso(v) : ''}</div>
-    <div class="nv-itens">${itensHTML(w)}</div>${v.visual ? visualHTML() : ''}${v.obrigado ? obrigadoHTML(v.obrigado) : ''}
+    <div class="cab">${v.cap && !v.aviso && typeof MARCA === 'string' ? `<img class="nv-marca" src="${MARCA}" alt="">` : ''}<p class="cap">${esc(v.cap || (v.aviso ? 'mudança nos pontos · leia antes de jogar' : 'o jogo foi atualizado'))}</p><h2 id="nv-big-t">${J && J.de ? `${esc(J.de)}<span> → ${esc(v.versao)}</span>` : `${esc(a)}<span>.${esc(b)}</span>`}</h2><div class="nome">${esc(v.nome || '')}</div>${w.resumo ? `<p>${esc(w.resumo)}</p>` : ''}${v.aviso ? seuAviso(v) : ''}</div>
+    ${v.atributos ? atributosHTML(v.atributos) : ''}<div class="nv-itens">${itensHTML(w)}</div>${v.visual ? visualHTML() : ''}${v.obrigado ? obrigadoHTML(v.obrigado) : ''}
     <div class="pe">${exp ? '<button type="button" class="btn v grande" data-nvbig="x">conhecer as Expedições</button>' : ''}<button type="button" class="btn grande" data-nvbig="nv">ver tudo o que mudou</button><span class="sp"></span><button type="button" class="btn" data-nvbig="">fechar</button></div>
   </div></div>`);
+  if(v.atributos) animaNen();
   document.querySelector('#nv-big [data-nvbig]').focus({preventScroll:true});   // o foco no botão do pé não rola a janela: o topo (e o "no seu jogo") aparece primeiro
 }
 /* 0.9.0-beta2: a janela épica, com os efeitos só nela. A torre ao lado do principal desce um andar por vez */

@@ -144,7 +144,7 @@ function pedido(cia){
     'Responda SÓ com uma lista JSON, sem texto antes ou depois e sem markdown:',
     '[{"regra": "...", "rk": "D|C|B|A", ...campos da regra..., "nome": "...", "texto": "...", "ic": "..."}]', '',
     'Regras que o jogo sabe conferir (use só estas, com estes campos):',
-    '- contagem: {"regra": "contagem", "n": 35, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, fac faculdade, tre treino e projetos, vid vida), prazo (true = feitas até o prazo).',
+    '- contagem: {"regra": "contagem", "n": 35, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, tre treino, pro projeto, vid vida), prazo (true = feitas até o prazo).',
     '- sequencia: {"regra": "sequencia", "hab": "ID", "n": 14} = o hábito em n dias seguidos (hábito semanal: n semanas seguidas com a meta da semana). hab é o id da lista de hábitos (cf = Codeforces, duo = Duolingo).',
     '- nota: {"regra": "nota", "disc": "BD", "media": 8} = garantir média final 8 na disciplina; ou {"regra": "nota", "disc": "BD", "aval": "P2", "nota": 8} = tirar 8 ou mais numa avaliação que ainda não tem nota.',
     '- constancia: {"regra": "constancia", "n": 21} = n dias seguidos com tarefa feita; folgas não contam, férias vazias pausam.',
@@ -188,9 +188,14 @@ async function resgata(no, como){
   render(); confete(); toast(como === 'jenny' ? `+${fmt(c.j)} J <small>${esc(c.n)} resgatada</small>` : `${esc(nomeF(c.f))} na bolsa <small>use pelo Book → Feitiços</small>`);
 }
 /* ao abrir o jogo (e a cada recarga): avisa uma vez quando uma conquista da IA é cumprida */
-const avisadas = new Set();
+const avisadas = new Set(), canceladas = new Set();
 function avisa(){
   if(!CTX) return;
+  // #121: o tipo faculdade saiu; a conquista de tipo 'fac' ainda não cumprida é descartada (a vaga abre), uma vez
+  const cancela = CTX.SRV ? GB.conqCancelar(CTX, estado()).filter(no => !canceladas.has(no)) : [];
+  if(cancela.length){ cancela.forEach(no => canceladas.add(no));
+    Promise.all(cancela.map(no => post('/api/conquistas', {acao:'descartar', no}))).then(recarrega).then(render)
+      .then(() => toast(`${cancela.length} conquista(s) de faculdade cancelada(s) <small>o tipo faculdade saiu do jogo; a vaga abriu</small>`)).catch(() => {}); }
   for(const c of GB.conqIA(CTX, estado())) if(c.on && !c.resgate && !avisadas.has(c.no)){
     avisadas.add(c.no);
     if(avisadas.size === 1 || !document.querySelector('.toast')){ const to = document.createElement('div'); to.className = 'toast';

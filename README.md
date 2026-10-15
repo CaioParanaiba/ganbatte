@@ -53,7 +53,8 @@ No Windows, um jeito fácil de abrir o terminal na pasta certa: abra a pasta no 
 digite `cmd` e aperte Enter.
 
 O navegador abre sozinho em **http://127.0.0.1:8642/**. Na primeira vez aparece um assistente que pergunta seu nome,
-as tags, os hábitos e as disciplinas do semestre, e no fim oferece um tour por cada aba.
+mostra como o jogo funciona e os 6 tipos de Nen, pergunta os hábitos e se você tem matérias (elas se cadastram depois,
+na aba Chefões, à mão ou com a IA), e no fim oferece um tour por cada aba.
 
 **Deixe a janela do terminal aberta enquanto joga.** Para parar, aperte `Ctrl+C` nela. Para jogar de novo, rode o mesmo
 comando.
@@ -192,6 +193,9 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| **0.9.1** | **atualização da Torre Trick** | **Junta a 0.9.1-beta1 e a beta2** (as linhas abaixo): tipos das tarefas novos (#121, #5), tarefas recorrentes (#113), janela do N recolhida (#111), Enter depois das opções (#112), foto nova no grupo (#109), primeira entrada refeita (#127), tutoriais enxutos e a frase de cada tipo de Nen na regra nova (#131, direto na `main`, sem beta). A entrada leva o `"aviso": "0.9.1-beta1"` com o hexágono de Nen: quem viu na beta não vê de novo; quem vem da 0.9 na `main` vê uma vez |
+| 0.9.1-beta2 | atualização da Torre Trick | Primeira entrada refeita (#127, PR #128): licença ao vivo, hexágono dos tipos, passo "tarefa, caçada ou projeto", matérias na aba Chefões. Tutoriais enxutos (PR #129): passos com `se()` pulam o que o jogador não tem, aba Chefões vazia sem tour, passo do Codeforces corrigido, tipo projeto na janela de caçada |
+| 0.9.1-beta1 | atualização da Torre Trick | Tipos das tarefas (#121): faculdade sai, treino e projeto (`+projeto`, Conjuração) se separam; sugestões de tipo e prioridade novas (#5). Tarefas recorrentes com `rep:` (#113). Janela do N recolhida (#111), Enter depois das opções (#112), foto nova no grupo (#109). Janela de aviso com o hexágono de Nen de cada um passando do antes para o depois (`"atributos"` no `novidades.js`, `migra.tipos`) |
 | **0.9** | **atualização da Torre Trick** | **A maior atualização do Ganbatte. Junta a 0.7.1-beta1 e a 0.9.0-beta1 a beta4** (as linhas abaixo): modo em grupo com a Torre Trick, a licença hunter e os placares (#38 a #42, #67, #76, #84, #91), caçadas dentro de caçadas (#92), retratos dos chefões e coleção permanente (#33), Jenny de cada tarefa (#57), desafios da IA mais justos (#75), cadastros seguidos (#58, #59), Antigravity na IA (#60), contribuição paga no beta e tarefa de dev (#96, #97). Janela épica com a marca `0.9-final`, a mesma das betas, e o agradecimento a quem contribuiu |
 | 0.9.0-beta4 | atualização da Torre Trick | Tarefa de dev na expedição Ganbatte aberta (`projeto_dev()`, PR #102), para todos os devs ficarem com a automação. A janela épica da 0.9 passa para a beta4 com a mesma marca (`0.9-final`): quem pulou a beta3 vê, quem viu não vê de novo. |
 | 0.9.0-beta3 | atualização da Torre Trick | Entrar no grupo pela aba Torre Trick (#84), mudar o servidor do grupo de computador (#91), caçadas dentro de caçadas (#92), contribuição paga no beta e tarefa de dev pelo responsável (#96, #97). **Janela épica definitiva da 0.9** (`"marca": "0.9-final"` no `novidades.js`): quem viu a da beta2 vê de novo, e a main usa a mesma marca. |

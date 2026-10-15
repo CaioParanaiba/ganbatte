@@ -1187,6 +1187,14 @@ a.btn{display:inline-block;text-decoration:none}
 .l-tag{border-radius:6px;padding:0 6px;background:var(--track)}
 .l-tag.nen{color:var(--c);background:color-mix(in srgb,var(--c) 13%,transparent)}
 .l-tag.l-late{color:var(--red)} .l-tag.l-hoje{color:var(--amb)}
+.l-acum{font:700 12px var(--f-mono);color:var(--red);margin-left:4px}   /* recorrente fixa atrasada: #2, #3 (#113) */
+.l-repn{width:58px;background:var(--panel2);border:1px solid var(--hair);border-radius:99px;padding:3px 10px;font:500 12.5px var(--f-mono);color:var(--ink)}
+.l-repb{display:flex;justify-content:flex-end;margin:0 0 6px}
+.rep-w{max-width:720px} .rep-w .l-list{margin:0}
+.rep-tab{width:100%;border-collapse:collapse;font-size:13.5px} .rep-tab th{text-align:left;font:600 11.5px var(--f-mono);color:var(--faint);padding:0 8px 6px 0}
+.rep-tab td{padding:7px 8px 7px 0;border-top:1px solid var(--hair);vertical-align:top} .rep-tab td:nth-child(3){font-family:var(--f-mono);white-space:nowrap}
+.rep-tab .l-late{color:var(--red)}
+@media (max-width:560px){ .rep-tab th:nth-child(2),.rep-tab td:nth-child(2){display:none} }
 .l-pri{font:700 10.5px var(--f-mono);color:var(--bg);background:var(--soft);border-radius:5px;padding:0 5px;margin-right:4px} .l-pri.A{background:var(--red)} .l-pri.B{background:var(--amb)}
 .l-right{display:flex;gap:6px;align-items:center}
 .l-acts{display:flex;gap:2px;opacity:0;transition:opacity .12s;order:-1}   /* antes do XP: o XP fica sempre na ponta */
@@ -1288,6 +1296,7 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
             <div class="l-opts">
               <div class="l-seg"><span>disciplina</span><select id="l-disc" aria-label="Disciplina"><option value="">nenhuma</option></select></div>
               <div class="l-seg" id="l-due" role="group" aria-label="Prazo"><span>prazo</span></div>
+              <div class="l-seg" id="l-rep"><span>repete</span><select id="l-reps" aria-label="Repete"></select><span id="l-repx"></span></div>
               <div class="l-seg" id="l-pri" role="group" aria-label="Prioridade"><span>prioridade</span></div>
             </div>
             <div class="l-seg l-cacs"><span>caçada</span><select id="l-cac" aria-label="Caçada"><option value="">nenhuma</option></select><input id="l-cacn" placeholder="nome da caçada nova" aria-label="Nome da caçada nova" hidden><select id="l-cacx" aria-label="Onde fica a caçada nova" hidden></select></div>
@@ -1457,7 +1466,7 @@ function devolve(){
   EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.9';
+const VERSAO_PAGINA = '0.9.1';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -2075,9 +2084,9 @@ function rSys(S){
     <div class="two">
       <div class="card">${tab(['tipo', 'XP', 'como o jogo reconhece'], [
         linha(`<span class="d" style="--c:${NC(5)}"></span>entrega`, '<b>25</b>', `<span class="mono">${esc(tagDe('ent') || '@entrega')}</span>`),
-        linha(`<span class="d" style="--c:${NC(0)}"></span>estudo`, '<b>15</b>', `<span class="mono">${esc(tagDe('est') || '@estudo')}</span>`),
-        linha(`<span class="d" style="--c:${NC(2)}"></span>faculdade`, '<b>15</b>', '<span class="mono">+fac.SIGLA</span>'),
-        linha(`<span class="d" style="--c:${NC(1)}"></span>treino e projetos`, '<b>10</b>', `<span class="mono">${esc(tagDe('tre') || '+treino')}</span>`),
+        linha(`<span class="d" style="--c:${NC(0)}"></span>estudo`, '<b>15</b>', `<span class="mono">${esc(tagDe('est') || '@estudo')}</span> ou só <span class="mono">+fac.SIGLA</span>`),
+        linha(`<span class="d" style="--c:${NC(1)}"></span>treino`, '<b>10</b>', `<span class="mono">${esc(tagDe('tre') || '+treino')}</span>`),
+        linha(`<span class="d" style="--c:${NC(2)}"></span>projeto`, '<b>10</b>', `<span class="mono">${esc(tagDe('pro') || '+projeto')}</span>`),
         linha(`<span class="d" style="--c:${NC(3)}"></span>vida`, '<b>10</b>', 'sem tag'),
         linha(`<span class="d" style="--c:${NC(4)}"></span>hábito`, '<b>3 a 12</b>', 'pelo nível do hábito (abaixo)')])}</div>
       <div class="card">${tab(['de fora das tarefas', 'XP', ''], [
@@ -2115,7 +2124,7 @@ function rSys(S){
 
     ${sec('ten', 'flame', 'Ten: dias seguidos', 'O dia acende com pelo menos uma tarefa que não seja hábito.')}
     <div class="three">
-      <div class="card rg-txt"><p><b>Acende:</b> uma tarefa concluída no dia (entrega, estudo, faculdade, treino ou vida). Hábito, Duolingo e Codeforces sozinhos não acendem.</p><p>Agora: <b>${S.ten.cur}</b> · recorde <b>${S.ten.max}</b>.</p></div>
+      <div class="card rg-txt"><p><b>Acende:</b> uma tarefa concluída no dia (entrega, estudo, treino, projeto ou vida). Hábito, Duolingo e Codeforces sozinhos não acendem.</p><p>Agora: <b>${S.ten.cur}</b> · recorde <b>${S.ten.max}</b>.</p></div>
       <div class="card rg-txt"><p><b>Zetsu (folga automática):</b> você começa com 1 e ganha outra a cada 7 dias acesos, até 2. Um dia vazio gasta uma sozinho, e o Ten segue.</p><p>Guardadas agora: <b>${S.ten.zet}</b>.</p></div>
       <div class="card rg-txt"><p><b>Carta Zetsu:</b> salva hoje ou ontem (só se ontem quebrou). Nas <b>férias</b>, dia vazio não derruba e não gasta folga.</p><p>Cartas do Ten no Book: 7, 14, 30 e 60 dias.</p></div>
     </div>
@@ -2171,16 +2180,28 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-rg]'
 
 /* ---------- Lista (tela inicial): adicionar, concluir, editar, remover; cada tarefa mostra quanto vale ---------- */
 const LTIPOS = [
-  {k:'ent', n:'entrega', c:5, d:'algo que você entrega para alguém, com prazo', ex:'Lista 3 de derivadas · Trabalho de BD · Relatório do lab'},
-  {k:'est', n:'estudo', c:0, d:'tempo de aprender para a matéria: ninguém cobra, mas prepara a prova', ex:'Revisar integrais · Ler o capítulo 4 · Refazer a P1'},
-  {k:'fac', n:'faculdade', c:2, d:'outras coisas da faculdade, ligadas a uma disciplina, que não são entrega nem estudo', ex:'Montar o grupo do projeto · Falar com o professor'},
-  {k:'tre', n:'treino/projeto', c:1, d:'treino e projetos: programação e projetos pessoais fora da matéria', ex:'Contest no Codeforces · Ajudar no desenvolvimento do Ganbatte · Meu site'},
+  {k:'ent', n:'entrega', c:5, d:'um trabalho seu que alguém cobra ou avalia (professor, chefe, cliente); ter prazo não basta', ex:'Entregar a lista 3 de derivadas · Trabalho de BD · Relatório do estágio'},
+  {k:'est', n:'estudo', c:0, d:'tempo de aprender: ninguém cobra, mas prepara a prova. Tarefa da disciplina que não é entrega é estudo', ex:'Revisar integrais · Fazer a lista 2 · Exercício de programação de POO'},
+  {k:'tre', n:'treino', c:1, d:'prática de programação fora da matéria', ex:'Contest no Codeforces · Upsolve · LeetCode'},
+  {k:'pro', n:'projeto', c:2, d:'criar algo seu, fora da matéria', ex:'Meu site · Um bot · Ajudar no desenvolvimento do Ganbatte'},
   {k:'hab', n:'hábito', c:4, d:'o que se repete: vale pelo nível do hábito (3 a 12 XP), mas sozinho não acende o Ten (os fixos ficam em Configurações)', ex:'Treino de digitação · 30 min de leitura'},
   {k:'vid', n:'vida', c:3, d:'todo o resto: casa, saúde, família, documentos, trabalho ou estágio (por enquanto)', ex:'Renovar a carteirinha · Consulta no dentista · Pagar o boleto'}];
-const LA = {tipo:'est', due:'', pri:'jogo', auto:true, por:'', salvando:false, adicionada:false};   // auto: o tipo segue a sugestão do texto até o jogador escolher um   // rascunho do formulário (pri: 'jogo' = o jogo decide, '' = sem, ou a letra)
+const LA = {tipo:'est', due:'', rep:'', repN:10, repU:'d', pri:'jogo', auto:true, por:'', salvando:false, adicionada:false};   // auto: o tipo segue a sugestão do texto até o jogador escolher um   // rascunho do formulário (pri: 'jogo' = o jogo decide, '' = sem, ou a letra)
 const LPRI = [['jogo','o jogo decide'], ['A','A'], ['B','B'], ['C','C'], ['','sem']], PRI_COR = {A:'var(--red)', B:'var(--amb)', C:'var(--soft)'};
 const SEM3 = ['seg','ter','qua','qui','sex','sáb','dom'];
 const tagDe = k => { const T = GBx.TAGS[k]; return !T ? '' : T.ctx[0] ? '@' + T.ctx[0] : T.proj[0] ? '+' + T.proj[0] : ''; };
+/* repete (#113): o jogador escolhe uma frase; a regra sai do prazo (o dia da semana, o dia do mês, o dia do ano) */
+const REP_K = ['', 'sem', 'mes', '2mes', '3mes', '6mes', 'ano', 'dep'];
+function repToken(k, base, n, un){
+  if(!k) return '';
+  if(k === 'dep') return `rep:+${Math.max(1, Math.min(999, Math.round(+n) || 1))}${un}`;
+  if(k === 'sem') return 'rep:sem-' + GBx.SEM_REP[dow(base)];
+  if(k === 'ano') return 'rep:ano-' + base.slice(5);
+  return `rep:${k}-${+base.slice(8,10)}`;   // mes-15, 6mes-15
+}
+const repOpts = (base, sel, orig) => (orig ? [`<option value="orig"${sel === 'orig' ? ' selected' : ''}>${esc(GBx.repFrase(orig))}</option>`] : []).concat(REP_K.map(k =>
+  `<option value="${k}"${k === sel ? ' selected' : ''}>${k === '' ? 'não repete' : k === 'dep' ? 'depois de concluir…' : esc(GBx.repFrase(repToken(k, base).slice(4)))}</option>`)).join('');
+const repDep = (id, n, un) => `<input type="number" class="l-repn" id="${id}n" min="1" max="999" value="${n}" aria-label="Quantos"><select id="${id}u" aria-label="Unidade">${[['d','dias'],['sem','semanas'],['mes','meses']].map(([k,t]) => `<option value="${k}"${k === un ? ' selected' : ''}>${t}</option>`).join('')}</select>`;
 const dueTxt = d => { const k = dias(HOJE, d); return k < 0 ? `atrasada ${-k}d` : k === 0 ? 'hoje' : k === 1 ? 'amanhã' : k < 7 ? SEM3[dow(d)] + ' ' + ddmm(d) : ddmm(d); };
 function valeL(t, S){
   if(t.done){ const o = S.xs.find(o => o.t === t || o.t.raw === t.raw), x = o ? o.x : 0; return {x, j:x*10, ms:[]}; }
@@ -2193,7 +2214,7 @@ function rascunho(){
   const txt = document.getElementById('l-txt').value.trim().replace(PRI_TXT, ''), disc = document.getElementById('l-disc').value;
   const tag = ['ent','est','tre','hab'].includes(LA.tipo) ? tagDe(LA.tipo) : '';
   const cac = window.GB_EXP ? GB_EXP.tagForm() : '';
-  return [txt || 'sua tarefa', disc ? '+fac.' + disc : '', tag && !txt.toLowerCase().includes(tag.toLowerCase()) ? tag : '', cac, LA.due ? 'due:' + LA.due : ''].filter(Boolean).join(' ');
+  return [txt || 'sua tarefa', disc ? '+fac.' + disc : '', tag && !txt.toLowerCase().includes(tag.toLowerCase()) ? tag : '', cac, LA.due ? 'due:' + LA.due : '', repToken(LA.rep, LA.due || HOJE, LA.repN, LA.repU)].filter(Boolean).join(' ');
 }
 /* prioridade do rascunho: a digitada, a do botão ou a sugerida pelo jogo (com os motivos) */
 function priL(linha, S){
@@ -2206,16 +2227,22 @@ function priL(linha, S){
 /* editor completo da tarefa (✎, issue #20): texto, tipo, disciplina, prazo, prioridade e caçada (#35: uma tarefa vira etapa de
    uma caçada, nova ou aberta). O texto guarda tudo o que o editor não mostra (av:, prova:, +exp., rec:...), então nada da linha
    se perde; as datas dele ficam como no todo.txt */
-const LE = {txt:'', tipo:'vid', disc:'', due:'', pri:'', tipo0:'', tags0:[], cac:'', cacn:''};   // tipo0/tags0: como a linha veio, para voltar igual se o tipo não mudar
+const LE = {txt:'', tipo:'vid', disc:'', due:'', pri:'', tipo0:'', tags0:[], cac:'', cacn:'', rep:'', repN:10, repU:'d', rep0:'', repOrig:''};   // tipo0/tags0: como a linha veio, para voltar igual se o tipo não mudar; rep0: a regra que veio (repOrig: ela, quando nenhuma frase dá o mesmo rep:)
 function abreEd(t){
-  const tags = ['ent','est','tre','hab'].flatMap(k => [...GBx.TAGS[k].ctx.map(v => '@' + v), ...GBx.TAGS[k].proj.map(v => '+' + v)]);
+  const tags = ['ent','est','tre','pro','hab'].flatMap(k => [...GBx.TAGS[k].ctx.map(v => '@' + v), ...GBx.TAGS[k].proj.map(v => '+' + v)]);
   const ws = t.raw.replace(/^\([A-Z]\) /, '').replace(/^\d{4}-\d\d-\d\d /, '').split(/\s+/).filter(Boolean), tipo = (LTIPOS.find(x => x.c === nenDe(t)) || LTIPOS[5]).k;
-  Object.assign(LE, {txt: ws.filter(w => !tags.includes(w.toLowerCase()) && !/^\+fac\./i.test(w) && !/^due:/i.test(w) && !/^\+cac\./i.test(w)).join(' '),
+  Object.assign(LE, {txt: ws.filter(w => !tags.includes(w.toLowerCase()) && !/^\+fac\./i.test(w) && !/^due:/i.test(w) && !/^\+cac\./i.test(w) && !/^rep:/i.test(w)).join(' '),
     tipo, tipo0: tipo, tags0: ws.filter(w => tags.includes(w.toLowerCase())), disc: discOf(t) || '', due: t.due || '', pri: t.pri || '', cac: GBx.cacDe(t) || '', cacn: ''});
+  /* a regra que veio: a frase que dá o mesmo rep:, ou 'orig' (ex.: dia 31 com o prazo em 30/11), que mantém a regra como está */
+  const r = GBx.repRegra(t.rep);
+  Object.assign(LE, {rep0: r ? t.rep.toLowerCase() : '', repN: r && r.tipo === 'depois' ? r.n : 10, repU: r && r.tipo === 'depois' ? r.un : 'd'});
+  LE.rep = !r ? '' : REP_K.find(k => k && repToken(k, LE.due || HOJE, LE.repN, LE.repU) === 'rep:' + LE.rep0) || 'orig';
+  LE.repOrig = LE.rep === 'orig' ? LE.rep0 : '';
 }
 /* a linha que vai para o servidor: a tag do tipo só entra se o texto, a disciplina e o rec: ainda não dão esse tipo */
 function linhaEd(){
-  const base = [LE.txt.trim(), LE.disc ? '+fac.' + LE.disc : '', LE.due ? 'due:' + LE.due : '', LE.cac && LE.cac !== '+nova' ? '+cac.' + LE.cac : ''].filter(Boolean).join(' ');
+  const base = [LE.txt.trim(), LE.disc ? '+fac.' + LE.disc : '', LE.due ? 'due:' + LE.due : '', LE.cac && LE.cac !== '+nova' ? '+cac.' + LE.cac : '',
+    LE.rep === 'orig' ? 'rep:' + LE.rep0 : repToken(LE.rep, LE.due || HOJE, LE.repN, LE.repU)].filter(Boolean).join(' ');
   if(LE.tipo === LE.tipo0 && LE.tags0.length) return base + ' ' + LE.tags0.join(' ');
   const T = LTIPOS.find(x => x.k === LE.tipo), tag = tagDe(LE.tipo);
   return tag && nenDe(GBx.parseLinha(HOJE + ' ' + base, 0)) !== T.c ? base + ' ' + tag : base;
@@ -2230,6 +2257,7 @@ function edHTML(S){
     <div class="l-opts">
       <div class="l-seg"><span>disciplina</span><select id="l-eddisc" aria-label="Disciplina"><option value="">nenhuma</option>${ds.map(d => `<option value="${esc(d)}"${d === LE.disc ? ' selected' : ''}>${esc(d)}</option>`).join('')}</select></div>
       <div class="l-seg" role="group" aria-label="Prazo"><span>prazo</span>${[['sem',''],['hoje',HOJE],['amanhã',am]].map(([n,d]) => chip('due:' + d, d === LE.due, n)).join('')}<input class="dt" inputmode="numeric" maxlength="10" id="l-eddate" placeholder="${GBx.fmtTxt()}" value="${LE.due && LE.due !== HOJE && LE.due !== am ? GBx.brData(LE.due) : ''}" aria-label="Outra data (${GBx.fmtTxt()})"></div>
+      <div class="l-seg"><span>repete</span><select id="l-edrep" aria-label="Repete">${repOpts(LE.due || HOJE, LE.rep, LE.repOrig)}</select>${LE.rep === 'dep' ? repDep('l-edrep', LE.repN, LE.repU) : ''}</div>
       <div class="l-seg" role="group" aria-label="Prioridade"><span>prioridade</span>${['A','B','C',''].map(k => chip('pri:' + k, k === LE.pri, k || 'sem', k ? ' l-pc' : '')).join('')}</div>
       ${window.GB_EXP ? `<div class="l-seg"><span>caçada</span><select id="l-edcac" aria-label="Caçada">${GB_EXP.opcoesCac(LE.cac, '+ nova caçada com esta tarefa…')}</select>${LE.cac === '+nova' ? `<input id="l-edcacn" maxlength="80" value="${esc(LE.cacn)}" placeholder="nome da caçada" title="vazio: o texto da tarefa" aria-label="Nome da caçada nova (vazio: o texto da tarefa)">` : ''}</div>` : ''}
     </div>
@@ -2247,10 +2275,11 @@ function dataEd(){
   const box = document.getElementById('l-edbox'); if(!box) return;
   LE.txt = document.getElementById('l-ed').value;
   box.querySelector('.l-prev').outerHTML = new DOMParser().parseFromString(edHTML(estado()), 'text/html').querySelector('.l-prev').outerHTML;
+  const rs = document.getElementById('l-edrep'); if(rs) rs.innerHTML = repOpts(LE.due || HOJE, LE.rep, LE.repOrig);
 }
 function ajudaL(){
   return `<table><tbody>${LTIPOS.map(t => `<tr><td style="color:${NC(t.c)}">${t.n}</td><td>${esc(t.d)}.<br><i>${esc(t.ex)}</i></td></tr>`).join('')}</tbody></table>
-    <p style="margin:8px 0 0">Na dúvida, pense em quem cobra: alguém espera a entrega → <b>entrega</b>; é para a prova → <b>estudo</b>; programação ou projeto seu → <b>treino/projeto</b>. O jogo sugere o tipo pelas palavras do texto${window.GB_IA && window.GB_IA.ligada() ? ', e o botão <b>IA?</b> pergunta à IA' : ''}; clicar num tipo troca a sugestão.</p>`;
+    <p style="margin:8px 0 0">Na dúvida, pense em quem cobra: alguém espera a entrega → <b>entrega</b>; é para a matéria → <b>estudo</b>; prática de programação → <b>treino</b>; algo seu que você cria → <b>projeto</b>. O jogo sugere o tipo pelas palavras do texto${window.GB_IA && window.GB_IA.ligada() ? ', e o botão <b>IA?</b> pergunta à IA' : ''}; clicar num tipo troca a sugestão.</p>`;
 }
 function marcaTipo(){ document.querySelectorAll('[data-ltipo]').forEach(b => b.setAttribute('aria-pressed', b.dataset.ltipo === LA.tipo)); }
 let adicionadaTimer = null;
@@ -2258,13 +2287,16 @@ function limpaAdicionada(){ clearTimeout(adicionadaTimer); LA.adicionada = false
 function prevL(){
   if(!CTX) return;
   if(LA.auto){ const sg = GBx.sugereTipo(document.getElementById('l-txt').value, !!document.getElementById('l-disc').value);
-    if(sg){ if(LA.tipo !== sg.k){ LA.tipo = sg.k; marcaTipo(); } LA.por = `pela palavra "${sg.por}"`; } else LA.por = ''; }
+    if(sg){ if(LA.tipo !== sg.k){ LA.tipo = sg.k; marcaTipo(); } LA.por = sg.disc ? 'pela disciplina' : sg.por === '#' ? 'pelo número da issue' : `pela palavra "${sg.por}"`; } else LA.por = ''; }
   const S = estado(), linha = rascunho(), t = GBx.parseLinha(HOJE + ' ' + linha, 0), v = valeL(t, S), nen = NEN[nenDe(t)], P = priL(linha, S);
   const btn = document.getElementById('l-btn');
   btn.disabled = LA.salvando || !document.getElementById('l-txt').value.trim();
   btn.classList.toggle('salva', LA.adicionada && !LA.salvando);
   btn.textContent = LA.salvando ? 'adicionando…' : LA.adicionada ? '✓ adicionada' : '+ adicionar';
   document.getElementById('l-hint').innerHTML = document.getElementById('l-txt').value.trim() ? `<span style="color:${NC(nenDe(t))}">${esc(nen.n)}</span>${v.ms.length ? `<span class="l-mult">${v.ms.join(' + ')}</span>` : ''}<span class="l-rewards"><span class="l-xp">+${v.x}</span>${jennyL(v.x)}</span>` : `<span class="l-nk" title="aperte N em qualquer aba para abrir este formulário">N</span>`;
+  const rs = document.getElementById('l-reps'), rx = document.getElementById('l-repx');
+  rs.innerHTML = repOpts(LA.due || HOJE, LA.rep);
+  if((rx.dataset.dep === '1') !== (LA.rep === 'dep')){ rx.dataset.dep = LA.rep === 'dep' ? '1' : ''; rx.innerHTML = LA.rep === 'dep' ? repDep('l-rep', LA.repN, LA.repU) : ''; }
   const jb = document.querySelector('[data-lpri="jogo"]'); if(jb) jb.innerHTML = 'o jogo decide' + (P.sug ? ` · <b>${P.sug.pri || 'sem'}</b>` : '');
   const ptx = P.sug ? (P.sug.pri ? `prioridade <b style="color:${PRI_COR[P.sug.pri]}">${P.sug.pri}</b>` : 'sem prioridade') + `<small>${P.sug.por.length ? esc(P.sug.por.join(' · ')) : 'nada urgente'}</small>`
     : P.como ? `prioridade <b style="color:${PRI_COR[P.pri] || 'var(--soft)'}">${P.pri}</b><small>${P.como}</small>` : '';
@@ -2288,14 +2320,14 @@ function formL(){
   if(window.GB_EXP) GB_EXP.formCacadas();
   prevL();
 }
-function rowL(t, S, x){
+function rowL(t, S, x, jan){   // jan: a linha está na janela ↻ recorrentes (com ela aberta, o editor fica só lá)
   const v = x != null ? {x, ms:[]} : valeL(t, S), nen = nenDe(t), d = discOf(t), feita = !!t.done;
   const dc = t.due && !feita ? (t.due < HOJE ? ' l-late' : t.due === HOJE ? ' l-hoje' : '') : '';
   return `<li class="l-task${feita ? ' done' : ''}" style="--c:${NC(nen)}" data-ln="${t.n}">
     <button class="l-ck" data-l="${feita ? 'reopen' : 'done'}" aria-label="${feita ? 'reabrir' : 'concluir'}: ${esc(t.txt)}">${feita ? '✓' : ''}</button>
-    <div class="l-body">${UI.ledit === edKey(t) ? edHTML(S)
-      : `<span class="l-txt">${t.pri && !feita ? `<span class="l-pri ${t.pri}">${t.pri}</span>` : ''}${esc(t.txt)}</span>`}
-      <span class="l-tags"><span class="l-tag nen">${esc(NEN[nen].n)}</span>${d ? `<span class="l-tag">${esc(d)}</span>` : ''}${t.due ? `<span class="l-tag${dc}">${dueTxt(t.due)}</span>` : ''}${isRec(t) ? '<span class="l-tag">rotina</span>' : ''}${window.GB_EXP ? GB_EXP.etiquetas(t, S) : ''}</span></div>
+    <div class="l-body">${UI.ledit === edKey(t) && !!UI.rep === !!jan ? edHTML(S)
+      : `<span class="l-txt">${t.pri && !feita ? `<span class="l-pri ${t.pri}">${t.pri}</span>` : ''}${esc(t.txt)}${!feita && GBx.repAcum(t, HOJE) > 1 ? `<b class="l-acum" title="a data dela já chegou ${GBx.repAcum(t, HOJE)} vezes; um concluir vale por todas">#${GBx.repAcum(t, HOJE)}</b>` : ''}</span>`}
+      <span class="l-tags"><span class="l-tag nen">${esc(NEN[nen].n)}</span>${d ? `<span class="l-tag">${esc(d)}</span>` : ''}${t.due ? `<span class="l-tag${dc}">${dueTxt(t.due)}</span>` : ''}${isRec(t) ? '<span class="l-tag">rotina</span>' : ''}${GBx.repRegra(t.rep) ? `<span class="l-tag" title="tarefa recorrente: concluir cria a próxima">↻ ${esc(GBx.repFrase(t.rep))}</span>` : ''}${window.GB_EXP ? GB_EXP.etiquetas(t, S) : ''}</span></div>
     <div class="l-right">${v.ms.length ? `<span class="l-mult" title="${v.base} XP · ${v.ms.map(multL).join(' · ')}">${v.ms.join(' + ')}</span>` : ''}<span class="l-rewards"><span class="l-xp" title="${v.base != null ? v.base + ' XP de base' : 'XP ganho'}">+${v.x}</span>${jennyL(v.x, feita)}</span>
       ${feita ? '' : `<span class="l-acts"><button class="l-ib" data-l="d1" title="adiar 1 dia" aria-label="adiar 1 dia">${ic('moon')}</button>${t.pri !== 'A' ? '<button class="l-ib" data-l="up" title="subir prioridade" aria-label="subir prioridade">▲</button>' : ''}${'ABC'.includes(t.pri || 'Z') ? '<button class="l-ib" data-l="down" title="descer prioridade" aria-label="descer prioridade">▼</button>' : ''}<button class="l-ib" data-l="edit" title="editar" aria-label="editar">✎</button><button class="l-ib del" data-l="delete" title="remover" aria-label="remover">✕</button></span>`}</div></li>`;
 }
@@ -2321,15 +2353,17 @@ function rL(S){
   ].filter(g => g[2].length);
   const xpDe2 = new Map(S.xs.map(o => [o.t.raw, o.x]));
   const feitas = D.feitas.filter(t => t.done === HOJE && t.n), xpF = feitas.reduce((s,t) => s + (xpDe2.get(t.raw) || 0), 0);
-  document.getElementById('l-groups').innerHTML = (G.length ? G.map(([n,c,l]) => `<section class="l-grp"><h3><span class="t ${c}">${n}</span><small>${l.length}</small><span class="sum">até +${l.reduce((s,t) => s + t.x, 0)} XP</span></h3><ul class="l-list">${l.map(t => t.h).join('')}</ul></section>`).join('')
+  const nRep = repTodas().length, nGu = (D.guardadas || []).length;
+  document.getElementById('l-groups').innerHTML = (nRep ? `<div class="l-repb"><button type="button" class="go" data-repabre>↻ recorrentes (${nRep})${nGu ? ` · ${nGu} guardada${nGu === 1 ? '' : 's'}` : ''}</button></div>` : '') + (G.length ? G.map(([n,c,l]) => `<section class="l-grp"><h3><span class="t ${c}">${n}</span><small>${l.length}</small><span class="sum">até +${l.reduce((s,t) => s + t.x, 0)} XP</span></h3><ul class="l-list">${l.map(t => t.h).join('')}</ul></section>`).join('')
       : '<div class="card l-empty">Nenhuma tarefa aberta. Escreva a primeira ali em cima: o tipo e o prazo mudam quanto ela vale.</div>')
     + (feitas.length ? `<details class="l-grp"${UI.ldone ? ' open' : ''} id="l-feitas"><summary><h3><span class="t ok">Concluídas hoje</span><small>${feitas.length}</small><span class="sum">+${xpF} XP</span></h3></summary><ul class="l-list">${feitas.map(t => rowL(t, S, xpDe2.get(t.raw) || 0)).join('')}</ul></details>` : '');
+  repJanela(S);
   const ed = document.getElementById('l-ed'); if(ed && !document.querySelector('#xn,#xc')){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
   document.getElementById('l-golpes').innerHTML = S.golpes.slice(0,3).map(g => `<div class="l-g"><b>${esc(g.t.txt)}</b><small>${[discOf(g.t), g.t.due ? dueTxt(g.t.due) : '', g.fury ? 'fúria ×1,5' : '', g.bonus ? 'missão ×1,5' : ''].filter(Boolean).join(' · ')}</small><span class="l-xp">+${g.x}</span></div>`).join('') || '<p class="sub" style="margin:0">Nada aberto.</p>';
   document.getElementById('l-bosses').innerHTML = S.bs.map(b => `<button class="l-boss${b.dead ? ' dead' : ''}" data-go="b2" data-bsel="${b.d}"><span class="sig">${avB(b)}${esc(b.d)}</span><span class="hp"><i style="width:${pct(b.rest,b.tot)}%"></i></span><span class="st${b.fury ? ' fury' : ''}">${b.dead ? 'DERROTADO' : b.fury ? 'FÚRIA' : Math.round(pct(b.rest,b.tot)) + '%'}</span><span class="nm">${esc(b.n)}${b.need != null && !b.dead ? ` · precisa de ${nf(Math.max(0,b.need))} no resto` : ''}</span></button>`).join('') || '<p class="sub" style="margin:0">Nenhuma disciplina cadastrada. Cadastre na aba Chefões.</p>';
   document.getElementById('l-exps').innerHTML = window.GB_EXP ? GB_EXP.lateral(S) : '';
   habitosL(S);
-  document.getElementById('l-vale').innerHTML = [['ent',5,25],['est',0,15],['fac',2,15],['tre',1,10],['vid',3,10],['hab',4,'3–12']].map(([k,c,x]) => `<tr><td><span class="d" style="--c:${NC(c)}"></span>${LTIPOS.find(t => t.k === k).n} <span style="color:var(--faint)">${k === 'fac' ? '+fac.SIGLA' : k === 'vid' ? 'sem tag' : esc(tagDe(k))}</span></td><td>${x}</td></tr>`).join('')
+  document.getElementById('l-vale').innerHTML = [['ent',5,25],['est',0,15],['tre',1,10],['pro',2,10],['vid',3,10],['hab',4,'3–12']].map(([k,c,x]) => `<tr><td><span class="d" style="--c:${NC(c)}"></span>${LTIPOS.find(t => t.k === k).n} <span style="color:var(--faint)">${k === 'vid' ? 'sem tag' : esc(tagDe(k))}</span></td><td>${x}</td></tr>`).join('')
     + '<tr class="x"><td>no prazo · missão · fúria</td><td>×1,5 cada</td></tr>';
 }
 
@@ -2439,7 +2473,7 @@ async function tipoIA(btn){
     ...LTIPOS.map(t => `${t.k}: ${t.d}. Ex.: ${t.ex}`), '', `Disciplina escolhida: ${document.getElementById('l-disc').value || 'nenhuma'}`, `Tarefa: ${txt}`].join('\n');
   btn.disabled = true;
   try {
-    const r = await window.GB_IA.rodaIA(pedido, 'tipo da tarefa', '', true), m = r.match(/\b(ent|est|fac|tre|hab|vid)\b\s*\|?\s*(.*)/);
+    const r = await window.GB_IA.rodaIA(pedido, 'tipo da tarefa', '', true), m = r.match(/\b(ent|est|tre|pro|hab|vid)\b\s*\|?\s*(.*)/);
     if(!m) throw new Error('resposta fora do formato: ' + r.slice(0, 80));
     LA.tipo = m[1]; LA.auto = false; LA.por = 'pela IA: ' + m[2].trim().slice(0, 90); marcaTipo(); prevL();
   } catch(err){ toast('A IA não respondeu: ' + esc(err.message)); }
@@ -2465,14 +2499,42 @@ async function cfMao(menos){
     document.body.appendChild(to); setTimeout(() => to.remove(), 6000); }
   catch(err){ toast('Não marcou: ' + esc(err.message)); }
 }
-function toastUndo(html, ms = 6000){ document.querySelectorAll('.toast').forEach(t => t.remove()); const to = document.createElement('div'); to.className = 'toast' + (document.getElementById('xn') ? ' l-aviso' : ''); to.innerHTML = html + '<button class="l-undo" data-lundo>desfazer</button>'; document.body.appendChild(to); setTimeout(() => to.remove(), ms); }
+/* ---------- recorrentes (#113): a janela ↻ com todas (só ver as próximas, ou editar com as mesmas linhas da Lista) ---------- */
+const repTodas = () => D.abertas.concat(D.guardadas || []).filter(t => GBx.repRegra(t.rep)).sort((p,q) => (p.due || '9').localeCompare(q.due || '9'));
+function repStatus(t){
+  const n = GBx.repAcum(t, HOJE);
+  if(t.due && t.due < HOJE) return `<span class="l-late">atrasada${n > 1 ? ` · #${n}` : ''}</span>`;
+  return GBx.repVisivel(t, HOJE) ? 'na Lista' : `guardada · entra na Lista em ${ddmm(GBx.repEntra(t))}`;
+}
+function repJanela(S){
+  let bg = document.getElementById('repw');
+  if(!UI.rep){ if(bg) bg.remove(); return; }
+  if(!bg){ bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = 'repw'; document.body.appendChild(bg); }
+  const ts = repTodas();
+  const corpo = !ts.length ? '<p class="sub" style="margin:0">Nenhuma tarefa recorrente. No formulário da Lista, abra "detalhes" e escolha em <b>repete</b>.</p>'
+    : UI.repEd ? `<ul class="l-list">${ts.map(t => rowL(t, S, null, true)).join('')}</ul>`
+    : `<table class="rep-tab"><thead><tr><th>tarefa</th><th>repete</th><th>prazo</th><th></th></tr></thead><tbody>${ts.map(t => `<tr><td>${esc(t.txt)}</td><td>${esc(GBx.repFrase(t.rep))}</td><td>${t.due ? GBx.brData(t.due) : '—'}</td><td class="sub">${repStatus(t)}</td></tr>`).join('')}</tbody></table>`;
+  bg.innerHTML = `<div class="wz rep-w" role="dialog" aria-modal="true" aria-labelledby="repw-t"><div class="wz-body"><h3 id="repw-t" style="margin:0">↻ Tarefas recorrentes</h3>
+    <p class="sub" style="margin:0">Uma de cada vez: concluir cria a próxima. A que está longe do prazo fica guardada aqui e entra na Lista alguns dias antes (1 dia na semanal, 3 na mensal, 2 semanas na semestral e na anual).${UI.repEd ? ' Editar vale para esta e as próximas.' : ''}</p>${corpo}</div>
+    <div class="wz-foot">${ts.length ? `<button type="button" class="btn" data-repmodo>${UI.repEd ? 'só ver' : 'editar'}</button>` : '<span></span>'}<button type="button" class="btn v" data-repfecha>fechar</button></div></div>`;
+}
+/* ✕ numa recorrente: pular só esta vez (vira a próxima, sem contar como atraso) ou parar de repetir (apaga) */
+function repApaga(t){
+  const r = GBx.repRegra(t.rep), prox = GBx.repProxima(r, t.due, HOJE);
+  const bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = 'repx';
+  bg.innerHTML = `<div class="wz" role="dialog" aria-modal="true" aria-labelledby="repx-t" style="max-width:480px"><div class="wz-body"><h3 id="repx-t" style="margin:0">Remover "${esc(t.txt)}"?</h3>
+    <p style="margin:0">Ela repete ${esc(GBx.repFrase(t.rep))}. <b>Pular esta vez</b>: esta não acontece e a próxima fica para ${GBx.brData(prox)}, sem contar como atraso. <b>Parar de repetir</b>: apaga a tarefa, e ela não volta.</p></div>
+    <div class="wz-foot"><button type="button" class="btn" data-repxx>cancelar</button><span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-repxpara="${t.n}">parar de repetir</button><button type="button" class="btn v" data-repxpula="${t.n}">pular esta vez</button></span></div></div>`;
+  document.body.appendChild(bg); bg.querySelector('[data-repxpula]').focus();
+}
+function toastUndo(html, ms = 6000){ document.querySelectorAll('.toast').forEach(t => t.remove()); const to = document.createElement('div'); to.className = 'toast' + (document.querySelector('#xn,#repw') ? ' l-aviso' : ''); to.innerHTML = html + '<button class="l-undo" data-lundo>desfazer</button>'; document.body.appendChild(to); setTimeout(() => to.remove(), ms); }
 async function acaoL(fn, msg){ try { await fn(); await recarrega(); render(); if(msg) toastUndo(msg); } catch(err){ toast('Não deu: ' + esc(err.message)); } }
 document.addEventListener('click', async e => {
   const q = s => e.target.closest(s);
   if(q('[data-lajuda]')){ const a = document.getElementById('l-ajuda'), b = q('[data-lajuda]'); a.hidden = !a.hidden; b.setAttribute('aria-expanded', !a.hidden); if(!a.hidden) a.innerHTML = ajudaL(); return; }
   if(q('[data-ltipoia]')){ tipoIA(q('[data-ltipoia]')); return; }
   const tp = q('[data-ltipo]'); if(tp){ LA.tipo = tp.dataset.ltipo; LA.auto = false; LA.por = 'escolhido por você'; marcaTipo();
-    if(LA.tipo === 'fac' && !document.getElementById('l-disc').value && BOSSES[0]) document.getElementById('l-disc').value = BOSSES[0].d; prevL(); return; }
+    prevL(); return; }
   const pr = q('[data-lpri]'); if(pr){ LA.pri = pr.dataset.lpri; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b === pr)); prevL(); return; }
   const du = q('[data-ldue]'); if(du){ LA.due = du.dataset.ldue; document.getElementById('l-date').value = ''; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === du)); prevL(); return; }
   const oa = q('[data-ontemabre]'); if(oa){ UI.ontem = oa.dataset.ontemabre === '1'; render(); return; }
@@ -2480,17 +2542,25 @@ document.addEventListener('click', async e => {
   if(q('[data-cfmao]')){ cfMaoPergunta(); return; }
   const dn = q('[data-denovo]'); if(dn){ dn.disabled = true; acaoL(() => post('/api/denovo', {id:dn.dataset.denovo}), `Feito de novo <small>acima da meta da semana: XP ×${GBx.HAB_EXTRA}</small>`); return; }
   if(q('[data-cfmx]')){ document.getElementById('cfm').remove(); return; }
+  if(q('[data-repabre]')){ UI.rep = true; UI.repEd = false; render(); return; }
+  if(q('[data-repfecha]') || e.target.id === 'repw'){ UI.rep = false; UI.ledit = null; render(); return; }
+  if(q('[data-repmodo]')){ UI.repEd = !UI.repEd; UI.ledit = null; render(); return; }
+  if(q('[data-repxx]') || e.target.id === 'repx'){ document.getElementById('repx').remove(); return; }
+  const rx = q('[data-repxpula],[data-repxpara]'); if(rx){ document.getElementById('repx').remove();
+    const n = +(rx.dataset.repxpula || rx.dataset.repxpara), t = D.abertas.concat(D.guardadas || []).find(x => x.n === n); if(!t) return;
+    acaoL(() => post('/api/act', {raw:t.raw, action: rx.dataset.repxpula ? 'pular' : 'delete'}), rx.dataset.repxpula ? 'Pulada <small>a próxima já está na fila</small>' : 'Parou de repetir'); return; }
   if(q('[data-cfmok]')){ cfMao(false); return; }
   if(q('[data-cfmmenos]')){ q('[data-cfmmenos]').closest('.toast').remove(); cfMao(true); return; }
   if(q('[data-lundo]')){ q('[data-lundo]').closest('.toast').remove(); acaoL(() => post('/api/undo', {}), ''); return; }
   if(q('#l-feitas summary')){ UI.ldone = !document.getElementById('l-feitas').open; return; }
   const le = q('[data-le]'); if(le){ const [k, v] = le.dataset.le.split(/:(.*)/);
-    if(k === 'tipo'){ LE.tipo = v; if(v === 'fac' && !LE.disc && BOSSES[0]) LE.disc = BOSSES[0].d; if(v === 'vid') LE.disc = ''; }
+    if(k === 'tipo'){ LE.tipo = v; if(v === 'vid') LE.disc = ''; }
     else LE[k] = v;
     redesenhaEd(); return; }
   const b = q('[data-l]'); if(!b) return;
-  const n = +b.closest('[data-ln]').dataset.ln, t = D.abertas.concat(D.feitas).find(x => x.n === n); if(!t) return;
+  const n = +b.closest('[data-ln]').dataset.ln, t = D.abertas.concat(D.guardadas || [], D.feitas).find(x => x.n === n); if(!t) return;
   const act = b.dataset.l;
+  if(act === 'delete' && GBx.repRegra(t.rep) && !t.done){ repApaga(t); return; }
   if(act === 'edit'){ abreEd(t); UI.ledit = edKey(t); render(); const ed = document.getElementById('l-ed'); if(ed){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); } return; }
   if(act === 'cancel'){ UI.ledit = null; render(); return; }
   if(act !== 'save') UI.ledit = null;
@@ -2507,12 +2577,13 @@ document.addEventListener('click', async e => {
     floatAt(rr, `+${dx} XP`); if(dx > 0 && window.GB_FX) GB_FX.tarefa(rr);
     if(depois.prepBonus > antes.prepBonus) toastUndo('Preparação completa! <small>+1 feitiço à escolha</small>');
     else if(depois.a.n > antes.a.n){ toastUndo(`▲ Andar ${depois.a.n} <small>a torre sobe</small>`); confete(); }
-    else toastUndo(`+${dx} XP <small>+${fmt(dx*10)} J</small>`);
+    else toastUndo(`+${dx} XP <small>+${fmt(dx*10)} J${GBx.repRegra(t.rep) ? ` · a próxima fica para ${ddmm(GBx.repProxima(GBx.repRegra(t.rep), t.due, HOJE))}` : ''}</small>`);
     return; }
   const MSG = {reopen:'Tarefa reaberta', d1:'Adiada 1 dia', up:'Prioridade maior', down:'Prioridade menor', delete:'Tarefa removida'};
   acaoL(() => post('/api/act', {raw:t.raw, action:act}), MSG[act]);
 });
 document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && e.target.id !== 'l-ed'){ const x = document.getElementById('repx'); if(x){ x.remove(); return; } if(UI.rep){ UI.rep = false; UI.ledit = null; render(); return; } }
   if(e.target.id !== 'l-ed') return;
   if(e.key === 'Enter'){ e.preventDefault(); document.querySelector('[data-l="save"]').click(); }
   if(e.key === 'Escape'){ UI.ledit = null; render(); }
@@ -2527,7 +2598,11 @@ document.addEventListener('change', e => {
   if(e.target.id === 'l-disc') prevL();
   if(e.target.matches('[data-cofrev]')){ const v = numIn(e.target.value); if(isNaN(v) || v < 0){ toast('Valor do cofre inválido'); return; } EST.cofreMes = Math.round(v*100)/100; salvaUI(); render(); toast(v > 0 ? `Cofre do mês: R$ ${fmt(EST.cofreMes)} por mês` : 'Cofre do mês desligado'); }
   if(e.target.id === 'l-edcac'){ LE.cac = e.target.value; redesenhaEd(); }
-  if(e.target.id === 'l-eddisc'){ LE.disc = e.target.value; if(!LE.disc && LE.tipo === 'fac') LE.tipo = 'vid'; redesenhaEd(); }
+  if(e.target.id === 'l-edrep'){ LE.rep = e.target.value; redesenhaEd(); }
+  if(e.target.id === 'l-edrepn' || e.target.id === 'l-edrepu'){ LE[e.target.id === 'l-edrepn' ? 'repN' : 'repU'] = e.target.value; dataEd(); }
+  if(e.target.id === 'l-reps'){ LA.rep = e.target.value; prevL(); }
+  if(e.target.id === 'l-repn' || e.target.id === 'l-repu'){ LA[e.target.id === 'l-repn' ? 'repN' : 'repU'] = e.target.value; prevL(); }
+  if(e.target.id === 'l-eddisc'){ LE.disc = e.target.value; if(LE.disc && LE.tipo === 'vid') LE.tipo = 'est'; redesenhaEd(); }
   if(e.target.id === 'l-eddate'){ const iso = GBx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(GBx.dataRuim('')); return; }
     LE.due = iso || ''; dataEd(); }
   if(e.target.id === 'l-date'){ const iso = GBx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(GBx.dataRuim('')); return; }
@@ -2541,11 +2616,13 @@ document.getElementById('l-add').addEventListener('submit', async e => {
   try {
     try { if(window.GB_EXP) await GB_EXP.antesDeAdicionar(); await post('/api/add', {text:(P.pri ? `(${P.pri}) ` : '') + linha}); }
     catch(err){ erro.textContent = 'Não adicionou: ' + err.message; erro.hidden = false; return; }
+    const gu = GBx.repRegra((linha.match(/(?:^|\s)rep:(\S+)/) || [])[1]) && LA.due && !GBx.repVisivel(GBx.parseLinha(HOJE + ' ' + linha, 0), HOJE);
+    LA.rep = '';   // como a prioridade, o repete vale só para esta tarefa
     campo.value = ''; LA.adicionada = true; LA.pri = 'jogo'; LA.auto = true; LA.por = ''; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lpri === 'jogo'));   // a letra escolhida vale só para esta tarefa
     if(window.GB_EXP) GB_EXP.depoisDeAdicionar();
     try { await recarrega(); render(); }
     catch(err){ erro.textContent = 'Tarefa adicionada. Não deu para atualizar a Lista; recarregue a página.'; erro.hidden = false; return; }
-    toastUndo(`Adicionada${P.pri ? ` com prioridade ${P.pri}` : ''} <small>vale +${v.x} XP</small>`, 2000);
+    toastUndo(gu ? `Guardada em ↻ recorrentes <small>entra na Lista em ${ddmm(GBx.repEntra(GBx.parseLinha(HOJE + ' ' + linha, 0)))}</small>` : `Adicionada${P.pri ? ` com prioridade ${P.pri}` : ''} <small>vale +${v.x} XP</small>`, gu ? 4000 : 2000);
   } finally {
     LA.salvando = false; campo.readOnly = false; f.removeAttribute('aria-busy'); prevL();
     if(LA.adicionada && (document.getElementById('xn') || cur === 'l')) campo.focus({preventScroll:true});
@@ -2569,7 +2646,7 @@ function tab(t){
   try { history.replaceState(null,'','#'+t); } catch(e){}
   render(); try { window.scrollTo({top:0}); } catch(e){}
 }
-function toast(html, ms = 2600){ const to = document.createElement('div'); to.className = 'toast' + (document.querySelector('#xn,#xc') ? ' l-aviso' : ''); to.innerHTML = html; document.body.appendChild(to); setTimeout(() => to.remove(), ms); return to; }
+function toast(html, ms = 2600){ const to = document.createElement('div'); to.className = 'toast' + (document.querySelector('#xn,#xc,#repw') ? ' l-aviso' : ''); to.innerHTML = html; document.body.appendChild(to); setTimeout(() => to.remove(), ms); return to; }
 function floatAt(r, txt){ const f = document.createElement('div'); f.className = 'float'; f.textContent = txt; f.style.left = (r.left + r.width/2)+'px'; f.style.top = (r.top - 6)+'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 1200); }
 function confete(forcado){
   if(!forcado && window.GB_FX) GB_FX.festa();

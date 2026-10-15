@@ -195,9 +195,9 @@ function prazoDe(txt){
 function linhaEtapa(txt, o){
   const [t, due] = prazoDe(txt), base = o.base;
   const disc = o.disc !== undefined ? o.disc : base ? discOf(base) : '';
-  let k = o.tipo || (GB.sugereTipo(t, !!disc) || {}).k || (base ? GB.tipoDe(base) : '');
-  if(k === 'fac' && !disc) k = 'vid';
-  const tag = ['ent','est','tre','hab'].includes(k) ? tagDe(k) : '';
+  const sg = GB.sugereTipo(t, !!disc) || {};   // sg.disc: estudo só por ter disciplina, vale menos que o tipo das outras etapas
+  const k = o.tipo || (!sg.disc && sg.k) || (base ? GB.tipoDe(base) : '') || sg.k || '';
+  const tag = ['ent','est','tre','pro','hab'].includes(k) ? tagDe(k) : '';
   return [t, disc ? '+fac.' + disc : '', tag && !t.toLowerCase().includes(tag.toLowerCase()) ? tag : '', o.grupo, due ? 'due:' + due : ''].filter(Boolean).join(' ');
 }
 async function addEtapa(alvo, txt, S){
@@ -289,12 +289,14 @@ function depoisDeAdicionar(){
   formL();
 }
 
-/* ---------- tecla N: o mesmo formulário da Lista, com os detalhes abertos, numa janela ---------- */
+/* ---------- tecla N: o mesmo formulário da Lista, numa janela ---------- */
+/* Abre recolhida; abrir ou fechar os detalhes nela fica lembrado para o próximo N (por navegador, #111). */
 const N = {};
+const nDetLe = () => { try { return localStorage.getItem('gb-ndet') === '1'; } catch(e){ return false; } };
 function abreN(cac){
   if(!CTX || document.getElementById('xn')) return;
   limpaAdicionada();
-  const f = document.getElementById('l-add'); N.foco = document.activeElement; N.det = UI.ldet; UI.ldet = true;
+  const f = document.getElementById('l-add'); N.foco = document.activeElement; N.det = UI.ldet; UI.ldet = nDetLe() || cac !== undefined;
   if(cac !== undefined) UI.lcac = cac;
   const bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = 'xn';
   bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa<small>Enter adiciona · vazio, Enter fecha · Esc fecha · C cria uma caçada inteira</small></h3><div id="xn-slot"></div></div><div class="wz-foot"><button type="button" class="btn" data-nfecha>fechar</button></div></div>`;
@@ -305,6 +307,7 @@ function fechaN(){
   const bg = document.getElementById('xn'); if(!bg) return;
   limpaAdicionada();
   // O painel da IA e os irmãos do formulário podem mudar enquanto a janela está aberta.
+  try { localStorage.setItem('gb-ndet', UI.ldet ? '1' : '0'); } catch(e){}
   document.getElementById('l-form').appendChild(document.getElementById('l-add')); UI.ldet = N.det; bg.remove(); formL();
   if(N.foco && N.foco.isConnected) N.foco.focus({preventScroll:true}); N.foco = null;
 }
@@ -328,7 +331,7 @@ const erro = (id, m) => { const el = document.getElementById(id + '-err'); if(el
 const expSelect = (id, v) => `<select id="${id}">${'<option value="">nenhuma (caçada avulsa)</option>' + ativas(estado()).map(e => `<option value="${esc(e.slug)}"${e.slug === v ? ' selected' : ''}>${esc(e.n)}</option>`).join('')}</select>`;
 function abreC(exp, pai){
   if(!CTX) return;
-  const tipos = [['','o jogo decide'], ['ent','entrega'], ['est','estudo'], ['tre','treino e projetos'], ['vid','vida']];
+  const tipos = [['','o jogo decide'], ['ent','entrega'], ['est','estudo'], ['tre','treino'], ['pro','projeto'], ['vid','vida']];
   janela('xc', 'Nova caçada', `<p>Uma tarefa grande dividida em etapas. Na Lista, as etapas ficam juntas, com uma barra de quantas faltam; cada uma vale o XP normal dela. Numa expedição, a caçada vira um <b>marco</b>, e fechá-la dá bônus.</p>
     <div class="wz-f"><label>nome<input id="xc-n" maxlength="80" placeholder="ex.: Trabalho da mãe"></label><label>expedição${expSelect('xc-x', exp || '')}</label><label>dentro da caçada${paiSelect('xc-c', pai || '')}<small class="h">Fica na expedição da caçada de cima.</small></label>
       <label>tipo das etapas<select id="xc-t">${tipos.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></label>
@@ -589,10 +592,18 @@ document.addEventListener('submit', async ev => {
   catch(err){ inp.disabled = false; toast('Não adicionou: ' + esc(err.message)); }
 });
 document.addEventListener('keydown', ev => {
+  // Enter e Esc no seletor aberto pertencem à escolha, não ao envio da tarefa.
+  if(document.getElementById('xn') && ev.target.matches('select') && CSS.supports('selector(:open)') && ev.target.matches(':open')) return;
   if(ev.key === 'Escape'){ if(document.getElementById('xn')){ fechaN(); return; } if(document.querySelector('#xc,#xe,#xx')){ fechaJanela(); return; } }
-  if(ev.key === 'Enter' && ev.target.id === 'l-txt' && document.getElementById('xn') && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.isComposing){
+  const n = document.getElementById('xn');
+  if(ev.key === 'Enter' && n && (ev.target === document.body || n.contains(ev.target)) && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.isComposing){
+    if(document.querySelector('#wz,#tr-pop,#nv-big,#nv-pon')) return;
+    const b = ev.target.closest('button');
+    if(b && !b.matches('#l-btn,[data-ltipo],[data-ldue],[data-lpri]')) return;
     ev.preventDefault(); if(LA.salvando || ev.repeat) return;
-    if(!ev.target.value.trim()) fechaN(); else document.getElementById('l-add').requestSubmit();
+    const campo = document.getElementById('l-txt');
+    if(campo.value.trim()){ campo.focus({preventScroll:true}); document.getElementById('l-add').requestSubmit(); }
+    else if(ev.target === campo) fechaN();
     return;
   }
   if(ev.key === 'Enter' && document.getElementById('xc') && (ev.ctrlKey || ev.metaKey || ['xc-n','xc-e'].includes(ev.target.id)) && !ev.altKey && !ev.shiftKey && !ev.isComposing){
