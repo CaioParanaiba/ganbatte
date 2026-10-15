@@ -53,7 +53,8 @@ No Windows, um jeito fácil de abrir o terminal na pasta certa: abra a pasta no 
 digite `cmd` e aperte Enter.
 
 O navegador abre sozinho em **http://127.0.0.1:8642/**. Na primeira vez aparece um assistente que pergunta seu nome,
-as tags, os hábitos e as disciplinas do semestre, e no fim oferece um tour por cada aba.
+mostra como o jogo funciona e os 6 tipos de Nen, pergunta os hábitos e se você tem matérias (elas se cadastram depois,
+na aba Chefões, à mão ou com a IA), e no fim oferece um tour por cada aba.
 
 **Deixe a janela do terminal aberta enquanto joga.** Para parar, aperte `Ctrl+C` nela. Para jogar de novo, rode o mesmo
 comando.

@@ -1,4 +1,5 @@
-/* Ganbatte · guia: o assistente da primeira entrada (nome, nickname, tags, disciplinas) e o tutorial de cada aba.
+/* Ganbatte · guia: o assistente da primeira entrada (licença, o ciclo, os 6 tipos, hábitos, matérias), o editor de disciplinas,
+ * a aba Chefões vazia e o tutorial de cada aba.
  * Carregado depois do script da página: usa CTX, EST, NEN, HOJE, tab, render, post, recarrega, esc, ic, NC, salvaUI.
  * O assistente grava por POST /api/config {jogador, avaliacoes}; o tutorial lembra as abas já vistas em estado.json (tour).
  */
@@ -28,14 +29,76 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .wz-card{border:1px solid var(--hair);border-radius:12px;padding:12px;background:var(--panel2);display:flex;flex-direction:column;gap:4px}
 .wz-card b{font:700 14px var(--f-hud);display:flex;gap:8px;align-items:center}
 .wz-card span{font-size:13px;color:var(--soft)}
-.wz-tags{display:flex;flex-direction:column;gap:8px}
-.wz-tag{display:grid;grid-template-columns:150px minmax(0,1fr) 160px;gap:6px 14px;align-items:center;border:1px solid var(--hair);border-left:4px solid var(--c);border-radius:12px;padding:10px 12px;background:var(--panel2)}
-.wz-tag .nm b{display:block;font:700 14px var(--f-hud)} .wz-tag .nm small{font:600 11px var(--f-mono);color:var(--c)}
-.wz-tag .es{font-size:13px;color:var(--soft)} .wz-tag .es b{color:var(--ink);font-weight:600}
-.wz-tag code{grid-column:2/4;font:12px var(--f-mono);color:var(--soft);background:var(--panel);border-radius:6px;padding:3px 8px;overflow-wrap:anywhere}
-.wz-tag .fixo{font:600 13px var(--f-mono);color:var(--soft)}
+.wz-bg .wz-sm{font-size:13px}
+/* licença (passos 1 e 6): visual seco, só borda, tipografia e o 念 de fundo; o carimbo é a única animação */
+.wz-lic{width:100%;max-width:360px;aspect-ratio:1.586;border-radius:14px;border:1.5px solid var(--volt);background:var(--panel2);position:relative;overflow:hidden;
+  display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto 1fr auto;gap:8px 14px;padding:14px 16px}
+.wz-lic .lic-kj{position:absolute;right:-6px;bottom:-24px;font:700 120px/1 "Noto Serif JP",serif;color:color-mix(in srgb,var(--volt) 10%,transparent);pointer-events:none}
+.wz-lic .lic-lt{grid-column:1/-1;display:flex;justify-content:space-between;font:600 10.5px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--volt)}
+.wz-lic .lic-ph{width:74px;height:92px;border-radius:8px;border:1px solid var(--hair);background:var(--panel) center/cover}
+.wz-lic .lic-dd{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wz-lic .lic-dd b{font:700 20px/1.1 var(--f-hud);overflow-wrap:anywhere} .wz-lic .lic-dd span{font:12px var(--f-mono);color:var(--soft);overflow-wrap:anywhere}
+.wz-lic dl{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;margin:8px 0 0;font:11.5px var(--f-mono)} .wz-lic dt{color:var(--faint)} .wz-lic dd{margin:0}
+.wz-lic .lic-lb{grid-column:1/-1;font:11px var(--f-mono);color:var(--faint);letter-spacing:.2em;overflow:hidden;white-space:nowrap}
+.wz-lic.carimbo{animation:wz-carimbo .7s cubic-bezier(.2,.9,.25,1.2) both}
+.wz-lic .lic-selo{position:absolute;right:14px;top:34px;font:700 11px var(--f-mono);letter-spacing:.12em;color:var(--grn);border:1.5px solid var(--grn);border-radius:6px;padding:2px 7px;transform:rotate(-8deg);animation:wz-selo .4s .55s both}
+@keyframes wz-carimbo{0%{transform:scale(1.25) rotate(-4deg);opacity:0}60%{transform:scale(.98) rotate(.5deg);opacity:1}100%{transform:none}}
+@keyframes wz-selo{from{opacity:0;transform:rotate(-8deg) scale(1.6)}to{opacity:1;transform:rotate(-8deg)}}
+@media (prefers-reduced-motion:reduce){.wz-lic.carimbo,.wz-lic .lic-selo{animation:none}}
+.wz-quem{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:20px;align-items:start}
+.wz-quem.wz-fim{grid-template-columns:minmax(0,340px) minmax(0,1fr);align-items:center}
+.wz-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+/* passo 2: o ciclo */
+.wz-loop{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1.3fr);gap:10px;align-items:stretch}
+.wz-loop .arr{align-self:center;font:700 18px var(--f-mono);color:var(--faint)}
+.wz-lp{border:1px solid var(--hair);border-radius:12px;padding:12px;background:var(--panel2);display:flex;flex-direction:column;gap:4px;min-width:0}
+.wz-lp .wz-k{font:600 10.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--volt)}
+.wz-lp b{font:700 15px var(--f-hud)} .wz-lp span{font-size:13px;color:var(--soft)}
+.wz-lp ul{margin:2px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--soft)} .wz-lp li b{font:600 13px var(--f-ui);color:var(--ink)}
+.wz-also{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.wz-also div{border-top:2px solid var(--c);padding-top:8px;font-size:13px;color:var(--soft);min-width:0} .wz-also div b{display:block;font:700 14px var(--f-hud);color:var(--ink)}
+.wz-cap{margin:0;font:600 11px var(--f-mono);color:var(--faint);letter-spacing:.12em;text-transform:uppercase}
+/* passo 3: o hexágono */
+.wz-hex{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr);gap:18px;align-items:center}
+.wz-hex svg{width:100%;height:auto;display:block}
+.wz-hex svg .g{fill:none;stroke:var(--hair);stroke-width:1}
+.wz-hex svg [data-wznen]{cursor:pointer} .wz-hex svg circle{stroke:var(--panel);stroke-width:3}
+.wz-hex svg text{font:600 10.5px var(--f-mono);fill:var(--soft)} .wz-hex svg .on text{fill:var(--ink);font-weight:800}
+.wz-tp{border:1px solid var(--hair);border-left:4px solid var(--c);border-radius:12px;padding:14px 16px;background:var(--panel2);display:flex;flex-direction:column;gap:8px;min-width:0}
+.wz-tp header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.wz-tp h4{margin:0;font:700 20px var(--f-hud);color:var(--c)} .wz-tp header span{font:600 12px var(--f-mono);color:var(--soft)}
+.wz-tp header em{margin-left:auto;font:700 13px var(--f-mono);font-style:normal}
+.wz-tp code{font:12px var(--f-mono);color:var(--soft);background:var(--panel);border-radius:6px;padding:3px 8px;overflow-wrap:anywhere}
+.wz-tp .no{font-size:12.5px;color:var(--faint)}
+.wz-nens{display:flex;gap:6px;flex-wrap:wrap}
+.wz-nens button{border:1.5px solid var(--hair);background:none;border-radius:99px;padding:3px 10px;cursor:pointer;font:600 12px var(--f-mono);color:var(--soft)}
+.wz-nens button[aria-pressed="true"]{border-color:var(--c);color:var(--c)}
+/* passo 4: hábitos e integrações */
+.wz-hb{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+.wz-pts{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--soft)} .wz-pts b{color:var(--ink);font-weight:600}
+.wz-ig{border:1px solid var(--hair);border-radius:12px;background:var(--panel2);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.wz-bg .wz-ig label.sw{flex-direction:row;gap:10px;align-items:center;font:14px var(--f-ui);color:var(--ink);letter-spacing:0;text-transform:none;cursor:pointer}
+.wz-ig label.sw b{font:700 14px var(--f-hud);display:block} .wz-ig label.sw small{display:block;font-size:12px;color:var(--soft)}
+.wz-ig label.sw input{margin-left:auto;width:18px;height:18px;accent-color:var(--grn)}
+.wz-ig > span{font-size:12.5px;color:var(--soft)} .wz-ig > span b{color:var(--ink)}
+/* passo 5: matérias */
+.wz-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.wz-op{border:1.5px solid var(--hair);border-radius:14px;padding:14px;background:var(--panel2);cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:6px;min-width:0;color:var(--ink);font:inherit}
+.wz-op b{font:700 15px var(--f-hud)} .wz-op span{font-size:13px;color:var(--soft)} .wz-op span b{font:600 13px var(--f-ui);color:var(--ink)}
+.wz-op[aria-pressed="true"]{border-color:var(--volt);background:color-mix(in srgb,var(--volt) 7%,var(--panel2))}
+/* aba Chefões vazia */
+.b2-vazio{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+.b2-vazio h3{margin:0 0 6px;font:700 22px var(--f-hud)} .b2-vazio p{margin:0 0 8px;color:var(--soft);font-size:14px} .b2-vazio p b{color:var(--ink)}
+.b2-ryo{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.b2-ryo i{width:34px;height:34px;border-radius:50%;border:1.5px dashed var(--faint);display:grid;place-items:center;font:700 12px var(--f-hud);color:var(--faint);font-style:normal}
+.b2-cam{display:flex;flex-direction:column;gap:8px}
+.b2-cam > div{border:1px solid var(--hair);border-radius:12px;padding:12px 14px;background:var(--panel2);display:flex;flex-direction:column;gap:6px}
+.b2-cam > div.rec{border-color:color-mix(in srgb,var(--volt) 50%,var(--hair))}
+.b2-cam b{font:700 14px var(--f-hud)} .b2-cam span{font-size:13px;color:var(--soft)}
+.b2-cam .bt{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .wz-disc{display:flex;flex-direction:column;gap:8px}
 .wz-row{display:grid;grid-template-columns:110px minmax(0,1fr) 150px 150px 34px;gap:8px;align-items:end}
+.wz-row.wz-hrow{grid-template-columns:minmax(0,1fr) 150px 34px}
 .wz-row .boss{grid-column:1/-1;font:12px var(--f-mono);color:var(--soft);margin-top:-2px}
 .wz-x{border:1px solid var(--hair);background:none;border-radius:9px;height:36px;cursor:pointer;color:var(--soft)} .wz-x:hover{color:var(--red);border-color:var(--red)}
 .wz-foot{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:14px 22px;border-top:1px solid var(--hair);flex-wrap:wrap}
@@ -43,7 +106,8 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .wz-av{display:flex;gap:10px;flex-wrap:wrap}
 .wz-av button{width:64px;height:64px;border-radius:50%;border:2px solid var(--hair);background:var(--panel2) center/cover;cursor:pointer;padding:0}
 .wz-av button[aria-pressed="true"]{border-color:var(--volt);box-shadow:0 0 0 3px color-mix(in srgb,var(--volt) 25%,transparent)}
-@media (max-width:720px){ .wz-f,.wz-cards{grid-template-columns:1fr} .wz-tag{grid-template-columns:1fr} .wz-tag code{grid-column:1} .wz-row{grid-template-columns:1fr 1fr} .wz-row .wz-x{grid-column:2} }
+@media (max-width:720px){ .wz-f,.wz-cards,.wz-quem,.wz-quem.wz-fim,.wz-also,.wz-hex,.wz-hb,.wz-opts,.b2-vazio{grid-template-columns:1fr} .wz-row{grid-template-columns:1fr 1fr} .wz-row .wz-x{grid-column:2} .wz-row.wz-hrow{grid-template-columns:minmax(0,1fr) 128px 34px} .wz-row.wz-hrow .wz-x{grid-column:auto}
+  .wz-steps{display:none} .wz-loop{grid-template-columns:1fr} .wz-loop .arr{justify-self:center;transform:rotate(90deg)} .wz-hex svg{max-width:280px;margin:0 auto} }
 
 .tr-hole{position:fixed;z-index:70;border-radius:14px;box-shadow:0 0 0 9999px rgba(8,10,16,.66);outline:2px solid var(--volt);pointer-events:none;transition:all .2s ease}
 .tr-pop{position:fixed;z-index:71;width:min(360px,calc(100vw - 32px));background:var(--panel);border:1px solid var(--volt);border-radius:14px;padding:14px 16px;box-shadow:0 20px 50px -20px rgba(0,0,0,.7)}
@@ -58,18 +122,18 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 
 /* ---------- assistente da primeira entrada ---------- */
 const TIPOS = [
-  {k:'ent', n:'Entrega',   c:5, pre:'@', ess:'um <b>trabalho seu que alguém cobra</b> ou avalia: lista entregue, trabalho, atividade no sistema da faculdade, relatório do estágio. Ter prazo não basta.', ex:'Entregar a lista 3 de derivadas +fac.CALC2 {tag} due:sexta', xp:25},
-  {k:'est', n:'Estudo',    c:0, pre:'@', ess:'tempo de <b>aprender</b>: revisar, ler, resumir, fazer exercícios. Ninguém cobra, mas é o que prepara a prova. Tarefa só com a disciplina já é estudo.', ex:'Revisar integrais por partes +fac.CALC2 {tag}', xp:15},
-  {k:'tre', n:'Treino', c:1, pre:'+', ess:'<b>prática de programação fora da matéria</b>: Codeforces, contest, LeetCode, upsolve.', ex:'Virtual contest no Codeforces {tag}', xp:10},
-  {k:'pro', n:'Projeto', c:2, pre:'+', ess:'<b>criar algo seu</b>, fora da matéria: o seu app, site ou bot, ajudar num projeto (como o próprio Ganbatte).', ex:'Fazer a página inicial do meu site {tag}', xp:10},
-  {k:'hab', n:'Hábito',    c:4, pre:'+', ess:'o que se <b>repete todo dia</b>: digitação, leitura, exercício. Vale metade, mas mantém o Ten.', ex:'Treino de digitação {tag}', xp:5},
+  {k:'ent', n:'Entrega',   c:5, pre:'@', ess:'um <b>trabalho seu que alguém cobra</b> ou avalia: lista entregue, trabalho, atividade no sistema da faculdade, relatório do estágio. Ter prazo não basta.', ex:'Entregar a lista 3 de derivadas +fac.CALC2 {tag} due:sexta', xp:25, no:'Pagar um boleto tem prazo, mas ninguém avalia: é vida.'},
+  {k:'est', n:'Estudo',    c:0, pre:'@', ess:'tempo de <b>aprender</b>: revisar, ler, resumir, fazer exercícios. Ninguém cobra, mas é o que prepara a prova. Tarefa só com a disciplina já é estudo.', ex:'Revisar integrais por partes +fac.CALC2 {tag}', xp:15, no:'Entregar a lista não é estudo: alguém cobra, então é entrega.'},
+  {k:'tre', n:'Treino', c:1, pre:'+', ess:'<b>prática de programação fora da matéria</b>: Codeforces, contest, LeetCode, upsolve.', ex:'Virtual contest no Codeforces {tag}', xp:10, no:'O trabalho prático de uma disciplina não é treino: é entrega.'},
+  {k:'pro', n:'Projeto', c:2, pre:'+', ess:'<b>criar algo seu</b>, fora da matéria: o seu app, site ou bot, ajudar num projeto (como o próprio Ganbatte).', ex:'Fazer a página inicial do meu site {tag}', xp:10, no:'O projeto final de uma disciplina é entrega: alguém avalia.'},
+  {k:'hab', n:'Hábito',    c:4, pre:'+', ess:'o que se <b>repete todo dia</b>: digitação, leitura, exercício. Vale metade, mas mantém o Ten.', ex:'Treino de digitação {tag}', xp:5, no:'Tem data (aluguel todo dia 1)? Não é hábito: é uma tarefa que repete.'},
   {k:'vid', n:'Vida',      c:3, pre:'',  ess:'<b>todo o resto</b>: casa, família, saúde, documentos. Sem tag nenhuma.', ex:'Renovar a carteirinha do RU', xp:10, fixo:'sem tag'},
 ];
 const RYODAN = [['Chrollo','crown','O líder: rouba a técnica dos outros.'],['Feitan','spider','Rápido e cruel nos detalhes.'],['Machi','thread','Costura tudo com fios de Nen.'],
   ['Nobunaga','bullet','Um corte só, se você entrar no alcance.'],['Uvogin','horn','Força bruta: só cai com treino.'],['Shalnark','antenna','Controla tudo por antenas.'],
   ['Shizuku','vacuum','Aspira qualquer coisa e esquece o resto.'],['Kortopi','copy','Copia tudo, mas a cópia some.'],['Franklin','bullet','Rajada sem fim de exercícios.'],
   ['Phinks','wing','Cada giro do braço bate mais forte.'],['Pakunoda','spider','Lê as memórias: sabe o que você não estudou.'],['Bonolenov','cat','O som da batalha.']];
-const W = {editar:false, passo:0, nome:'', nick:'', av:'logo', tags:{}, habs:[], hid:[], cfOn:false, cfH:'', cfM:3, disc:[], ini:'', fim:'', p1:40, p2:60, err:''};
+const W = {editar:false, passo:0, nome:'', nick:'', av:'logo', tags:{}, habs:[], hid:[], cfOn:false, cfH:'', cfM:3, disc:[], ini:'', fim:'', p1:40, p2:60, err:'', nen:0, mat:'depois'};
 /* frequência do hábito: 0 = todo dia; 1 a 6 = vezes por semana (seg a dom) */
 const freqSel = (attr, v) => `<select ${attr} aria-label="Frequência">${[0,1,2,3,4,5,6].map(n => `<option value="${n}"${+v === n ? ' selected' : ''}>${n ? n + '× por semana' : 'todo dia'}</option>`).join('')}</select>`;
 /* id do hábito: o que ele já tinha, mesmo com o nome mudado (renomear não zera o nível nem o histórico); hábito novo: pelo nome,
@@ -109,65 +173,116 @@ function meio(a, b, f){ const x = new Date(a + 'T12:00:00Z'), y = new Date(b + '
 function iniciaW(){
   const j = CTX.JOG || {};
   const [ini, fim] = j.semestre ? [j.semestre.ini, j.semestre.fim] : semestrePadrao();
-  Object.assign(W, {passo:0, nome: j.nome && j.nome !== 'Hunter' ? j.nome : '', nick: j.nick || '', av: UI.avatar || 'logo', ini, fim, err:''});
+  Object.assign(W, {passo:0, nome: j.nome && j.nome !== 'Hunter' ? j.nome : '', nick: j.nick || '', av: UI.avatar || 'logo', ini, fim, err:'', nen:0, mat: j.materias || 'depois'});
   for(const t of TIPOS) if(!t.fixo) W.tags[t.k] = tagPadrao(t.k);
   W.habs = (j.habitos && j.habitos.length ? j.habitos.map(h => h.n) : ['Treino de digitação', 'Leitura (20 min)', 'Academia']);
   W.hf = (j.habitos && j.habitos.length ? j.habitos.map(h => h.semana || 0) : [0, 0, 2]);
   W.hid = (j.habitos || []).map(h => h.id);
   W.cfOn = !!(j.cf && j.cf.handle); W.cfH = (j.cf && j.cf.handle) || ''; W.cfM = (j.cf && j.cf.meta) || 3;
   W.duoOn = !!(j.duo && j.duo.usuario); W.duoU = (j.duo && j.duo.usuario) || '';
-  W.disc = (j.disciplinas && j.disciplinas.length ? j.disciplinas : [{d:'', n:''}, {d:'', n:''}]).map(d => ({...d, n1: d.n1 || meio(ini, fim, .45), n2: d.n2 || meio(ini, fim, .95)}));
+  /* a primeira entrada não pede disciplinas (#127): elas vão na aba Chefões; as que já existirem no jogador.json continuam */
+  W.disc = (j.disciplinas || []).map(d => ({...d, n1: d.n1 || meio(ini, fim, .45), n2: d.n2 || meio(ini, fim, .95)}));
 }
-const PASSOS_1 = ['Quem é você', 'Como o jogo funciona', 'Tipos de tarefa', 'Hábitos', 'Disciplinas', 'Pronto'];
+const PASSOS_1 = ['Quem é você', 'Como funciona', 'Os 6 tipos', 'Hábitos', 'Matérias', 'Licença'];
 let PASSOS = PASSOS_1;
+const nHabs = () => W.habs.filter(Boolean).length + (W.cfOn ? 1 : 0) + (W.duoOn ? 1 : 0);
+/* a licença: monta-se ao vivo no passo 1 e volta carimbada no último */
+function licHTML(carimbo){
+  const nm = W.nome || 'Hunter', src = (W.av === 'logo' ? LOGO : avSrc(W.av)).replace(/'/g, '%27');
+  return `<div class="wz-lic${carimbo ? ' carimbo' : ''}" id="wz-lic"><span class="lic-kj" aria-hidden="true">念</span>
+    <div class="lic-lt"><span>Licença Hunter</span><span>Ganbatte</span></div>
+    <div class="lic-ph" style="background-image:url('${src}')"></div>
+    <div class="lic-dd"><b>${esc(nm)}</b><span>@${esc(W.nick || 'nickname')}</span>
+      <dl><dt>andar</dt><dd>1 de 251</dd>${carimbo ? `<dt>hábitos</dt><dd>${nHabs()}</dd>` : ''}<dt>emitida</dt><dd>${GB.brData(HOJE)}</dd></dl></div>
+    <div class="lic-lb" aria-hidden="true">${esc('<<GANBATTE<<' + nm.toUpperCase().replace(/\s+/g, '<') + '<'.repeat(24))}</div>
+    ${carimbo ? '<span class="lic-selo">APROVADO</span>' : ''}</div>`;
+}
+/* os 6 tipos na ordem do hexágono (GBx.NEN): o tipo de tarefa de cada um; Manipulação é explicada pelos hábitos marcados */
+function tipoNen(i){
+  if(i === 4) return {ess:'os <b>hábitos</b> que você marca na Lista (próximo passo). Cada um sobe de nível com os dias seguidos.', xp:'3 a 12', ex:['Leitura (20 min) · todo dia', 'Academia · 2× por semana'],
+    no:TIPOS.find(t => t.k === 'hab').no};
+  const t = TIPOS.find(t => t.c === i);
+  return {ess:t.ess, xp:t.xp, ex:[t.ex.replace('{tag}', t.fixo ? '' : W.tags[t.k] || '').trim()], no:t.no};
+}
+function hexHTML(){
+  const R = 88, pt = (i, k) => { const a = -Math.PI/2 + i*Math.PI/3; return [Math.cos(a)*R*k, Math.sin(a)*R*k]; };
+  const pol = k => [0,1,2,3,4,5].map(i => pt(i, k).map(n => n.toFixed(1)).join(',')).join(' ');
+  let s = `<svg viewBox="-150 -122 300 244" aria-hidden="true">`;
+  for(const k of [.33,.66,1]) s += `<polygon class="g" points="${pol(k)}"/>`;
+  for(let i = 0; i < 6; i++){ const p = pt(i, 1); s += `<line class="g" x1="0" y1="0" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}"${i === W.nen ? ` style="stroke:${NC(i)};stroke-width:2"` : ''}/>`; }
+  NEN.forEach((x, i) => { const p = pt(i, 1), q = pt(i, 1.2), an = Math.abs(q[0]) < 4 ? 'middle' : q[0] > 0 ? 'start' : 'end', y = q[1] + (q[1] > 4 ? 10 : q[1] < -4 ? -2 : 4);
+    s += `<g data-wznen="${i}"${i === W.nen ? ' class="on"' : ''}><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i === W.nen ? 9 : 7}" style="fill:${NC(i)}"/>
+      <text x="${q[0].toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${an}">${esc(x.c)}</text></g>`; });
+  const t = tipoNen(W.nen), n = NEN[W.nen];
+  return `<div class="wz-hex">${s}</svg>
+    <div class="wz-tp" style="--c:${NC(W.nen)}"><header><h4>${n.n}</h4><span>${esc(n.c)}</span><em>${t.xp} XP</em></header>
+      <p>${t.ess[0].toUpperCase() + t.ess.slice(1)}</p>${t.ex.map(e => `<code>${esc(e)}</code>`).join('')}${t.no ? `<p class="no">${t.no}</p>` : ''}</div></div>
+    <div class="wz-nens" role="group" aria-label="tipos de Nen">${NEN.map((x, i) => `<button type="button" data-wznen="${i}" aria-pressed="${i === W.nen}" style="--c:${NC(i)}">${x.n}</button>`).join('')}</div>`;
+}
 function passoHTML(){
-  const p = W.editar ? 4 : W.passo;
+  if(W.editar) return discHTML();
+  const p = W.passo;
   if(p === 0) return `<h3>Bem-vindo à Associação Hunter</h3>
-    <p>O Ganbatte transforma a sua lista de tarefas num jogo. Você continua anotando e concluindo tarefas; o jogo calcula o resto: andares, chefões, sequência de dias e moedas para a loja.</p>
-    <div class="wz-f">
-      <label>Nome<input id="wz-nome" value="${esc(W.nome)}" placeholder="ex.: Gon Freecss" maxlength="40"><small class="h">Aparece na sua ficha.</small></label>
-      <label>Nickname<input id="wz-nick" value="${esc(W.nick)}" placeholder="ex.: gon" maxlength="20"><small class="h">Letras, números e _. É como os outros te veem no placar do grupo (Torre Trick).</small></label>
-    </div>
-    <label>Foto de perfil</label>
-    <div class="wz-av">${['logo'].concat((CTX.AVATARES||[]).filter(a => GBx.catalogo([a]).slice(-1)[0].p === 0)).map(a => `<button type="button" data-wzav="${a}" aria-pressed="${W.av === a}" style="background-image:url('${(a === 'logo' ? LOGO : avSrc(a)).replace(/'/g, '%27')}')" title="${a === 'logo' ? 'Emblema' : esc(GBx.catalogo([a]).slice(-1)[0].n)}"></button>`).join('')}</div>
-    <p style="font-size:13px">As outras fotos estão na Masadora, a loja do jogo.</p>`;
+    <div class="wz-quem"><div class="wz-col">
+      <p>Você anota e conclui tarefas; o jogo transforma isso em andares, chefões e moedas para a loja. Primeiro, a sua licença.</p>
+      <div class="wz-f">
+        <label>Nome<input id="wz-nome" value="${esc(W.nome)}" placeholder="ex.: Gon Freecss" maxlength="40"><small class="h">Aparece na sua licença.</small></label>
+        <label>Nickname<input id="wz-nick" value="${esc(W.nick)}" placeholder="ex.: gon" maxlength="20"><small class="h">Letras, números e _. É como o grupo te vê na Torre Trick.</small></label>
+      </div>
+      <label>Foto de perfil</label>
+      <div class="wz-av">${['logo'].concat((CTX.AVATARES||[]).filter(a => GBx.catalogo([a]).slice(-1)[0].p === 0)).map(a => `<button type="button" data-wzav="${a}" aria-pressed="${W.av === a}" style="background-image:url('${(a === 'logo' ? LOGO : avSrc(a)).replace(/'/g, '%27')}')" title="${a === 'logo' ? 'Emblema' : esc(GBx.catalogo([a]).slice(-1)[0].n)}"></button>`).join('')}</div>
+      <p class="wz-sm">As outras fotos estão na Masadora, a loja do jogo.</p></div>
+    <div class="wz-col">${licHTML(false)}<p class="wz-sm">Ela é carimbada no último passo.</p></div></div>`;
   if(p === 1) return `<h3>Como o jogo funciona</h3>
-    <p>Seis peças. Nenhuma delas pune: XP não se perde, e nota baixa vira bônus.</p>
-    <div class="wz-cards">
-      <div class="wz-card"><b>${ic('tower')} Arena Celestial</b><span>Cada tarefa concluída dá <b>XP</b>, e o XP sobe andares (são 251). A torre zera no fim do semestre.</span></div>
-      <div class="wz-card"><b>${ic('spider')} Chefões</b><span>Cada disciplina é um chefão. A <b>vida dele é a sua nota</b>: cada avaliação tira pontos, e média 6 derruba. Tarefa não derruba chefão, mas prepara a prova.</span></div>
-      <div class="wz-card"><b>${ic('flame')} Ten</b><span>Dias seguidos com pelo menos uma tarefa feita (hábito sozinho não conta). O <b>Zetsu</b> é uma folga guardada: um dia vazio não quebra a sequência.</span></div>
-      <div class="wz-card"><b>${ic('int')} Tipos de Nen</b><span>Cada tarefa treina um dos 6 tipos. O mais fraco vira a <b>missão da semana</b>: as tarefas dele valem ×1,5.</span></div>
-      <div class="wz-card"><b>${ic('coin')} Jenny e Masadora</b><span>XP também vira <b>Jenny</b>, a moeda da loja: fotos, cores, efeitos e prêmios reais que você mesmo define.</span></div>
-      <div class="wz-card"><b>${ic('card')} Feitiços e cartas</b><span>Terminar a preparação de uma prova antes da data dá um <b>feitiço</b>. Conquistas viram cartas no Book.</span></div>
-    </div>`;
-  if(p === 2) return `<h3>Tipos de tarefa e tags</h3>
-    <p>No todo.txt, uma <b>tag</b> é uma palavra com <b>@</b> ou <b>+</b> na tarefa. É ela que diz o tipo, e o tipo decide o XP e o Nen que a tarefa treina. Você pode trocar o nome das tags, desde que cada uma continue querendo dizer a mesma coisa. Na Lista você nem precisa digitar: escolhe o tipo num botão.</p>
-    <div class="wz-tags">${TIPOS.map(t => { const tag = t.fixo ? '' : W.tags[t.k]; return `<div class="wz-tag" style="--c:${NC(t.c)}">
-      <span class="nm"><b>${t.n}</b><small>${NEN[t.c].n} · ${t.xp} XP</small></span>
-      <span class="es">${t.ess}</span>
-      ${t.fixo ? `<span class="fixo">${t.fixo}</span>` : `<input id="wz-tag-${t.k}" value="${esc(tag)}" aria-label="Tag de ${t.n}" maxlength="24">`}
-      <code>exemplo: ${esc(t.ex.replace('{tag}', tag || ''))}</code></div>`; }).join('')}</div>
-    <p style="font-size:13px">Bônus: <b>×1,5</b> se concluir até o prazo (<span class="mono">due:</span>), ×1,5 na missão da semana e ×1,5 no chefão em fúria.</p>`;
-  if(p === 3) return `<h3>Hábitos</h3>
-    <p>Hábitos são o que você quer fazer <b>todo dia</b> ou <b>algumas vezes por semana</b> (ex.: academia 2× por semana). Eles aparecem sozinhos na Lista, você marca à mão quando fizer, e cada um tem o seu <b>nível</b>: começa valendo 3 XP e sobe até 12 com os dias seguidos (falhar cai um nível). Hábito não acende o Ten sozinho. O semanal aparece todo dia até você cumprir a meta da semana (seg a dom), e o heatmap dele conta por semana. Tem <b>data</b> (pagar o aluguel todo dia 1, trocar a escova a cada 3 meses)? Não é hábito: é uma <b>tarefa que repete</b>, criada na Lista em <b>detalhes → repete</b>; ela fica atrasada se passar da data, e concluir cria a próxima.</p>
-    <div class="wz-disc">${W.habs.map((h,i) => `<div class="wz-row" style="grid-template-columns:minmax(0,1fr) 150px 34px"><label>Hábito ${i + 1}<input id="wz-h-${i}" value="${esc(h)}" placeholder="ex.: Treino de digitação" maxlength="40"></label><label>Frequência${freqSel(`id="wz-hf-${i}"`, W.hf[i])}</label><button type="button" class="wz-x" data-wzhdel="${i}" aria-label="remover hábito">✕</button></div>`).join('')}</div>
-    <div><button type="button" class="btn" data-wzhadd>+ hábito</button></div>
-    <div class="wz-card" style="gap:10px">
-      <b>${ic('tra')} Codeforces</b>
-      <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink)"><input type="checkbox" id="wz-cf"${W.cfOn ? ' checked' : ''}> Quero contar os problemas do Codeforces</label>
-      <div class="wz-f"><label>Handle do Codeforces<input id="wz-cfh" value="${esc(W.cfH)}" placeholder="ex.: tourist" maxlength="24"${W.cfOn ? '' : ' disabled'}></label>
-        <label>Meta por dia<input id="wz-cfm" inputmode="numeric" value="${W.cfM}"${W.cfOn ? '' : ' disabled'}></label></div>
-      <span>Ele não se marca à mão: o jogo consulta o Codeforces e conta os problemas <b>aceitos</b> no dia (+5 XP cada, até 6). Bater a meta dá +10 e um heatmap só dele.</span>
+    <div class="wz-loop">
+      <div class="wz-lp"><span class="wz-k">você</span><b>Conclui uma tarefa</b><span>Na Lista, como em qualquer app de tarefas.</span></div>
+      <span class="arr" aria-hidden="true">→</span>
+      <div class="wz-lp"><span class="wz-k">o jogo</span><b>Dá XP</b><span>Quanto, depende do tipo da tarefa. No prazo, vale mais.</span></div>
+      <span class="arr" aria-hidden="true">→</span>
+      <div class="wz-lp"><span class="wz-k">o XP vira</span><ul><li><b>andares</b> na Arena Celestial</li><li><b>Jenny</b> para gastar na loja</li><li><b>Nen</b> no tipo da tarefa</li></ul></div>
     </div>
-    <div class="wz-card" style="gap:10px">
-      <b>${ic('scroll')} Duolingo</b>
-      <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink)"><input type="checkbox" id="wz-duo"${W.duoOn ? ' checked' : ''}> Quero contar os dias de Duolingo</label>
-      <div class="wz-f"><label>Usuário do Duolingo<input id="wz-duou" value="${esc(W.duoU)}" placeholder="o nome do seu perfil" maxlength="40"${W.duoOn ? '' : ' disabled'}></label></div>
-      <span>Só o usuário, <b>sem senha</b>: o jogo lê a ofensiva do seu perfil e marca sozinho o hábito no dia em que você faz a lição (vale XP pelo nível, como os outros hábitos). O dia salvo pelo bloqueio de ofensiva não conta. Ao ligar, os dias da ofensiva atual desde o início da temporada entram no heatmap e nas conquistas, sem XP.</span>
-    </div>`;
-  if(p === 4) return `<h3>Disciplinas do semestre</h3>
-    <p>Cada disciplina vira um chefão do Genei Ryodan. Por enquanto, toda matéria tem duas avaliações: <b>N1</b> e <b>N2</b>. Depois você pode detalhar (provas, listas, trabalhos) no arquivo <span class="mono">avaliacoes.txt</span>.</p>
+    <p class="wz-cap">e também</p>
+    <div class="wz-also">
+      <div style="--c:${NC(3)}"><b>Ten</b>Dias seguidos com tarefa feita. Uma folga guardada (Zetsu) segura um dia vazio.</div>
+      <div style="--c:var(--red)"><b>Chefões</b>Se você estuda, cada matéria vira um chefão, e a vida dele é a sua nota.</div>
+      <div style="--c:${NC(4)}"><b>Cartas</b>Conquistas viram cartas no Book, sem você precisar marcar nada.</div>
+    </div>
+    <p class="wz-sm">Nada pune: XP não se perde, e nota baixa vira bônus.</p>`;
+  if(p === 2) return `<h3>Os 6 tipos de Nen</h3>
+    <p>Cada tarefa treina um dos 6 tipos. O hexágono da Arena mostra o seu perfil, e o tipo mais fraco vira a <b>missão da semana</b>: as tarefas dele valem ×1,5. Clique num tipo.</p>
+    ${hexHTML()}
+    <p class="wz-sm">Na Lista você escolhe o tipo num botão, e o jogo sugere sozinho. As tags (${['ent','est','tre','pro'].map(k => `<span class="mono">${esc(W.tags[k])}</span>`).join(', ')}) dá para mudar em <b>Configurações</b>.</p>`;
+  if(p === 3) return `<h3>Hábitos</h3>
+    <div class="wz-hb"><div class="wz-col">
+      <ul class="wz-pts"><li>O que você quer fazer <b>todo dia</b> ou <b>algumas vezes por semana</b>.</li>
+        <li>Aparecem sozinhos na Lista; você marca quando fizer. Cada um sobe de <b>nível</b> com os dias seguidos (falhar desce um).</li>
+        <li>Tem data (aluguel todo dia 1)? Não é hábito: é uma <b>tarefa que repete</b>, em detalhes → repete.</li></ul>
+      <div class="wz-disc">${W.habs.map((h,i) => `<div class="wz-row wz-hrow"><label>Hábito ${i + 1}<input id="wz-h-${i}" value="${esc(h)}" placeholder="ex.: Treino de digitação" maxlength="40"></label><label>Frequência${freqSel(`id="wz-hf-${i}"`, W.hf[i])}</label><button type="button" class="wz-x" data-wzhdel="${i}" aria-label="remover hábito">✕</button></div>`).join('')}</div>
+      <div><button type="button" class="btn" data-wzhadd>+ hábito</button></div></div>
+    <div class="wz-col"><p class="wz-cap">contam sozinhos</p>
+      <div class="wz-ig"><label class="sw" for="wz-cf"><span><b>Codeforces</b><small>problemas aceitos no dia</small></span><input type="checkbox" id="wz-cf"${W.cfOn ? ' checked' : ''}></label>
+        ${W.cfOn ? `<div class="wz-f"><label>Handle<input id="wz-cfh" value="${esc(W.cfH)}" placeholder="ex.: tourist" maxlength="24"></label><label>Meta por dia<input id="wz-cfm" inputmode="numeric" value="${W.cfM}"></label></div>
+        <span>Conta os problemas <b>aceitos</b> no dia (+5 XP cada, até 6). Bater a meta dá +10.</span>` : ''}</div>
+      <div class="wz-ig"><label class="sw" for="wz-duo"><span><b>Duolingo</b><small>a ofensiva do seu perfil</small></span><input type="checkbox" id="wz-duo"${W.duoOn ? ' checked' : ''}></label>
+        ${W.duoOn ? `<label>Usuário do Duolingo<input id="wz-duou" value="${esc(W.duoU)}" placeholder="o nome do seu perfil" maxlength="40"></label>
+        <span>Só o usuário, <b>sem senha</b>: o jogo lê a ofensiva e marca o hábito no dia em que você faz a lição.</span>` : ''}</div>
+    </div></div>`;
+  if(p === 4) return `<h3>Você tem matérias neste semestre?</h3>
+    <p>Se você estuda, <b>cada matéria vira um chefão</b> do Genei Ryodan, e a vida dele é a sua nota. Não precisa cadastrar nada agora.</p>
+    <div class="wz-opts">${[['depois','Sim, configuro depois','Na aba <b>Chefões</b>, com calma. Com uma IA ligada, ela lê o plano de ensino e monta as avaliações.'],
+      ['agora','Sim, quero fazer agora','Ao terminar, a aba Chefões abre direto no cadastro das matérias.'],
+      ['nao','Não estudo agora','A aba Chefões fica lá, vazia, para quando você quiser.']].map(([k, t, d]) =>
+      `<button type="button" class="wz-op" data-wzmat="${k}" aria-pressed="${W.mat === k}"><b>${t}</b><span>${d}</span></button>`).join('')}</div>`;
+  return `<h3>Licença emitida</h3>
+    <div class="wz-quem wz-fim">${licHTML(true)}<div class="wz-col">
+      <p>Tudo pronto, <b>${esc(W.nome.split(' ')[0] || 'Hunter')}</b>. Você começa no andar 1 da Arena Celestial, com ${nHabs()} hábito${nHabs() === 1 ? '' : 's'}.</p>
+      <p>${W.mat === 'agora' ? 'Ao começar, a aba <b>Chefões</b> abre no cadastro das matérias. Depois, anote as tarefas na <b>Lista</b> e veja a torre subir.' : 'Anote a primeira tarefa na <b>Lista</b>, conclua, e veja a torre subir.'}</p>
+      <p>O tutorial mostra o que cada bloco de cada aba quer dizer. Dá para rever a qualquer hora pelo botão <b>? tutorial</b>.</p></div></div>`;
+}
+/* editor de disciplinas (aba Chefões e Configurações; não faz mais parte da primeira entrada) */
+function discHTML(){
+  return `<h3>Disciplinas do semestre</h3>
+    <p>Cada disciplina vira um chefão do Genei Ryodan. Adicione, renomeie ou remova disciplinas e ajuste as datas da N1 e da N2; o plano completo (provas, listas, trabalhos) fica no editor de cada chefão, à mão ou com a IA. As notas já registradas continuam valendo enquanto a sigla for a mesma.</p>
     <div class="wz-f" style="grid-template-columns:repeat(4,minmax(0,1fr))">
       <label>Início do semestre<input class="dt" inputmode="numeric" maxlength="10" placeholder="${GB.fmtTxt()}" id="wz-ini" value="${GB.brData(W.ini)}"></label>
       <label>Fim do semestre<input class="dt" inputmode="numeric" maxlength="10" placeholder="${GB.fmtTxt()}" id="wz-fim" value="${GB.brData(W.fim)}"></label>
@@ -183,47 +298,28 @@ function passoHTML(){
       <button type="button" class="wz-x" data-wzdel="${i}" title="remover" aria-label="remover disciplina">✕</button>
       <span class="boss">chefão: ${r[0]} · ${esc(r[2])}${d.notas ? ` · <b style="color:var(--amb)">${d.notas} nota(s) registrada(s)</b>` : ''}</span></div>`; }).join('')}</div>
     <div><button type="button" class="btn" data-wzadd>+ disciplina</button></div>
-    <p style="font-size:13px">A sigla vira a tag da disciplina: <span class="mono">+fac.SIGLA</span>. Não sabe a data da prova ainda? Deixe a sugerida e ajuste quando souber.</p>`;
-  return `<h3>Tudo pronto, ${esc(W.nome.split(' ')[0] || 'Hunter')}</h3>
-    <p>Você começa no andar 1, com a paleta Simples, ${W.disc.filter(d => d.d).length} chefões pela frente e ${W.habs.filter(Boolean).length + (W.cfOn ? 1 : 0)} hábitos. Anote as tarefas na <b>Lista</b>, conclua, e veja a Arena subir.</p>
-    <p>Quer um tour rápido? Ele mostra o que cada bloco de cada aba quer dizer. Dá para rever a qualquer hora pelo botão <b>? tutorial</b>.</p>`;
+    <p class="wz-sm">A sigla vira a tag da disciplina: <span class="mono">+fac.SIGLA</span>. Não sabe a data da prova ainda? Deixe a sugerida e ajuste quando souber.</p>`;
 }
 function coleta(){
   const v = id => { const e = document.getElementById(id); return e ? e.value : null; };
-  if(W.editar){}
-  else if(W.passo === 0){ W.nome = (v('wz-nome')||'').trim(); W.nick = (v('wz-nick')||'').trim().toLowerCase(); }
-  if(!W.editar && W.passo === 2) for(const t of TIPOS) if(!t.fixo) W.tags[t.k] = limpaTag(t.k, v('wz-tag-' + t.k));
-  if(!W.editar && W.passo === 3){
-    W.habs = W.habs.map((h,i) => (v('wz-h-' + i) || '').trim()); W.hf = W.habs.map((h,i) => +(v('wz-hf-' + i) || 0));
-    const cf = document.getElementById('wz-cf'); W.cfOn = !!(cf && cf.checked); W.cfH = (v('wz-cfh') || '').trim(); W.cfM = parseInt(v('wz-cfm')) || 0;
-    const duo = document.getElementById('wz-duo'); W.duoOn = !!(duo && duo.checked); W.duoU = (v('wz-duou') || '').trim().replace(/^@/, '');
-  }
-  if(W.passo === 4 || W.editar){
+  if(W.editar){
     const dt = (id, antes) => { const x = v(id); if(x == null) return antes; const r = GB.isoData(x, HOJE); if(!r) W.dtRuim = x; return r || antes; };
     W.dtRuim = '';
     W.ini = dt('wz-ini', W.ini); W.fim = dt('wz-fim', W.fim); W.p1 = +v('wz-p1') || 0; W.p2 = +v('wz-p2') || 0;
     W.disc = W.disc.map((d,i) => ({...d, d:(v('wz-d-'+i)||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,''), n:(v('wz-n-'+i)||'').trim(), n1:dt('wz-n1-'+i, d.n1), n2:dt('wz-n2-'+i, d.n2)}));
+    return;
+  }
+  if(W.passo === 0){ W.nome = (v('wz-nome')||'').trim(); W.nick = (v('wz-nick')||'').trim().toLowerCase(); }
+  if(W.passo === 3){
+    W.habs = W.habs.map((h,i) => (v('wz-h-' + i) || '').trim()); W.hf = W.habs.map((h,i) => +(v('wz-hf-' + i) || 0));
+    const cf = document.getElementById('wz-cf'); W.cfOn = !!(cf && cf.checked);
+    if(v('wz-cfh') != null){ W.cfH = v('wz-cfh').trim(); W.cfM = parseInt(v('wz-cfm')) || 0; }   // desligado, os campos somem, mas o que foi digitado fica
+    const duo = document.getElementById('wz-duo'); W.duoOn = !!(duo && duo.checked);
+    if(v('wz-duou') != null) W.duoU = v('wz-duou').trim().replace(/^@/, '');
   }
 }
 function valida(){
-  if(!W.editar && W.passo === 0){
-    if(!W.nome) return 'Escreva o seu nome.';
-    if(!/^[a-z0-9_]{2,20}$/.test(W.nick)) return 'O nickname precisa de 2 a 20 letras, números ou _.';
-  }
-  if(!W.editar && W.passo === 2){
-    const vs = Object.values(W.tags);
-    if(vs.some(x => !x)) return 'Toda tag precisa de um nome.';
-    if(new Set(vs).size !== vs.length) return 'Duas tags estão com o mesmo nome.';
-    if(vs.some(x => /^\+fac\./.test(x))) return '+fac. é reservado para as disciplinas.';
-  }
-  if(!W.editar && W.passo === 3){
-    const hs = W.habs.filter(Boolean);
-    if(new Set(hs.map(slug)).size !== hs.length) return 'Há dois hábitos com o mesmo nome.';
-    if(W.cfOn && !HANDLE.test(W.cfH)) return 'Escreva o seu handle do Codeforces (3 a 24 letras, números, _ . -).';
-    if(W.cfOn && !(W.cfM >= 1 && W.cfM <= 6)) return 'A meta do Codeforces vai de 1 a 6 problemas por dia.';
-    if(W.duoOn && !DUO_US.test(W.duoU)) return 'Escreva o seu usuário do Duolingo (letras, números, _ . -).';
-  }
-  if(W.passo === 4 || W.editar){
+  if(W.editar){
     const ds = W.disc.filter(d => d.d);
     if(W.dtRuim) return GB.dataRuim(W.dtRuim);
     if(!ds.length) return 'Cadastre pelo menos uma disciplina (a sigla basta).';
@@ -231,12 +327,25 @@ function valida(){
     if(!(W.ini < W.fim)) return 'O fim do semestre precisa ser depois do início.';
     if(W.p1 + W.p2 !== 100) return `Os pesos da N1 e da N2 somam ${W.p1 + W.p2}; precisam somar 100.`;
     if(ds.some(d => !d.det && !(d.n1 < d.n2))) return 'Em cada disciplina, a N2 vem depois da N1.';
+    return '';
+  }
+  if(W.passo === 0){
+    if(!W.nome) return 'Escreva o seu nome.';
+    if(!/^[a-z0-9_]{2,20}$/.test(W.nick)) return 'O nickname precisa de 2 a 20 letras, números ou _.';
+  }
+  if(W.passo === 3){
+    const hs = W.habs.filter(Boolean);
+    if(new Set(hs.map(slug)).size !== hs.length) return 'Há dois hábitos com o mesmo nome.';
+    if(W.cfOn && !HANDLE.test(W.cfH)) return 'Escreva o seu handle do Codeforces (3 a 24 letras, números, _ . -).';
+    if(W.cfOn && !(W.cfM >= 1 && W.cfM <= 6)) return 'A meta do Codeforces vai de 1 a 6 problemas por dia.';
+    if(W.duoOn && !DUO_US.test(W.duoU)) return 'Escreva o seu usuário do Duolingo (letras, números, _ . -).';
   }
   return '';
 }
+/* sem disciplinas, o arquivo fica só com a linha da temporada: o semestre padrão, ajustável no cadastro da aba Chefões */
 function avaliacoesTxt(){
   const volta = new Date(W.fim + 'T12:00:00Z'); volta.setUTCDate(volta.getUTCDate() + 50);
-  const L = ['# Plano de avaliação de cada disciplina (Ganbatte). Gerado pelo assistente da primeira entrada; pode editar à mão.',
+  const L = ['# Plano de avaliação de cada disciplina (Ganbatte). Gerado pelo jogo; pode editar à mão.',
     '# temporada | nome | início | fim do semestre | volta às aulas',
     '# [SIGLA] chefão | ícone | por que esse chefão',
     '# chave | nome da avaliação | peso | data | palavra-chave (opcional) | contínua (opcional)',
@@ -253,10 +362,10 @@ function desenhaW(){
   bg.innerHTML = `<div class="wz" role="dialog" aria-modal="true" aria-labelledby="wz-t">
     <div class="wz-top"><img src="${MARCA}" alt=""><div><h2 id="wz-t">Licença Hunter</h2><p>Passo ${W.passo + 1} de ${PASSOS.length} · ${PASSOS[W.passo]}</p></div>
       <div class="wz-steps" aria-hidden="true">${PASSOS.map((_,i) => `<i class="${i <= W.passo ? 'on' : ''}"></i>`).join('')}</div></div>
-    <div class="wz-body">${W.editar ? passoHTML().replace(/<p>Cada disciplina vira um chefão do Genei Ryodan\..*?<\/p>/s, '<p>Adicione, renomeie ou remova disciplinas e ajuste as datas da N1 e da N2. As notas já registradas continuam valendo enquanto a sigla for a mesma; disciplinas com plano detalhado ficam como estão no arquivo.</p>') : passoHTML()}</div>
+    <div class="wz-body">${passoHTML()}</div>
     <div class="wz-foot"><button type="button" class="btn" data-wznav="-1"${W.passo ? '' : ' hidden'}>← voltar</button><span class="err" role="alert">${esc(W.err)}</span>
       <span style="display:flex;gap:8px;margin-left:auto">${W.editar ? '<button type="button" class="btn" data-wzsair>cancelar</button><button type="button" class="btn v" data-wzdisc>salvar disciplinas</button>' : ult ? '<button type="button" class="btn" data-wzfim="0">começar sem tutorial</button><button type="button" class="btn v" data-wzfim="1">começar e ver o tutorial</button>' : '<button type="button" class="btn v" data-wznav="1">próximo →</button>'}</span></div></div>`;
-  const f = bg.querySelector('.wz-body input'); if(f && W.passo !== 1) f.focus();
+  const f = bg.querySelector('.wz-body input'); if(f && (W.editar || W.passo === 0 || W.passo === 3)) f.focus();
 }
 function abreW(){ W.editar = false; PASSOS = PASSOS_1; iniciaW(); desenhaW(); }
 function abreDisciplinas(nova){   // nova = {d, n}: disciplina sugerida (ex.: um plano de ensino lido pela IA sem chefão)
@@ -274,13 +383,14 @@ function abreDisciplinas(nova){   // nova = {d, n}: disciplina sugerida (ex.: um
   desenhaW();
 }
 async function salvaW(tour){
-  const jogador = {configurado:true, nome:W.nome, nick:W.nick, tags:W.tags, semestre:{ini:W.ini, fim:W.fim},
+  const jogador = {configurado:true, nome:W.nome, nick:W.nick, tags:W.tags, semestre:{ini:W.ini, fim:W.fim}, materias:W.mat,
     disciplinas:W.disc.filter(d => d.d).map(d => ({d:d.d, n:d.n, n1:d.n1, n2:d.n2})), habitos:habsJSON(W.habs, W.hf, W.hid), cf: W.cfOn ? {handle:W.cfH, meta:W.cfM} : null, duo: W.duoOn ? {usuario:W.duoU} : null};
   if(window.GB_TEMP && !(await GB_TEMP.antesDeTrocar(avaliacoesTxt()))){ W.err = 'Não salvou: a temporada atual precisa ser guardada antes de trocar.'; desenhaW(); return; }
   try { await post('/api/config', {jogador, avaliacoes: avaliacoesTxt()}); await recarrega(); }
   catch(e){ W.err = 'Não salvou: ' + e.message; desenhaW(); return; }
   UI.avatar = W.av; EST.tour = tour ? {} : Object.fromEntries(['l','b','b2','d2','bk','ms','sys','cfg','nv','x'].map(k => [k,1])); salvaUI();
   document.getElementById('wz').remove();
+  if(W.mat === 'agora'){ abaReal('b2'); abreDisciplinas(); return; }   // o tutorial da Lista aparece quando ele voltar a ela
   abaReal('l');
   if(tour) setTimeout(() => tutorial('l'), 250);
 }
@@ -289,12 +399,14 @@ document.addEventListener('click', e => {
   const nav = q('[data-wznav]');
   if(nav){ coleta(); const d = +nav.dataset.wznav; if(d > 0){ W.err = valida(); if(W.err){ desenhaW(); return; } } W.err = ''; W.passo += d; desenhaW(); return; }
   const av = q('[data-wzav]'); if(av){ coleta(); W.av = av.dataset.wzav; desenhaW(); return; }
+  const nn = q('[data-wznen]'); if(nn){ W.nen = +nn.dataset.wznen; desenhaW(); const b = document.querySelector(`.wz-nens [data-wznen="${W.nen}"]`); if(b && nn.tagName === 'BUTTON') b.focus(); return; }
+  const mt = q('[data-wzmat]'); if(mt){ W.mat = mt.dataset.wzmat; desenhaW(); const b = document.querySelector(`[data-wzmat="${W.mat}"]`); if(b) b.focus(); return; }
   if(q('[data-wzadd]')){ coleta(); const n = W.disc.length; W.disc.push({d:'', n:'', n1:meio(W.ini, W.fim, .45), n2:meio(W.ini, W.fim, .95)}); desenhaW(); const i = document.getElementById('wz-d-' + n); if(i) i.focus(); return; }
   const dl = q('[data-wzdel]'); if(dl){ coleta(); W.disc.splice(+dl.dataset.wzdel, 1); if(!W.disc.length) W.disc.push({d:'', n:'', n1:meio(W.ini, W.fim, .45), n2:meio(W.ini, W.fim, .95)}); desenhaW(); return; }
   if(q('[data-wzhadd]')){ coleta(); W.habs.push(''); W.hf.push(0); W.hid.push(''); desenhaW(); const i = document.getElementById('wz-h-' + (W.habs.length - 1)); if(i) i.focus(); return; }
   const hd = q('[data-wzhdel]'); if(hd){ coleta(); W.habs.splice(+hd.dataset.wzhdel, 1); W.hf.splice(+hd.dataset.wzhdel, 1); W.hid.splice(+hd.dataset.wzhdel, 1); desenhaW(); return; }
-  if(e.target.id === 'wz-duo'){ document.getElementById('wz-duou').disabled = !e.target.checked; if(e.target.checked) document.getElementById('wz-duou').focus(); return; }
-  if(e.target.id === 'wz-cf'){ ['wz-cfh','wz-cfm'].forEach(id => document.getElementById(id).disabled = !e.target.checked); if(e.target.checked) document.getElementById('wz-cfh').focus(); return; }
+  if(e.target.id === 'wz-cf' || e.target.id === 'wz-duo'){ const id = e.target.id; coleta(); desenhaW();
+    const f = document.getElementById(id === 'wz-cf' ? 'wz-cfh' : 'wz-duou'); (f || document.getElementById(id)).focus(); return; }
   if(q('[data-wzsair]')){ document.getElementById('wz').remove(); W.editar = false; return; }
   if(q('[data-wzdisc]')){ coleta(); W.err = valida(); if(W.err){ desenhaW(); return; }
     const perdidas = BOSSES.filter(b => !W.disc.some(d => d.d === b.d) && Object.keys(NOTAS).concat(Object.keys(PARC)).some(k => k.startsWith(b.d + ':')));
@@ -310,6 +422,11 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if(!document.getElementById('wz') || e.key !== 'Enter' || e.target.tagName === 'BUTTON') return;
   e.preventDefault(); const b = document.querySelector('[data-wznav="1"]'); if(b) b.click();
+});
+/* passo 1: a licença acompanha o que a pessoa digita */
+document.addEventListener('input', e => {
+  if(e.target.id !== 'wz-nome' && e.target.id !== 'wz-nick') return;
+  coleta(); const l = document.getElementById('wz-lic'); if(l) l.outerHTML = licHTML(false);
 });
 
 /* ---------- tutorial: destaca cada bloco e explica o que ele quer dizer ---------- */
@@ -477,7 +594,7 @@ function cfgHTML(){
       <div class="wz-f"><label>Nome<input data-cfg="nome" value="${esc(c.nome)}" maxlength="40"></label><label>Nickname<input data-cfg="nick" value="${esc(c.nick)}" maxlength="20"></label>
         <label>Datas<select data-cfg="datas"><option value="dmy"${c.datas === 'dmy' ? ' selected' : ''}>dia/mês/ano · 31/12/2026</option><option value="mdy"${c.datas === 'mdy' ? ' selected' : ''}>mês/dia/ano · 12/31/2026</option></select></label></div>
       <label>Hábitos (aparecem na Lista e você marca à mão; o semanal some quando a meta da semana é cumprida)</label>
-      <div class="wz-disc">${c.habs.map((h,i) => `<div class="wz-row" style="grid-template-columns:minmax(0,1fr) 150px 34px"><input data-cfgh="${i}" value="${esc(h)}" aria-label="Hábito ${i + 1}" maxlength="40">${freqSel(`data-cfghf="${i}"`, c.hf[i])}<button type="button" class="wz-x" data-cfghdel="${i}" aria-label="remover hábito">✕</button></div>`).join('')}
+      <div class="wz-disc">${c.habs.map((h,i) => `<div class="wz-row wz-hrow"><input data-cfgh="${i}" value="${esc(h)}" aria-label="Hábito ${i + 1}" maxlength="40">${freqSel(`data-cfghf="${i}"`, c.hf[i])}<button type="button" class="wz-x" data-cfghdel="${i}" aria-label="remover hábito">✕</button></div>`).join('')}
         <div class="wz-row" style="grid-template-columns:minmax(0,1fr) auto"><input id="cfg-novo" value="${esc(c.novo)}" placeholder="novo hábito, ex.: 30 min de exercício" maxlength="40"><button type="button" class="btn" data-cfghadd>+ adicionar</button></div></div>
       <div class="wz-f" style="grid-template-columns:auto minmax(0,1fr) 120px;align-items:end">
         <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink);padding-bottom:9px"><input type="checkbox" data-cfg="cfOn"${c.cfOn ? ' checked' : ''}> Codeforces</label>
@@ -592,8 +709,35 @@ document.addEventListener('click', async e => {
   CF2 = null; render(); toast('Salvo <small>os hábitos novos aparecem na Lista</small>');
 });
 
+/* ---------- aba Chefões vazia (#127): as matérias saíram da primeira entrada e começam aqui, com a IA ou à mão ---------- */
+function vazioB2(){
+  const IA = window.GB_IA, lig = !!(IA && IA.ligada()), nao = (CTX.JOG || {}).materias === 'nao';
+  return `<div class="card b2-vazio"><div>
+      <p class="cap">chefões · nenhum ainda</p><h3>O Genei Ryodan está esperando</h3>
+      <p>Cada matéria do semestre vira um chefão. A <b>vida dele é a sua nota</b>: cada avaliação tira pontos, e média 6 derruba. As tarefas da matéria preparam cada prova, e terminar a preparação antes da data dá um <b>feitiço</b>.</p>
+      ${nao ? '<p>Você disse que não estuda agora. Quando precisar, é só começar por aqui.</p>' : ''}
+      <p class="mono" style="font-size:12.5px">semestre: ${GB.brData(TEMP.ini)} a ${GB.brData(TEMP.fim)} · ajuste no cadastro</p>
+      <div class="b2-ryo" aria-hidden="true">${RYODAN.map(r => `<i title="${r[0]}">${r[0][0]}</i>`).join('')}</div></div>
+    <div class="b2-cam">
+      <div${lig ? ' class="rec"' : ''}><b>Com a IA</b>
+        <span>${lig ? 'Envie o plano de ensino de cada matéria (ou ponha os PDFs na pasta planos) e clique em <b>ler todos os planos</b>, no card ao lado. A IA liga cada plano a uma matéria e monta as provas, datas e pesos; você confere antes de salvar.'
+          : 'Com uma IA de terminal ligada (Claude Code, Codex...), o jogo manda o plano de ensino para ela e recebe as provas, datas e pesos prontos. Você confere antes de salvar.'}</span>
+        <div class="bt">${lig ? '<label class="btn v" style="cursor:pointer">enviar plano<input type="file" accept=".pdf,.html,.htm,.docx,.txt,.md" data-wzplano hidden></label>' : '<button type="button" class="btn v" data-wzia>ligar a IA</button>'}</div></div>
+      <div><b>À mão</b><span>Sigla, nome e as datas da N1 e da N2, com o início e o fim do semestre. Dá para detalhar as avaliações depois, no editor de cada chefão.</span>
+        <div class="bt"><button type="button" class="btn${lig ? '' : ' v'}" data-wzdiscabre>+ matéria</button></div></div>
+    </div></div>`;
+}
+document.addEventListener('click', e => {
+  if(!e.target.closest('[data-wzia]')) return;
+  tab('cfg'); setTimeout(() => { const c = document.getElementById('cfg-ia'); if(c) c.scrollIntoView({behavior:'smooth', block:'start'}); }, 150);
+});
+document.addEventListener('change', async e => {
+  if(!e.target.matches('[data-wzplano]') || !e.target.files[0]) return;
+  try { const nome = await window.GB_IA.enviaPlano(e.target.files[0]); toast(`${esc(nome)} guardado <small>agora clique em ler todos os planos</small>`); render(); }
+  catch(err){ toast('Não enviou: ' + esc(err.message)); }
+});
 const rB2_0 = RENDER.b2;
-RENDER.b2 = S => { rB2_0(S); const h = document.querySelector('#b2-inbox h2'); if(h) h.insertAdjacentHTML('afterend', '<p style="margin:0 0 10px"><button type="button" class="btn v" data-wzdiscabre>editar disciplinas e datas</button></p>'); };
+RENDER.b2 = S => { rB2_0(S); if(!S.bs.length) document.getElementById('b2-cols').innerHTML = vazioB2(); const h = document.querySelector('#b2-inbox h2'); if(h) h.insertAdjacentHTML('afterend', '<p style="margin:0 0 10px"><button type="button" class="btn v" data-wzdiscabre>editar disciplinas e datas</button></p>'); };
 window.GB_GUIA = {abreW, abreDisciplinas, tutorial, avisaContrib};
 if(CTX){ tab(cur); avisaContrib(); }   // os dados podem ter chegado antes deste script (no modo demonstração chegam): reaplica a aba com o guia
 })();
