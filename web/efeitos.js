@@ -1,6 +1,7 @@
 /* Ganbatte · efeitos da Masadora: texturas, molduras, fontes, animações e sons comprados na loja.
  * Os itens (preço, descrição) ficam em COS no motor.js; aqui fica o que eles fazem na tela.
- * - CSS: injetado uma vez, pelos atributos data-fx, data-bg, data-frame e data-font do <html> (aplicaTema no index.html)
+ * - CSS: injetado uma vez, pelos atributos data-fx, data-bg, data-frame, data-font e os da #135 (data-borda, data-hover,
+ *   data-cursor, data-hp, data-heat, data-trans) do <html> (aplicaTema no index.html)
  *   e pelas classes do preview da loja (.fxd.X, .tex-X, .fr-X, .ft-X).
  * - Efeitos com laço (poeira, rastro, gyo): GB_FX.aplica() liga e desliga conforme o que está equipado.
  * - Efeitos de evento: GB_FX.tarefa(retângulo do botão) ao concluir uma tarefa; GB_FX.festa() no andar novo ou chefão derrotado.
@@ -72,6 +73,71 @@ const CSS = `
 @keyframes hjOnda{to{transform:scale(9);opacity:0;border-width:1px}}
 .gb-rastro{position:fixed;z-index:58;pointer-events:none;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--c);box-shadow:0 0 10px 2px var(--c);animation:hjRastro .7s ease-out forwards}
 @keyframes hjRastro{to{transform:scale(.1) translateY(-10px);opacity:0}}
+/* ---------- itens novos da Masadora (#135): bordas, hover, cursor, HP, heatmap e transição de aba ----------
+   Cada um tem o seu atributo no <html> (data-borda, data-hover, data-cursor, data-hp, data-heat, data-trans) e a classe
+   do preview da loja (.bd-X, .hv-X, .hp-X, .hm-X, .tr-X dentro de .pvc) */
+.pvc{display:block;padding:0}
+.pvc .mc{position:absolute;left:16px;right:16px;top:16px;bottom:16px;background:var(--panel);border:1px solid var(--hair);border-radius:8px;display:grid;place-items:center;font:600 12px var(--f-hud);color:var(--soft)}
+.pvc .tr7{position:absolute;inset:16px;overflow:hidden;border-radius:8px} .pvc .tr7 .mc{inset:0} .pvc .tr7 .tB{background:var(--panel2)}
+.pvc .cur7{position:absolute;inset:0;display:grid;place-items:center} .pvc .cur7 svg{width:34px;height:40px}
+.pvc .hp7{position:absolute;left:16px;right:16px;top:30px;display:grid;gap:6px;font:600 11px var(--f-hud);color:var(--soft)}
+.pvc .hp7 > i{display:block;height:12px;border-radius:4px;background:var(--track);overflow:hidden} .pvc .hp7 > i > b{display:block;height:100%;width:62%;background:var(--red)}
+.pvc .hm7{position:absolute;inset:14px 18px;display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(4,1fr);gap:4px}
+.pvc .hm7 i{background:var(--track);border-radius:2px} .pvc .hm7 i.h3{background:var(--grn)}
+:root[data-borda="dupla"] .card,.bd-dupla .mc{border:4px double var(--soft)}
+:root[data-borda="trac"] .card,.bd-trac .mc{border:2px dashed var(--soft)}
+:root[data-borda="cantos"] .card,.bd-cantos .mc{border-color:transparent;background-image:linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink));
+  background-size:14px 2px,2px 14px,14px 2px,2px 14px;background-position:0 0,0 0,100% 100%,100% 100%;background-repeat:no-repeat}
+:root[data-borda="corrente"] .card,.bd-corrente .mc{border:5px solid transparent;border-image:repeating-linear-gradient(90deg,var(--amb) 0 7px,transparent 7px 9px,color-mix(in srgb,var(--amb) 60%,var(--bg)) 9px 16px,transparent 16px 18px) 5}
+:root[data-borda="teia"] .card,.bd-teia .mc{border-color:var(--soft);background-image:repeating-radial-gradient(circle at 0 0,transparent 0 10px,color-mix(in srgb,var(--ink) 25%,transparent) 10px 11px),repeating-conic-gradient(from 90deg at 0 0,color-mix(in srgb,var(--ink) 25%,transparent) 0 .6deg,transparent .6deg 15deg);background-size:56px 56px;background-repeat:no-repeat}
+:root[data-borda="naipes"] .card,.bd-naipes .mc{border-color:var(--amb);position:relative}
+:root[data-borda="naipes"] .card::before,:root[data-borda="naipes"] .card::after,.bd-naipes .mc::before,.bd-naipes .mc::after{position:absolute;font:700 13px Georgia,serif;pointer-events:none}
+:root[data-borda="naipes"] .card::before,.bd-naipes .mc::before{content:"♠";top:4px;left:7px;color:var(--ink)}
+:root[data-borda="naipes"] .card::after,.bd-naipes .mc::after{content:"♥";bottom:4px;right:7px;color:var(--red)}
+:root[data-borda="aura"] .card,.bd-aura .mc{border-color:var(--n2)}
+:root[data-hover="contorno"] .card:hover{border-color:var(--ink)}
+:root[data-hover="shu"] .card:hover{border-color:var(--aura);box-shadow:0 0 0 2px color-mix(in srgb,var(--aura) 50%,transparent),0 0 16px -2px var(--aura)}
+.gb-en{position:fixed;z-index:58;pointer-events:none;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2px solid var(--aura);animation:hjEn .7s ease-out forwards}
+:root[data-cursor="ioio"] body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='32' viewBox='0 0 24 32'%3E%3Cpath d='M12 0v16' stroke='%23999' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='22' r='8' fill='%239FD3FF' stroke='%23111' stroke-width='2'/%3E%3Ccircle cx='12' cy='22' r='2.5' fill='%23111'/%3E%3C/svg%3E") 12 2,auto}
+:root[data-cursor="carta"] body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='28' viewBox='0 0 24 28'%3E%3Crect x='3' y='2' width='16' height='23' rx='2.5' fill='%23fff' stroke='%23777' transform='rotate(-14 11 14)'/%3E%3Ctext x='8' y='18' font-size='10' fill='%23E0365A' transform='rotate(-14 11 14)'%3E%E2%99%A6%3C/text%3E%3C/svg%3E") 4 4,auto}
+:root[data-cursor="agulha"] body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Cpath d='M2 2 22 22' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M2 2 22 22' stroke='%23222' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='22' cy='22' r='3' fill='none' stroke='%23222' stroke-width='1.4'/%3E%3C/svg%3E") 3 3,auto}
+:root[data-hp="corrente"] :is(.hp4 > b,.l-boss .hp i),.hp-corrente .hp7 > i > b{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='14'%3E%3Cellipse cx='7.5' cy='7' rx='6.2' ry='4' fill='none' stroke='%23596069' stroke-width='3.2'/%3E%3Cellipse cx='7.5' cy='7' rx='6.2' ry='4' fill='none' stroke='%23B9BFC8' stroke-width='1.8'/%3E%3Crect x='12.5' y='5.6' width='10' height='2.8' rx='1.4' fill='%23D5D9DF' stroke='%23596069' stroke-width='.8'/%3E%3C/svg%3E") repeat-x left center/22px 100%;background-color:transparent}
+:root[data-hp="cristal"] :is(.hp4 > b,.l-boss .hp i),.hp-cristal .hp7 > i > b{background:linear-gradient(115deg,#BFE8FF 0 20%,#7FC8F8 20% 45%,#E6F7FF 45% 55%,#5FA8E8 55% 80%,#BFE8FF 80%)}
+:root[data-heat="cartas"] .l-hg i:not(.fora),.hm-cartas .hm7 i{border-radius:1px;transform:scaleX(.72)}
+:root[data-heat="cartas"] .l-hg i:is(.h1,.h2,.h3,.h4,.z),.hm-cartas .hm7 i.h3{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 35%,transparent)}
+:root[data-heat="pegadas"] .l-hg i:not(.fora),.hm-pegadas .hm7 i{border-radius:50% 50% 45% 45%/60% 60% 40% 40%;transform:scale(.75,.95)}
+:root[data-heat="chamas"] .l-hg i:is(.h1,.h2,.h3,.h4,.z),.hm-chamas .hm7 i.h3{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M5 0C6.5 3 9.5 5.5 9.5 9a4.5 4.5 0 0 1-9 0c0-2.2 1.2-3.6 2.4-4.6 0 1.8.8 3 1.9 3.2C4.2 5.6 3.6 2.8 5 0Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M5 0C6.5 3 9.5 5.5 9.5 9a4.5 4.5 0 0 1-9 0c0-2.2 1.2-3.6 2.4-4.6 0 1.8.8 3 1.9 3.2C4.2 5.6 3.6 2.8 5 0Z'/%3E%3C/svg%3E") center/contain no-repeat}
+:root[data-heat="chamas"] .l-hg i:is(.h3,.h4),.hm-chamas .hm7 i.h3{background:#FF6A1F}
+@media (prefers-reduced-motion:no-preference){
+  :root[data-borda="aura"] .card,.bd-aura .mc{animation:hjBordaAura 2.4s ease-in-out infinite}
+  :root[data-hover="vira"] .card:hover{animation:hjVira .7s ease-in-out}
+  :root[data-hover="bungee"] .card:hover{transform-origin:0 50%;animation:hjBungee .6s ease-in-out}
+  .hv-contorno .mc{animation:hjContorno 2.4s ease-in-out infinite} .hv-shu .mc{animation:hjShu 2.4s ease-in-out infinite}
+  .hv-vira .mc{animation:hjVira 2.4s ease-in-out infinite} .hv-bungee .mc{transform-origin:0 50%;animation:hjBungee 2.4s ease-in-out infinite}
+  .hv-en .en7{position:absolute;width:20px;height:20px;border-radius:50%;left:40%;top:40%;border:2px solid var(--aura);animation:hjEn 2.4s ease-out infinite}
+  .pvc .cur7 svg{animation:hjCur 3s ease-in-out infinite}
+  :root[data-heat="chamas"] .l-hg i:is(.h1,.h2,.h3,.h4,.z),.hm-chamas .hm7 i.h3{transform-origin:50% 100%;animation:hjChama 1.3s ease-in-out infinite alternate}
+  :root[data-trans="deslizar"].gb-troca section[id^="v-"]:not([hidden]){animation:hjDesliza .3s ease-out}
+  :root[data-trans="glitch"].gb-troca section[id^="v-"]:not([hidden]){animation:hjGlitch .4s steps(1)}
+  .tr-deslizar .tA{animation:hjSlideA 3s ease-in-out infinite} .tr-deslizar .tB{animation:hjSlideB 3s ease-in-out infinite}
+  .tr-glitch .mc{animation:hjGlitchPv 2.6s steps(1) infinite}
+}
+@keyframes hjBordaAura{0%,100%{box-shadow:0 0 0 1px var(--n2),0 0 6px -2px var(--n2)}50%{box-shadow:0 0 0 2px var(--n2),0 0 18px 2px var(--n2)}}
+@keyframes hjContorno{0%,40%{border-color:var(--hair)}50%,90%{border-color:var(--ink)}}
+@keyframes hjShu{0%,40%{box-shadow:none;border-color:var(--hair)}55%,90%{box-shadow:0 0 0 2px color-mix(in srgb,var(--aura) 50%,transparent),0 0 16px -2px var(--aura);border-color:var(--aura)}}
+@keyframes hjVira{0%{transform:perspective(600px) rotateY(0)}100%{transform:perspective(600px) rotateY(360deg)}}
+@keyframes hjBungee{0%{transform:scaleX(1)}35%{transform:scaleX(1.06)}65%{transform:scaleX(.97)}100%{transform:scaleX(1)}}
+@keyframes hjEn{0%{transform:scale(.3);opacity:1}100%{transform:scale(7);opacity:0}}
+@keyframes hjCur{0%,100%{transform:translate(-20px,-6px)}50%{transform:translate(24px,8px)}}
+@keyframes hjChama{0%{transform:scale(1,1)}50%{transform:scale(.88,1.12) skewX(3deg)}100%{transform:scale(1.05,.92) skewX(-3deg)}}
+@keyframes hjDesliza{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes hjGlitch{0%{clip-path:inset(20% 0 50% 0);transform:translateX(-6px)}30%{clip-path:inset(60% 0 10% 0);transform:translateX(6px)}60%{clip-path:none;transform:translateX(-2px)}100%{clip-path:none;transform:none}}
+@keyframes hjGlitchPv{0%,70%{clip-path:none;transform:none}72%{clip-path:inset(20% 0 50% 0);transform:translateX(-6px)}75%{clip-path:inset(60% 0 10% 0);transform:translateX(6px)}78%{clip-path:none;transform:none}}
+@keyframes hjSlideA{0%,40%{transform:translateX(0)}50%,90%{transform:translateX(-110%)}100%{transform:translateX(0)}}
+@keyframes hjSlideB{0%,40%{transform:translateX(110%)}50%,90%{transform:translateX(0)}100%{transform:translateX(110%)}}
+/* ---------- molduras simples ---------- */
+:root[data-frame="fina"] .av.me,.fr-fina .av.me{border:1px solid var(--ink);box-shadow:none}
+:root[data-frame="dupla"] .av.me,.fr-dupla .av.me{border:4px double var(--soft);box-shadow:none}
 /* ---------- loja ---------- */
 .gb-ver{min-width:34px;padding-inline:10px}
 .pv .gb-tag{position:absolute;right:8px;bottom:6px;font:600 10px var(--f-mono);color:var(--soft);background:var(--panel);border:1px solid var(--hair);border-radius:99px;padding:0 7px}
@@ -166,7 +232,14 @@ function ligaPoeira(on){
   };
   passo();
 }
-let ultRastro = 0;
+let ultRastro = 0, ultCard = null;
+/* En (hover): ao entrar num card, um círculo de aura se espalha do cursor */
+document.addEventListener('pointerover', e => {
+  if(e.pointerType !== 'mouse' || calmo() || vista().hover !== 'en') return;
+  const c = e.target.closest && e.target.closest('.card'); if(!c || c === ultCard) return; ultCard = c;
+  const o = document.createElement('i'); o.className = 'gb-en'; o.style.left = e.clientX + 'px'; o.style.top = e.clientY + 'px'; tira(o, 750);
+}, {passive:true});
+document.addEventListener('pointerout', e => { if(ultCard && !(e.relatedTarget && ultCard.contains(e.relatedTarget))) ultCard = null; }, {passive:true});
 document.addEventListener('pointermove', e => {
   if(e.pointerType !== 'mouse' || calmo()) return;
   if(temFx('gyo')){ const c = e.target.closest && e.target.closest('.card'); if(c){ const b = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - b.left) + 'px'); c.style.setProperty('--my', (e.clientY - b.top) + 'px'); } }
@@ -197,6 +270,10 @@ const SONS = {
           festa(){ ruido(0, .1, .5, 1600); tom(150, 0, .28, 'sine', .5, 45); ruido(.22, .14, .6, 2200); tom(110, .22, .45, 'sine', .6, 35); }},
   sino:  {tarefa(){ tom(880, 0, 1.8, 'sine', .14); tom(1760, 0, 1.1, 'sine', .04); tom(2640, 0, .6, 'sine', .02); },
           festa(){ [659, 880, 1319].forEach((f, i) => { tom(f, i*.35, 2.2, 'sine', .12); tom(f*2, i*.35, 1.2, 'sine', .035); }); }},
+  clique: {tarefa(){ tom(2400, 0, .03, 'square', .05); tom(1200, .02, .03, 'square', .035); },
+           festa(){ [0, .09, .18].forEach(t => { tom(2400, t, .03, 'square', .05); tom(1200, t + .02, .03, 'square', .035); }); }},
+  gota:   {tarefa(){ tom(1400, 0, .2, 'sine', .16, 500); },
+           festa(){ [0, .16, .32].forEach((t, i) => tom(1400 + i*200, t, .2, 'sine', .14, 500 + i*100)); }},
   fanfarra: {tarefa(){ tom(784, 0, .07, 'square', .04); tom(1175, .07, .07, 'square', .04); tom(1568, .14, .18, 'square', .04); },
              festa(){ [[523,0,.12],[523,.13,.12],[523,.26,.12],[659,.4,.35],[587,.78,.12],[659,.92,.12],[784,1.06,.6]].forEach(([f, t, d]) => { tom(f, t, d, 'square', .05); tom(f/2, t, d, 'triangle', .05); }); }},
 };
@@ -207,7 +284,9 @@ const toca = (k, ev) => { const s = SONS[k]; if(s && s[ev]) try { s[ev](); } cat
 window.GB_FX = {
   EV: ['godspeed', 'baralho', 'jajanken'], FESTA: ['fogos'],
   aplica(){ ligaPoeira(temFx('estrelas') && !calmo()); },
-  aba(){ if(!temFx('digita')) return; const r = document.documentElement; r.classList.add('gb-entra'); clearTimeout(this._aba); this._aba = setTimeout(() => r.classList.remove('gb-entra'), 900); },
+  aba(){ const r = document.documentElement;
+    if(vista().trans){ r.classList.remove('gb-troca'); void r.offsetWidth; r.classList.add('gb-troca'); clearTimeout(this._tr); this._tr = setTimeout(() => r.classList.remove('gb-troca'), 450); }
+    if(!temFx('digita')) return; r.classList.add('gb-entra'); clearTimeout(this._aba); this._aba = setTimeout(() => r.classList.remove('gb-entra'), 900); },
   tarefa(r){
     if(UI.som && !somOff()) toca(UI.som, 'tarefa');
     if(UI.fxOff || calmo()) return;
