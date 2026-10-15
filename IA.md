@@ -129,7 +129,7 @@ No Windows, use `curl.exe` (no PowerShell, `curl` sozinho é outro comando) e as
 |---|---|---|
 | `GET /api/jogo` | — | tudo de uma vez: `todo`, `done` (listas de linhas), `avaliacoes`, `notas`, `ajustes` (texto), `narradas`, `jogador`, `hoje` |
 | `POST /api/add` | `{"text": "linha"}` | nova tarefa (o jogo põe a data de criação) |
-| `POST /api/act` | `{"raw": "linha exata", "action": "...", "value": "..."}` | mexe numa tarefa: `edit` (value = novo texto, sem prioridade nem data de criação; `"pri": "A"` ou `""` troca a prioridade junto), `up`, `down`, `d1` (adia 1 dia), `setdate` (value = data), `rmdue`, `delete`, `done` (só se o jogador pediu) |
+| `POST /api/act` | `{"raw": "linha exata", "action": "...", "value": "..."}` | mexe numa tarefa: `edit` (value = novo texto, sem prioridade nem data de criação; `"pri": "A"` ou `""` troca a prioridade junto), `up`, `down`, `d1` (adia 1 dia), `setdate` (value = data), `rmdue`, `delete`, `done` (só se o jogador pediu), `pular` (só em tarefa com `rep:`) |
 | `POST /api/jogo/planos` | `{"avaliacoes": "arquivo inteiro"}` | grava o `avaliacoes.txt` (o anterior vai para `.bak`). Pode mandar `"notas"` junto |
 | `POST /api/jogo/nota` | `{"disc": "CALC2", "aval": "P1", "nota": 7.5, "parcial": false}` | lança uma nota (0 a 10). `parcial: true` = uma das entregas de uma avaliação contínua |
 | `POST /api/jogo/ajuste` | `{"quando": "...", "texto": "...", "aplicado": true}` | marca um lembrete da caixa de entrada como aplicado (`quando` e `texto` exatamente como no arquivo) |
@@ -177,6 +177,13 @@ aceita `hoje`, `amanha` e `+3`; já `15/10` é lido no formato do jogador e pode
   Uma caçada pode ficar **dentro de outra** (`pai` em `estado` → `cacadas`, só dois níveis): a tarefa leva o NOME da
   caçada de dentro, e quem escolhe onde ela fica é o jogador, na página.
 - `+exp.NOME` (opcional): tarefa solta de uma expedição, que não é de nenhum marco.
+- `rep:REGRA` (opcional): **tarefa que repete** (o que tem data, não é hábito). Fixa no calendário: `rep:sem-seg` (toda
+  segunda; `ter`, `qua`, `qui`, `sex`, `sab`, `dom`), `rep:mes-1` (todo mês no dia 1), `rep:6mes-1` (a cada 6 meses no
+  dia 1), `rep:ano-12-25` (todo ano em 25/12, mês-dia). Depois de concluir: `rep:+10d`, `rep:+2sem`, `rep:+3mes`. Só existe
+  uma aberta por vez: ao concluir (`done`), o servidor cria a próxima sozinho; **não crie a próxima à mão**. Sem `due:`, o
+  servidor põe a primeira data. Dia que o mês não tem vai para o último dia (31 → 30). Quem está longe do prazo não aparece
+  na Lista (fica na janela ↻ recorrentes) até alguns dias antes. Para "não vai acontecer desta vez", use a ação `pular`
+  (vira a próxima, sem atraso); `delete` para de repetir.
 - **não crie nem edite** linhas com `rec:` (hábitos, Codeforces e Duolingo: o servidor cria todo dia).
 - **não crie nem edite** linhas com `gh:` (tarefas de dev do GitHub: o servidor cria e conclui sozinho).
 - texto curto, começando por verbo (Revisar, Fazer, Ler, Entregar).

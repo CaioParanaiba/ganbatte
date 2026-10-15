@@ -25,7 +25,8 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   GET  /api/jogo                          tudo o que a página precisa
   GET  /api/backup                        ZIP da pasta de dados (botão "baixar meus dados" na aba Configurações)
   POST /api/act   {raw, action, value?, pri?}   done | reopen | delete | up | down | d1 | d7 | a1 | hoje | amanha | rmdue | setdate | edit
-  POST /api/add   {text}                  linha no formato todo.txt; due:hoje|amanha|+N|DD/MM|AAAA-MM-DD
+                                          | pular (recorrente rep:: esta vez vira a próxima, #113)
+  POST /api/add   {text}                  linha no formato todo.txt; due:hoje|amanha|+N|DD/MM|AAAA-MM-DD; rep:REGRA = recorrente
   POST /api/undo  {}                      desfaz a última operação deste servidor
   POST /api/reabre {raw, xp?}             reabre uma tarefa concluída que já está no done.txt (volta aberta para o todo.txt)
   POST /api/config {jogador, avaliacoes?} grava jogador.json (e avaliacoes.txt) e refaz os hábitos de hoje
@@ -241,7 +242,7 @@ def transformar(line, action, value=None):
         raise Erro("tarefa concluída: reabra antes de alterar")
     if action == "edit":
         m = re.match(r"^(\([A-Z]\) )?(\d{4}-\d{2}-\d{2} )?", line)
-        return (m.group(1) or "") + (m.group(2) or "") + " ".join(normaliza_due(limpa(value or "").split()))
+        return (m.group(1) or "") + (m.group(2) or "") + " ".join(normaliza_rep(normaliza_due(limpa(value or "").split())))
     if action in ("up", "down"):
         m = PRI.match(line)
         i = ORDEM.index(m.group(1)) if m and m.group(1) in ORDEM else len(ORDEM) - 1   # (D) em diante conta como sem prioridade
@@ -285,6 +286,108 @@ def normaliza_due(palavras):
     return out
 
 
+# ---------- tarefas recorrentes (#113) ----------
+# rep:REGRA numa tarefa normal. Fixa (calendário): sem-seg (toda segunda), mes-1 (todo mês no dia 1), 6mes-1 (a cada 6 meses
+# no dia 1), ano-12-25 (todo ano em 25/12). Depois de concluir: +10d, +2sem, +3mes. Só existe uma aberta por vez: concluir
+# cria a próxima. Na fixa, a próxima é a primeira data da regra depois do prazo e do dia da conclusão; na outra, a conclusão + N.
+REP = re.compile(r"(?:(?<=\s)|^)rep:(\S+)(?=\s|$)")
+SEM_REP = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"]
+
+
+def rep_regra(s):
+    """O texto depois do rep: -> a regra, ou None se for inválido."""
+    s = str(s).lower()
+    m = re.fullmatch(r"sem-(seg|ter|qua|qui|sex|sab|dom)", s)
+    if m:
+        return {"tipo": "sem", "dia": SEM_REP.index(m.group(1))}
+    m = re.fullmatch(r"(\d{0,2})mes-(\d{1,2})", s)
+    if m and 1 <= int(m.group(1) or 1) <= 12 and 1 <= int(m.group(2)) <= 31:
+        return {"tipo": "mes", "n": int(m.group(1) or 1), "dia": int(m.group(2))}
+    m = re.fullmatch(r"ano-(\d\d)-(\d\d)", s)
+    if m:
+        try:
+            date(2000, int(m.group(1)), int(m.group(2)))   # 2000 é bissexto: 29/02 vale
+        except ValueError:
+            return None
+        return {"tipo": "ano", "mes": int(m.group(1)), "dia": int(m.group(2))}
+    m = re.fullmatch(r"\+(\d{1,3})(d|sem|mes)", s)
+    if m and int(m.group(1)) >= 1:
+        return {"tipo": "depois", "n": int(m.group(1)), "un": m.group(2)}
+    return None
+
+
+def dia_do_mes(ano, mes, dia):
+    """O dia do mês; se o mês for mais curto, o último dia dele (dia 31 em novembro vira 30: sempre para baixo, nunca dia 1)."""
+    while True:
+        try:
+            return date(ano, mes, dia)
+        except ValueError:
+            dia -= 1
+
+
+def soma_meses(d, n, dia=None):
+    m = d.month - 1 + n
+    return dia_do_mes(d.year + m // 12, m % 12 + 1, dia or d.day)
+
+
+def rep_passo(r, d):
+    """A primeira data da regra fixa depois do dia d."""
+    if r["tipo"] == "sem":
+        return d + timedelta(days=(r["dia"] - d.weekday() - 1) % 7 + 1)
+    if r["tipo"] == "mes":
+        x = dia_do_mes(d.year, d.month, r["dia"])
+        return x if x > d else soma_meses(d, r["n"], r["dia"])
+    x = dia_do_mes(d.year, r["mes"], r["dia"])
+    return x if x > d else dia_do_mes(d.year + 1, r["mes"], r["dia"])
+
+
+def rep_proxima(r, due, feita):
+    """O prazo da próxima vez: a fixa conta do prazo (concluir antes não puxa a data; atrasada, pula as datas que passaram),
+    a de depois de concluir conta do dia da conclusão."""
+    if r["tipo"] == "depois":
+        return soma_meses(feita, r["n"]) if r["un"] == "mes" else feita + timedelta(days=r["n"] * (7 if r["un"] == "sem" else 1))
+    x = rep_passo(r, due)
+    while x <= feita:
+        x = rep_passo(r, x)
+    return x
+
+
+def rep_sucessora(linha, feita):
+    """A linha da próxima vez de uma recorrente aberta, concluída (ou pulada) no dia feita; None se ela não for recorrente."""
+    m = REP.search(linha)
+    r = rep_regra(m.group(1)) if m else None
+    if not r:
+        return None
+    du = DUE.search(linha)
+    nova = set_due(linha, rep_proxima(r, date.fromisoformat(du.group(1)) if du else feita, feita))
+    return re.sub(r"^(\([A-Z]\) )?\d{4}-\d{2}-\d{2} ", lambda x: (x.group(1) or "") + feita.isoformat() + " ", nova, count=1)
+
+
+def normaliza_rep(palavras):
+    """rep: válido, um só, e sempre com prazo: sem due:, a fixa ganha a primeira data da regra (hoje ou depois) e a de depois
+    de concluir, hoje."""
+    reps = [i for i, w in enumerate(palavras) if w.lower().startswith("rep:")]
+    if not reps:
+        return palavras
+    r = rep_regra(palavras[reps[0]][4:])
+    if len(reps) > 1 or not r:
+        raise Erro(f"repetição inválida em {palavras[reps[-1]]}")
+    palavras = list(palavras)
+    palavras[reps[0]] = palavras[reps[0]].lower()
+    if not any(DUE.fullmatch(w) for w in palavras):
+        palavras.append("due:" + (hoje() if r["tipo"] == "depois" else rep_passo(r, hoje() - timedelta(days=1))).isoformat())
+    return palavras
+
+
+def tira_sucessora(linhas, aberta, dia):
+    """Reabrir uma recorrente tira a próxima que a conclusão criou, se ela ainda estiver como foi criada. Devolve a linha tirada."""
+    s = rep_sucessora(aberta, dia)
+    for j, l in enumerate(linhas):
+        if s and not DONE_RE.match(l) and PRI.sub("", l) == s:
+            return linhas.pop(j)
+    return None
+
+
 def montar(texto):
     """Texto digitado -> linha do todo.txt (prioridade, data de criação, resto com due normalizado)."""
     texto = limpa(texto)
@@ -292,19 +395,20 @@ def montar(texto):
     pri = m.group(1).upper() if m else None
     if m:
         texto = texto[m.end():]
-    palavras = normaliza_due(texto.split())
+    palavras = normaliza_rep(normaliza_due(texto.split()))
     if not palavras or palavras[0] == "x":
         raise Erro("texto vazio ou inválido")
     return (f"({pri}) " if pri else "") + hoje().isoformat() + " " + " ".join(palavras)
 
 
 def operar(fn):
-    """Roda fn(linhas) -> (antes, depois) sob o lock, grava e guarda para o desfazer."""
+    """Roda fn(linhas) -> (antes, depois[, extra]) sob o lock, grava e guarda para o desfazer. extra: {"mais": linha que a
+    operação acrescentou, "menos": linha que ela tirou} (a próxima vez de uma recorrente), que o desfazer também volta."""
     with lock:
         linhas = ler()
-        antes, depois = fn(linhas)
+        antes, depois, *extra = fn(linhas)
         gravar(linhas)
-        undo_stack.append({"from": antes, "to": depois})
+        undo_stack.append(dict({"from": antes, "to": depois}, **(extra[0] if extra else {})))
         del undo_stack[:-40]
         return {"ok": True, "from": antes, "to": depois, "undo": len(undo_stack)}
 
@@ -322,7 +426,24 @@ def api_act(d):
         i = achar(linhas, d.get("raw"))
         if d.get("action") == "delete":
             return linhas.pop(i), None
+        if d.get("action") == "pular":   # recorrente: esta vez não acontece; vira a próxima, sem contar como feita nem atrasada
+            nova = None if DONE_RE.match(linhas[i]) else rep_sucessora(linhas[i], hoje())
+            if not nova:
+                raise Erro("só uma tarefa recorrente aberta pode ser pulada")
+            antes, linhas[i] = linhas[i], nova
+            return antes, nova
         nova = transformar(linhas[i], str(d.get("action")), d.get("value"))
+        if d.get("action") == "done":   # recorrente: concluir cria a próxima
+            prox = rep_sucessora(linhas[i], hoje())
+            antes, linhas[i] = linhas[i], nova
+            if prox and prox not in linhas:
+                inserir(linhas, prox)
+                return antes, nova, {"mais": prox}
+            return antes, nova
+        if d.get("action") == "reopen":   # e reabrir tira a próxima que a conclusão criou
+            antes, linhas[i] = linhas[i], nova
+            tirada = tira_sucessora(linhas, nova, date.fromisoformat(DONE_RE.match(antes).group(1)))
+            return (antes, nova, {"menos": tirada}) if tirada else (antes, nova)
         if d.get("action") == "edit" and "pri" in d:   # o editor completo da Lista troca a prioridade junto ("" = sem)
             letra = str(d.get("pri") or "").upper()
             if letra and not re.fullmatch(r"[A-Z]", letra):
@@ -350,6 +471,7 @@ def api_reabre(d):
         nova = transformar(raw, "reopen")
         linhas = ler()
         done.remove(raw)
+        tirada = tira_sucessora(linhas, nova, date.fromisoformat(DONE_RE.match(raw).group(1)))
         inserir(linhas, nova)
         gravar(done, "done.txt")
         gravar(linhas)
@@ -362,7 +484,7 @@ def api_reabre(d):
         if xp and isinstance(xd, dict) and isinstance(xd.get(dia), (int, float)):
             xd[dia] = max(0, xd[dia] - xp)
             gravar_json("estado.json", est)
-        undo_stack.append({"from": raw, "to": nova, "reabre": True})
+        undo_stack.append({"from": raw, "to": nova, "reabre": True, "menos": tirada})
         del undo_stack[:-40]
         return {"ok": True, "to": nova}
 
@@ -385,6 +507,8 @@ def api_undo(_):
             if op["to"] not in linhas:
                 raise Erro("a linha mudou depois da operação; não deu para desfazer", 409)
             linhas.remove(op["to"])
+            if op.get("menos"):
+                inserir(linhas, op["menos"])
             done = ler("done.txt")
             inserir(done, op["from"])
             gravar(linhas)
@@ -405,6 +529,10 @@ def api_undo(_):
                 del linhas[i]
             else:
                 linhas[i] = op["from"]
+        if op.get("mais") in linhas:   # a próxima vez que a conclusão criou sai junto
+            linhas.remove(op["mais"])
+        if op.get("menos"):   # e a que o reabrir tirou volta
+            inserir(linhas, op["menos"])
         undo_stack.pop()
         gravar(linhas, arq)
         return {"ok": True, "undo": len(undo_stack)}
