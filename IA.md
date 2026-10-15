@@ -160,9 +160,10 @@ aceita `hoje`, `amanha` e `+3`; já `15/10` é lido no formato do jogador e pode
 - `(A)`, `(B)`, `(C)`: prioridade (opcional). `(A)` = prova ou entrega em até 7 dias; o resto, em geral, sem prioridade.
 - a data logo depois é a de criação (o jogo põe sozinho no `/api/add`; não escreva).
 - `+fac.SIGLA`: liga a tarefa à disciplina (a sigla do `avaliacoes.txt`).
-- tags: as do jogador estão em `jogador.json` → `tags` (`ent` = entrega, `est` = estudo, `tre` = treino e projetos de
-  programação, inclusive pessoais, `hab` = hábito). Faculdade sem entrega nem estudo = só `+fac.SIGLA`; o resto (casa,
-  saúde, documentos, trabalho) fica sem tag. Sem tag do jogador, use `@entrega` e `@estudo`. **A tag muda o XP**: entrega vale mais que estudo.
+- tags: as do jogador estão em `jogador.json` → `tags` (`ent` = entrega: trabalho que alguém cobra ou avalia, não só
+  ter prazo; `est` = estudo; `tre` = treino de programação fora da matéria, como Codeforces; `pro` = projeto seu, como um
+  app ou site, padrão `+projeto`; `hab` = hábito). Tarefa da disciplina sem tag (só `+fac.SIGLA`) conta como estudo; o
+  resto (casa, saúde, documentos, trabalho) fica sem tag. Sem tag do jogador, use `@entrega` e `@estudo`. **A tag muda o XP**: entrega vale mais que estudo.
 - `due:` prazo. Só ponha quando houver uma data de verdade.
 - `av:CHAVE` (opcional): liga a tarefa a uma avaliação específica (ex.: `av:P2`). Sem isso, o jogo liga pelas
   palavras-chave e pela data.
@@ -399,7 +400,7 @@ Responda SÓ com uma lista JSON, sem texto antes ou depois e sem markdown:
 [{"regra": "...", "rk": "D|C|B|A", ...campos da regra..., "nome": "...", "texto": "...", "ic": "..."}]
 
 Regras que o jogo sabe conferir (use só estas, com estes campos):
-- contagem: {"regra": "contagem", "n": 35, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, fac faculdade, tre treino e projetos, vid vida), prazo (true = feitas até o prazo).
+- contagem: {"regra": "contagem", "n": 35, "palavra": "sql", "disc": "BD", "tipo": "est", "prazo": true} = n tarefas concluídas que batem com todos os filtros dados. Filtros (use pelo menos um): palavra (aparece no texto da tarefa), disc (sigla da disciplina), tipo (ent entrega, est estudo, tre treino, pro projeto, vid vida), prazo (true = feitas até o prazo).
 - sequencia: {"regra": "sequencia", "hab": "ID", "n": 14} = o hábito em n dias seguidos (hábito semanal: n semanas seguidas com a meta da semana). hab é o id da lista de hábitos (cf = Codeforces, duo = Duolingo).
 - nota: {"regra": "nota", "disc": "BD", "media": 8} = garantir média final 8 na disciplina; ou {"regra": "nota", "disc": "BD", "aval": "P2", "nota": 8} = tirar 8 ou mais numa avaliação que ainda não tem nota.
 - constancia: {"regra": "constancia", "n": 21} = n dias seguidos com tarefa feita; folgas não contam, férias vazias pausam.

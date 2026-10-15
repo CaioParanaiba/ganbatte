@@ -21,7 +21,7 @@ const PERFIS = {
   medio:  {ativo:.85, fds:.5, tarefas:4, habitos:2.5, cf:1, prazo:.75, nota:7.2},
   pesado: {ativo:1,   fds:.9, tarefas:8, habitos:4,   cf:4, prazo:.95, nota:8.6},
 };
-const TIPOS = [['ent', .2], ['est', .35], ['fac', .15], ['tre', .15], ['vid', .15]];   // de que tipo são as tarefas soltas
+const TIPOS = [['ent', .2], ['est', .35], ['disc', .15], ['tre', .15], ['vid', .15]];   // de que tipo são as tarefas soltas (disc: só a disciplina, conta como estudo)
 const TEMP = {ini:'2026-08-03', fim:'2026-12-12', volta:'2027-02-22'};
 const DISC = ['CALC', 'ED', 'BD', 'ARQ'];
 const AVS = [['P1', 40, '2026-09-25'], ['P2', 60, '2026-11-27']];   // as mesmas avaliações em todas as disciplinas
@@ -35,7 +35,7 @@ const GB = ctx.window.GB;
 const args = process.argv.slice(2), opt = k => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null; };
 const semente = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const conta = (rnd, media) => { let n = Math.floor(media); if(rnd() < media - n) n++; return n; };   // inteiro com essa média
-const TXT = {ent:'Lista de exercicios @entrega', est:'Revisar materia @estudo', fac:'Falar com o professor', tre:'Treino +treino', vid:'Arrumar a casa'};
+const TXT = {ent:'Lista de exercicios @entrega', est:'Revisar materia @estudo', disc:'Falar com o professor', tre:'Treino +treino', vid:'Arrumar a casa'};
 
 function simula(nome, P){
   const rnd = semente(nome.length * 7919 + 17), done = [], cf = {}, habitos = [1, 2, 3, 4].map(i => ({id:'h-' + i, n:'Habito ' + i}));

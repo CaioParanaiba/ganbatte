@@ -195,9 +195,9 @@ function prazoDe(txt){
 function linhaEtapa(txt, o){
   const [t, due] = prazoDe(txt), base = o.base;
   const disc = o.disc !== undefined ? o.disc : base ? discOf(base) : '';
-  let k = o.tipo || (GB.sugereTipo(t, !!disc) || {}).k || (base ? GB.tipoDe(base) : '');
-  if(k === 'fac' && !disc) k = 'vid';
-  const tag = ['ent','est','tre','hab'].includes(k) ? tagDe(k) : '';
+  const sg = GB.sugereTipo(t, !!disc) || {};   // sg.disc: estudo só por ter disciplina, vale menos que o tipo das outras etapas
+  const k = o.tipo || (!sg.disc && sg.k) || (base ? GB.tipoDe(base) : '') || sg.k || '';
+  const tag = ['ent','est','tre','pro','hab'].includes(k) ? tagDe(k) : '';
   return [t, disc ? '+fac.' + disc : '', tag && !t.toLowerCase().includes(tag.toLowerCase()) ? tag : '', o.grupo, due ? 'due:' + due : ''].filter(Boolean).join(' ');
 }
 async function addEtapa(alvo, txt, S){

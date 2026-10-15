@@ -58,10 +58,10 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 
 /* ---------- assistente da primeira entrada ---------- */
 const TIPOS = [
-  {k:'ent', n:'Entrega',   c:5, pre:'@', ess:'algo que você <b>entrega para alguém</b>: lista, trabalho, atividade no sistema da faculdade. Tem prazo e alguém confere.', ex:'Lista 3 de derivadas +fac.CALC2 {tag} due:sexta', xp:25},
-  {k:'est', n:'Estudo',    c:0, pre:'@', ess:'tempo de <b>aprender</b>: revisar, ler, resumir, refazer exercícios. Ninguém cobra, mas é o que prepara a prova.', ex:'Revisar integrais por partes +fac.CALC2 {tag}', xp:15},
-  {k:'fac', n:'Faculdade', c:2, pre:'+', ess:'<b>outras coisas da faculdade</b> que não são entrega nem estudo: organizar o projeto, montar o grupo, falar com o professor. Basta a disciplina.', ex:'Montar o grupo do projeto +fac.POO', xp:15, fixo:'+fac.SIGLA'},
-  {k:'tre', n:'Treino e projetos', c:1, pre:'+', ess:'<b>programação e projetos pessoais fora da matéria</b>: Codeforces, contest, o seu app ou site, ajudar num projeto (como o próprio Ganbatte).', ex:'Virtual contest no Codeforces {tag}', xp:10},
+  {k:'ent', n:'Entrega',   c:5, pre:'@', ess:'um <b>trabalho seu que alguém cobra</b> ou avalia: lista entregue, trabalho, atividade no sistema da faculdade, relatório do estágio. Ter prazo não basta.', ex:'Entregar a lista 3 de derivadas +fac.CALC2 {tag} due:sexta', xp:25},
+  {k:'est', n:'Estudo',    c:0, pre:'@', ess:'tempo de <b>aprender</b>: revisar, ler, resumir, fazer exercícios. Ninguém cobra, mas é o que prepara a prova. Tarefa só com a disciplina já é estudo.', ex:'Revisar integrais por partes +fac.CALC2 {tag}', xp:15},
+  {k:'tre', n:'Treino', c:1, pre:'+', ess:'<b>prática de programação fora da matéria</b>: Codeforces, contest, LeetCode, upsolve.', ex:'Virtual contest no Codeforces {tag}', xp:10},
+  {k:'pro', n:'Projeto', c:2, pre:'+', ess:'<b>criar algo seu</b>, fora da matéria: o seu app, site ou bot, ajudar num projeto (como o próprio Ganbatte).', ex:'Fazer a página inicial do meu site {tag}', xp:10},
   {k:'hab', n:'Hábito',    c:4, pre:'+', ess:'o que se <b>repete todo dia</b>: digitação, leitura, exercício. Vale metade, mas mantém o Ten.', ex:'Treino de digitação {tag}', xp:5},
   {k:'vid', n:'Vida',      c:3, pre:'',  ess:'<b>todo o resto</b>: casa, família, saúde, documentos. Sem tag nenhuma.', ex:'Renovar a carteirinha do RU', xp:10, fixo:'sem tag'},
 ];
@@ -489,7 +489,7 @@ function cfgHTML(){
       <label>Usuário do GitHub (opcional: bug que você reportou vale +${GB.CONTRIB.bug.xp} XP e +${GB.CONTRIB.bug.j.toLocaleString('pt-BR')} J quando a correção entra no beta; ideia, +${GB.CONTRIB.ideia.xp} XP e +${GB.CONTRIB.ideia.j.toLocaleString('pt-BR')} J. Quem desenvolve: a issue em que você é o responsável vira tarefa na Lista e se conclui sozinha quando entra no beta)<input data-cfg="gh" value="${esc(c.gh)}" maxlength="39" placeholder="deixe vazio se não usa"></label>
       ${contribHTML()}
       <label>Tags (o nome muda; o significado de cada tipo continua o mesmo)</label>
-      <div class="wz-f" style="grid-template-columns:repeat(4,minmax(0,1fr))">${TIPOS.filter(t => !t.fixo).map(t => `<label style="color:${NC(t.c)}">${t.n}<input data-cfgt="${t.k}" value="${esc(c.tags[t.k])}" maxlength="24"></label>`).join('')}</div>
+      <div class="wz-f" style="grid-template-columns:repeat(5,minmax(0,1fr))">${TIPOS.filter(t => !t.fixo).map(t => `<label style="color:${NC(t.c)}">${t.n}<input data-cfgt="${t.k}" value="${esc(c.tags[t.k])}" maxlength="24"></label>`).join('')}</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button type="button" class="btn v" data-cfgsave>salvar</button><button type="button" class="btn" data-cfgreset>descartar</button>
         <span class="sub" style="color:var(--red)" role="alert">${esc(c.err)}</span><button type="button" class="btn" data-wzdiscabre style="margin-left:auto">editar disciplinas e datas</button></div>
     </div></div>`;
