@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- vitrine das lojas, decidida em 15/10/2026 (índice #134). Abre direto no navegador, a partir da pasta do repositório. -->
+<title>Masadora nova</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&text=%E5%BF%B5&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;600&family=Pixelify+Sans:wght@400;600&family=Bangers&family=DotGothic16&display=swap">
+<style>
+/* layout: a Masadora do jogo como vitrine; uma prateleira por faixa (comum → lendário), cards com a prévia de cada item */
+:root{
+  color-scheme:dark;
+  --page:#0F1016; --shelf:#161821; --card:#1B1D28; --line:#2A2D3C; --txt:#E6E8F0; --dim:#9197AD;
+  --r-comum:#A3A9BC; --r-raro:#6FA3F2; --r-epico:#B98AF0; --r-lenda:#E6B75A; --hxh:#F0776F; --duv:#F2B15A;
+  --f-head:"Chakra Petch", "Inter", system-ui, sans-serif;
+  --f-ui:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  --f-hud:"Chakra Petch", "Inter", sans-serif;
+}
+body{background:var(--page);color:var(--txt);font-family:var(--f-ui);font-size:14px;line-height:1.45}
+.wrap{max-width:1200px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:26px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+h1{font-family:var(--f-head);font-weight:700;font-size:clamp(26px,4.5vw,36px);margin:0;letter-spacing:.01em}
+h1 .jp{font-family:var(--f-ui);font-weight:500;color:var(--dim);font-size:.55em;margin-left:8px}
+.lead{color:var(--dim);margin:0;max-width:70ch}
+.legenda{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:13px;color:var(--dim)}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+.barra{display:flex;flex-wrap:wrap;gap:8px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--page);padding-block:10px;border-bottom:1px solid var(--line)}
+.barra button{font:500 13px var(--f-ui);color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 12px;cursor:pointer}
+.barra button[aria-pressed="true"]{border-color:var(--txt);background:var(--txt);color:var(--page)}
+.barra button:focus-visible,.som:focus-visible{outline:2px solid var(--r-raro);outline-offset:2px}
+.barra .sep{width:1px;background:var(--line);margin:0 4px}
+
+.prat{display:grid;gap:12px;background:var(--shelf);border:1px solid var(--line);border-radius:10px;padding:16px;border-top:3px solid var(--rc)}
+.prat-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.prat-h h2{margin:0;font-family:var(--f-head);font-size:22px;font-weight:700;color:var(--rc);letter-spacing:.04em;text-transform:uppercase}
+.prat-h .q{font-family:var(--f-mono);font-size:12px;color:var(--dim)}
+.prat-h .r{font-size:13px;color:var(--dim);flex-basis:100%;max-width:80ch}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(186px,1fr));gap:12px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:inset 0 2px 0 var(--rc)}
+.card .info{padding:9px 11px 11px;display:grid;gap:3px}
+.card .nm{font-weight:600;font-size:14px;line-height:1.25}
+.card .mt{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--dim)}
+.card .mt .pr{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.card .rk{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--rc)}
+.selo{position:absolute;top:7px;right:7px;z-index:3;font:700 10px var(--f-head);letter-spacing:.06em;color:#fff;background:var(--hxh);padding:2px 6px 2px 5px;border-radius:3px;box-shadow:0 1px 0 rgba(0,0,0,.4);display:flex;gap:3px;align-items:center}
+.selo i{font-style:normal;font-family:"Noto Serif JP",serif;font-size:11px}
+.duv{position:absolute;top:7px;left:7px;z-index:3;width:18px;height:18px;border-radius:50%;background:var(--duv);color:#1A1200;font:700 12px var(--f-ui);display:grid;place-items:center;cursor:help}
+.nota-duv{font-size:12px;color:var(--duv);line-height:1.35}
+.trava{font-size:11px;color:var(--dim)}
+
+/* ---------- prévia: cada uma com a paleta do jogo nas variáveis ---------- */
+.pv{height:118px;position:relative;overflow:hidden;background-color:var(--bg);color:var(--ink);border-bottom:1px solid var(--line);color-scheme:normal}
+.sc{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--hair);border-radius:7px;padding:8px 10px;z-index:1}
+.av{width:30px;height:30px;border-radius:50%;background:var(--panel2) center/cover no-repeat;border:2px solid var(--hair);position:relative;flex:none}
+.ln{flex:1;min-width:0;display:grid;gap:5px}
+.ln b{font:600 12px var(--f-hud);white-space:nowrap;overflow:hidden}
+.ln small{font:500 10px var(--f-ui);color:var(--amb)}
+.xp{height:6px;background:var(--track);border-radius:3px;overflow:hidden}
+.xp>b{display:block;height:100%;width:64%;background:var(--aura)}
+.boss{position:absolute;top:12px;left:12px;width:44px;height:30px;border-radius:5px;background:var(--panel2);border:1px solid var(--hair);z-index:1}
+.boss::after{content:"";position:absolute;left:5px;right:5px;bottom:5px;height:4px;border-radius:2px;background:var(--red)}
+
+/* paleta */
+.pal{position:absolute;inset:0;display:grid;grid-template-rows:1fr auto;padding:12px;gap:8px}
+.pal .pn{background:var(--panel);border:1px solid var(--hair);border-radius:7px;padding:8px 10px;display:grid;gap:3px}
+.pal .pn b{font:600 13px var(--f-hud)}.pal .pn span{font-size:11px;color:var(--soft)}
+.pal .sw{display:flex;gap:4px}.pal .sw i{flex:1;height:14px;border-radius:3px}
+
+/* texturas (as do jogo) */
+.tex-manga{background-image:radial-gradient(color-mix(in srgb,var(--ink) 9%,transparent) 1px,transparent 1.3px);background-size:6px 6px}
+.tex-ceu{background-image:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--volt) 14%,transparent),transparent 60%),linear-gradient(180deg,color-mix(in srgb,var(--aura) 8%,transparent),transparent 40%)}
+.tex-nen{background-image:radial-gradient(60% 40% at 10% 90%,color-mix(in srgb,var(--aura) 16%,transparent),transparent 70%),radial-gradient(50% 35% at 90% 10%,color-mix(in srgb,var(--volt) 12%,transparent),transparent 70%)}
+.tex-cartas{background-image:repeating-linear-gradient(45deg,color-mix(in srgb,var(--volt) 6%,transparent) 0 14px,transparent 14px 28px),repeating-linear-gradient(-45deg,color-mix(in srgb,var(--aura) 5%,transparent) 0 14px,transparent 14px 28px)}
+.tex-arena{background-image:linear-gradient(color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px);background-size:44px 44px}
+.tex-scan{background-image:repeating-linear-gradient(0deg,color-mix(in srgb,#000 22%,transparent) 0 1px,transparent 1px 3px),radial-gradient(130% 100% at 50% 50%,transparent 55%,color-mix(in srgb,#000 38%,transparent))}
+.tex-grao{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.tex-hex{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17.32' height='30' viewBox='0 0 17.32 30'%3E%3Cpath d='M8.66 0L17.32 5V15L8.66 20L0 15V5Z M8.66 20V30' fill='none' stroke='%23909090' stroke-opacity='.16' stroke-width='.7'/%3E%3C/svg%3E");background-size:31px 54px}
+.tex-teia{background-image:repeating-radial-gradient(circle at 100% 0,transparent 0 54px,color-mix(in srgb,var(--ink) 8%,transparent) 54px 55.5px),repeating-conic-gradient(from 180deg at 100% 0,color-mix(in srgb,var(--ink) 8%,transparent) 0 .12deg,transparent .12deg 7.5deg)}
+
+/* molduras (as do jogo) */
+.big{position:absolute;inset:0;display:grid;place-items:center}
+.big .av{width:62px;height:62px;border-width:3px}
+.fr-hunter .av{border-color:#E8C35A;box-shadow:0 0 0 3px color-mix(in srgb,#E8C35A 30%,transparent),0 0 14px -4px #E8C35A}
+.fr-volt .av{border:2px dashed var(--volt);box-shadow:0 0 0 3px color-mix(in srgb,var(--volt) 25%,transparent),0 0 18px -2px var(--volt)}
+.fr-aranha .av{border:3px double var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 25%,transparent)}
+.fr-nen .av{border-color:var(--n2);box-shadow:0 0 0 3px color-mix(in srgb,var(--n2) 30%,transparent),0 0 20px -2px var(--n2)}
+.fr-carta .av{border-radius:7px;border:3px double var(--amb);box-shadow:0 0 0 2px color-mix(in srgb,var(--amb) 25%,transparent),0 6px 16px -8px var(--amb)}
+.fr-escarlate .av{border-color:#FF2E4D;animation:hjEscarlate 2.4s ease-in-out infinite}
+.fr-giro .av{border-color:transparent}
+.fr-giro .av::after{content:"";position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(var(--aura),var(--volt),var(--amb),var(--red),var(--aura));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px));filter:drop-shadow(0 0 4px var(--aura));animation:hjGiro 3.2s linear infinite}
+
+/* título e fonte */
+.tt{position:absolute;inset:0;display:flex;align-items:center;gap:12px;padding:0 16px}
+.tt .av{width:44px;height:44px}
+.tt div{display:grid;gap:2px}.tt b{font:600 15px var(--f-hud)}.tt span{font:600 12px var(--f-ui);color:var(--amb)}
+.ft{position:absolute;inset:0;display:grid;place-content:center;gap:4px;text-align:center;padding:0 10px}
+.ft b{font-family:var(--fx-font);font-size:22px;font-weight:400;line-height:1.1}
+.ft span{font-family:var(--fx-font);font-size:13px;color:var(--soft)}
+.ft-maquina{--fx-font:"JetBrains Mono",monospace}.ft-manga{--fx-font:Bangers,Impact,sans-serif}.ft-pixel{--fx-font:"Pixelify Sans","Courier New",monospace}.ft-arcade{--fx-font:DotGothic16,"Courier New",monospace}
+
+/* som */
+.sm{position:absolute;inset:0;display:grid;place-items:center}
+.som{width:56px;height:56px;border-radius:50%;border:1px solid var(--hair);background:var(--panel);color:var(--aura);cursor:pointer;display:grid;place-items:center}
+.som svg{width:24px;height:24px}
+.som.toca{animation:hjToca .5s ease-out}
+
+/* pixel */
+.px{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);image-rendering:pixelated}
+.px i{display:block}
+.px b{position:absolute;left:10px;bottom:10px;font:400 14px "Pixelify Sans",monospace;background:rgba(0,0,0,.55);color:#fff;padding:2px 6px}
+
+/* fotos */
+.foto{position:absolute;inset:0;background:var(--panel2) center/cover no-repeat}
+.foto.chefe::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+
+/* efeitos (prévias das do jogo) */
+.o{position:absolute;pointer-events:none}
+@media (prefers-reduced-motion:no-preference){
+  .fx-shake .boss{animation:hjShake .35s linear infinite}
+  .fx-shim .xp>b{background:linear-gradient(90deg,var(--aura),var(--volt),#fff,var(--volt),var(--aura));background-size:200% 100%;animation:hjShim 1.2s linear infinite}
+  .fx-aura .sc .av{animation:hjAura 1.8s ease-in-out infinite}
+  .fx-corrente .xp>b{background:repeating-linear-gradient(90deg,var(--amb) 0 9px,color-mix(in srgb,var(--amb) 30%,transparent) 9px 11px,color-mix(in srgb,var(--amb) 70%,var(--bg)) 11px 20px,color-mix(in srgb,var(--amb) 30%,transparent) 20px 22px);background-size:44px 100%;animation:hjCorrente 1.1s linear infinite;box-shadow:0 0 8px -1px var(--amb)}
+  .fx-digita .ln b{animation:hjDigita 2.4s steps(14) infinite}
+  .fx-gyo .sc{background-image:radial-gradient(90px circle at var(--mx,30%) 50%,color-mix(in srgb,var(--aura) 22%,transparent),transparent 70%);animation:hjGyo 3s ease-in-out infinite alternate}
+  .o.zap{inset:0;background:radial-gradient(circle at 70% 30%,var(--volt),color-mix(in srgb,var(--volt) 30%,transparent) 40%,transparent 75%);opacity:0;animation:hjZap 2.2s ease-out infinite}
+  .o.drift{width:120px;height:80px;border-radius:50%;background:var(--aura);filter:blur(28px);opacity:.28;top:-10px;left:-20px;animation:hjDrift 7s ease-in-out infinite alternate}
+  .o.estrelas{inset:0;background-image:radial-gradient(2px 2px at 20% 70%,var(--aura),transparent),radial-gradient(2px 2px at 60% 40%,var(--volt),transparent),radial-gradient(1.5px 1.5px at 85% 80%,var(--aura),transparent),radial-gradient(1.5px 1.5px at 40% 20%,var(--volt),transparent),radial-gradient(1.5px 1.5px at 10% 30%,var(--aura),transparent);animation:hjSobe 3s linear infinite}
+  .o.rastro{width:7px;height:7px;border-radius:50%;background:var(--aura);box-shadow:-8px 3px 0 -1px color-mix(in srgb,var(--aura) 60%,transparent),-16px 6px 0 -2px color-mix(in srgb,var(--aura) 35%,transparent),0 0 10px var(--aura);top:24px;left:20px;animation:hjRastro 2.6s ease-in-out infinite}
+  .o.jaja{top:6px;right:12px;font:400 30px Bangers,Impact,sans-serif;color:var(--amb);-webkit-text-stroke:1px var(--bg);letter-spacing:.02em;animation:hjPop 1.8s ease-out infinite}
+  .o.jaja::before{content:"";position:absolute;inset:-6px -14px;border:2px solid var(--amb);border-radius:50%;opacity:0;animation:hjOnda 1.8s ease-out infinite}
+  .o.carta{top:14px;right:40px;width:22px;height:32px;border-radius:3px;background:#FFF;border:1px solid #ccc;transform-origin:50% 120%;animation:hjLeque 2s ease-out infinite}
+  .o.carta::after{content:"♦";position:absolute;inset:0;display:grid;place-items:center;color:#E0365A;font-size:13px}
+  .o.carta.c2{animation-delay:.08s;--g:-28deg}.o.carta.c3{animation-delay:.16s;--g:28deg}
+  .o.conf{top:-8px;width:6px;height:9px;animation:hjCai 1.9s linear infinite}
+  .o.fogo{width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,transparent 30%,var(--c) 32%,transparent 36%),conic-gradient(from 0deg,var(--c) 0 3deg,transparent 3deg 30deg);-webkit-mask:radial-gradient(circle,transparent 25%,#000 30%);mask:radial-gradient(circle,transparent 25%,#000 30%);opacity:0;animation:hjFogo 2.2s ease-out infinite}
+  .o.raio{top:-20px;left:-40%;width:180%;height:4px;background:linear-gradient(90deg,transparent,#BFE8FF,#5FB4FF,transparent);box-shadow:0 0 12px #5FB4FF;transform:rotate(18deg);opacity:0;animation:hjRaio 1.9s ease-out infinite}
+  .o.raio+.o.flash{inset:0;background:color-mix(in srgb,#5FB4FF 25%,transparent);opacity:0;animation:hjZap 1.9s ease-out infinite}
+  .o.ascensao{inset:-60%;opacity:.35;filter:blur(18px);background:conic-gradient(from 0deg at 50% 50%,var(--grn),var(--volt),var(--aura),var(--red),var(--amb),var(--grn));animation:hjGiro 12s linear infinite}
+}
+@keyframes hjEscarlate{0%,100%{box-shadow:0 0 0 3px color-mix(in srgb,#FF2E4D 18%,transparent),0 0 10px -4px #FF2E4D}50%{box-shadow:0 0 0 4px color-mix(in srgb,#FF2E4D 35%,transparent),0 0 26px 2px #FF2E4D}}
+@keyframes hjGiro{to{transform:rotate(1turn)}}
+@keyframes hjShake{0%,100%{transform:translate(0)}25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,-1px)}}
+@keyframes hjShim{to{background-position:-200% 0}}
+@keyframes hjAura{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--aura) 60%,transparent)}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--aura) 0%,transparent),0 0 14px 2px var(--aura)}}
+@keyframes hjCorrente{to{background-position:44px 0}}
+@keyframes hjDigita{0%{clip-path:inset(0 100% 0 0)}45%,100%{clip-path:inset(0 0 0 0)}}
+@keyframes hjGyo{from{--mx:10%;background-position:-60px 0}to{background-position:90px 0}}
+@keyframes hjZap{0%,55%{opacity:0}60%{opacity:.9}100%{opacity:0}}
+@keyframes hjDrift{to{transform:translate(110px,40px)}}
+@keyframes hjSobe{from{background-position:0 0,0 0,0 0,0 0,0 0}to{background-position:0 -118px,0 -118px,0 -118px,0 -118px,0 -118px}}
+@keyframes hjRastro{0%{transform:translate(0,0)}50%{transform:translate(120px,20px)}100%{transform:translate(0,0)}}
+@keyframes hjPop{0%,20%{transform:scale(.2);opacity:0}30%{transform:scale(1.25);opacity:1}40%,80%{transform:scale(1);opacity:1}100%{opacity:0}}
+@keyframes hjOnda{0%,25%{transform:scale(.4);opacity:0}30%{opacity:.8}70%,100%{transform:scale(1.5);opacity:0}}
+@keyframes hjLeque{0%{transform:rotate(0) translateY(10px);opacity:0}20%{opacity:1}60%{transform:rotate(var(--g,0deg)) translateY(-4px)}100%{transform:rotate(calc(var(--g,0deg)*2)) translateY(-30px);opacity:0}}
+@keyframes hjCai{to{transform:translateY(130px) rotate(540deg)}}
+@keyframes hjFogo{0%{transform:scale(.1);opacity:1}70%{opacity:1}100%{transform:scale(1.3);opacity:0}}
+@keyframes hjRaio{0%,40%{opacity:0;transform:translateY(0) rotate(18deg)}50%{opacity:1}70%,100%{opacity:0;transform:translateY(130px) rotate(18deg)}}
+@keyframes hjToca{0%{transform:scale(1)}40%{transform:scale(1.12);box-shadow:0 0 0 8px color-mix(in srgb,var(--aura) 25%,transparent)}100%{transform:scale(1)}}
+
+.vazio{border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;text-align:center;padding:16px;color:var(--dim);font-size:13px;min-height:120px}
+.rodape{color:var(--dim);font-size:13px;max-width:75ch}
+
+/* ---------- proposta: estados dos cards ---------- */
+.card.novo{border:1.5px dashed var(--rc);box-shadow:none;background:color-mix(in srgb,var(--card) 85%,var(--rc) 6%)}
+.card.sai{opacity:.5}
+.card.sai .nm{text-decoration:line-through}
+.est{position:absolute;bottom:auto;top:7px;left:7px;z-index:3;font:700 10px var(--f-head);letter-spacing:.06em;padding:2px 6px;border-radius:3px;text-transform:uppercase}
+.est.novo{background:var(--txt);color:var(--page)}
+.est.mov{background:var(--card);color:var(--txt);border:1px solid var(--line)}
+.est.sai{background:#3A2A2A;color:#F2B8B0}
+.card .duv{top:30px}
+.why{font-size:12px;color:var(--dim);line-height:1.35}
+.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.kpi{background:var(--shelf);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;gap:2px}
+.kpi b{font:700 24px var(--f-head);font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--dim)}
+.kpi.meta b{color:var(--r-lenda)}
+.prat.pack{--rc:var(--txt)}
+.prat.gratis{--rc:var(--r-raro)}
+.prat.fora{--rc:#8A5A55}
+
+/* ---------- prévias dos itens novos ---------- */
+.mc{position:absolute;left:16px;right:16px;top:18px;bottom:18px;background:var(--panel);border:1px solid var(--hair);border-radius:7px;display:grid;place-items:center;font:600 12px var(--f-hud);color:var(--soft)}
+.bd-dupla .mc{border:4px double var(--soft)}
+.bd-trac .mc{border:2px dashed var(--soft)}
+.bd-cantos .mc{border-color:transparent;background:linear-gradient(var(--ink),var(--ink)) 0 0/12px 2px no-repeat,linear-gradient(var(--ink),var(--ink)) 0 0/2px 12px no-repeat,linear-gradient(var(--ink),var(--ink)) 100% 100%/12px 2px no-repeat,linear-gradient(var(--ink),var(--ink)) 100% 100%/2px 12px no-repeat,var(--panel)}
+.bd-corrente .mc{border:5px solid transparent;border-image:repeating-linear-gradient(90deg,var(--amb) 0 7px,transparent 7px 9px,color-mix(in srgb,var(--amb) 60%,var(--bg)) 9px 16px,transparent 16px 18px) 5}
+.bd-teia .mc{background-image:repeating-radial-gradient(circle at 0 0,transparent 0 10px,color-mix(in srgb,var(--ink) 30%,transparent) 10px 11px),repeating-conic-gradient(from 90deg at 0 0,color-mix(in srgb,var(--ink) 30%,transparent) 0 .6deg,transparent .6deg 15deg);background-size:44px 44px;background-repeat:no-repeat;border-color:var(--soft)}
+.bd-naipes .mc::before,.bd-naipes .mc::after{position:absolute;font:700 13px serif}
+.bd-naipes .mc::before{content:"♠";top:4px;left:7px;color:var(--ink)}
+.bd-naipes .mc::after{content:"♥";bottom:4px;right:7px;color:var(--red)}
+.bd-naipes .mc{border-color:var(--amb)}
+@media (prefers-reduced-motion:no-preference){
+  .bd-aura .mc{border-color:var(--n2);animation:hjBordaAura 2.4s ease-in-out infinite}
+  .hv-contorno .mc{animation:hjContorno 2.4s ease-in-out infinite}
+  .hv-shu .mc{animation:hjShu 2.4s ease-in-out infinite}
+  .hv-vira .mc{animation:hjVira 3s ease-in-out infinite}
+  .hv-bungee .mc{transform-origin:0 50%;animation:hjBungee 2.4s ease-in-out infinite}
+  .hv-en .o.en{width:20px;height:20px;border-radius:50%;left:40%;top:40%;border:2px solid var(--aura);animation:hjEn 2.4s ease-out infinite}
+  .cur svg{animation:hjCur 3s ease-in-out infinite}
+  .heat.chamas i.on svg{animation:hjChama 1.3s ease-in-out infinite alternate;animation-delay:inherit}
+  .cur .io{animation:hjIo 2.2s ease-in-out infinite}.cur .fio{transform-origin:50% 0;animation:hjFio 2.2s ease-in-out infinite}
+  .tr-deslizar .tA{animation:hjSlideA 3s ease-in-out infinite}.tr-deslizar .tB{animation:hjSlideB 3s ease-in-out infinite}
+  .tr-glitch .mc{animation:hjGlitch 2.6s steps(1) infinite}
+}
+@keyframes hjBordaAura{0%,100%{box-shadow:0 0 0 1px var(--n2),0 0 6px -2px var(--n2)}50%{box-shadow:0 0 0 2px var(--n2),0 0 18px 2px var(--n2)}}
+@keyframes hjContorno{0%,40%{border-color:var(--hair)}50%,90%{border-color:var(--ink)}}
+@keyframes hjShu{0%,40%{box-shadow:none;border-color:var(--hair)}55%,90%{box-shadow:0 0 0 2px color-mix(in srgb,var(--aura) 50%,transparent),0 0 16px -2px var(--aura);border-color:var(--aura)}}
+@keyframes hjVira{0%,35%{transform:rotateY(0)}50%,85%{transform:rotateY(180deg)}100%{transform:rotateY(360deg)}}
+@keyframes hjBungee{0%,40%{transform:scaleX(1)}55%{transform:scaleX(1.12)}65%{transform:scaleX(.95)}75%,100%{transform:scaleX(1)}}
+@keyframes hjEn{0%{transform:scale(.3);opacity:1}100%{transform:scale(7);opacity:0}}
+@keyframes hjCur{0%,100%{transform:translate(-20px,-6px)}50%{transform:translate(24px,8px)}}
+@keyframes hjChama{0%{transform:scale(1,1)}50%{transform:scale(.88,1.12) skewX(3deg)}100%{transform:scale(1.05,.92) skewX(-3deg)}}
+@keyframes hjIo{0%,100%{transform:translateY(-26px)}50%{transform:translateY(0)}}
+@keyframes hjFio{0%,100%{transform:scaleY(.6)}50%{transform:scaleY(1)}}
+@keyframes hjSlideA{0%,40%{transform:translateX(0)}50%,90%{transform:translateX(-110%)}100%{transform:translateX(0)}}
+@keyframes hjSlideB{0%,40%{transform:translateX(110%)}50%,90%{transform:translateX(0)}100%{transform:translateX(110%)}}
+@keyframes hjGlitch{0%,70%{clip-path:none;transform:none}72%{clip-path:inset(20% 0 50% 0);transform:translateX(-6px)}75%{clip-path:inset(60% 0 10% 0);transform:translateX(6px)}78%{clip-path:none;transform:none}}
+.cur{position:absolute;inset:0;display:grid;place-items:center}
+.cur svg{width:40px;height:40px}
+.cur svg[style]{animation:none!important}
+.hp{position:absolute;left:16px;right:16px;top:40px;display:grid;gap:6px;font:600 11px var(--f-hud);color:var(--soft)}
+.hp i{display:block;height:12px;border-radius:3px;background:var(--track);overflow:hidden}
+.hp i b{display:block;height:100%;width:62%}
+.hp.corrente i{height:14px;background:color-mix(in srgb,var(--track) 70%,#000)}
+.hp.corrente i b{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='14'%3E%3Cellipse cx='7.5' cy='7' rx='6.2' ry='4' fill='none' stroke='%23596069' stroke-width='3.2'/%3E%3Cellipse cx='7.5' cy='7' rx='6.2' ry='4' fill='none' stroke='%23B9BFC8' stroke-width='1.8'/%3E%3Crect x='12.5' y='5.6' width='10' height='2.8' rx='1.4' fill='%23D5D9DF' stroke='%23596069' stroke-width='.8'/%3E%3C/svg%3E") repeat-x left center/22px 14px}
+.hp.cristal i b{background:linear-gradient(115deg,#BFE8FF 0 20%,#7FC8F8 20% 45%,#E6F7FF 45% 55%,#5FA8E8 55% 80%,#BFE8FF 80%)}
+.heat{position:absolute;inset:16px 18px;display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(4,1fr);gap:4px}
+.heat i{background:var(--panel2);border-radius:2px}
+.heat i.on{background:var(--grn)}
+.heat.cartas i{border-radius:1px;transform:scaleX(.7)}.heat.cartas i.on{background:var(--amb)}
+.heat.pegadas i{border-radius:50% 50% 45% 45%/60% 60% 40% 40%;transform:scale(.75,.95)}
+.heat.chamas i{background:none;display:grid;place-items:end center}
+.heat.chamas i:not(.on)::after{content:"";width:40%;height:22%;border-radius:2px;background:var(--panel2)}
+.heat.chamas i svg{width:78%;height:100%;transform-origin:50% 100%;filter:drop-shadow(0 0 2px #FF6A1F88)}
+.tr{position:absolute;inset:18px 16px;overflow:hidden;border-radius:7px}
+.tr .mc{position:absolute;inset:0}
+.tr .tB{background:var(--panel2)}
+.ph{position:absolute;inset:0;display:grid;place-content:center;gap:4px;text-align:center;padding:12px;background:repeating-linear-gradient(135deg,transparent 0 10px,color-mix(in srgb,var(--rc) 8%,transparent) 10px 20px)}
+.ph b{font:700 15px var(--f-head);color:var(--rc);letter-spacing:.03em}
+.ph span{font-size:11.5px;color:var(--dim);line-height:1.3}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Proposta · #17 e #77 · 15/10/2026</div>
+    <h1>Masadora<span class="jp">proposta</span></h1>
+    <p class="lead">A loja como ficaria com as decisões de hoje. Os itens novos estão tracejados, o que muda de faixa leva um selo, e o que sai aparece riscado no fim. Os preços em Jenny continuam os de hoje; os novos ficam para a #77.</p>
+    <div class="legenda">
+      <span><i class="dot" style="background:var(--r-comum)"></i>Comum ≈ 1 dia</span>
+      <span><i class="dot" style="background:var(--r-raro)"></i>Raro ≈ 3 dias</span>
+      <span><i class="dot" style="background:var(--r-epico)"></i>Épico ≈ 8 dias · pede andar</span>
+      <span><i class="dot" style="background:var(--r-lenda)"></i>Lendário ≈ 30 dias · pede andar e XP</span>
+      <span><b class="selo" style="position:static"><i>念</i>HxH</b>tema da temporada</span>
+    </div>
+  </header>
+  <div class="resumo" id="resumo"></div>
+  <nav class="barra" aria-label="Filtros" id="barra"></nav>
+  <div id="loja" style="display:grid;gap:22px"></div>
+  <p class="rodape">Prévias dos itens novos: as de borda, hover, cursor, HP, heatmap e transição são uma ideia de como ficariam; temas e eventos ainda estão por desenhar. Os dias somam só o que se compra com Jenny: pacotes e itens liberados pelo jogo ficam fora da conta.</p>
+</div>
+<script>
+
+const PALS = {
+  painel:  ['dark','#13141B','#1B1D28','#222536','#E6E8F0','#9197AD','#5A6078','#2A2D3C','#252838','#7AA2F7','#F7768E','#E0AF68','#73C991','#9FD3FF','#B4A0FF','#F7768E','#7DCFFF','#73C991','#FF9E64','#BB9AF7','#E0AF68'],
+  simples: ['dark','#16181D','#1D2027','#24282F','#E2E5EB','#9BA1AD','#60666F','#2C3038','#272B33','#9FB2CF','#DB8A93','#CDB384','#8DBF9F','#B4C1D3','#A6AFC0','#DB8A93','#A6C3DA','#8DBF9F','#D3A27E','#ADA3CC','#CDB384'],
+  leorio:  ['dark','#0D1424','#132038','#1A2945','#E8EEF8','#97A6C2','#5A6A8A','#24345A','#1D2B4B','#4FC3D9','#FF7A7A','#F2C46D','#6FD6A8','#5FD3E6','#4F8FE0','#FF7A7A','#5FD3E6','#6FD6A8','#F2A65A','#9F9BF5','#F2C46D'],
+  gon:     ['dark','#0D1710','#132118','#1A2B20','#ECF5E8','#9DB5A0','#5E7863','#24392A','#1E3125','#9BE15D','#FF6B5B','#F2C14E','#9BE15D','#C6F27A','#3FBF7F','#FF6B5B','#7DD3FC','#9BE15D','#F2994A','#B794F6','#F2C14E'],
+  biscuit: ['dark','#1C1220','#26182B','#301E36','#FFF0F7','#C9A3BB','#80637A','#432A48','#38243D','#FFE08A','#FF7EB0','#FFE08A','#7EE0B5','#FF9EC7','#C3A6FF','#FF7EB0','#8FD3FF','#7EE0B5','#FFB07A','#C3A6FF','#FFE08A'],
+  netero:  ['dark','#17110C','#211810','#2B2016','#FFF5EA','#C8B19A','#86705A','#3F2F22','#33261B','#FF9A3C','#FF5E4D','#FFC861','#86D49A','#FFB25E','#F2E6D0','#FF5E4D','#8CCFF0','#86D49A','#FF9A3C','#C7A6E8','#FFC861'],
+  kurapika:['dark','#140D12','#1D1219','#261822','#F6EAF0','#B49BA8','#76606C','#3A2632','#2E1E28','#F5C26B','#FF3D5E','#F5C26B','#7DD8A4','#FF4D6D','#F5C26B','#FF3D5E','#7FC8F8','#7DD8A4','#F59E5B','#C9A2FF','#F5C26B'],
+  killua:  ['dark','#0C1120','#121A2E','#18223A','#EAF2FF','#93A3C4','#56648A','#22304F','#1C2742','#8CC8FF','#FF7A90','#FFD27A','#7CE0B0','#B6ECFF','#7FA8FF','#FF7A90','#B6ECFF','#7CE0B0','#FFB07A','#B9A2FF','#FFD27A'],
+  hisoka:  ['dark','#160C1A','#211128','#2A1633','#FFEFFA','#C39BC0','#7E5C7F','#3D2346','#331C3B','#FFD23F','#FF5C8A','#FFD23F','#6EE7B7','#FF6FB5','#FFD23F','#FF5C8A','#7DD3FC','#6EE7B7','#FB923C','#E879F9','#FFD23F'],
+  meruem:  ['dark','#0B110D','#111A14','#17231B','#EEF3E6','#A3B29A','#64725E','#24331F','#1D2A1C','#C9B458','#E0605A','#C9B458','#5DBB8A','#E3CF6E','#5DBB8A','#E0605A','#8FC9D9','#5DBB8A','#D99A4E','#A99AD0','#C9B458'],
+  zoldyck: ['dark','#100D16','#17131F','#1E1928','#ECE8F4','#A39CB5','#655E78','#2B2438','#241E30','#B9C4D6','#E5566F','#D8C08A','#7FCFA8','#9FE3FF','#A78BFA','#E5566F','#9FE3FF','#7FCFA8','#E8A06A','#A78BFA','#D8C08A'],
+  ryodan:  ['dark','#0E0A0B','#161012','#1E1618','#F3E9EA','#B09A9D','#6E5A5D','#2E2124','#261B1E','#FF4A5A','#FF3347','#E3B25B','#6FCF97','#FF6B6B','#C0394B','#FF3347','#8AB4F8','#6FCF97','#F2994A','#B57EDC','#E3B25B'],
+  greed:   ['dark','#0A1512','#0F1E19','#152720','#E9F5EE','#93B5A6','#58776A','#1F3A30','#1A3229','#E8C35A','#F2696B','#E8C35A','#5FD6A0','#7DF0C9','#E8C35A','#F2696B','#7FC8F8','#5FD6A0','#F2A65A','#B79CF2','#E8C35A'],
+  abismo:  ['dark','#05080C','#0A1016','#0F1720','#DDF3F2','#86A6A8','#4D6668','#162229','#121C23','#3EE6D0','#FF5D7A','#E7C46A','#3EE6A0','#3EE6D0','#7B6CFF','#FF5D7A','#3EC9E6','#3EE6A0','#FF9F5A','#9B8CFF','#E7C46A'],
+  aurora:  ['dark','#070914','#0D1020','#13172C','#EEF0FF','#A4A9CC','#61678C','#21264A','#1A1F3C','#7CF5C4','#FF6FA8','#FFD27A','#7CF5C4','#8FB8FF','#C58BFF','#FF6FA8','#8FB8FF','#7CF5C4','#FFB27A','#C58BFF','#FFD27A'],
+  pergaminho:['light','#EFE6D2','#FBF5E6','#F3EAD5','#2B1D14','#6B5544','#A08B76','#DCCDB0','#E5D8BC','#8A4B1F','#B3362F','#A8741A','#4F7A3A','#2F6A8A','#7A4E9C','#B3362F','#2F6A8A','#4F7A3A','#B4521E','#7A4E9C','#A8741A'],
+  claro:   ['light','#F4F5F9','#FFFFFF','#F3F4FA','#1B1E2E','#5B6180','#989EB6','#E1E4EE','#E8EAF2','#2F5FD0','#D6455D','#B7812A','#2F8A55','#1F78C8','#6B4FD8','#D6455D','#1F86B8','#2F8A55','#D0661F','#7E57C2','#B7812A'],
+};
+
+const TK = 'bg panel panel2 ink soft faint hair track prompt red amb grn volt aura n1 n2 n3 n4 n5 n6'.split(' ');
+const palStyle = k => { const p = PALS[k] || PALS.painel; return TK.map((t,i) => `--${t}:${p[i+1]}`).join(';'); };
+const RK = {comum:['Comum','var(--r-comum)','Muda uma coisa só, sem animação: paleta, moldura parada, título livre, foto, som curto.'],
+  raro:['Raro','var(--r-raro)','Muda a tela toda sem animação (textura, fonte), tem um efeito pequeno ou pontual, ou é travado por uma conquista. Retratos e peles pixel.'],
+  epico:['Épico','var(--r-epico)','Animação contínua na tela toda ou a cada tarefa. Temas completos e o Mundo pixel.'],
+  lenda:['Lendário','var(--r-lenda)','Exclusivo e marcante, quase sempre temático. Hoje só a Ascensão: faltam itens aqui.'],
+  fora:['Fora das faixas','var(--dim)','Não se compram avulsos, vêm de graça, ou são a encomenda.']};
+const CAT = {pal:'Paleta',tex:'Textura',fx:'Efeito',frame:'Moldura',title:'Título',font:'Fonte',som:'Som',full:'Tema completo',px:'Pixel',chefe:'Retrato de chefão',avatar:'Foto de perfil'};
+const TEMAS = {killua:{pal:'killua',bg:'ceu',fx:['shim','aura']}, hisoka:{pal:'hisoka',bg:'cartas',fx:['shake','zap']}, meruem:{pal:'meruem',bg:'nen',fx:['aura','drift']},
+  ryodan:{pal:'ryodan',bg:'teia',fx:['baralho','gyo']}, greed:{pal:'greed',bg:'scan',font:'arcade',fx:['digita','estrelas']}, zoldyck:{pal:'zoldyck',bg:'grao',fx:['godspeed','rastro']},
+  ascensao:{pal:'aurora',bg:'',frame:'giro',fx:['ascensao','estrelas','fogos']}};
+const SW = {'px-unlock':['#5FA35A','#3E7CC9','#F3E6C8','#EFEAF7','#2A2140'],'px-map-tarde':['#E8A35A','#C9974A','#C7517A','#F3D9A0','#2A1830'],'px-map-noite':['#1F3A3A','#14205A','#7C8BB8','#070A18','#FFD45E'],
+  'px-p1-gb':['#9BBC0F','#8BAC0F','#306230','#0F380F','#C4DE6B'],'px-p1-noite':['#151229','#3B2E6E','#7FE0A0','#B49CFF','#E8E2FF'],'px-gi-joy':['#2B2346','#0F0E1A','#FF6FB5','#6FE3FF','#FFD166'],
+  'px-gi-noite':['#0B1026','#141B3A','#FFB547','#7FD1FF','#C9A2FF'],'px-ms-neon':['#0E0B1F','#1D1840','#FF5FA2','#6FE3FF','#E9E6FF'],'px-ms-papel':['#EFE6D2','#D8C7A3','#FFFBF1','#B4521E','#2B1D14']};
+
+// [id, nome, cat, preço hoje, faixa, h = HxH, dúvida, trava]
+const I = [
+  ['pal-leorio','Leorio','pal',600,'comum',1],['pal-claro','Claro','pal',700,'comum',0],['pal-gon','Gon','pal',800,'comum',1],['pal-biscuit','Biscuit','pal',900,'comum',1],
+  ['pal-kurapika','Kurapika','pal',1000,'comum',1],['pal-netero','Netero','pal',1100,'comum',1],['pal-pergaminho','Pergaminho','pal',1100,'comum',0],['pal-killua','Killua','pal',1200,'comum',1],
+  ['pal-zoldyck','Zoldyck','pal',1300,'comum',1],['pal-ryodan','Genei Ryodan','pal',1400,'comum',1],['pal-greed','Greed Island','pal',1400,'comum',1],
+  ['pal-abismo','Continente Negro','pal',1600,'comum',1,'É a paleta mais cara hoje. Sobe para raro, ou vira básica com outro nome?'],
+  ['tx-scan','Tela de fliperama','tex',1800,'raro',0],['tx-manga','Retícula de mangá','tex',2000,'raro',0],['tx-grao','Papel antigo','tex',2000,'raro',0],['tx-arena','Ladrilhos da Arena','tex',2200,'raro',1],
+  ['tx-hex','Colmeia das Quimeras','tex',2400,'raro',1],['tx-ceu','Céu da Arena','tex',2500,'raro',1],['tx-teia','Teia da Aranha','tex',2800,'raro',1],['tx-nen','Névoa de Nen','tex',3000,'raro',1],
+  ['fx-shake','Fúria visível','fx',1000,'raro',0],['fx-shim','Barra elétrica','fx',1200,'raro',0],['fx-aura','Aura do avatar','fx',1500,'raro',0],['fx-digita','Terminal vivo','fx',1500,'raro',0],
+  ['fx-corrente','Corrente de Kurapika','fx',1800,'raro',1],['fx-zap','Raio no aviso','fx',2000,'raro',0],
+  ['fx-confete','Confete no andar novo','fx',2500,'raro',0,'Faz quase o mesmo que os Fogos, que ficaram em épico. Os dois juntos em raro ou em épico?'],
+  ['fx-gyo','Gyo','fx',2800,'raro',1,'Reage o tempo todo ao mouse: pode ser épico.'],
+  ['fx-jajanken','Jajanken','fx',2000,'epico',1,'Custa 2.000 J hoje: é o que mais sobe.'],['fx-baralho','Cartas do Hisoka','fx',2200,'epico',1],
+  ['fx-fogos','Fogos no andar novo','fx',2800,'epico',0,'Ver o Confete.'],['fx-drift','Aura ambiente','fx',3000,'epico',0],['fx-godspeed','Godspeed','fx',3000,'epico',1],
+  ['fx-estrelas','Poeira de Nen','fx',3200,'epico',0,'O nome tem Nen, mas o efeito serve a qualquer tema.'],['fx-rastro','Rastro de aura','fx',3500,'epico',0],
+  ['fr-hunter','Moldura Hunter ★','frame',500,'comum',1],['fr-volt','Moldura elétrica','frame',900,'comum',0],['fr-nen','Moldura de aura','frame',1200,'comum',1],['fr-carta','Carta de Greed Island','frame',1600,'comum',1],
+  ['fr-aranha','Moldura da Aranha','frame',1500,'raro',1,0,'derrote um chefão'],['fr-escarlate','Olhos escarlates','frame',2000,'raro',1],['fr-giro','Anel de aura','frame',3500,'raro',0],
+  ['tt-transm','Transmutador','title',300,'comum',1],['tt-cacador','Caçador de Aranhas','title',300,'comum',1],['tt-silencio','Passos Silenciosos','title',400,'comum',1],
+  ['tt-zetsu','Mestre do Zetsu','title',500,'comum',1],['tt-guarda','Guarda Real','title',600,'comum',1],
+  ['tt-godspeed','Segunda Natureza','title',600,'raro',0,0,'um hábito em 30 dias'],['tt-floor','Floor Master','title',800,'raro',1,'Custa menos que o Mestre de Nen (andar 100), que é mais fácil.','andar 200'],
+  ['tt-ten','Ten Inabalável','title',900,'raro',1,0,'Ten de 21 dias'],['tt-estrela2','Hunter ★★','title',1500,'raro',1,0,'2 chefões derrotados'],['tt-mestre','Mestre de Nen','title',2000,'raro',1,0,'andar 100'],
+  ['ft-maquina','Máquina de escrever','font',900,'raro',0],['ft-manga','Mangá','font',1200,'raro',0],['ft-pixel','Pixel','font',1500,'raro',0],['ft-arcade','Arcade japonês','font',1500,'raro',0],
+  ['sm-moeda','Moeda','som',1000,'comum',0],['sm-golpe','Golpe','som',1200,'comum',0],['sm-sino','Sino do templo','som',1400,'comum',0],['sm-fanfarra','Fanfarra 8-bit','som',2500,'raro',0],
+  ['th-killua','Tema Killua completo','full',6000,'epico',1],['th-hisoka','Tema Hisoka','full',8000,'epico',1],['th-ryodan','Tema Genei Ryodan','full',8500,'epico',1],
+  ['th-greed','Tema Greed Island','full',8800,'epico',1],['th-zoldyck','Tema Zoldyck','full',9000,'epico',1],['th-meruem','Tema Meruem','full',10000,'epico',1],
+  ['th-ascensao','Ascensão','full',25000,'lenda',1],
+  ['px-unlock','Mundo pixel','px',8000,'epico',0],['px-map-tarde','Mapa · Tarde','px',1500,'raro',0],['px-map-noite','Mapa · Noite','px',1500,'raro',0],['px-p1-gb','Ficha · Game Boy','px',1500,'raro',0],
+  ['px-p1-noite','Ficha · Noite','px',1500,'raro',0],['px-gi-joy','Greed Island · Joystation','px',1500,'raro',1,'O nome é de Greed Island, mas a pele em si é básica.'],
+  ['px-gi-noite','Greed Island · Noite','px',1500,'raro',1,'Mesma dúvida da Joystation.'],['px-ms-neon','Masadora · Neon','px',1500,'raro',0],['px-ms-papel','Masadora · Papel','px',1500,'raro',0],
+];
+[['chrollo','Chrollo Lucilfer'],['feitan','Feitan Portor'],['machi','Machi Komacine'],['uvogin','Uvogin'],['nobunaga','Nobunaga Hazama'],['shalnark','Shalnark'],['phinks','Phinks Magcub'],['pakunoda','Pakunoda'],
+ ['hisoka','Hisoka Morow'],['illumi','Illumi Zoldyck'],['genthru','Genthru'],['neferpitou','Neferpitou'],['shaiapouf','Shaiapouf'],['youpi','Menthuthuyoupi'],['meruem','Meruem']]
+  .forEach(([s,n]) => I.push(['ch-'+s,n,'chefe',1500,'raro',1]));
+['gon-1','gon-2','killua-1','killua-3','killua-4','kurapika-1','leorio-1','leorio-2','leorio-3','leorio-4']
+  .forEach(f => I.push(['av-'+f, f.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),'avatar',1000,'comum',1]));
+const FORA = [
+  ['pal-hisoka','Paleta Hisoka','pal',0,'fora',1,0,0,'só no Tema Hisoka'],['tx-cartas','Baralho','tex',0,'fora',1,0,0,'só no Tema Hisoka'],
+  ['pal-meruem','Paleta Meruem','pal',0,'fora',1,0,0,'só no Tema Meruem'],['pal-aurora','Paleta Aurora','pal',0,'fora',0,0,0,'só na Ascensão'],
+  ['fx-ascensao','Aurora girando','fx',0,'fora',0,0,0,'só na Ascensão'],['th-lenda','Tema sob encomenda','full',20000,'fora',0,0,0,'hoje “Lendário · tema exclusivo”; sai das faixas'],
+  ['pal-simples','Simples','pal',0,'fora',0,0,0,'grátis, vem com o jogo'],['av-killua-2','Killua 2','avatar',0,'fora',1,0,0,'grátis'],['av-hunter-x-hunter','Hunter X Hunter','avatar',0,'fora',1,0,0,'grátis'],
+];
+
+const fmt = n => n.toLocaleString('pt-BR');
+const AVATAR = '../../web/a/killua-2.png';
+const cena = (fxs=[]) => {
+  const o = [];
+  if(fxs.includes('zap')) o.push('<i class="o zap"></i>');
+  if(fxs.includes('drift')) o.push('<i class="o drift"></i>');
+  if(fxs.includes('estrelas')) o.push('<i class="o estrelas"></i>');
+  if(fxs.includes('ascensao')) o.push('<i class="o ascensao"></i>');
+  if(fxs.includes('rastro')) o.push('<i class="o rastro"></i>');
+  if(fxs.includes('jajanken')) o.push('<i class="o jaja">PEDRA!</i>');
+  if(fxs.includes('baralho')) o.push('<i class="o carta"></i><i class="o carta c2"></i><i class="o carta c3"></i>');
+  if(fxs.includes('confete')) ['var(--aura)','var(--amb)','var(--red)','var(--grn)','var(--volt)','var(--aura)','var(--amb)'].forEach((c,i) => o.push(`<i class="o conf" style="left:${8+i*13}%;background:${c};animation-delay:${(i*0.27)%1.9}s"></i>`));
+  if(fxs.includes('fogos')) [['20%','12px','var(--amb)',0],['60%','4px','var(--red)',.6],['40%','30px','var(--volt)',1.2]].forEach(([l,t,c,d]) => o.push(`<i class="o fogo" style="left:${l};top:${t};--c:${c};animation-delay:${d}s"></i>`));
+  if(fxs.includes('godspeed')) o.push('<i class="o raio"></i><i class="o flash"></i>');
+  return o.join('') + (fxs.includes('shake') ? '<i class="boss"></i>' : '') +
+    `<div class="sc"><i class="av" style="background-image:url(${AVATAR})"></i><div class="ln"><b>Andar 87 · Arena</b><div class="xp"><b></b></div></div></div>`;
+};
+const SOM_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+
+function previa(it){
+  const [id,n,cat] = it, k = id.replace(/^[a-z]+-/,'');
+  let pal = 'painel', cls = '', html = '';
+  if(cat==='pal'){ pal = k; const p = PALS[k]; html = `<div class="pal"><div class="pn"><b>Andar 87</b><span>1.240 XP · Ten 12 dias</span></div><div class="sw">${[14,13,11,10,12].map(i=>`<i style="background:${p[i]}"></i>`).join('')}</div></div>`; }
+  else if(cat==='tex'){ cls = 'tex-'+k; html = cena(); }
+  else if(cat==='fx'){ cls = 'fx-'+k; html = cena([k]); }
+  else if(cat==='frame'){ cls = 'fr-'+k; html = `<div class="big"><i class="av" style="background-image:url(${AVATAR})"></i></div>`; }
+  else if(cat==='title'){ html = `<div class="tt"><i class="av" style="background-image:url(${AVATAR})"></i><div><b>Andar 87</b><span>${n}</span></div></div>`; }
+  else if(cat==='font'){ cls = 'ft-'+k; html = `<div class="ft"><b>Andar 87</b><span>1.240 XP · Missões</span></div>`; }
+  else if(cat==='som'){ html = `<div class="sm"><button class="som" data-som="${k}" aria-label="Tocar o som ${n}">${SOM_IC}</button></div>`; }
+  else if(cat==='full'){
+    const t = TEMAS[k];
+    if(t){ pal = t.pal; cls = [t.bg?'tex-'+t.bg:'', ...t.fx.map(f=>'fx-'+f), t.frame?'fr-'+t.frame:'', t.font?'ft-'+t.font:''].join(' '); html = cena(t.fx); }
+    else html = `<div class="ft" style="--fx-font:var(--f-hud)"><b>?</b><span>desenhado para você</span></div>`;
+  }
+  else if(cat==='px'){ html = `<div class="px">${SW[id].map(c=>`<i style="background:${c}"></i>`).join('')}</div>`; }
+  else if(cat==='chefe'){ html = `<div class="foto chefe" style="background-image:url(../../web/chefoes/${k}.png)"></div>`; }
+  else if(cat==='avatar'){ html = `<div class="foto" style="background-image:url(../../web/a/${id.slice(3)}.png)"></div>`; }
+  return `<div class="pv ${cls}" style="${palStyle(pal)}">${html}</div>`;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- proposta: o que muda em cada item atual ---------- */
+Object.assign(PALS, {
+  grafite:['dark','#141414','#1C1C1C','#232323','#EDEDED','#A0A0A0','#666666','#2E2E2E','#262626','#D0D0D0','#E06C6C','#D8B36A','#7CC08F','#C8C8C8','#B0B0B0','#E06C6C','#9CC4E0','#7CC08F','#D99A6A','#B5A5D6','#D8B36A'],
+  sepia:['dark','#1A140F','#231B14','#2C2219','#F1E6D6','#BBA88F','#7D6B56','#3A2E22','#30261C','#D9A86A','#D9705A','#D9A86A','#93B07A','#E0C08A','#C99A6A','#D9705A','#A8B8C0','#93B07A','#D98A5A','#B49AB0','#D9A86A'],
+  contraste:['dark','#000000','#0A0A0A','#141414','#FFFFFF','#E0E0E0','#9A9A9A','#3A3A3A','#262626','#FFE600','#FF4D4D','#FFE600','#3DFF8A','#00E5FF','#FFFFFF','#FF4D4D','#00E5FF','#3DFF8A','#FF9A3D','#C78BFF','#FFE600'],
+  nevoa:['light','#E9ECEF','#F7F8F9','#EEF0F2','#22262B','#5E6670','#98A0A8','#D5DAE0','#DDE2E7','#4A6A8A','#C0505A','#A88440','#4A8A64','#4A7FB0','#6A62B8','#C0505A','#3E8AB0','#4A8A64','#C07040','#7A62B0','#A88440'],
+});
+const ANTES = {}; // faixa de antes, para o selo "de Raro"
+const MUDA = {'fx-shake':'comum','fx-shim':'comum','fx-zap':'comum','fx-drift':'raro','fx-gyo':'epico'};
+I.filter(i => i[2]==='px' && i[0]!=='px-unlock').forEach(i => MUDA[i[0]] = 'comum');
+const VIRA_BASICO = ['tx-ceu','tx-arena','tx-nen','fr-nen'];
+const SAI = {'fr-hunter':'vai para a loja do grupo','fr-carta':'vai para a loja do grupo','fr-escarlate':'vai para a loja do grupo','fr-giro':'vai para a loja do grupo',
+  'fr-aranha':'vai para a loja do grupo','fx-aura':'vai para a loja do grupo'};
+const GRATIS_CONQ = {'tt-godspeed':1,'tt-floor':1,'tt-ten':1,'tt-estrela2':1,'tt-mestre':1};
+for(const it of I){
+  const id = it[0];
+  it.est = '';
+  if(MUDA[id]){ ANTES[id] = it[4]; it[4] = MUDA[id]; it.est = 'mov'; }
+  if(VIRA_BASICO.includes(id)){ it[5] = 0; it.basico = 1; it.est = it.est || 'mov'; }
+  if(id==='fx-gyo'){ it.catNome = 'Hover nos cards'; it[6] = 0; it.obs = 'Vira o primeiro item da categoria hover.'; }
+  if(SAI[id]){ it.est = 'sai'; it.why = SAI[id]; }
+  if(id.startsWith('ch-')){ it.est = 'gratis'; it.why = 'grátis, liberado por nível'; }
+  if(GRATIS_CONQ[id]){ it.est = 'gratis'; it.why = 'grátis ao liberar a conquista'; }
+  if(it[2]==='full'){ it.est = 'pack'; }
+  if(['fx-confete','fx-fogos','fx-jajanken','fx-estrelas','pal-abismo','px-gi-joy','px-gi-noite','tt-floor'].includes(id)) it[6] = 0;
+}
+I.find(i => i[0]==='fx-confete').obs = 'Fica em raro; os Fogos são a versão maior, em épico.';
+I.find(i => i[0]==='fx-fogos').obs = 'A versão grande do Confete.';
+const ascP = I.find(i => i[0]==='th-ascensao'); ascP.obs = 'Vira pacote, ou é refeita como tema exclusivo (ver lendários novos).';
+CAT.hover = 'Hover nos cards'; CAT.borda = 'Borda de card'; CAT.cursor = 'Cursor'; CAT.hp = 'Barra de HP'; CAT.heat = 'Heatmap'; CAT.trans = 'Transição de aba'; CAT.tema = 'Tema exclusivo'; CAT.evento = 'Evento';
+CAT.full = 'Pacote'; CAT.x = 'Paleta';
+
+/* ---------- itens novos: [id, nome, cat, faixa, hxh, descrição, prévia] ---------- */
+const N = [
+  ['pal-grafite','Grafite','pal','comum',0,'Cinza puro, sem matiz.',{pal:'grafite'}],
+  ['pal-sepia','Sépia','pal','comum',0,'Marrom de fotografia antiga, escuro.',{pal:'sepia'}],
+  ['pal-contraste','Alto contraste','pal','comum',0,'Preto, branco e cores puras. Para ler sem esforço.',{pal:'contraste'}],
+  ['pal-nevoa','Névoa','pal','comum',0,'Cinza-claro frio, para o dia.',{pal:'nevoa'}],
+  ['fr-fina','Moldura fina','frame','comum',0,'Um aro fino na cor do texto.',{frameCss:'border-color:var(--ink);border-width:1px'}],
+  ['fr-dupla','Moldura dupla','frame','comum',0,'Aro duplo discreto.',{frameCss:'border:4px double var(--soft)'}],
+  ['sm-clique','Clique','som','comum',0,'Um clique seco de teclado a cada tarefa.',{som:'clique'}],
+  ['sm-gota','Gota','som','comum',0,'Uma gota d’água a cada tarefa.',{som:'gota'}],
+  ['bd-dupla','Borda dupla','borda','comum',0,'Os cards ganham borda dupla.',{cls:'bd-dupla'}],
+  ['bd-trac','Borda tracejada','borda','comum',0,'Borda tracejada em todos os cards.',{cls:'bd-trac'}],
+  ['bd-cantos','Cantos','borda','comum',0,'Só os cantos marcados, como um visor.',{cls:'bd-cantos'}],
+  ['bd-corrente','Corrente do Kurapika','borda','raro',1,'A borda vira uma corrente de elos dourados.',{cls:'bd-corrente'}],
+  ['bd-teia','Teia','borda','raro',1,'Uma teia no canto de cada card.',{cls:'bd-teia'}],
+  ['bd-naipes','Carta de baralho','borda','raro',1,'Naipes nos cantos, como uma carta do Hisoka.',{cls:'bd-naipes'}],
+  ['bd-aura','Borda de aura viva','borda','epico',0,'A borda respira na cor do seu tipo de Nen.',{cls:'bd-aura'}],
+  ['hv-contorno','Contorno','hover','comum',0,'O card ganha contorno quando o mouse passa.',{cls:'hv-contorno'}],
+  ['hv-shu','Shu','hover','raro',1,'O card se cobre de aura, como um objeto reforçado com Shu.',{cls:'hv-shu'}],
+  ['hv-vira','Carta que vira','hover','raro',1,'O card vira como uma carta de Greed Island.',{cls:'hv-vira'}],
+  ['hv-en','En','hover','epico',1,'Um círculo de aura se espalha a partir do cursor.',{cls:'hv-en',o:'<i class="o en"></i>'}],
+  ['hv-bungee','Bungee Gum','hover','epico',1,'O card estica e volta, como o chiclete do Hisoka.',{cls:'hv-bungee'}],
+  ['cr-ioio','Ioiô do Killua','cursor','raro',1,'O cursor vira o ioiô.',{cur:'ioio'}],
+  ['cr-carta','Carta do Hisoka','cursor','raro',1,'O cursor vira uma carta.',{cur:'carta'}],
+  ['cr-agulha','Agulha do Illumi','cursor','raro',1,'O cursor vira uma agulha.',{cur:'agulha'}],
+  ['hp-corrente','HP de corrente','hp','raro',1,'A vida do chefão vira uma corrente vermelha.',{hp:'corrente'}],
+  ['hp-cristal','HP de cristal','hp','raro',0,'A vida do chefão vira cristal.',{hp:'cristal'}],
+  ['hm-cartas','Constância em cartas','heat','raro',1,'Os quadradinhos do heatmap viram cartas.',{heat:'cartas'}],
+  ['hm-pegadas','Constância em pegadas','heat','raro',0,'Os quadradinhos viram pegadas.',{heat:'pegadas'}],
+  ['hm-chamas','Constância em chamas','heat','epico',0,'Os dias jogados viram chamas acesas.',{heat:'chamas'}],
+  ['tr-deslizar','Deslizar','trans','comum',0,'As abas deslizam ao trocar.',{tr:'deslizar'}],
+  ['tr-glitch','Glitch','trans','raro',0,'A tela falha por um instante ao trocar de aba.',{tr:'glitch'}],
+  ['tm-arena','Arena Celestial','tema','epico',1,'Fundo com a torre ao longe; a janela mostra o seu andar e a vista muda conforme sobe.',{ph:1}],
+  ['tm-yorknew','Yorknew à noite','tema','epico',1,'A cidade do leilão à noite, com luzes que acendem a cada tarefa.',{ph:1}],
+  ['tm-greed','Mapa de Greed Island','tema','epico',1,'O mapa da ilha no fundo; cada chefão derrotado marca uma cidade.',{ph:1}],
+  ['ev-ko','KO do chefão','evento','epico',0,'Ao derrotar um chefão, a carta dele rasga ao meio em tela cheia.',{ph:1}],
+  ['ev-mascote','Mascote pixel','evento','epico',0,'Um personagem pixel anda no canto, dorme quando você para e comemora as tarefas.',{ph:1}],
+  ['tm-continente','Continente Negro','tema','lenda',1,'Tema exclusivo: o mar e as criaturas do Continente Negro no fundo, com som e cards próprios. Pede andar e XP.',{ph:1}],
+  ['ev-elevador','Elevador da Arena Celestial','evento','lenda',1,'Ao subir de andar, a tela escurece e o número sobe como no painel do elevador. Pede andar e XP.',{ph:1}],
+  ['tm-ascensao','Ascensão refeita','tema','lenda',0,'A Ascensão como tema exclusivo de verdade, e não mais pacote. Pede andar e XP.',{ph:1}],
+];
+const GRATIS_NOVO = [['tm-torre','Tema de quem derrotou a torre','tema','lenda',1,'Um por temporada. Todos que chegam ao topo ganham acesso.',{ph:1}]];
+const FORA2 = FORA.filter(f => !['th-lenda'].includes(f[0]));
+const REMOVIDOS = [['th-lenda','Tema sob encomenda','full',20000,'fora',0,0,0],['pal-propria','Paleta própria','x',0,'fora',0,0,0]];
+REMOVIDOS[0].why = 'sai da loja; no lugar, o tema de quem derrotou a torre'; REMOVIDOS[1].why = 'ideia descartada'; REMOVIDOS.forEach(r => r.est='sai');
+
+const CUR = {ioio:'<svg viewBox="0 0 40 96" style="width:34px;height:96px"><path class="fio" d="M20 0v66" stroke="var(--soft)" stroke-width="1.2"/><g class="io"><circle cx="20" cy="76" r="10" fill="var(--volt)" stroke="var(--ink)" stroke-width="2"/><circle cx="20" cy="76" r="3" fill="var(--ink)"/></g></svg>',
+  carta:'<svg viewBox="0 0 40 40"><rect x="10" y="4" width="20" height="30" rx="3" fill="#fff" stroke="#bbb" transform="rotate(-14 20 20)"/><text x="17" y="25" font-size="12" fill="#E0365A" transform="rotate(-14 20 20)">♦</text></svg>',
+  agulha:'<svg viewBox="0 0 40 40"><path d="M6 34 34 6" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/><circle cx="33" cy="7" r="3.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/></svg>'};
+const ON = [0,1,1,0,1,1,1,0,1,1, 1,1,0,1,1,1,1,1,0,1, 0,1,1,1,1,0,1,1,1,1, 1,1,1,0,1,1,1,1,1,0];
+
+function previaNova(n){
+  const [id,nome,cat,,,,pv] = n;
+  let pal = pv.pal || 'painel', cls = pv.cls || '', html = '';
+  if(pv.pal){ const p = PALS[pv.pal]; html = `<div class="pal"><div class="pn"><b>Andar 87</b><span>1.240 XP · Ten 12 dias</span></div><div class="sw">${[14,13,11,10,12].map(i=>`<i style="background:${p[i]}"></i>`).join('')}</div></div>`; }
+  else if(pv.frameCss) html = `<div class="big"><i class="av" style="background-image:url(${AVATAR});${pv.frameCss}"></i></div>`;
+  else if(pv.som) html = `<div class="sm"><button class="som" data-som="${pv.som}" aria-label="Tocar o som ${nome}">${SOM_IC}</button></div>`;
+  else if(pv.cls) html = (pv.o||'') + `<div class="mc">Missão da semana</div>`;
+  else if(pv.cur) html = `<div class="cur"${pv.cur==='ioio'?' style="align-items:start"':''}>${CUR[pv.cur]}</div>`;
+  else if(pv.hp) html = `<div class="hp ${pv.hp}"><span>Chrollo · 62%</span><i><b></b></i></div>`;
+  else if(pv.heat==='chamas') html = `<div class="heat chamas">${ON.map((o,i)=>o ? `<i class="on" style="animation-delay:-${(i*0.37)%1.3}s"><svg viewBox="0 0 10 14"><path d="M5 0C6.5 3 9.5 5.5 9.5 9a4.5 4.5 0 0 1-9 0c0-2.2 1.2-3.6 2.4-4.6 0 1.8.8 3 1.9 3.2C4.2 5.6 3.6 2.8 5 0Z" fill="#FF6A1F"/><path d="M5 6c.9 1.6 2.4 2.6 2.4 4.4a2.4 2.4 0 0 1-4.8 0c0-1.2.8-2 1.4-2.6.1.9.5 1.4 1 1.5C4.7 8.4 4.5 7.2 5 6Z" fill="#FFD25A"/></svg></i>` : '<i></i>').join('')}</div>`;
+  else if(pv.heat) html = `<div class="heat ${pv.heat}">${ON.map(o=>`<i class="${o?'on':''}"></i>`).join('')}</div>`;
+  else if(pv.tr){ cls = 'tr-'+pv.tr; html = pv.tr==='deslizar' ? `<div class="tr"><div class="mc tA">Missões</div><div class="mc tB">Chefões</div></div>` : `<div class="tr"><div class="mc">Chefões</div></div>`; }
+  else html = `<div class="ph"><b>a criar</b><span>${esc(CAT[cat])}</span></div>`;
+  return `<div class="pv ${cls}" style="${palStyle(pal)}">${html}</div>`;
+}
+const DE = {comum:'Comum',raro:'Raro',epico:'Épico',lenda:'Lendário'};
+const ORDEM = ['comum','raro','epico','lenda'];
+function card(it, novo){
+  const [id,n,cat] = it, f = novo ? it[3] : it[4], h = it[4]==='fora' ? it[5] : (novo ? it[4] : it[5]);
+  const hx = novo ? it[4] : it[5], p = novo ? 0 : it[3], duv = novo ? 0 : it[6], trava = novo ? 0 : it[7];
+  const est = novo ? 'novo' : it.est;
+  const rc = est==='pack' ? 'var(--txt)' : est==='gratis' ? 'var(--r-raro)' : RK[f] ? RK[f][1] : 'var(--dim)';
+  const rk = est==='pack' ? 'Pacote' : est==='gratis' ? 'Liberado pelo jogo' : RK[f] ? RK[f][0] : '';
+  let selo = '';
+  if(est==='novo') selo = '<b class="est novo">Novo</b>';
+  else if(est==='mov' && ANTES[id]) selo = `<b class="est mov">${ORDEM.indexOf(f) < ORDEM.indexOf(ANTES[id]) ? '↓' : '↑'} era ${DE[ANTES[id]]}</b>`;
+  else if(est==='mov' && it.basico) selo = '<b class="est mov">agora básico</b>';
+  else if(est==='sai') selo = '<b class="est sai">sai</b>';
+  const preco = est==='pack' ? 'soma do que falta − 20%' : novo ? 'preço na #77' : est==='gratis' ? 'grátis' : p ? fmt(p)+' J hoje' : 'grátis';
+  return `<article class="card ${est==='novo'?'novo':''} ${est==='sai'?'sai':''}" style="--rc:${rc}">
+    ${hx ? '<b class="selo" title="Item do tema HxH"><i>念</i>HxH</b>' : ''}${selo}
+    ${duv ? `<b class="duv" title="${esc(duv)}">?</b>` : ''}
+    ${novo ? previaNova(it) : previa(it)}
+    <div class="info">
+      <div class="rk">${rk}</div>
+      <div class="nm">${esc(n)}</div>
+      <div class="mt"><span>${it.catNome||CAT[cat]||cat}</span><span class="pr">${preco}</span></div>
+      ${novo ? `<div class="why">${esc(it[5])}</div>` : ''}
+      ${it.why ? `<div class="why">${esc(it.why)}</div>` : ''}
+      ${it.obs ? `<div class="why">${esc(it.obs)}</div>` : ''}
+      ${it[8] ? `<div class="why">${esc(it[8])}</div>` : ''}
+      ${duv ? `<div class="nota-duv">? ${esc(duv)}</div>` : ''}
+    </div></article>`;
+}
+
+/* ---------- contas ---------- */
+const DIAS = {comum:1,raro:3,epico:8,lenda:30};
+const vendidos = () => I.filter(i => !i.est || i.est==='mov').map(i => ({f:i[4], h:i[5]})).concat(N.map(n => ({f:n[3], h:n[4]})));
+const diasHoje = I.reduce((s,i) => s + DIAS[ANTES[i[0]] || i[4]], 0);
+const V = vendidos(), diasNovo = V.reduce((s,v) => s + DIAS[v.f], 0);
+const ficam = I.filter(i => !i.est || i.est==='mov'), diasFicam = ficam.reduce((s,i)=>s+DIAS[i[4]],0);
+document.getElementById('resumo').innerHTML = [
+  [fmt(diasHoje),'dias do médio hoje (101 itens)'],
+  [fmt(diasFicam),`depois de tirar o que sai (${ficam.length} itens)`],
+  [fmt(diasNovo),`com os ${N.length} itens novos (${V.length} à venda)`],
+  ['300–320','meta da #77','meta'],
+].map(([b,s,c]) => `<div class="kpi ${c||''}"><b>${b}</b><span>${s}</span></div>`).join('') +
+  ORDEM.map(f => { const t = V.filter(v=>v.f===f), b = t.filter(v=>!v.h).length; return `<div class="kpi"><b style="color:${RK[f][1]}">${t.length}</b><span>${DE[f]}: ${b} básicos · ${t.length-b} HxH</span></div>`; }).join('');
+
+/* ---------- filtros e desenho ---------- */
+const st = {tema:'todos', ver:'tudo'};
+const barra = document.getElementById('barra');
+const botoes = (k, ops) => ops.map(([v,t]) => { const b = document.createElement('button'); b.textContent = t; b.setAttribute('aria-pressed', String(st[k]===v)); b.dataset.k = k;
+  b.onclick = () => { st[k] = v; barra.querySelectorAll(`[data-k="${k}"]`).forEach(x => x.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); desenha(); }; return b; });
+barra.append(...botoes('tema',[['todos','Tudo'],['h','Só HxH'],['b','Só básicos']]));
+const sep = document.createElement('i'); sep.className = 'sep'; barra.append(sep);
+barra.append(...botoes('ver',[['tudo','Loja inteira'],['muda','Só o que muda'],['novo','Só os novos']]));
+
+function desenha(){
+  const okT = h => st.tema==='todos' || (st.tema==='h') === !!h;
+  const okV = (est) => st.ver==='tudo' || (st.ver==='novo' ? est==='novo' : est && est!=='');
+  const prat = (cls, titulo, cor, desc, cards) => cards.length ? `<section class="prat ${cls}" style="${cor?'--rc:'+cor:''}">
+      <div class="prat-h"><h2>${titulo}</h2><span class="q">${cards.length} ${cards.length>1?'itens':'item'}</span><span class="r">${desc}</span></div>
+      <div class="grade">${cards.join('')}</div></section>` : '';
+  let html = '';
+  for(const f of ORDEM){
+    const atuais = I.filter(i => i[4]===f && (!i.est || i.est==='mov') && okT(i[5]) && okV(i.est)).sort((a,b)=>a[3]-b[3]).map(i => card(i));
+    const novos = N.filter(n => n[3]===f && okT(n[4]) && okV('novo')).map(n => card(n, 1));
+    html += prat('', RK[f][0], RK[f][1], RK[f][2], atuais.concat(novos));
+  }
+  html += prat('pack','Pacotes','', 'Sem faixa. Juntam itens avulsos com desconto sobre as peças que faltam; com tudo comprado, viram um botão para equipar tudo de uma vez.',
+    I.filter(i => i.est==='pack' && okT(i[5]) && okV('pack')).map(i => card(i)));
+  html += prat('gratis','Grátis por nível ou conquista','', 'Não se vendem: o jogo libera. Retratos por nível, títulos ao bater a conquista, o tema de quem derrotou a torre.',
+    I.filter(i => i.est==='gratis' && okT(i[5]) && okV('gratis')).map(i => card(i)).concat(GRATIS_NOVO.filter(n => okT(n[4]) && okV('novo')).map(n => card(n,1))));
+  html += prat('fora','Saem da Masadora','', 'Quem já comprou continua com eles. Os de perfil passam para a Loja da Associação.',
+    I.filter(i => i.est==='sai' && okT(i[5])).map(i => card(i)).concat(REMOVIDOS.filter(()=>st.ver!=='novo').map(i => card(i))));
+  if(st.ver==='tudo') html += prat('', 'Vêm com o jogo ou só num pacote','var(--dim)', 'Peças exclusivas de pacote e o que é grátis desde o começo.', FORA2.filter(i => okT(i[5])).map(i => card(i)));
+  document.getElementById('loja').innerHTML = html || '<p class="lead">Nenhum item com esses filtros.</p>';
+}
+desenha();
+// sons: versão curta feita no navegador
+let ctx;
+function tom(t0, f, d, tipo='sine', v=.2){ const o = ctx.createOscillator(), g = ctx.createGain(); o.type = tipo; o.frequency.value = f;
+  g.gain.setValueAtTime(v, t0); g.gain.exponentialRampToValueAtTime(.001, t0+d); o.connect(g).connect(ctx.destination); o.start(t0); o.stop(t0+d); }
+const SONS = {
+  moeda: t => { tom(t,988,.08,'square',.12); tom(t+.08,1319,.3,'square',.12); },
+  golpe: t => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type='triangle'; o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(40,t+.18);
+    g.gain.setValueAtTime(.5,t); g.gain.exponentialRampToValueAtTime(.001,t+.22); o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+.25); },
+  sino: t => { tom(t,523,2.2,'sine',.25); tom(t,1046,1.4,'sine',.08); tom(t,1569,.8,'sine',.04); },
+  clique: t => { tom(t,2400,.03,'square',.08); tom(t+.02,1200,.03,'square',.05); },
+  gota: t => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type='sine'; o.frequency.setValueAtTime(1400,t); o.frequency.exponentialRampToValueAtTime(500,t+.12); g.gain.setValueAtTime(.25,t); g.gain.exponentialRampToValueAtTime(.001,t+.2); o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+.22); },
+  fanfarra: t => { [523,659,784,1046,784,1046].forEach((f,i) => tom(t+i*.11, f, i===5?.5:.1, 'square', .09)); },
+};
+document.addEventListener('click', e => { const b = e.target.closest('.som'); if(!b) return;
+  try { ctx = ctx || new (window.AudioContext||window.webkitAudioContext)(); ctx.resume(); SONS[b.dataset.som](ctx.currentTime+.02); } catch(_){}
+  b.classList.remove('toca'); void b.offsetWidth; b.classList.add('toca'); });
+</script>
