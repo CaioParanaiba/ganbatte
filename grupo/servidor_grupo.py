@@ -33,7 +33,8 @@ Rotas (JSON):
   POST /dono/mudar {endereco}                 avisa os membros do endereço novo (vazio desfaz)
   jogador
   POST /g/<id>/entrar {codigo, nome, avatar?} usa um convite → {token, membro, admin, grupo}
-  POST /g/<id>/envio {protocolo, dias}        fatos dos dias novos ou que mudaram (sobrescreve por jogador e dia)
+  POST /g/<id>/envio {protocolo, dias, avatar?} fatos dos dias novos ou que mudaram (sobrescreve por jogador e dia);
+                                              o avatar, quando vem, troca a foto do perfil (#109)
   GET  /g/<id>/placar                         o placar (só fatos) e quais dias já fecharam
   POST /g/<id>/sair {}                        sai do grupo (o histórico fica)
   POST /g/<id>/frase {texto}                  a frase do líder da última semana fechada (#76): uma vez só
@@ -459,14 +460,17 @@ def freia(gid):
         raise Erro("muitas tentativas com convite errado; espere 10 minutos", 429)
 
 
+def avatar_ok(avatar):
+    avatar = str(avatar or "")
+    return "" if not AVATAR.match(avatar) or avatar.startswith(".") else avatar
+
+
 def entrar(gid, d):
     g = grupo_ou_404(gid)
     freia(gid)
     codigo = re.sub(r"[^A-Z0-9]", "", str(d.get("codigo", "")).upper())
     nome = nome_ok(d.get("nome"))
-    avatar = str(d.get("avatar") or "")
-    if not AVATAR.match(avatar) or avatar.startswith("."):
-        avatar = ""
+    avatar = avatar_ok(d.get("avatar"))
     token = secrets.token_urlsafe(32)
     with transacao() as c:
         cv = c.execute("SELECT * FROM convites WHERE grupo = ? AND hash = ?", (gid, hash_de(codigo))).fetchone()
@@ -532,6 +536,8 @@ def envio(gid, token, d):
         c.executemany("INSERT OR REPLACE INTO dias (grupo, membro, dia, xp, hab, missao, ferias, recebido) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                       [(gid, m["id"]) + v + (t,) for v in linhas])
         c.execute("UPDATE membros SET envio = ? WHERE id = ?", (t, m["id"]))
+        if "avatar" in d:   # a foto mudou no jogo depois de entrar (#109)
+            c.execute("UPDATE membros SET avatar = ? WHERE id = ?", (avatar_ok(d["avatar"]), m["id"]))
     return {"ok": True, "gravados": len(linhas), "ignorados": len(dias) - len(linhas)}
 
 

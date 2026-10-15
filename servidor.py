@@ -50,7 +50,8 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/grupo/entrar {link}           entra com o link do convite (https://endereco/g/ID#CODIGO); sem o código, troca o
                                           endereço de um grupo em que já está (o grupo mudou de computador, #91)
   POST /api/grupo/sair {chave}            sai do grupo
-  POST /api/grupo/sincronizar {resumo}    manda os dias que mudaram (motor.js → resumoGrupo) e traz o placar
+  POST /api/grupo/sincronizar {resumo, avatar?} manda os dias que mudaram (motor.js → resumoGrupo) e a foto, se mudou
+                                          (#109), e traz o placar
   POST /api/grupo/vinculo {chave, habito, pessoal} liga um hábito pessoal a um hábito do catálogo do grupo ("" desliga)
   POST /api/grupo/frase {chave, texto}    a frase do líder da semana (#76), repassada ao servidor do grupo
   POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config | habito | calibracao | placar | frase
@@ -2072,8 +2073,12 @@ def nome_publico(d):
     nome = " ".join(str(d.get("nome") or j.get("nick") or j.get("nome") or "").split())[:40]
     if not nome:
         raise Erro("escreva o seu nome no jogo (Configurações) antes de entrar num grupo")
-    av = str(d.get("avatar") or "")
-    return nome, (av if NOME_AV.match(av) and (WEB / "a" / f"{av}.png").is_file() else "")
+    return nome, avatar_publico(d.get("avatar"))
+
+
+def avatar_publico(av):
+    av = str(av or "")
+    return av if NOME_AV.match(av) and (WEB / "a" / f"{av}.png").is_file() else ""
 
 
 def api_grupo_entrar(d):
@@ -2146,8 +2151,10 @@ def assinatura(dia):
 
 
 def api_grupo_sincronizar(d):
-    """{resumo} (motor.js → resumoGrupo): manda a cada grupo os dias novos ou que mudaram e traz o placar. Fora do ar, o
-    placar guardado volta com offline; o que não foi fica para a próxima (enviado.json só marca o que o servidor recebeu)."""
+    """{resumo, avatar?} (motor.js → resumoGrupo): manda a cada grupo os dias novos ou que mudaram, a foto de perfil se ela
+    mudou (#109), e traz o placar. Fora do ar, o placar guardado volta com offline; o que não foi fica para a próxima
+    (enviado.json só marca o que o servidor recebeu)."""
+    av = avatar_publico(d["avatar"]) if "avatar" in d else None
     r = d.get("resumo") or {}
     dias = r.get("dias")
     if not isinstance(dias, list):
@@ -2157,12 +2164,12 @@ def api_grupo_sincronizar(d):
         k = chave_grupo(g)
         try:
             try:
-                out[k] = sincroniza_grupo(g, dias)
+                out[k] = sincroniza_grupo(g, dias, av)
             except GrupoMudou as e:
                 out.pop(k, None)
                 g = muda_grupo(g, e.para)
                 k = chave_grupo(g)
-                out[k] = dict(sincroniza_grupo(g, dias), mudou=True)
+                out[k] = dict(sincroniza_grupo(g, dias, av), mudou=True)
         except GrupoFora as e:
             out[k] = {"placar": ler_json_arquivo(arquivo_placar(g)), "offline": True, "erro": str(e)}
         except Erro as e:
@@ -2170,8 +2177,9 @@ def api_grupo_sincronizar(d):
     return {"ok": True, "grupos": out}
 
 
-def sincroniza_grupo(g, dias):
-    """Um grupo da sincronização: manda os dias novos ou que mudaram e traz o placar."""
+def sincroniza_grupo(g, dias, avatar=None):
+    """Um grupo da sincronização: manda os dias novos ou que mudaram e traz o placar. A foto vai junto quando é diferente
+    da que o placar guardado mostra (avatar None: não mexe)."""
     k = chave_grupo(g)
     with lock:
         feito = ler_json("enviado.json", {}).get(k, {})
@@ -2181,9 +2189,12 @@ def sincroniza_grupo(g, dias):
     cat, vinc = p.get("habitos") or [], vinculos_de(g)
     dias_g = [envio_do_grupo(x, cat, vinc) for x in dias if isinstance(x, dict)]
     novos = [x for x in dias_g if feito.get(x.get("dia")) != assinatura(x)]
-    for i in range(0, len(novos), 400):
+    eu = next((m for m in p.get("membros") or [] if m.get("id") == (p.get("voce") or {}).get("membro")), None)
+    foto = {} if avatar is None or (eu and eu.get("avatar", "") == avatar) else {"avatar": avatar}
+    for i in range(0, max(len(novos), 1 if foto else 0), 400):
         parte = novos[i:i + 400]
-        grupo_pede(g["url"], "POST", f"/g/{g['id']}/envio", {"protocolo": PROTOCOLO_GRUPO, "dias": parte}, g["token"], tempo=30)
+        grupo_pede(g["url"], "POST", f"/g/{g['id']}/envio", {"protocolo": PROTOCOLO_GRUPO, "dias": parte, **foto}, g["token"], tempo=30)
+        foto = {}
         with lock:
             env_ = ler_json("enviado.json", {})
             env_.setdefault(k, {}).update({x["dia"]: assinatura(x) for x in parte})

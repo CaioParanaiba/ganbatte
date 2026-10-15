@@ -491,6 +491,21 @@ class Jogo(Base):
         self.assertEqual(r["grupos"][self.chave]["enviados"], 1)
         self.assertEqual(sg.q1("SELECT xp FROM dias WHERE dia = '2026-10-01'")["xp"], 20)
 
+    def test_foto_nova_chega_ao_grupo(self):   # #109: a foto só ia na entrada
+        foto = lambda: sg.q1("SELECT avatar FROM membros")["avatar"]
+        s.api_grupo_sincronizar(self.resumo(10))
+        self.assertEqual(foto(), "")
+        r = s.api_grupo_sincronizar(dict(self.resumo(10), avatar="gon-1"))["grupos"][self.chave]
+        self.assertEqual((foto(), r["enviados"]), ("gon-1", 0))
+        n = len(self.chamadas)
+        s.api_grupo_sincronizar(dict(self.resumo(10), avatar="gon-1"))   # já está lá: não manda de novo
+        self.assertNotIn(f"/g/{self.gid}/envio", [rota for _, rota in self.chamadas[n:]])
+        s.api_grupo_sincronizar(dict(self.resumo(10), avatar="../nao-existe"))   # inválida ou a do jogo: volta para o logo
+        self.assertEqual(foto(), "")
+        s.api_grupo_sincronizar(dict(self.resumo(10), avatar="gon-2"))
+        s.api_grupo_sincronizar(self.resumo(10))   # jogo sem o campo (versão antiga): não mexe
+        self.assertEqual(foto(), "gon-2")
+
     def test_offline_mostra_o_ultimo_placar_e_manda_depois(self):
         s.api_grupo_sincronizar(self.resumo(10))
         self.fora = True
