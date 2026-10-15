@@ -370,7 +370,7 @@ zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
   mesmo se uma nota corrigida trouxer o chefão de volta. Os guardas da torre continuam com o ícone.
 - Falta: o equilíbrio de preços da loja inteira (issue própria).
 
-**0.9.1** (15/10/2026): lançada na `main`, juntando a 0.9.1-beta1 e a beta2 (issues #5, #109, #111, #112, #113, #121):
+**0.9.1** (15/10/2026): lançada na `main`, juntando a 0.9.1-beta1 e a beta2 (issues #5, #109, #111, #112, #113, #121) e, direto na `main`, a #131 (frase de cada tipo de Nen):
 tipos das tarefas novos, tarefas recorrentes, primeira entrada refeita e tutoriais enxutos. A entrada leva o
 `"aviso": "0.9.1-beta1"` (janela com o hexágono de Nen antes e depois): quem viu na beta não vê de novo.
 

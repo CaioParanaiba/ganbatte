@@ -14,12 +14,12 @@ const COFRE_MES = 150;                            // R$ por mês para prêmios q
 const ALLFX = ['shim','aura','shake','zap','drift','confete'];
 
 const NEN = [
-  {k:'int', n:'Intensificação', c:'estudo',   f:'@estudo',     s:'Força de base. Horas de estudo e revisão que deixam você pronto para as provas.'},
-  {k:'tra', n:'Transmutação',   c:'treino',   f:'+treino · Codeforces',            s:'Transformar teoria em código rápido. É o tipo do Killua.'},
+  {k:'int', n:'Intensificação', c:'estudo',   f:'@estudo · disciplina sem tag', s:'Força de base: estudo e revisão, com ou sem disciplina. Tarefa de disciplina sem tag cai aqui.'},
+  {k:'tra', n:'Transmutação',   c:'treino',   f:'+treino · Codeforces',            s:'Prática e Codeforces: transformar teoria em código rápido.'},
   {k:'con', n:'Conjuração',     c:'projeto',  f:'+projeto · issues do Ganbatte',   s:'Criar do zero: o seu app, site, bot ou projeto.'},
-  {k:'esp', n:'Especialização', c:'vida',     f:'o resto (sem tag)', s:'O que é só seu: casa, família, saúde, pessoas.'},
-  {k:'man', n:'Manipulação',    c:'hábitos',  f:'+rotina',         s:'Controle de si: hábitos diários, como a digitação.'},
-  {k:'emi', n:'Emissão',        c:'entregas', f:'@entrega',              s:'Pôr para fora: listas, trabalhos e atividades entregues.'},
+  {k:'esp', n:'Especialização', c:'vida',     f:'o resto (sem tag nem disciplina)', s:'O que é só seu: casa, família, saúde, pessoas. Tarefa sem tag e sem disciplina cai aqui.'},
+  {k:'man', n:'Manipulação',    c:'hábitos',  f:'+rotina',         s:'Controle de si: os hábitos que você marca e repete todo dia ou toda semana.'},
+  {k:'emi', n:'Emissão',        c:'entregas', f:'@entrega',              s:'Pôr para fora: trabalho que alguém cobra ou avalia, como listas, trabalhos e relatórios.'},
 ];
 const GUARDA = [{ic:'cat',n:'Neferpitou',r:'Ten de 14 dias'},{ic:'wing',n:'Shaiapouf',r:'2 semanas sem atraso'},{ic:'horn',n:'Menthuthuyoupi',r:'uma semana acima de 300 XP'},{ic:'crown',n:'Meruem',r:'todos os chefões derrotados'}];
 const SPELLS = [
