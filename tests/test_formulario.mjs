@@ -13,7 +13,7 @@ async function verifica(){
   addEventListener('unhandledrejection', e => erros.push(String(e.reason)));
   const confere = (ok, msg) => { if(!ok) throw new Error(msg); };
   const espera = async fn => { for(let i = 0; i < 100; i++){ if(fn()) return; await pausa(50); } throw new Error('Tempo esgotado'); };
-  const tecla = (key, extra = {}) => (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keydown', {key, bubbles:true, ...extra}));
+  const tecla = (key, extra = {}) => (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keydown', {key, bubbles:true, cancelable:true, ...extra}));
   const texto = t => { el('l-txt').focus(); el('l-txt').value = t; el('l-txt').dispatchEvent(new Event('input', {bubbles:true})); };
   const conta = async t => (await fetch('/api/jogo').then(r => r.json())).todo.filter(l => l.includes(t)).length;
   const abre = () => { document.activeElement.blur(); tecla('n'); confere(el('xn'), 'N não abriu a janela'); };
@@ -50,8 +50,13 @@ async function verifica(){
   document.querySelector('#tr-pop [data-tr="x"]')?.click();
   await post('/api/jogo/estado', {estado:EST});
   await recarrega(); render();
+  // As apresentações são agendadas e podem cobrir o formulário depois que o teste começou.
+  await pausa(1600);
+  for(let i = 0; el('nv-big') && i < 10; i++){
+    document.querySelector('#nv-big [data-nvbig=""]').click(); await pausa(100);
+  }
   confere(TABS.every(t => EST.tour[t]), 'Os tutoriais de teste não ficaram gravados');
-  confere(!document.querySelector('.wz-bg, #tr-pop'), 'Feche o assistente ou tutorial antes de executar');
+  confere(!document.querySelector('.wz-bg, #tr-pop, #nv-big'), 'Feche o assistente, tutorial ou apresentação antes de executar');
   passou.push('preparo automático dos tutoriais e estado preservado ao recarregar');
 
   // Atualizar a Lista removia o irmão que fechaN() usava em insertBefore().
@@ -122,6 +127,10 @@ async function verifica(){
     confere(el('l-add').getAttribute('aria-busy') === 'true', 'O formulário não indica que está ocupado');
     confere(el('l-txt').readOnly, 'O campo aceita texto que seria perdido durante o envio');
     tecla('Enter'); confere(el('xn'), 'Enter durante a gravação fechou a janela');
+    for(const seletor of ['[data-ltipo="ent"]', '[data-ldue]', '[data-lpri="A"]']){
+      document.querySelector(seletor).focus(); tecla('Enter');
+      confere(el('xn'), 'Enter na opção durante a gravação fechou a janela');
+    }
     confere(pedidos === 1, 'Envios repetidos geraram requisições duplicadas');
     libera(); await espera(() => !LA.salvando); adicionou();
     confere(await conta(repetida) === 1, 'Envios repetidos duplicaram a tarefa');
@@ -275,11 +284,85 @@ async function verifica(){
   window.resultadoFormulario = passou;
 }
 
+async function preparaEnter(opcao, vazio, semCacada = false){
+  if(!document.getElementById('xn')) GB_EXP.abreN();
+  if(document.getElementById('l-det').hidden) document.getElementById('l-more').click();
+  const campo = document.getElementById('l-txt');
+  const controle = document.querySelector(opcao);
+  let valor;
+  if(controle.tagName === 'SELECT'){
+    const primeira = [...controle.options].find(o => o.value && o.value !== '+nova');
+    if(!primeira) throw new Error('Falta uma opção de teste para ' + opcao);
+    valor = semCacada ? '' : primeira.value;
+    controle.value = valor;
+    controle.dispatchEvent(new Event('change', {bubbles:true}));
+  }
+  const texto = vazio ? '' : `Teste Enter ${Date.now()} ${opcao}`;
+  campo.focus(); campo.value = texto; campo.dispatchEvent(new Event('input', {bubbles:true}));
+  // Estado após escolher e fechar o menu nativo: o foco continua no select.
+  if(controle.tagName === 'SELECT') controle.focus();
+  window.enterFormulario = {texto, vazio, opcao, valor, real:false};
+}
+
+async function registraEnter(){
+  const campo = document.getElementById('l-txt'), alvo = document.activeElement;
+  const controle = document.querySelector(enterFormulario.opcao);
+  if(controle.tagName === 'SELECT'){
+    if(controle.value !== enterFormulario.valor || alvo !== controle) throw new Error('A seleção real não mudou o campo ' + controle.id);
+  } else if(enterFormulario.opcao !== '#xn-t' && controle.getAttribute('aria-pressed') !== 'true') throw new Error('O clique real não selecionou a opção');
+  for(const extra of [{repeat:true}, {ctrlKey:true}, {metaKey:true}, {altKey:true}, {isComposing:true}]){
+    alvo.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', bubbles:true, cancelable:true, ...extra}));
+    if(LA.salvando || campo.value !== enterFormulario.texto || !document.getElementById('xn')) throw new Error('Enter repetido, com modificador ou em composição enviou a tarefa');
+  }
+  Object.assign(enterFormulario, {linha:rascunho(), pri:priL(rascunho(), estado()).pri,
+    total:(await fetch('/api/jogo').then(r => r.json())).todo.length});
+  document.addEventListener('keydown', e => { enterFormulario.real = e.isTrusted && e.key === 'Enter'; }, {once:true});
+}
+
+async function confereEnter(){
+  const confere = (ok, msg) => { if(!ok) throw new Error(msg); };
+  for(let i = 0; LA.salvando && i < 100; i++) await new Promise(r => setTimeout(r, 50));
+  confere(!LA.salvando, 'O envio com Enter não terminou');
+  confere(enterFormulario.real, 'O teste não usou uma tecla real do navegador');
+  confere(document.getElementById('xn'), 'Enter na opção fechou a janela');
+  if(enterFormulario.vazio){
+    confere(document.getElementById('l-txt').value === '', 'Enter na opção alterou o texto vazio');
+    confere((await fetch('/api/jogo').then(r => r.json())).todo.length === enterFormulario.total, 'Enter na opção criou uma tarefa vazia');
+  } else {
+    const linhas = (await fetch('/api/jogo').then(r => r.json())).todo.filter(l => l.includes(enterFormulario.texto));
+    confere(linhas.length === 1, 'Enter na opção não gravou exatamente uma tarefa');
+    confere(linhas[0].includes(enterFormulario.linha), 'Enter perdeu as opções da tarefa');
+    confere((GBx.parseLinha(linhas[0], 0).pri || '') === (enterFormulario.pri || ''), 'Enter perdeu a prioridade da tarefa');
+    confere(document.getElementById('l-txt').value === '' && document.activeElement.id === 'l-txt', 'Enter não preparou a próxima tarefa');
+    const btn = document.getElementById('l-btn'), aviso = [...document.querySelectorAll('.toast')].find(e => e.textContent.includes('Adicionada'));
+    confere(btn.classList.contains('salva') && btn.textContent === '✓ adicionada' && getComputedStyle(btn).opacity === '1', 'Enter não confirmou visualmente no botão');
+    confere(aviso && +getComputedStyle(aviso).zIndex > +getComputedStyle(document.getElementById('xn')).zIndex, 'A confirmação de Enter está ausente ou atrás da janela');
+  }
+  resultadoFormulario.push('Enter real em ' + enterFormulario.opcao + (enterFormulario.vazio ? ' com texto vazio' : ' envia uma vez'));
+}
+
 const url = process.argv[2];
 if(!url) throw new Error('Informe a URL do servidor com dados de teste');
 const pasta = mkdtempSync(join(tmpdir(), 'ganbatte-formulario-'));
 const roteiro = join(pasta, 'roteiro.json');
-writeFileSync(roteiro, JSON.stringify([{js:`await (${verifica.toString()})()`}, {log:'JSON.stringify(window.resultadoFormulario)'}, {log:'Array.isArray(window.resultadoFormulario)'}]));
+const passos = [{js:`await (${verifica.toString()})()`}];
+for(const opcao of ['[data-ltipo="ent"]', '[data-ldue]:not([data-ldue=""])', '[data-lpri="A"]', '#xn-t']){
+  for(const vazio of [false, true]) passos.push(
+    {js:`await (${preparaEnter.toString()})(${JSON.stringify(opcao)}, ${vazio})`},
+    {click:opcao},
+    {js:`await (${registraEnter.toString()})()`},
+    {key:'\uE006'},
+    {js:`await (${confereEnter.toString()})()`});
+}
+for(const [opcao, semCacada] of [['#l-disc', false], ['#l-cac', false], ['#l-cac', true]]){
+  for(const vazio of [false, true]) passos.push(
+    {js:`await (${preparaEnter.toString()})(${JSON.stringify(opcao)}, ${vazio}, ${semCacada})`},
+    {js:`await (${registraEnter.toString()})()`},
+    {key:'\uE006'},
+    {js:`await (${confereEnter.toString()})()`});
+}
+passos.push({log:'JSON.stringify(window.resultadoFormulario)'}, {log:'Array.isArray(window.resultadoFormulario)'});
+writeFileSync(roteiro, JSON.stringify(passos));
 const navegador = fileURLToPath(new URL('../ferramentas/navegador.mjs', import.meta.url));
 const r = spawnSync(process.execPath, [navegador, url, roteiro], {cwd:pasta, encoding:'utf8', timeout:120000});
 process.stdout.write(r.stdout || ''); process.stderr.write(r.stderr || '');
