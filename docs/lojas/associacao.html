@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- vitrine das lojas, decidida em 15/10/2026 (índice #134). Abre direto no navegador, a partir da pasta do repositório. -->
+<title>Loja da Associação</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&text=%E5%BF%B5&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;600&family=Pixelify+Sans:wght@400;600&family=Bangers&family=DotGothic16&display=swap">
+<style>
+/* layout: a Masadora do jogo como vitrine; uma prateleira por faixa (comum → lendário), cards com a prévia de cada item */
+:root{
+  color-scheme:dark;
+  --page:#0F1016; --shelf:#161821; --card:#1B1D28; --line:#2A2D3C; --txt:#E6E8F0; --dim:#9197AD;
+  --r-comum:#A3A9BC; --r-raro:#6FA3F2; --r-epico:#B98AF0; --r-lenda:#E6B75A; --hxh:#F0776F; --duv:#F2B15A;
+  --f-head:"Chakra Petch", "Inter", system-ui, sans-serif;
+  --f-ui:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif, "Noto Serif JP";
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  --f-hud:"Chakra Petch", "Inter", sans-serif;
+}
+body{background:var(--page);color:var(--txt);font-family:var(--f-ui);font-size:14px;line-height:1.45}
+.wrap{max-width:1200px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:26px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+h1{font-family:var(--f-head);font-weight:700;font-size:clamp(26px,4.5vw,36px);margin:0;letter-spacing:.01em}
+h1 .jp{font-family:var(--f-ui);font-weight:500;color:var(--dim);font-size:.55em;margin-left:8px}
+.lead{color:var(--dim);margin:0;max-width:70ch}
+.legenda{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:13px;color:var(--dim)}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+.barra{display:flex;flex-wrap:wrap;gap:8px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--page);padding-block:10px;border-bottom:1px solid var(--line)}
+.barra button{font:500 13px var(--f-ui);color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 12px;cursor:pointer}
+.barra button[aria-pressed="true"]{border-color:var(--txt);background:var(--txt);color:var(--page)}
+.barra button:focus-visible,.som:focus-visible{outline:2px solid var(--r-raro);outline-offset:2px}
+.barra .sep{width:1px;background:var(--line);margin:0 4px}
+
+.prat{display:grid;gap:12px;background:var(--shelf);border:1px solid var(--line);border-radius:10px;padding:16px;border-top:3px solid var(--rc)}
+.prat-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.prat-h h2{margin:0;font-family:var(--f-head);font-size:22px;font-weight:700;color:var(--rc);letter-spacing:.04em;text-transform:uppercase}
+.prat-h .q{font-family:var(--f-mono);font-size:12px;color:var(--dim)}
+.prat-h .r{font-size:13px;color:var(--dim);flex-basis:100%;max-width:80ch}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(186px,1fr));gap:12px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:inset 0 2px 0 var(--rc)}
+.card .info{padding:9px 11px 11px;display:grid;gap:3px}
+.card .nm{font-weight:600;font-size:14px;line-height:1.25}
+.card .mt{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--dim)}
+.card .mt .pr{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.card .rk{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--rc)}
+.selo{position:absolute;top:7px;right:7px;z-index:3;font:700 10px var(--f-head);letter-spacing:.06em;color:#fff;background:var(--hxh);padding:2px 6px 2px 5px;border-radius:3px;box-shadow:0 1px 0 rgba(0,0,0,.4);display:flex;gap:3px;align-items:center}
+.selo i{font-style:normal;font-family:"Noto Serif JP",serif;font-size:11px}
+.duv{position:absolute;top:7px;left:7px;z-index:3;width:18px;height:18px;border-radius:50%;background:var(--duv);color:#1A1200;font:700 12px var(--f-ui);display:grid;place-items:center;cursor:help}
+.nota-duv{font-size:12px;color:var(--duv);line-height:1.35}
+.trava{font-size:11px;color:var(--dim)}
+
+/* ---------- prévia: cada uma com a paleta do jogo nas variáveis ---------- */
+.pv{height:118px;position:relative;overflow:hidden;background-color:var(--bg);color:var(--ink);border-bottom:1px solid var(--line);color-scheme:normal}
+.sc{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--hair);border-radius:7px;padding:8px 10px;z-index:1}
+.av{width:30px;height:30px;border-radius:50%;background:var(--panel2) center/cover no-repeat;border:2px solid var(--hair);position:relative;flex:none}
+.ln{flex:1;min-width:0;display:grid;gap:5px}
+.ln b{font:600 12px var(--f-hud);white-space:nowrap;overflow:hidden}
+.ln small{font:500 10px var(--f-ui);color:var(--amb)}
+.xp{height:6px;background:var(--track);border-radius:3px;overflow:hidden}
+.xp>b{display:block;height:100%;width:64%;background:var(--aura)}
+.boss{position:absolute;top:12px;left:12px;width:44px;height:30px;border-radius:5px;background:var(--panel2);border:1px solid var(--hair);z-index:1}
+.boss::after{content:"";position:absolute;left:5px;right:5px;bottom:5px;height:4px;border-radius:2px;background:var(--red)}
+
+/* paleta */
+.pal{position:absolute;inset:0;display:grid;grid-template-rows:1fr auto;padding:12px;gap:8px}
+.pal .pn{background:var(--panel);border:1px solid var(--hair);border-radius:7px;padding:8px 10px;display:grid;gap:3px}
+.pal .pn b{font:600 13px var(--f-hud)}.pal .pn span{font-size:11px;color:var(--soft)}
+.pal .sw{display:flex;gap:4px}.pal .sw i{flex:1;height:14px;border-radius:3px}
+
+/* texturas (as do jogo) */
+.tex-manga{background-image:radial-gradient(color-mix(in srgb,var(--ink) 9%,transparent) 1px,transparent 1.3px);background-size:6px 6px}
+.tex-ceu{background-image:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--volt) 14%,transparent),transparent 60%),linear-gradient(180deg,color-mix(in srgb,var(--aura) 8%,transparent),transparent 40%)}
+.tex-nen{background-image:radial-gradient(60% 40% at 10% 90%,color-mix(in srgb,var(--aura) 16%,transparent),transparent 70%),radial-gradient(50% 35% at 90% 10%,color-mix(in srgb,var(--volt) 12%,transparent),transparent 70%)}
+.tex-cartas{background-image:repeating-linear-gradient(45deg,color-mix(in srgb,var(--volt) 6%,transparent) 0 14px,transparent 14px 28px),repeating-linear-gradient(-45deg,color-mix(in srgb,var(--aura) 5%,transparent) 0 14px,transparent 14px 28px)}
+.tex-arena{background-image:linear-gradient(color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px);background-size:44px 44px}
+.tex-scan{background-image:repeating-linear-gradient(0deg,color-mix(in srgb,#000 22%,transparent) 0 1px,transparent 1px 3px),radial-gradient(130% 100% at 50% 50%,transparent 55%,color-mix(in srgb,#000 38%,transparent))}
+.tex-grao{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.tex-hex{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17.32' height='30' viewBox='0 0 17.32 30'%3E%3Cpath d='M8.66 0L17.32 5V15L8.66 20L0 15V5Z M8.66 20V30' fill='none' stroke='%23909090' stroke-opacity='.16' stroke-width='.7'/%3E%3C/svg%3E");background-size:31px 54px}
+.tex-teia{background-image:repeating-radial-gradient(circle at 100% 0,transparent 0 54px,color-mix(in srgb,var(--ink) 8%,transparent) 54px 55.5px),repeating-conic-gradient(from 180deg at 100% 0,color-mix(in srgb,var(--ink) 8%,transparent) 0 .12deg,transparent .12deg 7.5deg)}
+
+/* molduras (as do jogo) */
+.big{position:absolute;inset:0;display:grid;place-items:center}
+.big .av{width:62px;height:62px;border-width:3px}
+.fr-hunter .av{border-color:#E8C35A;box-shadow:0 0 0 3px color-mix(in srgb,#E8C35A 30%,transparent),0 0 14px -4px #E8C35A}
+.fr-volt .av{border:2px dashed var(--volt);box-shadow:0 0 0 3px color-mix(in srgb,var(--volt) 25%,transparent),0 0 18px -2px var(--volt)}
+.fr-aranha .av{border:3px double var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 25%,transparent)}
+.fr-nen .av{border-color:var(--n2);box-shadow:0 0 0 3px color-mix(in srgb,var(--n2) 30%,transparent),0 0 20px -2px var(--n2)}
+.fr-carta .av{border-radius:7px;border:3px double var(--amb);box-shadow:0 0 0 2px color-mix(in srgb,var(--amb) 25%,transparent),0 6px 16px -8px var(--amb)}
+.fr-escarlate .av{border-color:#FF2E4D;animation:hjEscarlate 2.4s ease-in-out infinite}
+.fr-giro .av{border-color:transparent}
+.fr-giro .av::after{content:"";position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(var(--aura),var(--volt),var(--amb),var(--red),var(--aura));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px));filter:drop-shadow(0 0 4px var(--aura));animation:hjGiro 3.2s linear infinite}
+
+/* título e fonte */
+.tt{position:absolute;inset:0;display:flex;align-items:center;gap:12px;padding:0 16px}
+.tt .av{width:44px;height:44px}
+.tt div{display:grid;gap:2px}.tt b{font:600 15px var(--f-hud)}.tt span{font:600 12px var(--f-ui);color:var(--amb)}
+.ft{position:absolute;inset:0;display:grid;place-content:center;gap:4px;text-align:center;padding:0 10px}
+.ft b{font-family:var(--fx-font);font-size:22px;font-weight:400;line-height:1.1}
+.ft span{font-family:var(--fx-font);font-size:13px;color:var(--soft)}
+.ft-maquina{--fx-font:"JetBrains Mono",monospace}.ft-manga{--fx-font:Bangers,Impact,sans-serif}.ft-pixel{--fx-font:"Pixelify Sans","Courier New",monospace}.ft-arcade{--fx-font:DotGothic16,"Courier New",monospace}
+
+/* som */
+.sm{position:absolute;inset:0;display:grid;place-items:center}
+.som{width:56px;height:56px;border-radius:50%;border:1px solid var(--hair);background:var(--panel);color:var(--aura);cursor:pointer;display:grid;place-items:center}
+.som svg{width:24px;height:24px}
+.som.toca{animation:hjToca .5s ease-out}
+
+/* pixel */
+.px{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);image-rendering:pixelated}
+.px i{display:block}
+.px b{position:absolute;left:10px;bottom:10px;font:400 14px "Pixelify Sans",monospace;background:rgba(0,0,0,.55);color:#fff;padding:2px 6px}
+
+/* fotos */
+.foto{position:absolute;inset:0;background:var(--panel2) center/cover no-repeat}
+.foto.chefe::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+
+/* efeitos (prévias das do jogo) */
+.o{position:absolute;pointer-events:none}
+@media (prefers-reduced-motion:no-preference){
+  .fx-shake .boss{animation:hjShake .35s linear infinite}
+  .fx-shim .xp>b{background:linear-gradient(90deg,var(--aura),var(--volt),#fff,var(--volt),var(--aura));background-size:200% 100%;animation:hjShim 1.2s linear infinite}
+  .fx-aura .sc .av{animation:hjAura 1.8s ease-in-out infinite}
+  .fx-corrente .xp>b{background:repeating-linear-gradient(90deg,var(--amb) 0 9px,color-mix(in srgb,var(--amb) 30%,transparent) 9px 11px,color-mix(in srgb,var(--amb) 70%,var(--bg)) 11px 20px,color-mix(in srgb,var(--amb) 30%,transparent) 20px 22px);background-size:44px 100%;animation:hjCorrente 1.1s linear infinite;box-shadow:0 0 8px -1px var(--amb)}
+  .fx-digita .ln b{animation:hjDigita 2.4s steps(14) infinite}
+  .fx-gyo .sc{background-image:radial-gradient(90px circle at var(--mx,30%) 50%,color-mix(in srgb,var(--aura) 22%,transparent),transparent 70%);animation:hjGyo 3s ease-in-out infinite alternate}
+  .o.zap{inset:0;background:radial-gradient(circle at 70% 30%,var(--volt),color-mix(in srgb,var(--volt) 30%,transparent) 40%,transparent 75%);opacity:0;animation:hjZap 2.2s ease-out infinite}
+  .o.drift{width:120px;height:80px;border-radius:50%;background:var(--aura);filter:blur(28px);opacity:.28;top:-10px;left:-20px;animation:hjDrift 7s ease-in-out infinite alternate}
+  .o.estrelas{inset:0;background-image:radial-gradient(2px 2px at 20% 70%,var(--aura),transparent),radial-gradient(2px 2px at 60% 40%,var(--volt),transparent),radial-gradient(1.5px 1.5px at 85% 80%,var(--aura),transparent),radial-gradient(1.5px 1.5px at 40% 20%,var(--volt),transparent),radial-gradient(1.5px 1.5px at 10% 30%,var(--aura),transparent);animation:hjSobe 3s linear infinite}
+  .o.rastro{width:7px;height:7px;border-radius:50%;background:var(--aura);box-shadow:-8px 3px 0 -1px color-mix(in srgb,var(--aura) 60%,transparent),-16px 6px 0 -2px color-mix(in srgb,var(--aura) 35%,transparent),0 0 10px var(--aura);top:24px;left:20px;animation:hjRastro 2.6s ease-in-out infinite}
+  .o.jaja{top:6px;right:12px;font:400 30px Bangers,Impact,sans-serif;color:var(--amb);-webkit-text-stroke:1px var(--bg);letter-spacing:.02em;animation:hjPop 1.8s ease-out infinite}
+  .o.jaja::before{content:"";position:absolute;inset:-6px -14px;border:2px solid var(--amb);border-radius:50%;opacity:0;animation:hjOnda 1.8s ease-out infinite}
+  .o.carta{top:14px;right:40px;width:22px;height:32px;border-radius:3px;background:#FFF;border:1px solid #ccc;transform-origin:50% 120%;animation:hjLeque 2s ease-out infinite}
+  .o.carta::after{content:"♦";position:absolute;inset:0;display:grid;place-items:center;color:#E0365A;font-size:13px}
+  .o.carta.c2{animation-delay:.08s;--g:-28deg}.o.carta.c3{animation-delay:.16s;--g:28deg}
+  .o.conf{top:-8px;width:6px;height:9px;animation:hjCai 1.9s linear infinite}
+  .o.fogo{width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,transparent 30%,var(--c) 32%,transparent 36%),conic-gradient(from 0deg,var(--c) 0 3deg,transparent 3deg 30deg);-webkit-mask:radial-gradient(circle,transparent 25%,#000 30%);mask:radial-gradient(circle,transparent 25%,#000 30%);opacity:0;animation:hjFogo 2.2s ease-out infinite}
+  .o.raio{top:-20px;left:-40%;width:180%;height:4px;background:linear-gradient(90deg,transparent,#BFE8FF,#5FB4FF,transparent);box-shadow:0 0 12px #5FB4FF;transform:rotate(18deg);opacity:0;animation:hjRaio 1.9s ease-out infinite}
+  .o.raio+.o.flash{inset:0;background:color-mix(in srgb,#5FB4FF 25%,transparent);opacity:0;animation:hjZap 1.9s ease-out infinite}
+  .o.ascensao{inset:-60%;opacity:.35;filter:blur(18px);background:conic-gradient(from 0deg at 50% 50%,var(--grn),var(--volt),var(--aura),var(--red),var(--amb),var(--grn));animation:hjGiro 12s linear infinite}
+}
+@keyframes hjEscarlate{0%,100%{box-shadow:0 0 0 3px color-mix(in srgb,#FF2E4D 18%,transparent),0 0 10px -4px #FF2E4D}50%{box-shadow:0 0 0 4px color-mix(in srgb,#FF2E4D 35%,transparent),0 0 26px 2px #FF2E4D}}
+@keyframes hjGiro{to{transform:rotate(1turn)}}
+@keyframes hjShake{0%,100%{transform:translate(0)}25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,-1px)}}
+@keyframes hjShim{to{background-position:-200% 0}}
+@keyframes hjAura{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--aura) 60%,transparent)}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--aura) 0%,transparent),0 0 14px 2px var(--aura)}}
+@keyframes hjCorrente{to{background-position:44px 0}}
+@keyframes hjDigita{0%{clip-path:inset(0 100% 0 0)}45%,100%{clip-path:inset(0 0 0 0)}}
+@keyframes hjGyo{from{--mx:10%;background-position:-60px 0}to{background-position:90px 0}}
+@keyframes hjZap{0%,55%{opacity:0}60%{opacity:.9}100%{opacity:0}}
+@keyframes hjDrift{to{transform:translate(110px,40px)}}
+@keyframes hjSobe{from{background-position:0 0,0 0,0 0,0 0,0 0}to{background-position:0 -118px,0 -118px,0 -118px,0 -118px,0 -118px}}
+@keyframes hjRastro{0%{transform:translate(0,0)}50%{transform:translate(120px,20px)}100%{transform:translate(0,0)}}
+@keyframes hjPop{0%,20%{transform:scale(.2);opacity:0}30%{transform:scale(1.25);opacity:1}40%,80%{transform:scale(1);opacity:1}100%{opacity:0}}
+@keyframes hjOnda{0%,25%{transform:scale(.4);opacity:0}30%{opacity:.8}70%,100%{transform:scale(1.5);opacity:0}}
+@keyframes hjLeque{0%{transform:rotate(0) translateY(10px);opacity:0}20%{opacity:1}60%{transform:rotate(var(--g,0deg)) translateY(-4px)}100%{transform:rotate(calc(var(--g,0deg)*2)) translateY(-30px);opacity:0}}
+@keyframes hjCai{to{transform:translateY(130px) rotate(540deg)}}
+@keyframes hjFogo{0%{transform:scale(.1);opacity:1}70%{opacity:1}100%{transform:scale(1.3);opacity:0}}
+@keyframes hjRaio{0%,40%{opacity:0;transform:translateY(0) rotate(18deg)}50%{opacity:1}70%,100%{opacity:0;transform:translateY(130px) rotate(18deg)}}
+@keyframes hjToca{0%{transform:scale(1)}40%{transform:scale(1.12);box-shadow:0 0 0 8px color-mix(in srgb,var(--aura) 25%,transparent)}100%{transform:scale(1)}}
+
+.vazio{border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;text-align:center;padding:16px;color:var(--dim);font-size:13px;min-height:120px}
+.rodape{color:var(--dim);font-size:13px;max-width:75ch}
+
+/* ---------- proposta: estados dos cards ---------- */
+.card.novo{border:1.5px dashed var(--rc);box-shadow:none;background:color-mix(in srgb,var(--card) 85%,var(--rc) 6%)}
+.card.sai{opacity:.5}
+.card.sai .nm{text-decoration:line-through}
+.est{position:absolute;bottom:auto;top:7px;left:7px;z-index:3;font:700 10px var(--f-head);letter-spacing:.06em;padding:2px 6px;border-radius:3px;text-transform:uppercase}
+.est.novo{background:var(--txt);color:var(--page)}
+.est.mov{background:var(--card);color:var(--txt);border:1px solid var(--line)}
+.est.sai{background:#3A2A2A;color:#F2B8B0}
+.card .duv{top:30px}
+.why{font-size:12px;color:var(--dim);line-height:1.35}
+.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.kpi{background:var(--shelf);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;gap:2px}
+.kpi b{font:700 24px var(--f-head);font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--dim)}
+.kpi.meta b{color:var(--r-lenda)}
+.prat.pack{--rc:var(--txt)}
+.prat.gratis{--rc:var(--r-raro)}
+.prat.fora{--rc:#8A5A55}
+
+/* ---------- prévias dos itens novos ---------- */
+.mc{position:absolute;left:16px;right:16px;top:18px;bottom:18px;background:var(--panel);border:1px solid var(--hair);border-radius:7px;display:grid;place-items:center;font:600 12px var(--f-hud);color:var(--soft)}
+.bd-dupla .mc{border:4px double var(--soft)}
+.bd-trac .mc{border:2px dashed var(--soft)}
+.bd-cantos .mc{border-color:transparent;background:linear-gradient(var(--ink),var(--ink)) 0 0/12px 2px no-repeat,linear-gradient(var(--ink),var(--ink)) 0 0/2px 12px no-repeat,linear-gradient(var(--ink),var(--ink)) 100% 100%/12px 2px no-repeat,linear-gradient(var(--ink),var(--ink)) 100% 100%/2px 12px no-repeat,var(--panel)}
+.bd-corrente .mc{border:5px solid transparent;border-image:repeating-linear-gradient(90deg,var(--amb) 0 7px,transparent 7px 9px,color-mix(in srgb,var(--amb) 60%,var(--bg)) 9px 16px,transparent 16px 18px) 5}
+.bd-teia .mc{background-image:repeating-radial-gradient(circle at 0 0,transparent 0 10px,color-mix(in srgb,var(--ink) 30%,transparent) 10px 11px),repeating-conic-gradient(from 90deg at 0 0,color-mix(in srgb,var(--ink) 30%,transparent) 0 .6deg,transparent .6deg 15deg);background-size:44px 44px;background-repeat:no-repeat;border-color:var(--soft)}
+.bd-naipes .mc::before,.bd-naipes .mc::after{position:absolute;font:700 13px serif}
+.bd-naipes .mc::before{content:"♠";top:4px;left:7px;color:var(--ink)}
+.bd-naipes .mc::after{content:"♥";bottom:4px;right:7px;color:var(--red)}
+.bd-naipes .mc{border-color:var(--amb)}
+@media (prefers-reduced-motion:no-preference){
+  .bd-aura .mc{border-color:var(--n2);animation:hjBordaAura 2.4s ease-in-out infinite}
+  .hv-contorno .mc{animation:hjContorno 2.4s ease-in-out infinite}
+  .hv-shu .mc{animation:hjShu 2.4s ease-in-out infinite}
+  .hv-vira .mc{animation:hjVira 3s ease-in-out infinite}
+  .hv-bungee .mc{transform-origin:0 50%;animation:hjBungee 2.4s ease-in-out infinite}
+  .hv-en .o.en{width:20px;height:20px;border-radius:50%;left:40%;top:40%;border:2px solid var(--aura);animation:hjEn 2.4s ease-out infinite}
+  .cur svg{animation:hjCur 3s ease-in-out infinite}
+  .heat.chamas i.on svg{animation:hjChama 1.3s ease-in-out infinite alternate;animation-delay:inherit}
+  .cur .io{animation:hjIo 2.2s ease-in-out infinite}.cur .fio{transform-origin:50% 0;animation:hjFio 2.2s ease-in-out infinite}
+  .tr-deslizar .tA{animation:hjSlideA 3s ease-in-out infinite}.tr-deslizar .tB{animation:hjSlideB 3s ease-in-out infinite}
+  .tr-glitch .mc{animation:hjGlitch 2.6s steps(1) infinite}
+}
+@keyframes hjBordaAura{0%,100%{box-shadow:0 0 0 1px var(--n2),0 0 6px -2px var(--n2)}50%{box-shadow:0 0 0 2px var(--n2),0 0 18px 2px var(--n2)}}
+@keyframes hjContorno{0%,40%{border-color:var(--hair)}50%,90%{border-color:var(--ink)}}
+@keyframes hjShu{0%,40%{box-shadow:none;border-color:var(--hair)}55%,90%{box-shadow:0 0 0 2px color-mix(in srgb,var(--aura) 50%,transparent),0 0 16px -2px var(--aura);border-color:var(--aura)}}
+@keyframes hjVira{0%,35%{transform:rotateY(0)}50%,85%{transform:rotateY(180deg)}100%{transform:rotateY(360deg)}}
+@keyframes hjBungee{0%,40%{transform:scaleX(1)}55%{transform:scaleX(1.12)}65%{transform:scaleX(.95)}75%,100%{transform:scaleX(1)}}
+@keyframes hjEn{0%{transform:scale(.3);opacity:1}100%{transform:scale(7);opacity:0}}
+@keyframes hjCur{0%,100%{transform:translate(-20px,-6px)}50%{transform:translate(24px,8px)}}
+@keyframes hjChama{0%{transform:scale(1,1)}50%{transform:scale(.88,1.12) skewX(3deg)}100%{transform:scale(1.05,.92) skewX(-3deg)}}
+@keyframes hjIo{0%,100%{transform:translateY(-26px)}50%{transform:translateY(0)}}
+@keyframes hjFio{0%,100%{transform:scaleY(.6)}50%{transform:scaleY(1)}}
+@keyframes hjSlideA{0%,40%{transform:translateX(0)}50%,90%{transform:translateX(-110%)}100%{transform:translateX(0)}}
+@keyframes hjSlideB{0%,40%{transform:translateX(110%)}50%,90%{transform:translateX(0)}100%{transform:translateX(110%)}}
+@keyframes hjGlitch{0%,70%{clip-path:none;transform:none}72%{clip-path:inset(20% 0 50% 0);transform:translateX(-6px)}75%{clip-path:inset(60% 0 10% 0);transform:translateX(6px)}78%{clip-path:none;transform:none}}
+.cur{position:absolute;inset:0;display:grid;place-items:center}
+.cur svg{width:40px;height:40px}
+.cur svg[style]{animation:none!important}
+.hp{position:absolute;left:16px;right:16px;top:40px;display:grid;gap:6px;font:600 11px var(--f-hud);color:var(--soft)}
+.hp i{display:block;height:12px;border-radius:3px;background:var(--track);overflow:hidden}
+.hp i b{display:block;height:100%;width:62%}
+.hp.corrente i{height:14px;background:color-mix(in srgb,var(--track) 70%,#000)}
+.hp.corrente i b{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='14'%3E%3Cellipse cx='7.5' cy='7' rx='6.2' ry='4' fill='none' stroke='%23596069' stroke-width='3.2'/%3E%3Cellipse cx='7.5' cy='7' rx='6.2' ry='4' fill='none' stroke='%23B9BFC8' stroke-width='1.8'/%3E%3Crect x='12.5' y='5.6' width='10' height='2.8' rx='1.4' fill='%23D5D9DF' stroke='%23596069' stroke-width='.8'/%3E%3C/svg%3E") repeat-x left center/22px 14px}
+.hp.cristal i b{background:linear-gradient(115deg,#BFE8FF 0 20%,#7FC8F8 20% 45%,#E6F7FF 45% 55%,#5FA8E8 55% 80%,#BFE8FF 80%)}
+.heat{position:absolute;inset:16px 18px;display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(4,1fr);gap:4px}
+.heat i{background:var(--panel2);border-radius:2px}
+.heat i.on{background:var(--grn)}
+.heat.cartas i{border-radius:1px;transform:scaleX(.7)}.heat.cartas i.on{background:var(--amb)}
+.heat.pegadas i{border-radius:50% 50% 45% 45%/60% 60% 40% 40%;transform:scale(.75,.95)}
+.heat.chamas i{background:none;display:grid;place-items:end center}
+.heat.chamas i:not(.on)::after{content:"";width:40%;height:22%;border-radius:2px;background:var(--panel2)}
+.heat.chamas i svg{width:78%;height:100%;transform-origin:50% 100%;filter:drop-shadow(0 0 2px #FF6A1F88)}
+.tr{position:absolute;inset:18px 16px;overflow:hidden;border-radius:7px}
+.tr .mc{position:absolute;inset:0}
+.tr .tB{background:var(--panel2)}
+.ph{position:absolute;inset:0;display:grid;place-content:center;gap:4px;text-align:center;padding:12px;background:repeating-linear-gradient(135deg,transparent 0 10px,color-mix(in srgb,var(--rc) 8%,transparent) 10px 20px)}
+.ph b{font:700 15px var(--f-head);color:var(--rc);letter-spacing:.03em}
+.ph span{font-size:11.5px;color:var(--dim);line-height:1.3}
+</style>
+<style>
+/* ---------- Associação: licença hunter e perfil ---------- */
+/* ---------- provador: a licença do grupo (web/grupo.js), em tamanho real ---------- */
+.prov{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.prov{grid-template-columns:minmax(0,1fr)}}
+.prov-l{display:grid;gap:10px;justify-items:center;background:#0B0C11;border:1px solid var(--line);border-radius:10px;padding:22px 16px}
+.prov-l .acoes{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.prov-l button{font:500 13px var(--f-ui);color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 12px;cursor:pointer}
+.prov-l .usando{font-size:12.5px;color:var(--dim);text-align:center;min-height:1.4em}
+.lgrade{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;align-content:start}
+.lc{all:unset;box-sizing:border-box;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:4px;position:relative;box-shadow:inset 3px 0 0 var(--rc)}
+.lc:focus-visible{outline:2px solid var(--r-raro);outline-offset:2px}
+.lc[aria-pressed="true"]{border-color:var(--txt);background:color-mix(in srgb,var(--card) 80%,var(--rc) 20%)}
+.lc .selo{top:8px;right:8px}
+.lc .nm{font-weight:600;font-size:14px;padding-right:52px}
+.lc .rk{font:600 10px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rc)}
+.lc .prova{font:600 11px var(--f-mono);color:var(--dim)}
+.lc[aria-pressed="true"] .prova{color:var(--txt)}
+
+#LIC{width:100%;display:grid;justify-items:center}
+.LIC{container-type:inline-size;width:100%;max-width:520px;--lk:#17171B;--lb:#BBDDF5;--lb2:#EEF7FD;--lcas:#E2E4EA;--lbor:#9AA0B0;--lt:#141418;--volt:#9FD3FF;--ltarja:#1A0B0B;color:var(--lt);perspective:1400px;cursor:pointer}
+.LIC .Lflipin{position:relative;transition:transform .6s cubic-bezier(.3,.7,.2,1);transform-style:preserve-3d}
+.LIC.Lvirada .Lflipin{transform:rotateY(180deg)}
+.LIC .Lface{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.LIC .Lface.Ltras{position:absolute;inset:0;transform:rotateY(180deg)}
+.LIC .Llf,.LIC .Llv{aspect-ratio:1.56;background:var(--lcas);border:1px solid var(--lbor);border-radius:4cqw;padding:2cqw;font-family:"JetBrains Mono",monospace;box-shadow:0 10px 30px -14px #000;box-sizing:border-box;position:relative;overflow:hidden}
+.LIC .Lin{height:100%;border:1px solid var(--lbor);border-radius:2.6cqw;overflow:hidden;box-sizing:border-box}
+.LIC .Llf .Lin{display:grid;grid-template-columns:40% 1fr}
+.LIC .Ltopo{background:var(--lk);padding:3.4cqw 3cqw;display:grid;gap:2.6cqw;align-content:center;justify-items:center}
+.LIC .Lemb{background:#FFFFFF;display:grid;place-items:center;padding:1.2cqw 2.4cqw;width:58%;box-sizing:border-box}.LIC .Lemb svg{width:100%;height:auto;display:block}
+.LIC .Lico{--s:24.6cqw;position:relative;width:var(--s);height:var(--s);border-radius:50%;box-shadow:0 0 0 2px var(--volt);padding:calc(var(--s)*.07);box-sizing:border-box}
+.LIC .Lph{display:block;width:100%;height:100%;border-radius:50%;background:#222536 center 18%/cover no-repeat}
+.LIC .Lestr{color:#E8C35A;font-size:5cqw;letter-spacing:1cqw;line-height:1;margin-top:-1cqw;text-shadow:0 0 1.4cqw #E8C35A88}
+.LIC .Lazul{background:linear-gradient(180deg,#FFFFFF 0%,var(--lb) 100%);padding:3.6cqw 4cqw;display:grid;gap:2cqw;align-content:start;min-width:0}
+.LIC .Lfaixa{background:repeating-linear-gradient(90deg,#666 0 .35cqw,transparent .35cqw 1.3cqw) left/11% 100% no-repeat,repeating-linear-gradient(90deg,transparent 0 .9cqw,#666 .9cqw 1.25cqw) right/11% 100% no-repeat,#F2F2F2;color:#222;text-align:center;font-weight:700;letter-spacing:.06em;white-space:nowrap;overflow:hidden;font-size:1.9cqw;padding:1.6cqw 6.5cqw}
+.LIC .Lnomebox{border:.7cqw solid var(--lt);background:#FFFFFF;display:flex;align-items:center;font:700 5cqw/1.2 "Chakra Petch",sans-serif;letter-spacing:.06em;padding:1cqw 2.2cqw;min-width:0}
+.LIC .Llls{display:grid;font-weight:600;color:#222;font-size:2.2cqw;gap:.8cqw}.LIC .Llls b{font-weight:800;color:var(--lt)}
+.LIC .Lglifo{display:block;max-width:100%;height:1.9cqw;width:auto;color:#2A2A30}
+.LIC .Llv .Lin{background:linear-gradient(180deg,var(--lb2),var(--lb));display:grid;grid-template-rows:17% auto 1fr;padding:0 0 3cqw}
+.LIC .Ltarja{background:var(--ltarja);margin-top:5cqw}
+.LIC .Lnumq{display:grid;grid-auto-flow:column;justify-content:start;gap:.8cqw;padding:3cqw 4cqw 2cqw}
+.LIC .Lnumq i{font-style:normal;display:grid;place-items:center;border:.5cqw solid var(--lt);border-radius:1.2cqw;font-weight:800;width:4.4cqw;height:4.4cqw;font-size:2.4cqw}
+.LIC .Lnumq .Lesp{width:2.4cqw}
+.LIC .Lvinfo{display:grid;grid-template-columns:1fr 1fr;gap:2cqw 4cqw;padding:0 4cqw;font-size:2.1cqw;align-content:start}
+.LIC h5{margin:0 0 .8cqw;font-size:.85em;letter-spacing:.14em;color:#3A3D4A}
+.LIC ul{list-style:none;margin:0;padding:0;display:grid;gap:.6cqw}.LIC li{display:flex;gap:1.6cqw;align-items:baseline;white-space:nowrap}
+.LIC .Lq{display:inline-grid;place-items:center;min-width:1.9em;height:1.5em;border-radius:99px;font-weight:800;background:#FFFFFFAA;font-size:.9em}
+.LIC .Lcar{position:absolute;right:5cqw;bottom:6cqw;font:800 3.4cqw "Chakra Petch",sans-serif;color:#C8102E;border:.7cqw solid #C8102E;padding:.6cqw 2cqw;border-radius:1cqw;transform:rotate(-12deg);opacity:.85;letter-spacing:.06em;z-index:2;mix-blend-mode:multiply}
+.LIC .Lcar.Laz{color:#1F5FA8;border-color:#1F5FA8}
+/* o que a loja muda */
+.LIC.cor-verde{--lb:#BFE8CF;--lb2:#EEFBF2}
+.LIC.cor-escarlate{--lb:#F5C2C8;--lb2:#FDF0F2;--lk:#2A0A10}
+.LIC.est-preto{--lcas:#2A2B31;--lbor:#4A4D58}
+.LIC.est-ouro{--lcas:#E9D9A6;--lbor:#B8902F}
+.LIC.est-ouro .Llf,.LIC.est-ouro .Llv{box-shadow:0 0 0 1px #E8C35A,0 10px 30px -14px #000}
+.LIC .Lchain{display:none}
+.LIC.bd-corrente .Lchain{display:block;position:absolute;inset:0;pointer-events:none;z-index:3;border-radius:4cqw;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='12'%3E%3Cellipse cx='7' cy='6' rx='6' ry='3.8' fill='none' stroke='%23454B55' stroke-width='3'/%3E%3Cellipse cx='7' cy='6' rx='6' ry='3.8' fill='none' stroke='%23C9CED6' stroke-width='1.5'/%3E%3Crect x='11.5' y='4.4' width='11' height='3.2' rx='1.6' fill='%23DDE1E7' stroke='%23454B55' stroke-width='1'/%3E%3C/svg%3E") repeat-x 0 0/4.2cqw 2.3cqw,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='12'%3E%3Cellipse cx='7' cy='6' rx='6' ry='3.8' fill='none' stroke='%23454B55' stroke-width='3'/%3E%3Cellipse cx='7' cy='6' rx='6' ry='3.8' fill='none' stroke='%23C9CED6' stroke-width='1.5'/%3E%3Crect x='11.5' y='4.4' width='11' height='3.2' rx='1.6' fill='%23DDE1E7' stroke='%23454B55' stroke-width='1'/%3E%3C/svg%3E") repeat-x 0 100%/4.2cqw 2.3cqw,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='22'%3E%3Cellipse cx='6' cy='7' rx='3.8' ry='6' fill='none' stroke='%23454B55' stroke-width='3'/%3E%3Cellipse cx='6' cy='7' rx='3.8' ry='6' fill='none' stroke='%23C9CED6' stroke-width='1.5'/%3E%3Crect x='4.4' y='11.5' width='3.2' height='11' rx='1.6' fill='%23DDE1E7' stroke='%23454B55' stroke-width='1'/%3E%3C/svg%3E") repeat-y 0 0/2.3cqw 4.2cqw,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='22'%3E%3Cellipse cx='6' cy='7' rx='3.8' ry='6' fill='none' stroke='%23454B55' stroke-width='3'/%3E%3Cellipse cx='6' cy='7' rx='3.8' ry='6' fill='none' stroke='%23C9CED6' stroke-width='1.5'/%3E%3Crect x='4.4' y='11.5' width='3.2' height='11' rx='1.6' fill='%23DDE1E7' stroke='%23454B55' stroke-width='1'/%3E%3C/svg%3E") repeat-y 100% 0/2.3cqw 4.2cqw}
+.LIC.bd-corrente .Llf,.LIC.bd-corrente .Llv{padding:2.6cqw}
+.LIC.vs-roxo{--ltarja:#2A1E44}
+.LIC.vs-roxo .Llv .Lin{background:linear-gradient(180deg,#F2EEFD,#C9B8F0)}
+@media (prefers-reduced-motion:no-preference){
+  .LIC.fx-brilho .Llf::after,.LIC.fx-brilho .Llv::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);background-size:250% 100%;animation:hjBrilho 2.8s ease-in-out infinite;pointer-events:none}
+  .LIC.fx-holo .Lazul,.LIC.fx-holo .Llv .Lin{background:conic-gradient(from var(--hg,0deg) at 30% 40%,#BFE8FF,#E4D2FF,#FFD2E6,#FFF1BF,#D2F5C4,#BFE8FF);animation:hjHolo 5s linear infinite}
+  .LIC.fx-holo .Ltopo{background:linear-gradient(160deg,#17171B,#2A2140,#17171B)}
+}
+
+.LIC .Lemb.Lrei{background:linear-gradient(160deg,#2A2140,#141418);box-shadow:0 0 0 .5cqw #E8C35A}
+@media (prefers-reduced-motion:no-preference){.LIC .Lemb.Lrei{animation:hjRei 2.6s ease-in-out infinite}}
+@keyframes hjRei{0%,100%{box-shadow:0 0 0 .5cqw #E8C35A,0 0 1cqw #E8C35A55}50%{box-shadow:0 0 0 .5cqw #FFE7A0,0 0 5cqw #E8C35A}}
+.pod .eu{border-color:var(--volt)!important;background:color-mix(in srgb,var(--panel) 80%,var(--volt) 12%)!important}
+.pod .ebg{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:4px;background:var(--panel2);border:1px solid var(--hair);font:700 13px "Noto Serif JP",serif;color:var(--ink);flex:none}
+.pod .ebg.aura{color:var(--aura);border-color:var(--aura)}
+@media (prefers-reduced-motion:no-preference){.pod .ebg.aura{animation:hjAura 1.8s ease-in-out infinite}}
+.pod .ebg.rei{background:linear-gradient(160deg,#2A2140,#141418);border-color:#E8C35A;width:30px;height:24px}.pod .ebg.rei svg{width:26px}
+.pod b.ouro{background:linear-gradient(90deg,#E8C35A,#FFF1B8,#E8C35A);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}
+@media (prefers-reduced-motion:no-preference){.pod .ebg.rei{animation:hjReiP 2.2s ease-in-out infinite}.pod b.ouro{animation:hjShim 2s linear infinite}}
+@keyframes hjReiP{0%,100%{box-shadow:0 0 0 0 #E8C35A00,0 0 4px #E8C35A66}50%{box-shadow:0 0 0 3px #E8C35A33,0 0 14px 2px #E8C35A}}
+.pod .seta{position:absolute;right:8px;top:-2px;font:600 10px var(--f-mono);color:var(--volt)}
+/* moldura da Aranha: doze patas e o número do membro */
+.fr-aranha2 .av{border:2px solid #141418;box-shadow:0 0 0 2px #C8102E}
+.fr-aranha2 .av::before{content:"";position:absolute;inset:-13px;border-radius:50%;background:repeating-conic-gradient(from 13deg,#141418 0 2.4deg,transparent 2.4deg 30deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 11px),#000 calc(100% - 11px),#000 calc(100% - 3px),transparent calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 11px),#000 calc(100% - 11px),#000 calc(100% - 3px),transparent calc(100% - 2px));filter:drop-shadow(0 0 1px #C8102E)}
+.fr-aranha2 .av::after{content:"4";position:absolute;right:-8px;bottom:-6px;width:20px;height:20px;border-radius:50%;background:#141418;color:#FF3347;font:700 12px var(--f-head);display:grid;place-items:center;box-shadow:0 0 0 2px #C8102E}
+
+.modo{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.modo div{background:var(--shelf);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;gap:6px}
+.modo p{margin:0;font-size:13px;color:var(--dim)}
+.regra-p{background:var(--shelf);border:1px solid var(--line);border-left:3px solid var(--r-lenda);border-radius:6px;padding:12px 14px;font-size:13.5px;color:var(--txt);max-width:90ch}
+.regra-p p{margin:0}.regra-p p+p{margin-top:6px;color:var(--dim)}
+.lib{display:inline-flex;align-items:center;gap:5px;font:600 11px var(--f-ui);padding:2px 7px;border-radius:4px;justify-self:start;border:1px solid currentColor;line-height:1.4}
+.lib.tc{color:#E8C35A}.lib.ind{color:#6FD6A8}.lib.col{color:#7FC8F8}.lib.lim{color:#F0776F}
+.lib i{font-style:normal}
+.marca{font:600 10px var(--f-mono);color:var(--dim);letter-spacing:.04em}
+
+@media (prefers-reduced-motion:no-preference){
+  .pf-aura .av{animation:hjAura 1.8s ease-in-out infinite}
+  .o.part{inset:0;background-image:radial-gradient(2px 2px at 30% 70%,var(--aura),transparent),radial-gradient(2px 2px at 70% 30%,var(--volt),transparent),radial-gradient(1.5px 1.5px at 45% 20%,var(--aura),transparent),radial-gradient(1.5px 1.5px at 60% 80%,var(--volt),transparent);animation:hjSobe 2.6s linear infinite}
+  .o.ren{width:40px;height:40px;border-radius:50%;left:calc(50% - 20px);top:calc(50% - 20px);box-shadow:0 0 0 3px var(--amb);animation:hjEn 2s ease-out infinite}
+  .nm-brilho b.nmx{background:linear-gradient(90deg,var(--amb),#fff,var(--amb));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:hjShim 1.6s linear infinite}
+  .nm-podio .row1{animation:hjSobePod 2.8s ease-in-out infinite}
+  .fd-cena{background-image:radial-gradient(60% 50% at 30% 30%,color-mix(in srgb,var(--aura) 30%,transparent),transparent 70%),radial-gradient(50% 50% at 80% 70%,color-mix(in srgb,var(--volt) 25%,transparent),transparent 70%);background-size:200% 200%;animation:hjFundo 6s ease-in-out infinite alternate}
+}
+@keyframes hjBrilho{from{background-position:120% 0}to{background-position:-120% 0}}
+@property --hg{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes hjHolo{to{--hg:360deg}}
+@keyframes hjSobePod{0%,30%{transform:translateY(26px)}50%,100%{transform:translateY(0)}}
+@keyframes hjFundo{to{background-position:100% 100%}}
+.fd-liso{background:color-mix(in srgb,var(--aura) 22%,var(--bg))}
+.pod{position:absolute;inset:14px 16px;display:grid;gap:5px;align-content:center}
+.pod div{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--hair);border-radius:5px;padding:4px 8px;font:600 12px var(--f-hud)}
+.pod div em{font-style:normal;color:var(--soft);width:16px}
+.pod div span{margin-left:auto;font:500 11px var(--f-mono);color:var(--soft)}
+.emb{position:absolute;inset:0;display:grid;place-items:center}
+.emb b{width:54px;height:54px;border-radius:12px;display:grid;place-items:center;font:700 26px "Noto Serif JP",serif;background:var(--panel);border:2px solid var(--hair);color:var(--ink)}
+.ttl{position:absolute;inset:0;display:grid;place-content:center;gap:6px;justify-items:center;text-align:center;padding:0 10px}
+.ttl b{font:600 14px var(--f-hud)}
+.ttl span{font:600 12px var(--f-ui);color:var(--amb);border:1px solid color-mix(in srgb,var(--amb) 50%,transparent);border-radius:999px;padding:2px 10px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Proposta · #43 · 15/10/2026 · moeda: Trick Coin</div>
+    <h1>Loja da Associação<span class="jp">proposta</span></h1>
+    <p class="lead">Tudo o que os outros veem de você no grupo: a licença hunter, o perfil, o placar e os títulos de grupo. A moeda é a Trick Coin, ganha só pela Torre Trick, com balanceamento próprio. Quase tudo aqui é novo; os preços ainda não existem.</p>
+    <div class="legenda">
+      <span><i class="dot" style="background:var(--r-comum)"></i>Comum</span>
+      <span><i class="dot" style="background:var(--r-raro)"></i>Raro</span>
+      <span><i class="dot" style="background:var(--r-epico)"></i>Épico</span>
+      <span><i class="dot" style="background:var(--r-lenda)"></i>Lendário · sempre por desafio</span>
+      <span><b class="selo" style="position:static"><i>念</i>HxH</b>tema da temporada</span>
+    </div>
+  </header>
+
+  <div class="modo">
+    <div><span class="lib tc"><i>◈</i>Trick Coin</span><p>Só comprar. Comuns e a maioria dos raros.</p></div>
+    <div><span class="lib ind"><i>◆</i>Desafio individual</span><p>Cumprir um desafio libera a compra, com preço alto. Existe em todas as faixas.</p></div>
+    <div><span class="lib col"><i>✦</i>Desafio coletivo</span><p>O grupo vence um desafio difícil e todos os participantes ganham de graça. Épicos e lendários.</p></div>
+    <div><span class="lib lim"><i>✕</i>Limitado</span><p>Só N donos, em qualquer faixa. O direito vai para o 1º (ou o top N) a cumprir o desafio, ou sai no Leilão de Yorknew.</p></div>
+  </div>
+
+  <div class="regra-p">
+    <p><b>Quem participou:</b> estava no grupo quando o desafio começou e fez um mínimo de pontos da Torre Trick durante ele. Quem entra depois não pega o item.</p>
+    <p>O item leva a marca da temporada e do desafio. Cada temporada traz desafios e itens novos, então sempre há uma segunda chance, mas nunca o mesmo item. Os desafios medem pela Torre Trick, nunca pelo XP bruto.</p>
+  </div>
+
+  <section class="prat" style="--rc:var(--txt)">
+    <div class="prat-h"><h2>Licença hunter</h2><span class="q" id="lic-q"></span><span class="r">A licença do grupo como ela é hoje (frente e verso). Clique num item para provar; dá para combinar cor, estojo, borda, brilho, estrelas, carimbo e número. Clique na licença para virar.</span></div>
+    <div class="prov">
+      <div class="prov-l"><div id="LIC"></div><div class="usando" id="usando"></div>
+        <div class="acoes"><button type="button" id="virar">Virar</button><button type="button" id="limpar">Voltar ao padrão</button></div></div>
+      <div class="lgrade" id="lgrade"></div>
+    </div>
+  </section>
+  <nav class="barra" aria-label="Filtros" id="barra"></nav>
+  <div id="loja" style="display:grid;gap:22px"></div>
+
+  <p class="rodape">Os itens que vieram da Masadora (molduras especiais, Aura do avatar) continuam com quem já comprou lá. As fotos em camadas (corpo, roupa, arma) são da #70 e entram aqui quando existirem.</p>
+</div>
+
+<script>
+const PALS = {
+  painel:  ['dark','#13141B','#1B1D28','#222536','#E6E8F0','#9197AD','#5A6078','#2A2D3C','#252838','#7AA2F7','#F7768E','#E0AF68','#73C991','#9FD3FF','#B4A0FF','#F7768E','#7DCFFF','#73C991','#FF9E64','#BB9AF7','#E0AF68'],
+  simples: ['dark','#16181D','#1D2027','#24282F','#E2E5EB','#9BA1AD','#60666F','#2C3038','#272B33','#9FB2CF','#DB8A93','#CDB384','#8DBF9F','#B4C1D3','#A6AFC0','#DB8A93','#A6C3DA','#8DBF9F','#D3A27E','#ADA3CC','#CDB384'],
+  leorio:  ['dark','#0D1424','#132038','#1A2945','#E8EEF8','#97A6C2','#5A6A8A','#24345A','#1D2B4B','#4FC3D9','#FF7A7A','#F2C46D','#6FD6A8','#5FD3E6','#4F8FE0','#FF7A7A','#5FD3E6','#6FD6A8','#F2A65A','#9F9BF5','#F2C46D'],
+  gon:     ['dark','#0D1710','#132118','#1A2B20','#ECF5E8','#9DB5A0','#5E7863','#24392A','#1E3125','#9BE15D','#FF6B5B','#F2C14E','#9BE15D','#C6F27A','#3FBF7F','#FF6B5B','#7DD3FC','#9BE15D','#F2994A','#B794F6','#F2C14E'],
+  biscuit: ['dark','#1C1220','#26182B','#301E36','#FFF0F7','#C9A3BB','#80637A','#432A48','#38243D','#FFE08A','#FF7EB0','#FFE08A','#7EE0B5','#FF9EC7','#C3A6FF','#FF7EB0','#8FD3FF','#7EE0B5','#FFB07A','#C3A6FF','#FFE08A'],
+  netero:  ['dark','#17110C','#211810','#2B2016','#FFF5EA','#C8B19A','#86705A','#3F2F22','#33261B','#FF9A3C','#FF5E4D','#FFC861','#86D49A','#FFB25E','#F2E6D0','#FF5E4D','#8CCFF0','#86D49A','#FF9A3C','#C7A6E8','#FFC861'],
+  kurapika:['dark','#140D12','#1D1219','#261822','#F6EAF0','#B49BA8','#76606C','#3A2632','#2E1E28','#F5C26B','#FF3D5E','#F5C26B','#7DD8A4','#FF4D6D','#F5C26B','#FF3D5E','#7FC8F8','#7DD8A4','#F59E5B','#C9A2FF','#F5C26B'],
+  killua:  ['dark','#0C1120','#121A2E','#18223A','#EAF2FF','#93A3C4','#56648A','#22304F','#1C2742','#8CC8FF','#FF7A90','#FFD27A','#7CE0B0','#B6ECFF','#7FA8FF','#FF7A90','#B6ECFF','#7CE0B0','#FFB07A','#B9A2FF','#FFD27A'],
+  hisoka:  ['dark','#160C1A','#211128','#2A1633','#FFEFFA','#C39BC0','#7E5C7F','#3D2346','#331C3B','#FFD23F','#FF5C8A','#FFD23F','#6EE7B7','#FF6FB5','#FFD23F','#FF5C8A','#7DD3FC','#6EE7B7','#FB923C','#E879F9','#FFD23F'],
+  meruem:  ['dark','#0B110D','#111A14','#17231B','#EEF3E6','#A3B29A','#64725E','#24331F','#1D2A1C','#C9B458','#E0605A','#C9B458','#5DBB8A','#E3CF6E','#5DBB8A','#E0605A','#8FC9D9','#5DBB8A','#D99A4E','#A99AD0','#C9B458'],
+  zoldyck: ['dark','#100D16','#17131F','#1E1928','#ECE8F4','#A39CB5','#655E78','#2B2438','#241E30','#B9C4D6','#E5566F','#D8C08A','#7FCFA8','#9FE3FF','#A78BFA','#E5566F','#9FE3FF','#7FCFA8','#E8A06A','#A78BFA','#D8C08A'],
+  ryodan:  ['dark','#0E0A0B','#161012','#1E1618','#F3E9EA','#B09A9D','#6E5A5D','#2E2124','#261B1E','#FF4A5A','#FF3347','#E3B25B','#6FCF97','#FF6B6B','#C0394B','#FF3347','#8AB4F8','#6FCF97','#F2994A','#B57EDC','#E3B25B'],
+  greed:   ['dark','#0A1512','#0F1E19','#152720','#E9F5EE','#93B5A6','#58776A','#1F3A30','#1A3229','#E8C35A','#F2696B','#E8C35A','#5FD6A0','#7DF0C9','#E8C35A','#F2696B','#7FC8F8','#5FD6A0','#F2A65A','#B79CF2','#E8C35A'],
+  abismo:  ['dark','#05080C','#0A1016','#0F1720','#DDF3F2','#86A6A8','#4D6668','#162229','#121C23','#3EE6D0','#FF5D7A','#E7C46A','#3EE6A0','#3EE6D0','#7B6CFF','#FF5D7A','#3EC9E6','#3EE6A0','#FF9F5A','#9B8CFF','#E7C46A'],
+  aurora:  ['dark','#070914','#0D1020','#13172C','#EEF0FF','#A4A9CC','#61678C','#21264A','#1A1F3C','#7CF5C4','#FF6FA8','#FFD27A','#7CF5C4','#8FB8FF','#C58BFF','#FF6FA8','#8FB8FF','#7CF5C4','#FFB27A','#C58BFF','#FFD27A'],
+  pergaminho:['light','#EFE6D2','#FBF5E6','#F3EAD5','#2B1D14','#6B5544','#A08B76','#DCCDB0','#E5D8BC','#8A4B1F','#B3362F','#A8741A','#4F7A3A','#2F6A8A','#7A4E9C','#B3362F','#2F6A8A','#4F7A3A','#B4521E','#7A4E9C','#A8741A'],
+  claro:   ['light','#F4F5F9','#FFFFFF','#F3F4FA','#1B1E2E','#5B6180','#989EB6','#E1E4EE','#E8EAF2','#2F5FD0','#D6455D','#B7812A','#2F8A55','#1F78C8','#6B4FD8','#D6455D','#1F86B8','#2F8A55','#D0661F','#7E57C2','#B7812A'],
+};
+
+const TK = 'bg panel panel2 ink soft faint hair track prompt red amb grn volt aura n1 n2 n3 n4 n5 n6'.split(' ');
+const palStyle = k => { const p = PALS[k] || PALS.painel; return TK.map((t,i) => `--${t}:${p[i+1]}`).join(';'); };
+const RK = {comum:['Comum','var(--r-comum)'], raro:['Raro','var(--r-raro)'], epico:['Épico','var(--r-epico)'], lenda:['Lendário','var(--r-lenda)']};
+const LIB = {tc:['◈','Trick Coin'], ind:['◆','Desafio individual'], col:['✦','Desafio coletivo'], lim:['✕','Limitado']};
+const CAT = {lic:'Licença hunter', mold:'Moldura', aura:'Em volta do perfil', fundo:'Fundo do perfil', emb:'Emblema no placar', nome:'Nome no placar', tit:'Título de grupo', foto:'Foto de perfil'};
+const AV = '../../web/a/killua-3.png';
+// [id, nome, cat, faixa, hxh, liberação, descrição, prévia, de onde veio]
+const I = [
+  ['lic-verde','Licença verde-caçador','lic','comum',0,'tc','Troca o azul-claro da licença por verde. O padrão (preto, branco e azul-claro) continua grátis.',{lic:'lv-verde'}],
+  ['lic-escarlate','Licença escarlate','lic','comum',1,'tc','Rosa-escarlate no lugar do azul, e o painel da foto em vinho, como os olhos do clã Kurta.',{lic:'lv-escarlate'}],
+  ['lic-estojo','Estojo preto','lic','comum',0,'tc','O estojo cinza em volta da licença vira preto.',{lic:'lv-preto'}],
+  ['lic-ouro','Estojo dourado','lic','raro',0,'tc','Estojo e borda dourados.',{lic:'lv-ouro'}],
+  ['lic-corrente','Borda de corrente','lic','raro',1,'tc','A borda vira a corrente do Kurapika.',{lic:'lv-corrente'}],
+  ['lic-brilho','Brilho','lic','raro',0,'tc','Um reflexo passa pela licença.',{lic:'lv-brilho'}],
+  ['lic-verso','Verso roxo','lic','raro',0,'tc','O verso (a tarja e o fundo) em roxo. A frente continua igual.',{verso:1,lic:'lv-verso'}],
+  ['lic-exame','Carimbo: Exame aprovado','lic','raro',1,'ind','Desafio: completar a primeira semana inteira do grupo sem atraso.',{car:'APROVADO'}],
+  ['lic-1estrela','Estrela ★','lic','raro',1,'ind','Desafio: liderar o placar do grupo numa semana.',{st:'★'}],
+  ['lic-1999','Licença Nº 1999','lic','raro',1,'lim','Só 1 dono. Vai para o 1º a cumprir o desafio da temporada.',{no:'1999'}],
+  ['lic-holo','Licença holográfica','lic','epico',0,'ind','Desafio: Ten de 30 dias dentro do grupo.',{lic:'lv-holo'}],
+  ['lic-2estrelas','Estrelas ★★','lic','epico',1,'ind','Desafio: liderar o placar em 4 semanas da temporada.',{st:'★★'}],
+  ['lic-chefao','Selo: chefão do grupo','lic','epico',1,'col','Todos que participaram ganham quando o grupo derrota o chefão (#44).',{car:'CHEFÃO ✓',az:1}],
+  ['mold-hunter','Moldura Hunter ★','mold','comum',1,'tc','Aro dourado de quem tem licença.',{fr:'fr-hunter'},'veio da Masadora'],
+  ['mold-carta','Carta de Greed Island','mold','raro',1,'tc','O avatar vira uma carta.',{fr:'fr-carta'},'veio da Masadora'],
+  ['mold-escarlate','Olhos escarlates','mold','raro',1,'tc','Brilho vermelho que pulsa.',{fr:'fr-escarlate'},'veio da Masadora'],
+  ['mold-aranha','Moldura da Aranha','mold','raro',1,'ind','Doze patas em volta do avatar e o número de membro. Desafio: derrotar um chefão do Genei Ryodan.',{fr:'fr-aranha2'},'veio da Masadora, com desenho novo'],
+  ['mold-giro','Anel de aura','mold','epico',0,'tc','Anel com as cores da paleta girando em volta do avatar.',{fr:'fr-giro'},'veio da Masadora'],
+  ['pf-aura','Aura do avatar','aura','raro',0,'tc','O avatar pulsa com aura no placar e na licença.',{pf:'pf-aura'},'veio da Masadora'],
+  ['pf-part','Partículas de Nen','aura','epico',0,'tc','Partículas sobem em volta do perfil.',{pf:'',o:'<i class="o part"></i>'}],
+  ['pf-ren','Ren no pódio','aura','epico',1,'ind','A aura explode em volta do avatar quando você sobe no pódio. Desafio: subir 3 posições numa semana.',{pf:'',o:'<i class="o ren"></i>'}],
+  ['fd-liso','Fundo de cor','fundo','comum',0,'tc','Fundo do perfil na cor da sua aura.',{fd:'fd-liso'}],
+  ['fd-arena','Fundo da Arena','fundo','raro',1,'tc','O piso da Arena Celestial atrás do perfil.',{fd:'tex-arena'}],
+  ['fd-cena','Fundo vivo','fundo','epico',0,'tc','Manchas de aura que se movem devagar atrás do perfil.',{fd:'fd-cena'}],
+  ['emb-nen','Emblema 念','emb','comum',1,'tc','Um símbolo pequeno que aparece ao lado do seu nome em todos os placares do grupo.',{embp:'念'}],
+  ['emb-naipe','Emblema de naipe','emb','comum',1,'tc','Um naipe (♠ ♥ ♦ ♣, à escolha) ao lado do seu nome nos placares.',{embp:'♠'}],
+  ['emb-aura','Emblema de aura','emb','raro',0,'tc','O 念 ao lado do seu nome pulsa com aura nos placares.',{embp:'念',aura:1}],
+  ['lic-emb-aranha','Emblema da Aranha','lic','raro',1,'ind','A aranha de doze patas da Trupe no lugar do emblema hunter da licença, com o seu número. Desafio: derrotar 3 chefões do Genei Ryodan.',{}],
+  ['nm-cor','Cor do nome','nome','comum',0,'tc','Seu nome no placar na cor que escolher.',{nome:'cor'}],
+  ['nm-brilho','Nome com brilho','nome','raro',0,'tc','Um brilho corre pelo seu nome.',{nome:'brilho'}],
+  ['nm-podio','Entrada no pódio','nome','epico',0,'ind','Sua linha sobe com destaque quando você passa alguém. Desafio: ficar no pódio 3 semanas seguidas.',{nome:'podio'}],
+  ['tt-membro','Membro da Associação','tit','comum',1,'tc','O primeiro título de grupo.',{tit:1}],
+  ['tt-7em1','7 dias em 1','tit','raro',0,'ind','Desafio: fazer mais da metade dos pontos da semana no último dia.',{tit:1}],
+  ['tt-ultimo','Rei do último minuto','tit','raro',0,'ind','Desafio: 5 entregas no próprio dia do prazo.',{tit:1}],
+  ['tt-1999','Top 1 desde 1999','tit','epico',0,'ind','Desafio: liderar o placar 3 semanas seguidas.',{tit:1}],
+  ['tt-costas','Carregou o grupo nas costas','tit','epico',0,'lim','Só 1 por desafio coletivo: quem mais pontuou nele.',{tit:1}],
+  ['tt-presidente','Presidente da Associação','tit','epico',1,'lim','Só 1 por temporada: o 1º do geral no fim.',{tit:1}],
+  ['lg-3estrelas','Hunter Três Estrelas','lic','lenda',1,'ind','Título, moldura e as três estrelas na licença. Desafio: todos os chefões da temporada derrotados e o pódio do geral.',{lic:'lv-ouro',st:'★★★'}],
+  ['lg-exame','Licença do Exame Hunter','lic','lenda',1,'col','Licença holográfica com o carimbo da temporada. O grupo inteiro precisa vencer o Exame Hunter de fim de temporada.',{lic:'lv-holo',car:'EXAME T1'}],
+  ['lg-0001','Licença Nº 0001','lic','lenda',1,'lim','Só 1 dono por grupo, para sempre. Sai no Leilão de Yorknew entre quem cumpriu o desafio da temporada.',{lic:'lv-ouro lv-brilho',no:'0001'}],
+  ['lg-rei','Emblema do Rei','lic','lenda',1,'col','A coroa do Rei em ouro no lugar do emblema hunter, com brilho, e a mesma coroa ao lado do seu nome em todos os placares. O grupo derrota o chefão do grupo na dificuldade máxima; todos os participantes ganham.',{embp:'rei'}],
+];
+const fmt = n => n.toLocaleString('pt-BR');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const EMBLEMA = '<svg viewBox="0 0 120 70" aria-hidden="true"><path d="M60 10 L84 35 L60 60 L36 35 Z" fill="#C8102E"/><path d="M12 10 L60 60 M60 10 L12 60 M60 10 L108 60 M108 10 L60 60" stroke="#141418" stroke-width="7" fill="none"/><path d="M3 10 H23 M50 10 H70 M97 10 H117 M3 60 H23 M50 60 H70 M97 60 H117" stroke="#141418" stroke-width="3.5"/></svg>';
+const TRUPE = (()=>{ const L = [[54,28,38,14,26,5],[53,31,33,22,16,17],[52,34,30,32,10,33],[52,37,30,43,13,51],[53,40,35,53,23,65],[56,43,45,58,40,69]];
+  const p = L.map(([a,b,c,d,e,f]) => `M${a} ${b}L${c} ${d}L${e} ${f}M${120-a} ${b}L${120-c} ${d}L${120-e} ${f}`).join('');
+  return `<svg viewBox="8 1 104 70" aria-hidden="true"><path d="${p}" stroke="#141418" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/><circle cx="60" cy="22" r="7.5" fill="#141418"/><ellipse cx="60" cy="44" rx="13" ry="17" fill="#141418"/><text x="60" y="52" text-anchor="middle" font-size="21" font-weight="800" fill="#FF3347" font-family="Chakra Petch,sans-serif">4</text></svg>`; })();
+const COROA = '<svg viewBox="0 0 120 70" aria-hidden="true"><defs><linearGradient id="ouro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF1B8"/><stop offset=".5" stop-color="#E8C35A"/><stop offset="1" stop-color="#9C7A2A"/></linearGradient></defs><path d="M28 54 L22 18 L42 36 L60 10 L78 36 L98 18 L92 54 Z" fill="url(#ouro)" stroke="#6E5418" stroke-width="2"/><rect x="27" y="54" width="66" height="8" rx="2" fill="url(#ouro)" stroke="#6E5418" stroke-width="2"/><circle cx="60" cy="40" r="5" fill="#C8102E"/><circle cx="42" cy="44" r="3.4" fill="#2F6FD0"/><circle cx="78" cy="44" r="3.4" fill="#2F6FD0"/></svg>';
+const ARANHA = '<svg viewBox="0 0 120 70" aria-hidden="true"><g stroke="#141418" stroke-width="3.2" fill="none" stroke-linecap="round"><path d="M52 30 L30 12 L14 20 M52 35 L26 28 L8 36 M52 40 L28 46 L12 60 M54 44 L38 60 L32 68 M68 30 L90 12 L106 20 M68 35 L94 28 L112 36 M68 40 L92 46 L108 60 M66 44 L82 60 L88 68"/></g><ellipse cx="60" cy="38" rx="11" ry="14" fill="#141418"/><circle cx="60" cy="22" r="7" fill="#141418"/><text x="60" y="44" text-anchor="middle" font-size="13" font-weight="700" fill="#FF3347" font-family="sans-serif">4</text></svg>';
+function licenca(pv){
+  if(pv.verso) return `<div class="lic-w"><div class="tt-lic ${pv.lic||''}"><div class="tt-lv"><div class="in"><div class="tarja"></div><div class="numq">${[...'2817'].map(c=>`<i>${c}</i>`).join('')}</div><div class="ilu">HUNTER</div></div></div></div></div>`;
+  const emb = pv.emb==='aranha' ? ARANHA : pv.emb==='nen' ? '<span class="k">念</span>' : EMBLEMA;
+  return `<div class="lic-w"><div class="tt-lic ${pv.lic||''}"><div class="tt-lf"><div class="in">
+    <div class="topo"><div class="emb">${emb}</div><i class="foto"></i>${pv.st?`<span class="estr">${pv.st}</span>`:''}</div>
+    <div class="azul"><div class="faixa">TORRE TRICK · T1</div><div class="nomebox"><span>KILLUA</span></div>
+      <div class="lls"><span>Nº <b>${pv.no || '0012 2026 4817'}</b></span><span><b>2º</b> NO GERAL</span><span>SEQ. <b>14</b></span></div></div></div>
+    ${pv.car?`<span class="car ${pv.az?'az':''}">${pv.car}</span>`:''}</div></div></div>`;
+}
+function previa(it){
+  const pv = it[7]; let cls = '', html = '';
+  if(pv.lic || pv.st || pv.car || pv.no || pv.verso || pv.emb) html = licenca(pv);
+  else if(pv.fr){ cls = pv.fr; html = `<div class="big"><i class="av" style="background-image:url(${AV})"></i></div>`; }
+  else if('pf' in pv){ cls = pv.pf; html = (pv.o||'') + `<div class="big"><i class="av" style="background-image:url(${AV})"></i></div>`; }
+  else if(pv.fd){ cls = pv.fd; html = `<div class="big"><i class="av" style="background-image:url(${AV})"></i></div>`; }
+  else if(pv.embp) html = `<div class="pod" style="position:absolute"><div><em>1</em>Gon<span>1.920</span></div><div class="eu"><em>2</em><i class="ebg ${pv.aura?'aura':''} ${pv.embp==='rei'?'rei':''}">${pv.embp==='rei' ? COROA : pv.embp}</i><b class="${pv.embp==='rei'?'ouro':''}">Killua</b><span>1.840</span></div><div><em>3</em>Leorio<span>1.205</span></div></div>`;
+  else if(pv.nome){ cls = 'nm-'+pv.nome; const nm = pv.nome==='cor' ? '<b class="nmx" style="color:var(--grn)">Killua</b>' : '<b class="nmx">Killua</b>';
+    html = `<div class="pod"><div class="row1"><em>${pv.nome==='podio'?'2':'1'}</em>${nm}<span>1.840</span></div><div><em>${pv.nome==='podio'?'1':'2'}</em>Gon<span>1.790</span></div><div><em>3</em>Leorio<span>1.205</span></div></div>`; }
+  else if(pv.tit) html = `<div class="ttl"><b>Killua · 2º da semana</b><span>${esc(it[1])}</span></div>`;
+  return `<div class="pv ${cls}" style="${palStyle('painel')}">${html}</div>`;
+}
+function card(it){
+  const [id,n,cat,f,h,lib,d,,de] = it;
+  return `<article class="card" style="--rc:${RK[f][1]}">
+    ${h ? '<b class="selo" title="Item do tema HxH"><i>念</i>HxH</b>' : ''}
+    ${previa(it)}
+    <div class="info">
+      <div class="rk">${RK[f][0]}</div>
+      <div class="nm">${esc(n)}</div>
+      <div class="mt"><span>${CAT[cat]}</span>${lib!=='col' ? '<span class="pr">Trick Coin</span>' : '<span class="pr">grátis</span>'}</div>
+      <span class="lib ${lib}"><i>${LIB[lib][0]}</i>${LIB[lib][1]}</span>
+      <div class="why">${esc(d)}</div>
+      ${lib!=='tc' ? '<div class="marca">TEMPORADA 1 · só para quem participou</div>' : ''}
+      ${de ? `<div class="why">${esc(de)}; quem já tem continua com ele.</div>` : ''}
+    </div></article>`;
+}
+const st = {cat:'todas', lib:'todos'};
+const barra = document.getElementById('barra');
+const botoes = (k, ops) => ops.map(([v,t]) => { const b = document.createElement('button'); b.textContent = t; b.setAttribute('aria-pressed', String(st[k]===v)); b.dataset.k = k;
+  b.onclick = () => { st[k] = v; barra.querySelectorAll(`[data-k="${k}"]`).forEach(x => x.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); desenha(); }; return b; });
+barra.append(...botoes('lib',[['todos','Todas as liberações'],...Object.entries(LIB).map(([k,v]) => [k,v[1]])]));
+const sep = document.createElement('i'); sep.className = 'sep'; barra.append(sep);
+barra.append(...botoes('cat',[['todas','Todas as categorias'],...Object.entries(CAT).filter(([k]) => k!=='foto' && k!=='lic')]));
+const DESC = {comum:'Só Trick Coin. A cor, o emblema, o primeiro título.', raro:'Trick Coin; alguns pedem um desafio individual simples.', epico:'Desafio individual ou coletivo, e depois um preço alto.', lenda:'Sempre por desafio: coletivo difícil, individual muito difícil, ou limitado.'};
+function desenha(){
+  const ok = it => (!AP[it[0]] || it[0]==='lg-rei') && (st.cat==='todas' || it[2]===st.cat) && (st.lib==='todos' || it[5]===st.lib);
+  document.getElementById('loja').innerHTML = ['comum','raro','epico','lenda'].map(f => {
+    const l = I.filter(i => i[3]===f && ok(i)); if(!l.length) return '';
+    const todos = I.filter(i => i[3]===f && (!AP[i[0]] || i[0]==='lg-rei')), hx = todos.filter(i=>i[4]).length;
+    return `<section class="prat" style="--rc:${RK[f][1]}"><div class="prat-h"><h2>${RK[f][0]}</h2><span class="q">${todos.length} itens · ${hx} HxH · ${todos.length-hx} básicos</span><span class="r">${DESC[f]}</span></div>
+      <div class="grade">${l.map(card).join('')}</div></section>`;
+  }).join('') || '<p class="lead">Nenhum item com esses filtros.</p>';
+}
+
+/* ---------- provador da licença ---------- */
+const AP = {'lic-verde':{cor:'verde'},'lic-escarlate':{cor:'escarlate'},'lic-estojo':{est:'preto'},'lic-ouro':{est:'ouro'},'lic-corrente':{bd:'corrente'},
+  'lic-brilho':{fx:'brilho'},'lic-holo':{fx:'holo'},'lic-verso':{vs:'roxo'},'lic-exame':{car:'APROVADO'},'lic-chefao':{car:'CHEFÃO ✓'},'lic-1estrela':{st:'★'},'lic-2estrelas':{st:'★★'},
+  'lic-1999':{no:'1999 2026 0417'},'lg-3estrelas':{est:'ouro',st:'★★★'},'lg-exame':{fx:'holo',car:'EXAME · T1'},'lg-0001':{est:'ouro',fx:'brilho',no:'0001 2026 0001'},'lic-emb-aranha':{emb:'aranha'},'lg-rei':{emb:'rei'}};
+let PV = {}, virada = false;
+function glifos(txt){
+  const segs = [[0,0,6,0],[0,0,0,8],[6,0,6,8],[0,8,6,8],[0,4,6,4],[3,0,3,8],[0,0,6,8],[6,0,0,8],[0,4,3,8],[3,0,6,4]];
+  let x = 0, d = '';
+  for(const ch of txt.toLowerCase()){ if(ch === ' '){ x += 7; continue; } const c = ch.charCodeAt(0);
+    for(let j = 0; j < 3; j++){ const s = segs[(c * (j + 3) + j * 7) % segs.length]; d += `M${x + s[0]} ${s[1]}L${x + s[2]} ${s[3]}`; } x += 10; }
+  return `<svg class="glifo" viewBox="-1 -1 ${x + 1} 10" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/></svg>`;
+}
+function licGrande(){
+  const cls = ['cor','est','bd','fx','vs'].filter(k => PV[k]).map(k => k+'-'+PV[k]).join(' ');
+  const no = (PV.no || '0012 2026 4817').split(' ');
+  const q = k => `<span class="Lq">${k}º</span>`;
+  return `<div class="LIC ${cls} ${virada?'Lvirada':''}" id="lic" title="clique para virar"><div class="Lflipin">
+    <div class="Lface"><div class="Llf"><i class="Lchain"></i><div class="Lin">
+      <div class="Ltopo"><div class="Lemb ${PV.emb==='rei'?'Lrei':''}">${PV.emb==='aranha' ? TRUPE : PV.emb==='rei' ? COROA : EMBLEMA}</div><span class="Lico"><span class="Lph" style="background-image:url(${AV})"></span></span>${PV.st?`<span class="Lestr">${PV.st}</span>`:''}</div>
+      <div class="Lazul"><div class="Lfaixa">VULTURES · 2026.2</div><div class="Lnomebox"><span>KILLUA</span></div>
+        <div class="Llls"><span>Nº <b>${no.join(' ')}</b></span><span><b>2º</b> NO GERAL · <b>60,2</b> ANDARES</span><span>SEQ. <b>11</b> · <b>1 TÍTULO</b></span><span>LÍDER EM <b>CONSTÂNCIA</b></span></div>
+        ${glifos('hunter killua torre trick')}</div></div>
+      ${PV.car?`<span class="Lcar ${PV.car.startsWith('CHEF')?'Laz':''}">${PV.car}</span>`:''}</div></div>
+    <div class="Lface Ltras"><div class="Llv"><i class="Lchain"></i><div class="Lin"><div class="Ltarja"></div>
+      <div class="Lnumq">${no.map((n,i) => [...n].map(c=>`<i>${c}</i>`).join('') + (i<2?'<span class="Lesp"></span>':'')).join('')}</div>
+      <div class="Lvinfo"><div><h5>PLACARES</h5><ul><li>${q(1)}constância</li><li>${q(2)}geral</li><li>${q(3)}entregas</li></ul></div>
+        <div><h5>EM CURSO</h5><ul><li>superação: +4,1 andares</li></ul><h5 style="margin-top:2cqw">REGISTRO</h5><ul><li>38 dias com XP</li></ul></div></div></div></div></div>
+  </div></div>`;
+}
+const LITENS = () => I.filter(i => AP[i[0]]);
+const usa = id => Object.entries(AP[id]).every(([k,v]) => PV[k]===v);
+function provador(){
+  document.getElementById('LIC').innerHTML = licGrande();
+  document.getElementById('lic').onclick = () => { virada = !virada; provador(); };
+  const on = LITENS().filter(i => usa(i[0])).map(i => i[1]);
+  document.getElementById('usando').textContent = on.length ? 'Provando: ' + on.join(' · ') : 'Licença padrão (grátis): preto, branco e azul-claro.';
+  document.getElementById('lgrade').innerHTML = ['comum','raro','epico','lenda'].flatMap(f => LITENS().filter(i => i[3]===f)).map(i => `<button type="button" class="lc" data-lic="${i[0]}" aria-pressed="${usa(i[0])}" style="--rc:${RK[i[3]][1]}">
+    ${i[4] ? '<b class="selo" title="Item do tema HxH"><i>念</i>HxH</b>' : ''}<span class="rk">${RK[i[3]][0]}</span><span class="nm">${esc(i[1])}</span>
+    <span class="lib ${i[5]}"><i>${LIB[i[5]][0]}</i>${LIB[i[5]][1]}</span><span class="why">${esc(i[6])}</span><span class="prova">${usa(i[0]) ? '✓ provando' : 'clique para provar'}</span></button>`).join('');
+  document.getElementById('lic-q').textContent = `${LITENS().length} itens`;
+}
+document.getElementById('lgrade').addEventListener('click', e => { const b = e.target.closest('[data-lic]'); if(!b) return; const id = b.dataset.lic;
+  if(usa(id)) Object.keys(AP[id]).forEach(k => delete PV[k]); else { Object.assign(PV, AP[id]); if(AP[id].vs) virada = true; } provador(); });
+document.getElementById('virar').onclick = () => { virada = !virada; provador(); };
+document.getElementById('limpar').onclick = () => { PV = {}; virada = false; provador(); };
+provador();
+desenha();
+</script>

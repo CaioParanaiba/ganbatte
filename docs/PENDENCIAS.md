@@ -168,6 +168,29 @@ peso atual, caiu de 2502 para 1212 J. O gasto (`spent`) fica gravado; o ganho er
   junte-os numa tabela de eras (decidido em 13/10/2026 não fazer antes de precisar). Mexeu em pontos já ganhos: aviso grande
   na Novidades (ver a seção abaixo).
 
+## Lojas (decidido em 15/10/2026, índice #134)
+
+Vitrines em `docs/lojas/` (`masadora.html` e `associacao.html`, abrem direto no navegador a partir do repositório). Detalhes
+nos comentários de 15/10 da #17 (Masadora), #43 (Associação) e #77 (preços).
+- **O comprado é para sempre**, mesmo que o item mude de preço, de faixa ou de loja.
+- **Duas lojas.** Masadora (Jenny): o que só você vê (interface, efeitos, temas, pacotes) e o básico do perfil (fotos
+  comuns, molduras simples, títulos de conquista). Loja da Associação (Trick Coin): o que os outros veem (licença hunter,
+  molduras especiais, efeitos em volta do perfil, fundo, emblema e nome no placar, títulos de grupo).
+- **Faixas** comum, raro, épico e lendário, e tema básico ou HxH (HxH quando o visual remete ao anime; o vocabulário do
+  jogo, como Nen e Arena, não conta). Preço da Masadora por faixa, em dias do médio (#77).
+- **Pacotes** no lugar dos "temas" atuais: sem faixa, soma das peças que faltam com desconto, viram "equipar tudo" quando
+  completos. **Tema** passa a ser só um ambiente exclusivo (épico ou lendário); os que faltam criar estão na #137.
+- **Liberação.** Masadora: retratos de chefão e títulos de conquista grátis ao liberar (quem comprou retrato recebe a Jenny
+  de volta); épico e lendário com trava pelo **andar da temporada**. Grupo: desafio individual (todas as faixas), coletivo
+  (épico e lendário, grátis para quem participou) e limitado (N donos, por desafio ou Leilão de Yorknew); todo lendário do
+  grupo é por desafio; só quem participou tem acesso.
+- **Títulos** nunca pejorativos: conquista ou desempenho curioso ("7 dias em 1"). Masadora: conquistas e torre; grupo:
+  títulos de grupo.
+- **Removidos:** Paleta própria e Tema sob encomenda (no lugar, o tema de quem derrota a torre, um por temporada).
+- **Na beta:** os itens novos e reformulados ficam só para provar, sem compra, até os preços (#135); a loja do grupo entra
+  como vitrine com provador, só na tela de quem prova, sem Trick Coin (#136). As molduras especiais saem da Masadora já,
+  com a compra bloqueada.
+
 ## Contribuições com mais de um dev (#96, #97; decidido em 14/10/2026)
 
 Com um segundo dev, a recompensa de bug/ideia separa **quem relata** de **quem faz**:
