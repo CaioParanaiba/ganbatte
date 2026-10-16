@@ -148,22 +148,109 @@ function glifos(txt){   // a "escrita hunter" é só enfeite: cada letra vira tr
     for(let j = 0; j < 3; j++){ const s = segs[(c * (j + 3) + j * 7) % segs.length]; d += `M${x + s[0]} ${s[1]}L${x + s[2]} ${s[3]}`; } x += 10; }
   return `<svg class="tt-glifo" viewBox="-1 -1 ${x + 1} 10" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/></svg>`;
 }
-const numeroDe = (P, id) => { const g = geralDe(P).find(x => x.membro === +id) || {andares:0}; return [String(id).padStart(4, '0'), P.grupo.ini ? P.grupo.ini.slice(0, 4) : P.hoje.slice(0, 4), String(1000 + (id * 2731) % 9000)]; };
-function frente(P, id, grande){
-  const m = membroDe(P, id), k = posGeral(P, id), g = geralDe(P)[k - 1] || {andares:0}, tit = titulosDe(P, id);
-  return `<div class="tt-lf"><div class="in"><div class="topo"><div class="emb">${EMBLEMA}</div>${ico(P, id, grande ? 150 : 128, 0, {nolink:true, semNome:true})}</div>
+const numeroDe = (P, id, pv) => { if(pv && pv.no) return [pv.no, P.grupo.ini ? P.grupo.ini.slice(0, 4) : P.hoje.slice(0, 4), pv.no]; return [String(id).padStart(4, '0'), P.grupo.ini ? P.grupo.ini.slice(0, 4) : P.hoje.slice(0, 4), String(1000 + (id * 2731) % 9000)]; };
+function frente(P, id, grande, pv){   // pv: os itens da loja aplicados (provador, #136)
+  pv = pv || {};
+  const m = membroDe(P, id), k = posGeral(P, id), g = geralDe(P)[k - 1] || {andares:0}, tit = titulosDe(P, id), emb = pv.emb === 'aranha' ? TRUPE(id) : pv.emb === 'rei' ? COROA : EMBLEMA;
+  return `<div class="tt-lf"><div class="in"><div class="topo"><div class="emb${pv.emb === 'rei' ? ' rei' : ''}">${emb}</div>${ico(P, id, grande ? 150 : 128, 0, {nolink:true, semNome:true})}${pv.st ? `<span class="estr">${pv.st}</span>` : ''}</div>
     <div class="azul"><div class="faixa">${esc(P.grupo.nome.toUpperCase())} · ${temporadaDe(P)}</div><div class="nomebox"><span>${esc(m.nome.toUpperCase())}</span></div>
-      <div class="lls"><span>Nº <b>${numeroDe(P, id).join(' ')}</b></span><span><b>${k}º</b> NO GERAL · <b>${andaresTxt(g.andares)}</b> ANDARES</span>
+      <div class="lls"><span>Nº <b>${numeroDe(P, id, pv).join(' ')}</b></span><span><b>${k}º</b> NO GERAL · <b>${andaresTxt(g.andares)}</b> ANDARES</span>
         <span>SEQ. <b>${m.sequencia || 0}</b> · <b>${tit.length} ${tit.length === 1 ? 'TÍTULO' : 'TÍTULOS'}</b></span><span>${tit[0] ? `LÍDER EM <b>${esc(tit[0].nome.toUpperCase())}</b>` : 'SEM TÍTULO AGORA'}</span></div>
-      ${glifos('hunter ' + m.nome + ' torre trick')}</div></div></div>`;
+      ${glifos('hunter ' + m.nome + ' torre trick')}</div></div>${pv.car ? `<span class="car${pv.car.startsWith('CHEF') ? ' az' : ''}">${esc(pv.car)}</span>` : ''}${pv.bd ? '<i class="chain"></i>' : ''}</div>`;
 }
-function verso(P, id){
+function verso(P, id, pv){
   const m = membroDe(P, id), g = geralDe(P).find(x => x.membro === +id) || {projecao:0};
   const pos = P.torre.placares.map(p => [p, p.linhas.findIndex(l => l.membro === +id) + 1]).filter(x => x[1]).sort((a, b) => a[1] - b[1]);
   const q = k => `<span class="q${k <= 3 ? ' m' + k : ''}">${k}º</span>`;
-  return `<div class="tt-lv"><div class="in"><div class="tarja"></div><div class="numq">${numeroDe(P, id).map((n, i) => [...n].map(c => `<i>${c}</i>`).join('') + (i < 2 ? '<span class="esp"></span>' : '')).join('')}</div>
+  return `<div class="tt-lv"><div class="in"><div class="tarja"></div><div class="numq">${numeroDe(P, id, pv).map((n, i) => [...n].map(c => `<i>${c}</i>`).join('') + (i < 2 ? '<span class="esp"></span>' : '')).join('')}</div>
     <div class="vinfo"><div><h5>PLACARES</h5><ul>${pos.slice(0, 6).map(([p, k]) => `<li>${q(k)}${pl(p.id, p.nome)}</li>`).join('') || '<li>nenhum ainda</li>'}</ul></div>
-      <div><h5>EM CURSO</h5><ul><li>superação: +${andaresTxt(g.projecao)} andares</li><li>(entra quando o período fechar)</li></ul><h5 style="margin-top:2cqw">REGISTRO</h5><ul><li>${m.dias_com_xp || 0} dias com XP</li>${m.admin ? '<li>admin do grupo</li>' : ''}</ul></div></div></div></div>`;
+      <div><h5>EM CURSO</h5><ul><li>superação: +${andaresTxt(g.projecao)} andares</li><li>(entra quando o período fechar)</li></ul><h5 style="margin-top:2cqw">REGISTRO</h5><ul><li>${m.dias_com_xp || 0} dias com XP</li>${m.admin ? '<li>admin do grupo</li>' : ''}</ul></div></div></div>${pv && pv.bd ? '<i class="chain"></i>' : ''}</div>`;
+}
+/* ---------- sub-aba loja: a Loja da Associação como vitrine com provador (#136) ----------
+   Sem Trick Coin e sem compra: cada item mostra a faixa, o 念 HxH e como vai ser liberado (#43). O provador aplica os itens
+   na sua licença de verdade (frente e verso), só nesta tela: nada vai para o servidor e ninguém mais vê. As imagens da
+   aranha da Trupe e da coroa do Rei são provisórias (#137) */
+const TRUPE = n => { const L = [[54,28,38,14,26,5],[53,31,33,22,16,17],[52,34,30,32,10,33],[52,37,30,43,13,51],[53,40,35,53,23,65],[56,43,45,58,40,69]];
+  const p = L.map(([a,b,c,d,e,f]) => `M${a} ${b}L${c} ${d}L${e} ${f}M${120-a} ${b}L${120-c} ${d}L${120-e} ${f}`).join('');
+  return `<svg viewBox="8 1 104 70" aria-hidden="true"><path d="${p}" stroke="#141418" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/><circle cx="60" cy="22" r="7.5" fill="#141418"/><ellipse cx="60" cy="44" rx="13" ry="17" fill="#141418"/><text x="60" y="52" text-anchor="middle" font-size="21" font-weight="800" fill="#FF3347" font-family="sans-serif">${n % 100}</text></svg>`; };
+const COROA = '<svg viewBox="0 0 120 70" aria-hidden="true"><path d="M28 54 L22 18 L42 36 L60 10 L78 36 L98 18 L92 54 Z" fill="#E8C35A" stroke="#6E5418" stroke-width="2"/><rect x="27" y="54" width="66" height="8" rx="2" fill="#E8C35A" stroke="#6E5418" stroke-width="2"/><circle cx="60" cy="40" r="5" fill="#C8102E"/><circle cx="42" cy="44" r="3.4" fill="#2F6FD0"/><circle cx="78" cy="44" r="3.4" fill="#2F6FD0"/></svg>';
+const FAIXA_TT = {comum:'Comum', raro:'Raro', epico:'Épico', lenda:'Lendário'};
+const LIB_TT = {tc:'Trick Coin', ind:'desafio individual', col:'desafio coletivo', lim:'limitado'};
+const CAT_TT = {lic:'Licença hunter', mold:'Molduras', aura:'Em volta do perfil', fundo:'Fundo do perfil', emb:'Emblema no placar', nome:'Nome no placar', tit:'Títulos de grupo'};
+/* [id, nome, categoria, faixa, HxH, liberação, descrição, o que aplica na licença (provador), de onde veio] */
+const LOJA_TT = [
+  ['lic-verde','Licença verde-caçador','lic','comum',0,'tc','Troca o azul-claro da licença por verde. O padrão (preto, branco e azul-claro) continua grátis.',{cor:'verde'}],
+  ['lic-escarlate','Licença escarlate','lic','comum',1,'tc','Rosa-escarlate no lugar do azul, e o painel da foto em vinho, como os olhos do clã Kurta.',{cor:'escarlate'}],
+  ['lic-estojo','Estojo preto','lic','comum',0,'tc','O estojo cinza em volta da licença vira preto.',{est:'preto'}],
+  ['lic-ouro','Estojo dourado','lic','raro',0,'tc','Estojo e borda dourados.',{est:'ouro'}],
+  ['lic-corrente','Borda de corrente','lic','raro',1,'tc','A borda vira a corrente do Kurapika.',{bd:'corrente'}],
+  ['lic-brilho','Brilho','lic','raro',0,'tc','Um reflexo passa pela licença.',{fx:'brilho'}],
+  ['lic-verso','Verso roxo','lic','raro',0,'tc','O verso (a tarja e o fundo) em roxo. A frente continua igual.',{vs:'roxo'}],
+  ['lic-exame','Carimbo: Exame aprovado','lic','raro',1,'ind','Desafio: completar a primeira semana inteira do grupo sem atraso.',{car:'APROVADO'}],
+  ['lic-1estrela','Estrela ★','lic','raro',1,'ind','Desafio: liderar o placar do grupo numa semana.',{st:'★'}],
+  ['lic-1999','Licença Nº 1999','lic','raro',1,'lim','Só 1 dono. Vai para o 1º a cumprir o desafio da temporada.',{no:'1999'}],
+  ['lic-emb-aranha','Emblema da Aranha','lic','raro',1,'ind','A aranha de doze patas da Trupe no lugar do emblema hunter da licença, com o seu número. Desafio: derrotar 3 chefões do Genei Ryodan.',{emb:'aranha'}],
+  ['lic-holo','Licença holográfica','lic','epico',0,'ind','Desafio: Ten de 30 dias dentro do grupo.',{fx:'holo'}],
+  ['lic-2estrelas','Estrelas ★★','lic','epico',1,'ind','Desafio: liderar o placar em 4 semanas da temporada.',{st:'★★'}],
+  ['lic-chefao','Selo: chefão do grupo','lic','epico',1,'col','Todos que participaram ganham quando o grupo derrota o chefão (#44).',{car:'CHEFÃO ✓'}],
+  ['mold-hunter','Moldura Hunter ★','mold','comum',1,'tc','Aro dourado de quem tem licença.',null,'veio da Masadora'],
+  ['mold-carta','Carta de Greed Island','mold','raro',1,'tc','O avatar vira uma carta.',null,'veio da Masadora'],
+  ['mold-escarlate','Olhos escarlates','mold','raro',1,'tc','Brilho vermelho que pulsa.',null,'veio da Masadora'],
+  ['mold-aranha','Moldura da Aranha','mold','raro',1,'ind','Doze patas em volta do avatar e o número de membro. Desafio: derrotar um chefão do Genei Ryodan.',null,'veio da Masadora, com desenho novo'],
+  ['mold-giro','Anel de aura','mold','epico',0,'tc','Anel com as cores da paleta girando em volta do avatar.',null,'veio da Masadora'],
+  ['pf-aura','Aura do avatar','aura','raro',0,'tc','O avatar pulsa com aura no placar e na licença.',null,'veio da Masadora'],
+  ['pf-part','Partículas de Nen','aura','epico',0,'tc','Partículas sobem em volta do perfil.'],
+  ['pf-ren','Ren no pódio','aura','epico',1,'ind','A aura explode em volta do avatar quando você sobe no pódio. Desafio: subir 3 posições numa semana.'],
+  ['fd-liso','Fundo de cor','fundo','comum',0,'tc','Fundo do perfil na cor da sua aura.'],
+  ['fd-arena','Fundo da Arena','fundo','raro',1,'tc','O piso da Arena Celestial atrás do perfil.'],
+  ['fd-cena','Fundo vivo','fundo','epico',0,'tc','Manchas de aura que se movem devagar atrás do perfil.'],
+  ['emb-nen','Emblema 念','emb','comum',1,'tc','Um símbolo pequeno que aparece ao lado do seu nome em todos os placares do grupo.'],
+  ['emb-naipe','Emblema de naipe','emb','comum',1,'tc','Um naipe (♠ ♥ ♦ ♣, à escolha) ao lado do seu nome nos placares.'],
+  ['emb-aura','Emblema de aura','emb','raro',0,'tc','O 念 ao lado do seu nome pulsa com aura nos placares.'],
+  ['nm-cor','Cor do nome','nome','comum',0,'tc','Seu nome no placar na cor que escolher.'],
+  ['nm-brilho','Nome com brilho','nome','raro',0,'tc','Um brilho corre pelo seu nome.'],
+  ['nm-podio','Entrada no pódio','nome','epico',0,'ind','Sua linha sobe com destaque quando você passa alguém. Desafio: ficar no pódio 3 semanas seguidas.'],
+  ['tt-membro','Membro da Associação','tit','comum',1,'tc','O primeiro título de grupo.'],
+  ['tt-7em1','7 dias em 1','tit','raro',0,'ind','Desafio: fazer mais da metade dos pontos da semana no último dia.'],
+  ['tt-ultimo','Rei do último minuto','tit','raro',0,'ind','Desafio: 5 entregas no próprio dia do prazo.'],
+  ['tt-1999','Top 1 desde 1999','tit','epico',0,'ind','Desafio: liderar o placar 3 semanas seguidas.'],
+  ['tt-costas','Carregou o grupo nas costas','tit','epico',0,'lim','Só 1 por desafio coletivo: quem mais pontuou nele.'],
+  ['tt-presidente','Presidente da Associação','tit','epico',1,'lim','Só 1 por temporada: o 1º do geral no fim.'],
+  ['lg-3estrelas','Hunter Três Estrelas','lic','lenda',1,'ind','Título, moldura e as três estrelas na licença. Desafio: todos os chefões da temporada derrotados e o pódio do geral.',{est:'ouro',st:'★★★'}],
+  ['lg-exame','Licença do Exame Hunter','lic','lenda',1,'col','Licença holográfica com o carimbo da temporada. O grupo inteiro precisa vencer o Exame Hunter de fim de temporada.',{fx:'holo',car:'EXAME · T1'}],
+  ['lg-0001','Licença Nº 0001','lic','lenda',1,'lim','Só 1 dono por grupo, para sempre. Sai no Leilão de Yorknew entre quem cumpriu o desafio da temporada.',{est:'ouro',fx:'brilho',no:'0001'}],
+  ['lg-rei','Emblema do Rei','lic','lenda',1,'col','A coroa do Rei em ouro no lugar do emblema hunter, e a mesma coroa ao lado do seu nome em todos os placares. O grupo derrota o chefão do grupo na dificuldade máxima; todos os participantes ganham.',{emb:'rei'}],
+];
+const TTPV = {};   // provador: o que está aplicado na licença agora (só na memória desta tela)
+const provando = it => it[7] && Object.entries(it[7]).every(([k, v]) => TTPV[k] === v);
+const licClasses = pv => ['cor','est','bd','fx','vs'].filter(k => pv[k]).map(k => 'tl-' + k + '-' + pv[k]).join(' ');
+function cardLoja(P, it){
+  const [id, n, cat, fa, hx, lib, d, ap, de] = it, me = P.voce.membro, ph = avMe(56);
+  const pv = ap ? `<div class="tt-lic ${licClasses(ap)}">${ap.vs ? verso(P, me, ap) : frente(P, me, false, ap)}</div>`
+    : cat === 'mold' ? `<div class="tl-av ${{'mold-hunter':'fr-hunter','mold-carta':'fr-carta','mold-escarlate':'fr-escarlate','mold-aranha':'fr-aranha','mold-giro':'fr-giro'}[id]}">${ph}</div>`
+    : cat === 'aura' ? `<div class="tl-av ${id === 'pf-aura' ? 'fxd aura' : 'tl-' + id}">${ph}</div>`
+    : cat === 'fundo' ? `<div class="tl-av tl-${id}${id === 'fd-arena' ? ' tex-arena' : ''}">${ph}</div>`
+    : cat === 'emb' || cat === 'nome' ? `<div class="tl-pod"><div><em>1</em><span>Gon</span><b>1.920</b></div><div class="eu tl-${id}"><em>2</em>${cat === 'emb' ? `<i class="tl-emb">${id === 'emb-naipe' ? '♠' : '<span class="nen7">念</span>'}</i>` : ''}<span class="tl-nm">${esc(nomeDe(P, me))}</span><b>1.840</b></div><div><em>3</em><span>Leorio</span><b>1.205</b></div></div>`
+    : `<div class="tl-tit"><b>${esc(nomeDe(P, me))}</b><span>${esc(n)}</span></div>`;
+  return `<div class="tl-it${ap ? ' prov' : ''}${ap && provando(it) ? ' on' : ''}"${ap ? ` data-ttprova="${id}" role="button" tabindex="0" title="provar na sua licença"` : ''}>
+    <div class="tl-pv">${pv}</div><div class="tl-info"><div class="tl-sl"><span class="tl-fa tl-${fa}">${FAIXA_TT[fa]}</span>${hx ? '<span class="tl-hx"><i class="nen7">念</i> HxH</span>' : ''}</div>
+    <b>${esc(n).replace('念', '<i class="nen7">念</i>')}</b><p>${esc(d)}</p>${de ? `<p class="tl-de">${esc(de)}; quem já tem continua com ele.</p>` : ''}
+    <div class="tl-lib"><span>${lib === 'col' ? 'grátis para quem participar' : lib === 'tc' ? 'compra direta' : 'compra depois do desafio'}</span><span class="tl-l-${lib}">${LIB_TT[lib]}</span></div>
+    ${ap ? `<span class="tl-prov">${provando(it) ? '✓ na sua licença' : 'clique para provar'}</span>` : ''}</div></div>`;
+}
+function subLoja(P){
+  const me = P.voce.membro, on = LOJA_TT.filter(provando);
+  const filtro = it => (!TT.llib || it[5] === TT.llib) && (!TT.lcat || it[2] === TT.lcat);
+  const bt = (k, v, t) => `<button type="button" data-ttlf="${k}:${v}" aria-pressed="${(TT[k] || '') === v}">${t}</button>`;
+  const fil = `<div class="tl-fil"><span>liberação</span>${bt('llib', '', 'todas')}${Object.entries(LIB_TT).map(([k, t]) => bt('llib', k, t)).join('')}<span>categoria</span>${bt('lcat', '', 'todas')}${Object.entries(CAT_TT).map(([k, t]) => bt('lcat', k, t.toLowerCase())).join('')}</div>`;
+  const prats = Object.keys(FAIXA_TT).map(fa => { const l = LOJA_TT.filter(it => it[3] === fa && filtro(it)); return l.length ? `<div class="tl-prat"><h3>${FAIXA_TT[fa]} <small>${l.length} ${l.length === 1 ? 'item' : 'itens'}</small></h3><div class="tl-grade">${l.map(it => cardLoja(P, it)).join('')}</div></div>` : ''; }).join('');
+  return `<div class="tt-stack">
+    <section class="card"><h2><span class="c">~/</span>provador da licença <span class="r">só na sua tela: nada vai para o servidor e ninguém mais vê</span></h2>
+      <p class="sub" style="margin:0 0 12px">${on.length ? 'Provando: ' + on.map(it => esc(it[1])).join(' · ') : 'Licença padrão, que é grátis: preto, branco e azul-claro. Clique num item da licença, aqui embaixo, para provar.'}${on.length ? ' <button type="button" class="btn" data-ttlimpa style="margin-left:6px">tirar tudo</button>' : ''}</p>
+      <div class="tt-duas"><div><span class="rot">frente</span><div class="tt-lic grande ${licClasses(TTPV)}">${frente(P, me, true, TTPV)}</div></div><div><span class="rot">verso</span><div class="tt-lic grande ${licClasses(TTPV)}">${verso(P, me, TTPV)}</div></div></div></section>
+    <section class="card"><h2><span class="c">~/</span>loja da associação <span class="r">vitrine: a compra chega com a Trick Coin (#43)</span></h2>
+      <p style="margin:0 0 10px;font-size:14px">O que os outros veem de você: licença, molduras, o que fica em volta do perfil, emblema e nome no placar, títulos de grupo. Os itens de desafio levam a marca da temporada e ficam só para quem participou.</p>
+      ${fil}${prats || '<p class="sub">Nenhum item com esses filtros.</p>'}</section></div>`;
 }
 const licenca = (P, id) => `<div class="tt-lic tt-flip" data-ttvirar title="clique para virar"><div class="flip-in"><div class="face">${frente(P, id)}</div><div class="face tras">${verso(P, id)}</div></div></div>`;
 
@@ -283,7 +370,7 @@ function subJogadores(P){
     <section class="card"><h2><span class="c">~/</span>licença de ${esc(m.nome)} <span class="r">frente: o principal · verso: o resto</span></h2>
       <div class="tt-duas"><div><span class="rot">frente</span><div class="tt-lic grande">${frente(P, id, true)}</div></div><div><span class="rot">verso</span><div class="tt-lic grande">${verso(P, id)}</div></div></div>
       ${id === P.voce.membro ? `<div style="margin-top:14px;max-width:600px">${alvo(P, id)}</div>` : ''}</section>
-    <section class="card"><h2><span class="c">~/</span>em breve</h2><div class="tt-futuro"><div><b>personalizar a licença</b>cor, holográfico, brilho e borda, pela loja do grupo (#43)</div><div><b>moldura e animação do ícone</b>também pela loja do grupo</div><div><b>avatar</b>o corpo inteiro, com as peças da loja (#70)</div><div><b>medalhas e conquistas</b>dos períodos fechados (#69)</div></div></section>
+    <section class="card"><h2><span class="c">~/</span>em breve</h2><div class="tt-futuro"><div><b>personalizar a licença</b>cor, estojo, borda e brilho: prove na <button type="button" class="go" data-ttsub="loja">loja</button>; a compra chega com a Trick Coin (#43)</div><div><b>avatar</b>o corpo inteiro, com as peças da loja (#70)</div><div><b>medalhas e conquistas</b>dos períodos fechados (#69)</div></div></section>
   </div></div>`;
 }
 
@@ -293,7 +380,7 @@ function torreHTML(g){
   if(!P.torre) return placarHTML(g);   // placar guardado de antes da Torre Trick (servidor do grupo antigo): a tabela de fatos
   const aviso = r.offline ? `<p class="gp-aviso">O servidor do grupo está fora do ar. Mostrando o placar de ${esc(quando(P.recebido))}; o que você fizer até lá vai junto na próxima vez.</p>`
     : r.sem_acesso ? `<p class="gp-aviso">${esc(r.erro)}</p>` : '';
-  const corpo = TT.sub === 'placares' ? subPlacares(P) : TT.sub === 'jogadores' ? subJogadores(P) : subPlacar(P);
+  const corpo = TT.sub === 'placares' ? subPlacares(P) : TT.sub === 'jogadores' ? subJogadores(P) : TT.sub === 'loja' ? subLoja(P) : subPlacar(P);
   return `${aviso}<div class="tt">${corpo}</div>
     <p class="sub" style="margin:4px 0 0">O seu XP e as suas tarefas não aparecem aqui: o grupo vê os seus andares, calculados com o teto. Última sincronização: ${G.ultima ? esc(quando(G.ultima / 1000)) : 'ainda não'} <button type="button" class="btn" data-gpsinc style="margin-left:6px">sincronizar agora</button></p>`;
 }
@@ -326,7 +413,7 @@ function rTT2(S){
   const ab = (id, t) => `<button type="button" data-ttsub="${id}"${G.aba === 'placar' && TT.sub === id ? ' aria-current="page"' : ''}>${t}</button>`;
   const fim = P && P.grupo.fim ? GBx.dias(P.hoje, P.grupo.fim) : null;
   const cab = P ? `<div class="tt-gh"><div><h3>${esc(P.grupo.nome)}</h3><div class="meta"><span><b>${temporadaDe(P)}</b>${fim != null && fim >= 0 ? ` · faltam ${fim} dias` : ''}</span><span>${P.membros.length} ${P.membros.length === 1 ? 'membro' : 'membros'}</span><span><i class="dot"></i>sincronizou ${esc(G.ultima ? quando(G.ultima / 1000) : quando(P.recebido))}</span></div></div>${sel}</div>` : sel;
-  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('placar', 'placar')}${ab('placares', 'placares')}${ab('jogadores', 'jogadores')}<button type="button" disabled>loja<small>em breve</small></button><button type="button" disabled>desafios<small>depois da 1.0</small></button>${adm ? `<button type="button" class="adm" data-gpaba="admin"${G.aba === 'admin' ? ' aria-current="page"' : ''}>administrar</button>` : ''}</nav>`;
+  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('placar', 'placar')}${ab('placares', 'placares')}${ab('jogadores', 'jogadores')}${ab('loja', 'loja')}<button type="button" disabled>desafios<small>depois da 1.0</small></button>${adm ? `<button type="button" class="adm" data-gpaba="admin"${G.aba === 'admin' ? ' aria-current="page"' : ''}>administrar</button>` : ''}</nav>`;
   document.getElementById('tt-root').innerHTML = cab + outro + nav + (G.aba === 'admin' ? adminHTML(g) : torreHTML(g));
 }
 const RENDER0 = {tt: RENDER.tt, cfg: RENDER.cfg};
@@ -402,6 +489,10 @@ document.addEventListener('click', async e => {
   if((b = q('[data-ttjog]'))){ vaiPara({sub:'jogadores', jog: +b.dataset.ttjog}); return; }
   if((b = q('[data-ttesp]'))){ TT.esp = b.dataset.ttesp; try { localStorage.setItem('gb-tt-esp', TT.esp); } catch(err){} render(); return; }
   if((b = q('[data-ttvirar]'))){ b.classList.toggle('virada'); return; }
+  if((b = q('[data-ttprova]'))){ const it = LOJA_TT.find(x => x[0] === b.dataset.ttprova);
+    if(it && provando(it)) Object.keys(it[7]).forEach(k => delete TTPV[k]); else if(it) Object.assign(TTPV, it[7]); render(); return; }
+  if(q('[data-ttlimpa]')){ Object.keys(TTPV).forEach(k => delete TTPV[k]); render(); return; }
+  if((b = q('[data-ttlf]'))){ const [k, v] = b.dataset.ttlf.split(':'); TT[k] = v; render(); return; }
   if(q('[data-gpoutro]')){ G.entrarAberto = !G.entrarAberto; render(); if(G.entrarAberto){ const i = document.querySelector('#tt-root [data-gpconvite]'); if(i) i.focus(); } return; }
   if((b = q('[data-gpsel]'))){ G.sel = b.dataset.gpsel; G.adm = null; G.link = ''; if(G.aba === 'admin') abreAdmin(); else render(); return; }
   if((b = q('[data-gpaba]'))){ G.aba = b.dataset.gpaba; G.link = ''; if(G.aba === 'admin') abreAdmin(); else render(); return; }
@@ -468,7 +559,7 @@ document.addEventListener('input', e => {
   document.getElementById('tt-frase-n').textContent = `${e.target.value.length}/${e.target.maxLength}`;
   document.querySelector('[data-ttfrase]').disabled = !e.target.value.trim();
 });
-document.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.matches('[data-gpconvite]')){ e.preventDefault(); e.target.closest('.gp-entra').querySelector('[data-gpentra]').click(); return; } if((e.key === 'Enter' || e.key === ' ') && e.target.matches('figure[data-ttjog]')){ e.preventDefault(); e.target.click(); } });
+document.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.matches('[data-gpconvite]')){ e.preventDefault(); e.target.closest('.gp-entra').querySelector('[data-gpentra]').click(); return; } if((e.key === 'Enter' || e.key === ' ') && e.target.matches('figure[data-ttjog],[data-ttprova]')){ e.preventDefault(); e.target.click(); } });
 
 document.head.insertAdjacentHTML('beforeend', `<style>
 .gp-heat{display:inline-flex;gap:2px;vertical-align:middle}
@@ -633,5 +724,59 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tt-flip{perspective:1400px;cursor:pointer} .tt-flip .flip-in{position:relative;transition:transform .6s cubic-bezier(.3,.7,.2,1);transform-style:preserve-3d}
 .tt-flip.virada .flip-in{transform:rotateY(180deg)} .tt-flip .face{backface-visibility:hidden;-webkit-backface-visibility:hidden} .tt-flip .face.tras{position:absolute;inset:0;transform:rotateY(180deg)}
 @media (prefers-reduced-motion:reduce){.tt-flip .flip-in{transition:none}}
+/* loja da Associação (#136): itens aplicados na licença (tl-*), vitrine e provador */
+.tt-lf,.tt-lv{position:relative}
+.tt-lf .estr{color:#E8C35A;font-size:5cqw;letter-spacing:1cqw;line-height:1;margin-top:-1cqw}
+.tt-lf .car{position:absolute;right:5cqw;bottom:6cqw;font:800 3.4cqw var(--f-hud);color:#C8102E;border:.7cqw solid #C8102E;padding:.6cqw 2cqw;border-radius:1cqw;transform:rotate(-12deg);opacity:.85;letter-spacing:.06em;z-index:2;mix-blend-mode:multiply}
+.tt-lf .car.az{color:#1F5FA8;border-color:#1F5FA8}
+.tt-lf .emb.rei{background:linear-gradient(160deg,#2A2140,#141418);box-shadow:0 0 0 .5cqw #E8C35A}
+.tt-lic.tl-cor-verde{--lb:#BFE8CF;--lb2:#EEFBF2} .tt-lic.tl-cor-escarlate{--lb:#F5C2C8;--lb2:#FDF0F2;--lk:#2A0A10}
+.tt-lic.tl-est-preto{--lcas:#2A2B31;--lbor:#4A4D58} .tt-lic.tl-est-ouro{--lcas:#E9D9A6;--lbor:#B8902F}
+.tt-lic.tl-est-ouro :is(.tt-lf,.tt-lv){box-shadow:0 0 0 1px #E8C35A,0 10px 30px -14px #000}
+.tt-lic .chain{position:absolute;inset:0;pointer-events:none;z-index:3;border-radius:4cqw;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='12'%3E%3Cellipse cx='7' cy='6' rx='6' ry='3.8' fill='none' stroke='%23454B55' stroke-width='3'/%3E%3Cellipse cx='7' cy='6' rx='6' ry='3.8' fill='none' stroke='%23C9CED6' stroke-width='1.5'/%3E%3Crect x='11.5' y='4.4' width='11' height='3.2' rx='1.6' fill='%23DDE1E7' stroke='%23454B55' stroke-width='1'/%3E%3C/svg%3E") repeat-x 0 0/4.2cqw 2.3cqw,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='12'%3E%3Cellipse cx='7' cy='6' rx='6' ry='3.8' fill='none' stroke='%23454B55' stroke-width='3'/%3E%3Cellipse cx='7' cy='6' rx='6' ry='3.8' fill='none' stroke='%23C9CED6' stroke-width='1.5'/%3E%3Crect x='11.5' y='4.4' width='11' height='3.2' rx='1.6' fill='%23DDE1E7' stroke='%23454B55' stroke-width='1'/%3E%3C/svg%3E") repeat-x 0 100%/4.2cqw 2.3cqw,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='22'%3E%3Cellipse cx='6' cy='7' rx='3.8' ry='6' fill='none' stroke='%23454B55' stroke-width='3'/%3E%3Cellipse cx='6' cy='7' rx='3.8' ry='6' fill='none' stroke='%23C9CED6' stroke-width='1.5'/%3E%3Crect x='4.4' y='11.5' width='3.2' height='11' rx='1.6' fill='%23DDE1E7' stroke='%23454B55' stroke-width='1'/%3E%3C/svg%3E") repeat-y 0 0/2.3cqw 4.2cqw,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='22'%3E%3Cellipse cx='6' cy='7' rx='3.8' ry='6' fill='none' stroke='%23454B55' stroke-width='3'/%3E%3Cellipse cx='6' cy='7' rx='3.8' ry='6' fill='none' stroke='%23C9CED6' stroke-width='1.5'/%3E%3Crect x='4.4' y='11.5' width='3.2' height='11' rx='1.6' fill='%23DDE1E7' stroke='%23454B55' stroke-width='1'/%3E%3C/svg%3E") repeat-y 100% 0/2.3cqw 4.2cqw}
+.tt-lic.tl-bd-corrente :is(.tt-lf,.tt-lv){padding:2.6cqw}
+.tt-lic.tl-vs-roxo .tt-lv .in{background:linear-gradient(180deg,#F2EEFD,#C9B8F0)} .tt-lic.tl-vs-roxo .tt-lv .tarja{background:#2A1E44}
+.tt-lic.tl-fx-holo .tt-lf .azul,.tt-lic.tl-fx-holo .tt-lv .in{background:linear-gradient(115deg,#BFE8FF,#E4D2FF,#FFD2E6,#FFF1BF,#D2F5C4,#BFE8FF);background-size:300% 100%}
+.tt-lic.tl-fx-holo .tt-lf .topo{background:linear-gradient(160deg,#17171B,#2A2140,#17171B)}
+@media (prefers-reduced-motion:no-preference){
+  .tt-lic.tl-fx-brilho :is(.tt-lf,.tt-lv)::after{content:"";position:absolute;inset:0;border-radius:4cqw;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);background-size:250% 100%;animation:tlBrilho 2.8s ease-in-out infinite;pointer-events:none}
+  .tt-lic.tl-fx-holo .tt-lf .azul,.tt-lic.tl-fx-holo .tt-lv .in{animation:tlHolo 6s linear infinite}
+  .tl-pf-part .av.me{box-shadow:0 -6px 0 -3px var(--aura),8px -2px 0 -4px var(--volt),-8px 2px 0 -4px var(--aura);animation:tlPart 2.4s ease-in-out infinite}
+  .tl-pf-ren .av.me{animation:tlRen 2.4s ease-out infinite}
+  .tl-fd-cena{background-size:200% 200%;animation:tlFundo 8s linear infinite alternate}
+  .tl-nm-brilho .tl-nm{background:linear-gradient(110deg,var(--ink) 35%,#fff 50%,var(--ink) 65%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:tlBrilho 2.8s linear infinite}
+  .tl-nm-podio{animation:tlSobe 3s ease-in-out infinite}
+  .tl-emb-aura .tl-emb{animation:tlEmb 2.4s ease-in-out infinite}
+}
+@keyframes tlBrilho{from{background-position:120% 0}to{background-position:-120% 0}}
+@keyframes tlHolo{to{background-position:300% 0}}
+@keyframes tlPart{50%{box-shadow:0 -12px 0 -3px transparent,10px -10px 0 -4px var(--volt),-10px -6px 0 -4px var(--aura)}}
+@keyframes tlRen{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--aura) 70%,transparent)}70%,100%{box-shadow:0 0 0 18px transparent}}
+@keyframes tlFundo{to{background-position:100% 100%}}
+@keyframes tlSobe{0%,30%{transform:translateY(26px)}50%,100%{transform:none}}
+@keyframes tlEmb{50%{color:var(--aura);text-shadow:0 0 8px var(--aura)}}
+.tt .nen7{font:700 1.1em/1 "Noto Serif JP",serif;font-style:normal}
+.tl-fil{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.tl-fil span{font:600 11px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin:0 2px 0 8px} .tl-fil span:first-child{margin-left:0}
+.tl-fil button{border:1px solid var(--hair);background:var(--panel);border-radius:3px;padding:3px 10px;cursor:pointer;font:600 11.5px var(--f-mono);color:var(--soft)}
+.tl-fil button[aria-pressed="true"]{color:var(--ink);border-color:var(--volt)}
+.tl-prat{margin-bottom:18px} .tl-prat h3{margin:0 0 8px;font:700 15px var(--f-hud)} .tl-prat h3 small{font:500 11px var(--f-mono);color:var(--faint);margin-left:6px}
+.tl-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.tl-it{border:1px solid var(--hair);border-radius:var(--tt-r) 3px 3px 3px;background:var(--panel2);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.tl-it.prov{cursor:pointer} .tl-it.prov:hover{border-color:color-mix(in srgb,var(--volt) 50%,var(--hair))} .tl-it.on{border-color:var(--volt);box-shadow:0 0 0 1px var(--volt)}
+.tl-pv{min-height:130px;display:grid;place-items:center;padding:12px;background:var(--bg);border-bottom:1px solid var(--hair)}
+.tl-pv .tt-lic{width:100%} .tl-pv .tt-lf{box-shadow:none} .tl-pv .tt-lic .tt-ico{--s:24cqw !important}
+.tl-av{display:grid;place-items:center;width:100%;height:110px;border-radius:3px} .tl-av .av.me{--s:56px;position:relative}
+.tl-fd-liso{background:color-mix(in srgb,var(--aura) 22%,var(--panel))} .tl-fd-cena{background-image:radial-gradient(circle at 20% 30%,color-mix(in srgb,var(--aura) 30%,transparent),transparent 40%),radial-gradient(circle at 80% 70%,color-mix(in srgb,var(--volt) 25%,transparent),transparent 45%)}
+.tl-pod{display:grid;gap:4px;width:100%;font:600 12.5px var(--f-mono)} .tl-pod > div{display:grid;grid-template-columns:20px auto minmax(0,1fr) auto;gap:6px;align-items:center;padding:4px 8px;border-radius:3px;color:var(--soft)}
+.tl-pod > div > span{grid-column:3} .tl-pod > div:not(.eu) > span{grid-column:2/4} .tl-pod em{font-style:normal;color:var(--faint)} .tl-pod b{font-weight:600}
+.tl-pod .eu{background:color-mix(in srgb,var(--volt) 9%,transparent);color:var(--ink)} .tl-pod .tl-emb{font-style:normal;color:var(--amb)} .tl-nm-cor .tl-nm{color:var(--grn)}
+.tl-tit{display:grid;gap:2px;text-align:center} .tl-tit b{font:700 15px var(--f-hud)} .tl-tit span{font:600 12px var(--f-mono);color:var(--amb)}
+.tl-info{padding:10px 12px;display:grid;gap:6px;flex:1;align-content:start} .tl-info b{font-size:14px} .tl-info p{margin:0;font-size:12.5px;color:var(--soft)} .tl-info .tl-de{color:var(--faint)}
+.tl-sl{display:flex;gap:5px;flex-wrap:wrap} .tl-sl span{font:600 10px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--hair);border-radius:3px;padding:1px 6px;color:var(--soft)}
+.tl-sl .tl-raro{color:var(--volt)} .tl-sl .tl-epico{color:var(--aura)} .tl-sl .tl-lenda{color:var(--amb)} .tl-sl .tl-hx{color:var(--red);text-transform:none}
+.tl-lib{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font:600 11px var(--f-mono);color:var(--faint);margin-top:auto}
+.tl-lib span:last-child{color:var(--soft);border:1px dashed var(--hair);border-radius:3px;padding:0 6px}
+.tl-prov{font:600 11px var(--f-mono);color:var(--volt)}
 </style>`);
 })();
