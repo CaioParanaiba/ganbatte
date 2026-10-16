@@ -2,7 +2,7 @@
 
   python3 docs/lojas/arte/arte.py gera ID [--espelha]      pede ao Antigravity (agy -p), espera, copia as imagens e prepara
   python3 docs/lojas/arte/arte.py prepara ID [--espelha]   limpa entrada/ID/* (tira o magenta, recorta) e mostra o link da bancada
-  python3 docs/lojas/arte/arte.py gostei ID N [nota]       guarda a variação N em aprovadas/ID/ (não é a decisão final)
+  python3 docs/lojas/arte/arte.py gostei ID N [nota]       guarda a variação N em aprovadas/ID/ (não é a decisão final); N pode ser 1,2,3
   python3 docs/lojas/arte/arte.py refazer ID "o que mudar"  volta para o gerador com a nota
   python3 docs/lojas/arte/arte.py pular ID [motivo]        fica para depois
 
@@ -135,14 +135,18 @@ def gera(ident):
 
 
 def gostei(ident, n, nota):
-    src = AQUI / 'entrada' / ident / f'pronto-{n}.png'
-    if not src.exists():
-        sys.exit(f'não achei {src}')
+    """n = uma variação (guarda como ID.png) ou várias separadas por vírgula (guarda como ID-N.png, para analisar depois)."""
+    ns = [x.strip() for x in str(n).split(',') if x.strip()]
     dst = AQUI / 'aprovadas' / ident
     dst.mkdir(parents=True, exist_ok=True)
-    shutil.copy(src, dst / f'{ident}.png')
-    marca(ident, 'gostei', nota or f'variação {n}')
-    print('guardada em', (dst / f'{ident}.png').relative_to(AQUI.parent.parent.parent))
+    for x in ns:
+        src = AQUI / 'entrada' / ident / f'pronto-{x}.png'
+        if not src.exists():
+            sys.exit(f'não achei {src}')
+        alvo = dst / (f'{ident}.png' if len(ns) == 1 else f'{ident}-{x}.png')
+        shutil.copy(src, alvo)
+        print('guardada em', alvo.relative_to(AQUI.parent.parent.parent))
+    marca(ident, 'gostei', nota or ('variação ' + ' e '.join(ns)))
 
 
 if __name__ == '__main__':
