@@ -5,3 +5,6 @@ __pycache__/
 .DS_Store
 # gerado por ferramentas/standalone.py (embute as imagens)
 docs/prototipo.html
+
+# perfil temporário do Firefox do ferramentas/navegador.mjs
+prof-*/
