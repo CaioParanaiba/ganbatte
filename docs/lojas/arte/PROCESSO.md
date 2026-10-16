@@ -55,3 +55,9 @@ Crie `prompts/ID.md` no formato dos outros (tipos e liberdade no `GUIA.md`) e um
 
 Se o prompt ou a imagem trouxer japonês (kanji, kana), ponha em `JAPONES.md` o texto, a leitura, o significado, o item e
 se ele diz mesmo o que a peça quer dizer. Faça isso ao escrever o prompt, e de novo ao registrar o `gostei`.
+
+## Referência tirada da internet
+
+Imagem de terceiros (arte oficial, sticker, foto) só serve de **referência de estrutura** para o Gemini; o prompt pede um
+desenho original, sem traçar nem copiar. Salve-a em `refs/ID/` com `local-` no nome (ex.: `2-local-aranha.png`): o
+`.gitignore` a deixa fora do repositório público, e o `arte.py pasta` a leva para a pasta do Gemini como as outras.
