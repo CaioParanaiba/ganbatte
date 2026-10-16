@@ -128,6 +128,18 @@ class Tarefas(Base):
         with self.assertRaises(s.Erro):
             s.api_jogo_estado({"estado": {"campo_estranho": 1}})
 
+    def test_estado_recalculo_troca_os_dias(self):   # #126: o recálculo desce e apaga dias; aba antiga não volta os números
+        s.api_jogo_estado({"estado": {"xpDias": {"2025-03-01": 10, "2026-10-05": 40}}})
+        rc = {"recalculo": {"ini": "2026-08-10", "em": "2026-10-15", "antes": 50, "depois": 25}}
+        s.api_jogo_estado({"estado": {"xpDias": {"2026-10-05": 25}, "migra": rc}})
+        self.assertEqual(s.ler_json("estado.json", {})["xpDias"], {"2026-10-05": 25})
+        s.api_jogo_estado({"estado": {"xpDias": {"2025-03-01": 10, "2026-10-05": 40}, "migra": {"0.6.4": {"xp": 0}}}})
+        e = s.ler_json("estado.json", {})
+        self.assertEqual(e["xpDias"], {"2026-10-05": 25})
+        self.assertEqual(e["migra"]["recalculo"], rc["recalculo"])
+        s.api_jogo_estado({"estado": {"xpDias": {"2026-10-05": 30, "2026-10-06": 12}, "migra": rc}})
+        self.assertEqual(s.ler_json("estado.json", {})["xpDias"], {"2026-10-05": 30, "2026-10-06": 12})
+
     def test_registro_de_compras_so_cresce(self):
         """Uma aba antiga, sem a compra que a outra gravou, não apaga essa compra do registro."""
         a = {"d": "2026-10-10", "h": "10:00:00", "tipo": "cos", "id": "pal-gon", "j": 800}

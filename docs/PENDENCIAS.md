@@ -238,6 +238,14 @@ só ~26% de jogar. O Ten dele ficou "on" em todos esses dias.
   janela como a da 0.6, com o que mudou e quanto mudou no jogo de cada um. Também corrigido: Gyo usado direto (sem ser
   "à escolha") gravava o atributo errado.
 
+**Recálculo do zero (#126, decidido com o Caio em 15/10/2026):** só conta XP o que foi feito a partir do início da temporada
+(`xpDesde()`; antes valia o `done.txt` inteiro) e o nível do Duolingo sobe só com os dias da ofensiva dentro dela (`duoPre()`).
+O que é de antes fica no heatmap e no histórico, sem XP, Jenny, nível, Ten nem missão. Na primeira abertura, `estado()` refaz os
+dias fechados pelas regras de agora (`migra.recalculo`: `ini`, `em`, `antes`, `depois`; linha que sumiu do `done.txt` perde o
+XP gravado) e o servidor aceita essa troca uma vez (depois, aba antiga não volta os números). Gasto continua gasto; carteira
+negativa fica em zero (`acertos.recalculo`); feitiço de missão já usado não é cobrado. O corte fica gravado e não anda na
+temporada seguinte: o que zera na troca continua a decidir.
+
 **Feito na 0.6.4-beta3** (#49): Book → Conquistas sem casas vazias, três cartas por hábito pelo nível (3, 6, 10) nos números
 livres de 000–099, Ten de 60 dias e os desafios da IA resgatados; Desafios da IA com 10 vagas por rank (`CONQ_VAGAS`). O
 que melhorar no Book (numeração, organização, validade dos desafios) está na #48.
@@ -373,7 +381,7 @@ ainda não o usa). `POST /api/temporada` grava `temporadas/NOME/resumo.json` e c
 outra com `ate` menor. `GET /api/jogo` → `temporadas` ([{nome, ate, guardada}]). `web/temporadas.js`: guarda sozinho ao
 abrir depois do fim (uma tentativa por aba), antes de o assistente gravar outra temporada (`antesDeTrocar`, nas duas
 gravações do `guia.js`) e pelo card *temporada* em Configurações (foto parcial). Falta: a tela de histórico e decidir o que
-zera na temporada nova (hoje nada zera: o motor conta todo o `done.txt`).
+zera na temporada nova (hoje nada zera: o XP conta do corte do recálculo da #126 em diante).
 
 **Coleção permanente e retratos dos chefões** (issue #33, PR #74, decidido com o Caio em 14/10/2026):
 - O comprado vai para `colecao/` dos dados (`api_colecao`: só acrescenta e copia a imagem de `web/a/` ou `web/chefoes/` para
