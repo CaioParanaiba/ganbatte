@@ -1,6 +1,6 @@
 """Fila de arte das lojas: prepara as imagens que o gerador salvou e registra o que o Caio achou.
 
-  python3 docs/lojas/arte/arte.py gera ID [--espelha]      pede ao Antigravity (agy -p), espera, copia as imagens e prepara
+  python3 docs/lojas/arte/arte.py gera ID [--espelha] [--so 1,3,4]   pede ao Antigravity (agy -p), espera, copia as imagens e prepara (--so: só esses conceitos da `Variations:`)
   python3 docs/lojas/arte/arte.py prepara ID [--espelha]   limpa entrada/ID/* (tira o magenta, recorta) e abre a bancada no navegador
   python3 docs/lojas/arte/arte.py gostei ID N [nota]       guarda a variação N em aprovadas/ID/ (não é a decisão final); N pode ser 1,2,3
   python3 docs/lojas/arte/arte.py refazer ID "o que mudar"  volta para o gerador com a nota
@@ -112,7 +112,7 @@ def abre(url):
         webbrowser.open(url)
 
 
-def gera(ident):
+def gera(ident, so=None):
     """O agy salva as imagens na pasta da conversa dele (~/.gemini/antigravity-cli/brain/ID-DA-CONVERSA/); daqui elas
     são copiadas para entrada/ID/, continuando a numeração."""
     linha(ident)
@@ -120,6 +120,8 @@ def gera(ident):
     pasta.mkdir(parents=True, exist_ok=True)
     pedido = (f'Leia docs/lojas/arte/AGY.md e siga as instruções dele: gere {ident}. '
               'Não use o terminal (nenhum comando): só leitura de arquivos e a sua ferramenta de gerar imagem.')
+    if so:   # item com `Variations:` na ficha: gera só alguns conceitos (os outros já existem)
+        pedido += f' Gere SÓ os conceitos {so} da linha Variations (os outros já existem), uma imagem por conceito, e espere todas terminarem.'
     refs = sorted(f for f in (AQUI / 'refs' / ident).glob('*') if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.webp'))
     if refs:   # o agy já tentou abrir a pasta como se fosse um arquivo e parou sem gerar: dá os caminhos prontos
         pedido += (' As imagens de referência deste item são (abra cada arquivo pelo caminho, nunca a pasta): '
@@ -169,7 +171,7 @@ if __name__ == '__main__':
         sys.exit(__doc__)
     cmd, ident = a[0], a[1]
     if cmd == 'gera':
-        gera(ident)
+        gera(ident, a[a.index('--so') + 1] if '--so' in a else None)
         prepara(ident, '--espelha' in a)
     elif cmd == 'prepara':
         prepara(ident, '--espelha' in a)
