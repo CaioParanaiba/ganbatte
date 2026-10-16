@@ -40,3 +40,8 @@ Ponha em `refs/ID/` a imagem do item como está hoje (recorte da vitrine `docs/l
 ## Item novo na fila
 
 Crie `prompts/ID.md` no formato dos outros (tipos e liberdade no `GUIA.md`) e uma linha na `FILA.md`.
+
+## Japonês na arte
+
+Se o prompt ou a imagem trouxer japonês (kanji, kana), ponha em `JAPONES.md` o texto, a leitura, o significado, o item e
+se ele diz mesmo o que a peça quer dizer. Faça isso ao escrever o prompt, e de novo ao registrar o `gostei`.
