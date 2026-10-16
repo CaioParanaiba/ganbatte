@@ -1,6 +1,7 @@
 """Fila de arte das lojas: prepara as imagens que o gerador salvou e registra o que o Caio achou.
 
   python3 docs/lojas/arte/arte.py gera ID [--espelha] [--so 1,3,4]   pede ao Antigravity (agy -p), espera, copia as imagens e prepara (--so: só esses conceitos da `Variations:`)
+  python3 docs/lojas/arte/arte.py proximo                  acha o próximo item (refazer, senão pendente) e monta a pasta dele
   python3 docs/lojas/arte/arte.py pasta ID [--so 1,3,4]    monta ~/Downloads/ganbatte-arte/ID/ com o(s) prompt(s) e as refs, para o Caio levar ao Gemini
   python3 docs/lojas/arte/arte.py importa ID [--espelha]   pega da pasta as imagens novas que o Caio pôs lá, copia para entrada/ID/ e prepara
   python3 docs/lojas/arte/arte.py prepara ID [--espelha]   limpa entrada/ID/* (tira o magenta, recorta) e abre a bancada no navegador
@@ -229,6 +230,17 @@ def gera(ident, so=None):
     print(f'{len(novas)} imagem(ns) copiada(s) para {pasta.relative_to(AQUI)}')
 
 
+def proximo():
+    """O próximo item da fila: a primeira linha `refazer` ou, se não houver, a primeira `pendente`."""
+    linhas = [[x.strip() for x in ln.strip('|').split('|')] for ln in FILA.read_text(encoding='utf-8').splitlines()]
+    linhas = [c for c in linhas if len(c) == 5 and c[0] not in ('id', '---')]
+    for st in ('refazer', 'pendente'):
+        for c in linhas:
+            if c[3] == st:
+                return c[0]
+    sys.exit('a fila acabou: nada em refazer nem pendente')
+
+
 def gostei(ident, n, nota):
     """n = uma variação (guarda como ID.png) ou várias separadas por vírgula (guarda como ID-N.png, para analisar depois)."""
     ns = [x.strip() for x in str(n).split(',') if x.strip()]
@@ -246,6 +258,11 @@ def gostei(ident, n, nota):
 
 if __name__ == '__main__':
     a = sys.argv[1:]
+    if a[:1] == ['proximo']:   # monta a pasta do próximo item para o Gemini
+        ident = proximo()
+        print('próximo:', ident)
+        pasta(ident)
+        sys.exit()
     if len(a) < 2:
         sys.exit(__doc__)
     cmd, ident = a[0], a[1]

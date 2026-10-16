@@ -9,7 +9,8 @@ que é o jogo real do Caio.
 
 ## Um ciclo
 
-1. O Caio diz qual item quer (ou "o próximo": a primeira linha `refazer` ou `pendente` da `FILA.md`).
+1. O Caio diz qual item quer, ou "o próximo": `arte.py proximo` acha a primeira linha `refazer` (senão a primeira
+   `pendente`) da `FILA.md` e já monta a pasta dele para o Gemini.
 2. **Pelo Gemini (o padrão desde 16/10, porque a cota de imagem do agy acaba rápido): o Caio é o intermediário.**
    `arte.py pasta ID` monta `~/Downloads/ganbatte-arte/ID/` com o prompt pronto para colar (`prompt.txt`, ou `prompt-N.txt`,
    um por conceito, quando a ficha tem `Variations:`; `--so 1,3,4` escolhe quais) e as referências como `ref-*`. O Caio
