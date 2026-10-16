@@ -31,7 +31,7 @@ h2{margin:0 0 8px;font:600 12px var(--f-mono);color:var(--dim);letter-spacing:.0
 @keyframes vai{from{background-position:0 center,0 0;-webkit-mask-position:0 center;mask-position:0 center}to{background-position:-46px center,0 0;-webkit-mask-position:-46px center;mask-position:-46px center}}
 .card{background:var(--card);border-radius:4px;padding:16px 18px;color:var(--txt)}
 .card small{display:block;color:var(--dim);font-size:12.5px}
-.bord{border-style:solid;border-width:var(--esp);border-image:var(--u) var(--fatia) round}
+.bord{border-style:solid;border-width:var(--bw,var(--esp));border-image:var(--u) var(--fatia) / var(--esp) round;padding:calc(16px + var(--rec,0px)) calc(18px + var(--rec,0px))}
 .palco{position:relative;height:min(62vh,520px);background:#000;border-radius:8px;overflow:hidden;cursor:none}
 .palco .dica{position:absolute;left:16px;bottom:12px;font:12px var(--f-mono);color:#555}
 .cur{position:absolute;left:0;top:0;width:var(--s);height:var(--s);pointer-events:none;transform-origin:0 0;transition:transform .12s}
@@ -100,13 +100,17 @@ IMGS.forEach((_, i) => { const b = document.createElement('button'); b.textConte
   b.onclick = () => { atual = i; vars.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i))); desenha(); }; vars.append(b); });
 
 // controles que só a borda e o cursor usam
-const st = {esp: 16, fatia: 12, s: 40};
+const st = {esp: 16, fatia: 12, s: 40, rec: 0, por: false};
 function controle(k, rot, min, max, un){
   const l = document.createElement('label'); l.innerHTML = `${rot} <input type="range" id="c-${k}" min="${min}" max="${max}" value="${st[k]}"> <output>${st[k]}${un}</output>`;
   l.querySelector('input').oninput = e => { st[k] = +e.target.value; l.querySelector('output').textContent = st[k] + un; desenha(); };
   document.getElementById('extra').append(l);
 }
-if(TIPO === 'borda'){ controle('esp', 'espessura', 4, 28, 'px'); controle('fatia', 'fatia', 4, 40, '%'); }
+if(TIPO === 'borda'){
+  controle('esp', 'espessura', 4, 28, 'px'); controle('fatia', 'fatia', 4, 40, '%'); controle('rec', 'campo recuado', 0, 24, 'px');
+  const l = document.createElement('label'); l.innerHTML = '<input type="checkbox" id="por-cima"> corrente sobre o campo';
+  l.querySelector('input').onchange = e => { st.por = e.target.checked; desenha(); }; document.getElementById('extra').append(l);
+}
 if(TIPO === 'cursor') controle('s', 'tamanho', 20, 72, 'px');
 
 function desenha(){
@@ -119,8 +123,8 @@ function desenha(){
       <div class="barra" style="--h:16px"><i class="tn" style="--u:${u};--c:var(--red)"></i></div>
       <div class="barra" style="--h:12px"><i class="pura" style="--u:${u}"></i></div></div></section>`);
   } else if(TIPO === 'borda'){
-    const b = `--u:${u};--esp:${st.esp}px;--fatia:${st.fatia}%`;
-    h.push(`<section><h2>cards de tamanhos diferentes (ajuste espessura e fatia no topo até os cantos encaixarem)</h2><div class="linha" style="align-items:flex-start">
+    const b = `--u:${u};--esp:${st.esp}px;--fatia:${st.fatia}%;--rec:${st.rec}px;--bw:${st.por ? Math.round(st.esp * .35) : st.esp}px`;
+    h.push(`<section><h2>cards de tamanhos diferentes (espessura e fatia até os cantos encaixarem; "campo recuado" afasta o conteúdo da corrente; "corrente sobre o campo" deixa a corrente invadir o campo em vez de ser cortada por ele)</h2><div class="linha" style="align-items:flex-start">
       <div class="card bord" style="${b};width:min(420px,100%)"><b>Perfil</b><small>Andar 199 · 2.378 XP na temporada</small><small>faltam 14 XP para o 200</small></div>
       <div class="card bord" style="${b};width:260px"><b>Quanto vale</b><small>até +23 XP</small></div>
       <div class="card bord" style="${b};width:200px;height:220px"><b>Chefões</b><small>ARQ1 · 86%</small><small>BD · 87%</small></div></div></section>`);
