@@ -165,7 +165,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   servidor lê do GitHub para avisar de versão nova (ao lançar uma, ponha-a no topo). `web/feedback.js`: bug, ideia ou
   dúvida vira uma issue preenchida pelos formulários de `.github/ISSUE_TEMPLATE/`. `web/temporadas.js`: guarda a temporada que acabou em `temporadas/NOME/` (a cápsula é `GB.capsula` no motor; `TEMA` no motor
   tem os nomes temáticos das funções). `web/efeitos.js`: o que os itens
-  da Masadora fazem na tela (texturas, molduras, fontes, animações e sons; os itens e preços ficam no `COS` do motor). `web/demo.js`: o servidor de mentira do
+  da Masadora fazem na tela (texturas, molduras, fontes, animações, sons, bordas e hover dos cards, cursores, barra de HP, heatmap e troca de aba; os itens e preços ficam no `COS` do motor, a faixa e o tema HxH de cada um no `FAIXA` e no `HXH`, e o preço dos pacotes em `pacote()`). `web/demo.js`: o servidor de mentira do
   modo demonstração (também usado no GitHub Pages). `web/a/`: o banco de fotos de perfil; cada PNG (256×256, nome com
   letras, números, `-`, `_` ou `.`) vira um item da Masadora por 1.000 J (os grátis ficam no `AV_GRATIS` do motor). O
   jogador não envia fotos: quem desenvolve põe aqui, e só imagens que podem ser distribuídas. Não renomeie uma foto que já
