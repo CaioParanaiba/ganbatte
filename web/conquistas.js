@@ -52,6 +52,7 @@ const progTxt = c => { const at = Math.min(c.at, c.meta);
   return c.rg === 'nota' ? `${GB.numBR(at).toFixed(1).replace('.', ',')} de ${String(c.meta).replace('.', ',')}` : `${fmt(at)} de ${fmt(c.meta)}`; };
 const pct = c => Math.max(0, Math.min(100, c.meta ? c.at / c.meta * 100 : 0, c.diasMin ? c.diasFeitos / c.diasMin * 100 : 100));
 let PROP = null;   // propostas em revisão: {itens:[{p, v, sel}], erro}
+let PEDE = false;   // a proposta está rodando: o botão vira "cancelar proposta" (#115)
 
 /* ---------- aba Book → Conquistas da IA ---------- */
 function book(S, ciaTodas){
@@ -89,7 +90,7 @@ function novasHTML(cia, vg){
   return `<div class="cq-novas" id="cq-novas"><h3>${ic('card')} Propor conquistas com IA</h3>
     ${vg <= 0 ? `<p class="sub" style="margin:0">As ${GB.CONQ_MAX} vagas estão ocupadas. Para pedir novas, conquiste (e resgate) ou descarte alguma.</p>`
       : lig ? `<p class="sub" style="margin:0">A IA (${esc(ia().nomeAg())}) lê o seu ritmo, as disciplinas, os hábitos e as palavras das tarefas e propõe ${n === 1 ? '1 desafio' : `até ${n} desafios`}. O jogo confere cada um e calcula a dificuldade e a recompensa; você aceita os que quiser.</p>
-        <div class="cq-linha"><button type="button" class="btn v" data-cqpede${roda ? ' disabled' : ''}>propor conquistas com IA</button><button type="button" class="go" data-cqcopia>ou copiar o pedido</button></div>`
+        <div class="cq-linha">${PEDE ? '<button type="button" class="btn" data-cqcancela>cancelar proposta</button>' : `<button type="button" class="btn v" data-cqpede${roda ? ' disabled' : ''}>propor conquistas com IA</button>`}<button type="button" class="go" data-cqcopia>ou copiar o pedido</button></div>`
       : `<p class="sub" style="margin:0">1. Copie o pedido: ele já vai com o seu ritmo, disciplinas, hábitos e palavras das tarefas. 2. Cole numa IA de chat. 3. Cole a resposta aqui e confira. Com a IA ligada em Configurações, ela faz isso sozinha.</p>
         <div class="cq-linha"><button type="button" class="btn v" data-cqcopia>copiar pedido</button></div>
         <textarea id="cq-cola" placeholder='cole aqui a resposta da IA: [{"regra": ..., "nome": ...}]'></textarea>
@@ -171,9 +172,10 @@ function confere(txt){
   const vr = vagasRk(GB.conqIA(CTX, S)); for(const it of PROP.itens) if(!it.v.erro && vr[it.v.rk] > 0){ it.sel = true; vr[it.v.rk]--; }
 }
 async function pede(cia){
-  PROP = null; render();
-  let txt; try { txt = await ia().rodaIA(pedido(cia), 'propondo conquistas'); } catch(err){ PROP = {itens:[], erro:'A IA não respondeu: ' + err.message}; render(); return; }
-  confere(txt); UI.bk = 'ia'; render();
+  PROP = null; PEDE = true; render();
+  let txt; try { txt = await ia().rodaIA(pedido(cia), 'propondo conquistas'); }
+  catch(err){ PEDE = false; PROP = ia().cancelado(err) ? null : {itens:[], erro:'A IA não respondeu: ' + err.message}; render(); return; }
+  PEDE = false; confere(txt); UI.bk = 'ia'; render();
 }
 async function cria(){
   const its = PROP.itens.filter(it => it.sel && !it.v.erro);
@@ -208,6 +210,7 @@ document.addEventListener('change', e => { const s = e.target.closest('[data-cqs
 document.addEventListener('click', e => {
   const q = s => e.target.closest(s), cia = () => GB.conqIA(CTX, estado());
   if(q('[data-cqpede]')){ pede(cia()); return; }
+  if(q('[data-cqcancela]')){ ia().cancela(); return; }
   if(q('[data-cqcopia]')){ ia().copia(pedido(cia()), 'Pedido das conquistas'); return; }
   if(q('[data-cqconfere]')){ confere(document.getElementById('cq-cola').value); render(); return; }
   if(q('[data-cqcria]')){ cria(); return; }

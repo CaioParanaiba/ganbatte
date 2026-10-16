@@ -193,7 +193,8 @@ async function rodaIA(tipo){
     const txt = await IA.planoIA(d, anexo);
     if(!E || E.d !== d){ toast(`A resposta da IA para ${d} chegou, mas o editor foi fechado`); return; }
     E.lemb = lemb; cola(txt);
-  } catch(err){ if(E){ E.err = 'A IA não respondeu: ' + err.message; desenha(); } else toast('A IA não respondeu: ' + esc(err.message)); }
+  } catch(err){ if(IA.cancelado(err)) return;
+    if(E){ E.err = 'A IA não respondeu: ' + err.message; desenha(); } else toast('A IA não respondeu: ' + esc(err.message)); }
 }
 function valida(){
   const e = validaAvs(E.avs, E.livre); if(e) return e;

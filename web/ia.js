@@ -32,6 +32,9 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .ia-ags label .btn{margin-left:auto}
 #ia-st{position:fixed;left:16px;bottom:16px;z-index:60;display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:var(--panel);border:1px solid var(--hair);box-shadow:0 6px 20px rgba(0,0,0,.18);font:600 12.5px var(--f-mono);color:var(--ink);max-width:calc(100vw - 32px)}
 #ia-st small{color:var(--soft);font-weight:400}
+#ia-st button{margin-left:4px;padding:2px 8px;border:1px solid var(--hair);border-radius:999px;background:transparent;color:var(--soft);font:600 11.5px var(--f-ui);cursor:pointer}
+#ia-st button:hover{color:var(--ink);border-color:var(--ink)}
+#ia-st button:disabled{cursor:default;opacity:.6}
 .ia-dot{width:8px;height:8px;border-radius:50%;background:var(--grn);animation:ia-p 1.2s ease-in-out infinite}
 @keyframes ia-p{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.ia-dot{animation:none}}
@@ -185,25 +188,38 @@ async function carregaIA(){
   try { const r = await fetch('/api/ia', {cache:'no-store'}); IAS = await r.json(); } catch(e){ IAS = {ok:false, error:SEM_SERVIDOR}; }
   return IAS;
 }
-/* manda o pedido, espera a resposta (o agente leva de segundos a minutos) e mostra o andamento no canto da tela */
+/* manda o pedido, espera a resposta (o agente leva de segundos a minutos) e mostra o andamento no canto da tela.
+   Cancelado (#115): o erro vem com cancelado = true; quem chama não mostra erro e para a fila inteira */
+const cancelado = err => !!(err && err.cancelado);
 async function rodaIA(pedido, rotulo, anexo, leve){
-  const {id} = await post('/api/ia/rodar', {pedido, anexo: anexo || '', leve: !!leve});
-  IA_RODA = {rotulo, ini:Date.now()}; status();
+  const R = IA_RODA = {rotulo, ini:Date.now(), id:''}; status();
   try {
+    R.id = (await post('/api/ia/rodar', {pedido, anexo: anexo || '', leve: !!leve})).id;
+    if(R.cancela) post('/api/ia/cancela', {id:R.id}).catch(() => {});   // cancelado antes de o servidor responder
     for(;;){
       await espera(1500);
-      let r; try { r = await (await fetch('/api/ia/rodar?id=' + id, {cache:'no-store'})).json(); } catch(e){ throw new Error(SEM_SERVIDOR); }
+      let r; try { r = await (await fetch('/api/ia/rodar?id=' + R.id, {cache:'no-store'})).json(); } catch(e){ throw new Error(SEM_SERVIDOR); }
       if(!r.ok) throw new Error(r.error || 'erro');
       if(r.estado === 'pronto') return r.texto;
+      if(r.estado === 'cancelado') throw Object.assign(new Error('pedido cancelado'), {cancelado:true});
       if(r.estado === 'erro') throw new Error(r.erro);
     }
-  } finally { IA_RODA = null; status(); }
+  } catch(err){ if(cancelado(err)) toast('Pedido cancelado <small>a IA parou</small>'); throw err; }
+  finally { if(IA_RODA === R) IA_RODA = null; status(); }
+}
+/* botão cancelar (aviso do canto e Book): o servidor encerra o agente e libera a vaga */
+function cancela(){
+  const R = IA_RODA; if(!R || R.cancela) return;
+  R.cancela = true; status();
+  if(R.id) post('/api/ia/cancela', {id:R.id}).catch(err => { R.cancela = false; status(); toast('Não cancelou: ' + esc(err.message)); });
 }
 function status(){
   let el = document.getElementById('ia-st');
   if(!IA_RODA){ if(el) el.remove(); clearInterval(status.t); status.t = 0; document.querySelectorAll('[data-iaescreve],[data-ceiarun],[data-iafalta],[data-iatesta],[data-ialertodos]').forEach(b => b.disabled = false); return; }
-  if(!el){ el = document.createElement('div'); el.id = 'ia-st'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
-  const pinta = () => { if(IA_RODA) el.innerHTML = `<span class="ia-dot"></span>IA · ${esc(IA_RODA.rotulo)} <small>${Math.round((Date.now() - IA_RODA.ini) / 1000)}s</small>`; };
+  if(!el){ el = document.createElement('div'); el.id = 'ia-st'; el.setAttribute('role', 'status'); document.body.appendChild(el);
+    el.addEventListener('click', e => { if(e.target.closest('[data-iacancela]')) cancela(); }); }
+  el.innerHTML = `<span class="ia-dot"></span>IA · ${esc(IA_RODA.rotulo)} <small></small><button type="button" data-iacancela${IA_RODA.cancela ? ' disabled' : ''}>${IA_RODA.cancela ? 'cancelando…' : 'cancelar'}</button>`;
+  const pinta = () => { const s = el.querySelector('small'); if(IA_RODA && s) s.textContent = Math.round((Date.now() - IA_RODA.ini) / 1000) + 's'; };
   pinta(); if(!status.t) status.t = setInterval(pinta, 1000);
   document.querySelectorAll('[data-iaescreve],[data-ceiarun],[data-iafalta],[data-iatesta],[data-ialertodos]').forEach(b => b.disabled = true);
 }
@@ -212,7 +228,7 @@ async function escreveCartas(lista){
   let ok = 0;
   for(const P of lista){
     try { await gravaCarta(await rodaIA(promptCarta(P), `carta ${P.periodo} (${ok + 1}/${lista.length})`), P); await recarrega(); ok++; }
-    catch(err){ toast(`Carta ${P.periodo} não saiu <small>${esc(err.message)}</small>`); break; }
+    catch(err){ if(!cancelado(err)) toast(`Carta ${P.periodo} não saiu <small>${esc(err.message)}</small>`); break; }
   }
   if(ok){ if(!document.querySelector('.wz-bg')) render(); toast(`${ok} carta(s) nova(s) no Book`); }
   return ok;
@@ -226,7 +242,7 @@ function autoCartas(){
 async function escreveUma(){
   const P = periodo(UI.iaTipo || 'semana');
   try { await gravaCarta(await rodaIA(promptCarta(P), `carta ${P.periodo}`), P); await recarrega(); }
-  catch(err){ toast('A IA não escreveu: ' + esc(err.message)); return; }
+  catch(err){ if(!cancelado(err)) toast('A IA não escreveu: ' + esc(err.message)); return; }
   UI.bk = 'claude'; UI.bksel = 'N-' + P.periodo; render(); toast('Carta adicionada ao Book');
 }
 
@@ -253,7 +269,7 @@ function iaHTML(){
 async function testa(){
   UI.iaTeste = ''; 
   try { const t = await rodaIA('Responda só com a palavra ok.', 'teste'); UI.iaTeste = `✓ ${esc(nomeAg())} respondeu: <span class="mono">${esc(t.slice(0, 60))}</span>`; }
-  catch(err){ UI.iaTeste = `✗ ${esc(err.message)}`; }
+  catch(err){ UI.iaTeste = cancelado(err) ? '' : `✗ ${esc(err.message)}`; }
   render();
 }
 
@@ -281,7 +297,7 @@ async function lerTodos(){
   const arqs = (IAS && IAS.planos) || []; if(!arqs.length){ toast('A pasta planos está vazia'); return; }
   LOTE = {itens:[], novas:[], fora:[], erro:''}; render();
   let txt; try { txt = await rodaIA(promptMapa(arqs), `ligando ${arqs.length} plano(s) às disciplinas`, arqs); }
-  catch(err){ LOTE.erro = err.message; render(); return; }
+  catch(err){ if(cancelado(err)) LOTE = null; else LOTE.erro = err.message; render(); return; }
   for(const l of txt.split('\n')){
     const p = l.replace(/`/g, '').split('|').map(x => x.trim()); if(p.length < 2) continue;
     const arq = arqs.find(a => a === p[0] || a === p[0].replace(/^.*[\\/]/, '')); if(!arq) continue;
@@ -294,7 +310,9 @@ async function lerTodos(){
   render();
   for(const it of LOTE.itens){
     it.estado = 'lendo'; render();
-    try { it.texto = await planoIA(it.d, it.arq); it.estado = 'pronto'; } catch(err){ it.estado = 'erro'; it.erro = err.message; }
+    try { it.texto = await planoIA(it.d, it.arq); it.estado = 'pronto'; }
+    catch(err){ if(cancelado(err)){ for(const x of LOTE.itens) if(x.estado === 'lendo' || x.estado === 'fila'){ x.estado = 'erro'; x.erro = 'cancelado'; } render(); return; }
+      it.estado = 'erro'; it.erro = err.message; }
     render();
   }
 }
@@ -377,7 +395,7 @@ document.addEventListener('click', e => {
   if(q('[data-iatadd]')){ addTarefas(); return; }
   if(q('#ia-lote summary')){ UI.iaLote = !document.getElementById('ia-lote').open; }
 });
-window.GB_IA = {promptPlano, promptCarta, copia, ligada, nomeAg, rodaIA, planoIA, enviaPlano, carregaIA, lembretes, planos: () => (IAS && IAS.planos) || [], rodando: () => !!IA_RODA};
+window.GB_IA = {promptPlano, promptCarta, copia, ligada, nomeAg, rodaIA, cancela, cancelado, planoIA, enviaPlano, carregaIA, lembretes, planos: () => (IAS && IAS.planos) || [], rodando: () => !!IA_RODA};
 if(CTX) tab(cur);
 (function tenta(){ if(!CTX){ setTimeout(tenta, 500); return; } if(CTX.SRV) carregaIA(); autoCartas(); })();
 })();
