@@ -23,10 +23,21 @@
  * 0.9 da main também, com as betas em "versoes".
  * "atributos" (0.9.1-beta1, #121): {"t", "d", "troca": {"i", "de", "para"}} põe na janela grande o hexágono de Nen de quem lê
  * passando do antes para o depois (S.rec.migra.tipos), com o nome do vértice "i" trocado; "cap" troca também a linha do aviso.
+ * 0.9.2-beta1 (#135): o "no seu jogo" do aviso mostra a Jenny dos retratos de chefão devolvida (acertos.retratos).
  * "atualizar agora" chama POST /api/atualizar (git pull ou o ZIP do GitHub) e espera o servidor reiniciar.
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta1", "nome": "atualização da Torre Trick", "data": "2026-10-15", "aviso": "0.9.2-beta1",
+   "cap": "lojas em faixas · retratos de chefão grátis",
+   "resumo": "As duas lojas foram reorganizadas. Os retratos de chefão ficaram grátis, e quem comprou recebe a Jenny de volta. Três pacotes ficaram mais baratos porque perderam peças que foram para a loja do grupo. O resto do seu XP e da sua Jenny continua igual, e o que você comprou continua seu.",
+   "itens": [
+     {"ic": "coin", "t": "Retratos de chefão grátis", "d": "Os 15 retratos de chefão agora vêm com o jogo: escolha o de cada chefão em Loja → Comprados. Quem comprou recebe os 1.500 J de cada retrato de volta, uma vez, na linha \"retratos devolvidos\" da carteira, e continua com o retrato (#135)."},
+     {"ic": "card", "t": "Masadora em faixas", "d": "Cada item tem uma faixa (comum, raro, épico) e o selo 念 HxH quando é do tema, com filtros no alto da loja. Os títulos de conquista (Floor Master, Mestre de Nen, Ten Inabalável, Segunda Natureza, Hunter ★★) ficam grátis quando você bate a conquista; quem já comprou um continua com ele (#135)."},
+     {"ic": "tower", "t": "Temas viraram pacotes", "d": "Os temas completos agora são pacotes: o preço desconta as peças que você já tem e, com tudo seu, o pacote equipa tudo de uma vez. A Aura do avatar e o Anel de aura saíram dos pacotes, por isso o Killua caiu de 6.000 para 4.600 J, o Meruem de 10.000 para 8.500 J e a Ascensão de 25.000 para 19.600 J. Quem comprou o pacote antes continua com a Aura e o Anel (#135)."},
+     {"ic": "antenna", "t": "Itens novos para provar", "d": "Bordas e hover dos cards, cursores, barra de HP dos chefões, heatmaps da constância, troca de aba, quatro paletas neutras, molduras simples e os sons Clique e Gota. Por enquanto, só para provar: os preços chegam com o balanceamento das lojas (#135, #77)."},
+     {"ic": "crown", "t": "Loja da Associação", "d": "Na Torre Trick, a sub-aba loja mostra o que vai sair na loja do grupo e como cada item vai ser liberado. O provador aplica os itens na sua licença, frente e verso, e só você vê. As molduras especiais e a Aura do avatar não se compram mais na Masadora, porque vão para lá; quem já tem continua usando (#136)."}
+   ]},
   {"versao": "0.9.1", "nome": "atualização da Torre Trick", "data": "2026-10-15", "aviso": "0.9.1-beta1",
    "cap": "tipos novos · o seu hexágono de Nen foi refeito",
    "resumo": "Os tipos das tarefas ficaram mais claros: faculdade saiu, treino e projeto se separaram, e o seu hexágono de Nen foi refeito com a regra nova. Chegaram as tarefas que repetem, e quem começa agora tem uma primeira entrada nova e um tutorial mais curto. O seu XP, a sua Jenny e os feitiços continuam exatamente iguais.",
@@ -743,6 +754,11 @@ function seuAviso(v){
   if(dv && v.aviso === '0.6.5'){   // devolução (#51): o que voltou para a loja e o que a carteira recebeu
     const nome = c => c.tipo === 'feitico' ? 'feitiço ' + ((GBx.SPELLS.find(s => s.k === c.id) || {}).n || c.id) : ((COS.find(i => i.id === c.id) || {}).n || c.id);
     partes.push(`Na 0.6.5, voltaram para a loja: <strong>${esc((dv.itens || []).map(nome).join(', '))}</strong>${dv.j > 0 ? `, e a carteira recebeu <strong>${(+dv.j).toLocaleString('pt-BR')} J</strong>, a parte paga com Jenny ganha jogando` : ''}.`);
+  }
+  if(v.aviso === '0.9.2-beta1'){   // retratos de chefão (#135): a Jenny que voltou, gravada em acertos.retratos
+    const rj = +(r.acertos || {}).retratos || 0;
+    if(rj > 0) partes.push(`a carteira recebeu <strong>${rj.toLocaleString('pt-BR')} J</strong> pelos retratos de chefão que você tinha comprado, e eles continuam seus.`);
+    else ok.push('você não tinha comprado retratos, então a sua carteira não mudou.');
   }
   const todas = partes.concat(ok); if(!todas.length) return '';
   return `<div class="nv-seu${partes.length ? '' : ' ok'}"><b>No seu jogo</b><span>${todas.map(t => t[0].toUpperCase() + t.slice(1)).join(' ')}</span></div>`;
