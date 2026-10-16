@@ -6,10 +6,21 @@ sem refazer. Decidido em 16/10/2026, a partir da reavaliação das vitrines (#13
 
 ## Como usar
 
-1. Escolha uma ficha da lista no fim (ou escreva uma nova no mesmo formato).
-2. Cole no Gemini o **guia de estilo** e, logo abaixo, a **ficha**. Peça 3 ou 4 variações.
-3. Salve a melhor (ou todas) com o nome do arquivo que a ficha pede e entregue. Quem aplica no jogo recorta o fundo,
-   reduz, testa no tamanho real e liga ao item.
+O jeito normal é pela **fila**: `FILA.md` lista os itens, `prompts/` tem o prompt pronto de cada um (`_estilo.txt` +
+`ID.md`), `refs/ID/` tem as imagens de referência. O Antigravity gera seguindo o `AGY.md`; o Claude prepara e mostra
+na `bancada.html` seguindo o `PROCESSO.md`; o que o Caio gostar fica em `aprovadas/`.
+
+À mão (Gemini ou outra pessoa): cole `prompts/_estilo.txt` e, logo abaixo, `prompts/ID.md`, anexe o que houver em
+`refs/ID/`, peça 3 variações e salve como `entrada/ID/ID-1.png`, `-2`, `-3`.
+
+## O que aprendemos no primeiro teste (16/10, corrente)
+
+- Peça **imagem**. Pedindo SVG, o Gemini escreve código com retângulos e arcos, e sai seco como o que já existia.
+- Ele ignora o tamanho pedido (a tira veio com 5856×704) e costuma entregar JPG. Tudo bem: o `arte.py` recorta,
+  tira o magenta e acerta a emenda. Os tamanhos da tabela abaixo valem como **proporção**.
+- Ele tende a repetir o objeto (a tira veio com duas correntes empilhadas). O `_estilo.txt` já pede uma cópia só.
+- Para tingir pela cor do tema, o branco do desenho pega a cor e o contorno escuro fica (multiplicar), senão vira mancha.
+- Borda montada a partir da tira não ficou boa: a borda de card é pedida inteira, com cantos desenhados (`bd-corrente`).
 
 O prompt está em inglês porque o Gemini segue melhor as regras técnicas assim. As fichas podem ser escritas em
 português, se for mais fácil.
@@ -77,7 +88,8 @@ Nesses itens, o desenho fornece no máximo as peças (`sprite`), e o código ani
 
 ## Fichas
 
-Itens marcados com "execução ruim" ou "pode melhorar" na reavaliação de 16/10 cujo problema é o desenho.
+Itens marcados com "execução ruim" ou "pode melhorar" na reavaliação de 16/10 cujo problema é o desenho. As versões
+que valem para gerar são as de `prompts/` (já com as lições acima); estas ficam como explicação de cada item.
 
 ### Elo de corrente (serve a 4 itens)
 Corrente de Kurapika, cursor de corrente, HP de corrente e Borda de corrente da licença. Na reavaliação: "ou bugadas ou

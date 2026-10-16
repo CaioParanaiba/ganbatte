@@ -1,0 +1,13 @@
+Generate an IMAGE (not SVG, not code).
+
+STYLE GUIDE (always apply):
+Game asset for a dark-themed productivity game inspired by Hunter x Hunter (2011 anime).
+Clean bold linework, flat cel shading with at most 2 shadow tones, no gradients,
+no glow, no lens flare, no 3D render look. Must read clearly when shrunk to 48 px.
+Original design inspired by the theme: do not copy official logos or trace anime frames.
+Solid flat #FF00FF magenta background filling everything outside the object
+(no shadow on the background, no vignette, no texture on it).
+No text, no letters, no signature, no watermark.
+Draw exactly what the sheet asks for, once: no extra copies, rows or variations in the same image.
+If reference images are attached, match their style, line weight and colors unless the sheet says otherwise.
+Follow the ASSET SHEET below. "Freedom" says how much you may invent beyond the description.

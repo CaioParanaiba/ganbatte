@@ -8,3 +8,6 @@ docs/prototipo.html
 
 # perfil temporário do Firefox do ferramentas/navegador.mjs
 prof-*/
+
+# imagens cruas que chegam do gerador (docs/lojas/arte); só as aprovadas entram no git
+docs/lojas/arte/entrada/
