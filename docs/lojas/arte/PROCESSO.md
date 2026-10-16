@@ -14,15 +14,17 @@ que é o jogo real do Caio.
    Ele chama o `agy -p`, que lê o `AGY.md`, gera 3 variações com as referências, e o script copia da pasta da conversa
    do agy para `entrada/ID/` e já prepara. Se o Caio gerou à mão, use só `arte.py prepara ID`.
    O preparo (na tira, `--espelha` se só uma metade veio limpa). O script
-   tira o magenta, recorta, acerta a emenda das tiras, salva `entrada/ID/pronto-N.png`, marca `gerado` e imprime o link
-   da bancada.
-3. Mande ao Caio o link da bancada (`bancada.html?...`). Ela já tem as variações lado a lado, cor do teste, e o pedaço
+   tira o magenta, recorta, acerta a emenda das tiras, salva `entrada/ID/pronto-N.png`, marca `gerado` e abre a
+   bancada.
+3. O `arte.py` já **abre a bancada no navegador do Caio** (Firefox, em aba nova) ao preparar; ele não deve ter que copiar
+   link nenhum. Se for preparar de outro jeito, abra você: `firefox --new-tab "<link>"`. Diga na resposta que abriu (e
+   deixe o link só como reserva). Ela já tem as variações lado a lado, cor do teste, e o pedaço
    do jogo certo para o tipo: tira = barras de XP e HP animadas; borda = cards com controle de espessura e fatia;
    cursor = tela preta com o cursor seguindo o mouse; efeito = um box de tarefa que solta o efeito ao concluir;
    carimbo = na licença; emblema = tamanhos e card; moldura = em volta da licença; textura = fundo repetido.
    Para economizar, **não** monte o jogo inteiro e não tire captura sem necessidade: o Caio olha a bancada.
 4. Pergunte o que ele achou e registre:
-   - gostou: `arte.py gostei ID N "nota curta"` (N = variação). Na borda, anote a espessura e a fatia que ele usou.
+   - gostou: `arte.py gostei ID N "nota curta"` (N = variação; `1,2,3` guarda várias para analisar depois). Na borda, anote a espessura e a fatia que ele usou.
    - não gostou: pergunte se quer **refazer** ou **pular**.
      - refazer: `arte.py refazer ID "o que mudar"`; se fizer sentido, ajuste também `prompts/ID.md` ou ponha
        referências em `refs/ID/`. O Antigravity lê a nota na próxima geração.

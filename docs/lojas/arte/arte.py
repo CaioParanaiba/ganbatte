@@ -1,14 +1,14 @@
 """Fila de arte das lojas: prepara as imagens que o gerador salvou e registra o que o Caio achou.
 
   python3 docs/lojas/arte/arte.py gera ID [--espelha]      pede ao Antigravity (agy -p), espera, copia as imagens e prepara
-  python3 docs/lojas/arte/arte.py prepara ID [--espelha]   limpa entrada/ID/* (tira o magenta, recorta) e mostra o link da bancada
+  python3 docs/lojas/arte/arte.py prepara ID [--espelha]   limpa entrada/ID/* (tira o magenta, recorta) e abre a bancada no navegador
   python3 docs/lojas/arte/arte.py gostei ID N [nota]       guarda a variação N em aprovadas/ID/ (não é a decisão final); N pode ser 1,2,3
   python3 docs/lojas/arte/arte.py refazer ID "o que mudar"  volta para o gerador com a nota
   python3 docs/lojas/arte/arte.py pular ID [motivo]        fica para depois
 
 Os tipos e as cores de teste vêm da FILA.md. --espelha (só tira): usa a metade de cima e espelha, quando a de baixo
 veio suja. Precisa de Pillow e numpy."""
-import json, shutil, subprocess, sys
+import json, shutil, subprocess, sys, webbrowser
 from datetime import date
 from pathlib import Path
 
@@ -100,6 +100,16 @@ def prepara(ident, espelha):
     marca(ident, 'gerado')
     url = f"{(AQUI / 'bancada.html').as_uri()}?id={ident}&tipo={info['tipo']}&cor={info['cor'].lstrip('#')}&img={','.join(saidas)}"
     print('\nbancada:', url)
+    abre(url)
+
+
+def abre(url):
+    """Abre a bancada no navegador do Caio, para ele não ter que copiar o link."""
+    fx = shutil.which('firefox')
+    if fx:
+        subprocess.Popen([fx, '--new-tab', url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    else:
+        webbrowser.open(url)
 
 
 def gera(ident):
