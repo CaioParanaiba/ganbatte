@@ -5,3 +5,5 @@ __pycache__/
 .DS_Store
 # gerado por ferramentas/standalone.py (embute as imagens)
 docs/prototipo.html
+# simulações dos temas (#137): levam os dados do jogador
+docs/lojas/temas/sim-*.html

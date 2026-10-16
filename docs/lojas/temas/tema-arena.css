@@ -1,0 +1,110 @@
+/* ===== Tema Arena Celestial (#137, simulação) =====
+   Tudo preso a :root[data-tema="arena"]. Nada muda de estrutura: o tema troca paleta, fundo e algumas peças que só ele tem.
+   Peças únicas, iguais em todas as abas: painel de elevador (andar no topo e na ficha), placas de aço com rebites,
+   aba atual acesa como botão de elevador, concluir como botão redondo de elevador e barra de XP em luzes de andar.
+   Fundo por aba: Lista e o resto = céu do seu andar; Progresso = a torre com o seu andar aceso; Chefões = o ringue. */
+:root[data-tema="arena"]{
+  --bg:#0A0F1F!important; --panel:#111A2E!important; --panel2:#18233B!important; --ink:#E9EEF8!important; --soft:#9AA8C4!important;
+  --faint:#5D6B8C!important; --hair:#2B3858!important; --track:#1A2440!important; --prompt:#8EC5FF!important; --red:#F06A5E!important;
+  --amb:#FFB547!important; --grn:#6FD3A0!important; --volt:#9CCBFF!important; --aura:#7FA2E8!important;
+  --led:#FFB547; --led-off:#3A2A10; --aco:#3A4A6E; --rebite:#6E80A8;
+  --f-led:"Share Tech Mono","JetBrains Mono",monospace;
+  background:#0A0F1F;
+}
+:root[data-tema="arena"] body{background:transparent!important;background-image:none!important}
+#ac-cena{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:#0A0F1F}
+#ac-cena svg{width:100%;height:100%;display:block}
+#ac-cena .ac-g{opacity:0;transition:opacity .8s ease}
+:root[data-aba="l"] #ac-cena .ac-janela,:root[data-aba="b"] #ac-cena .ac-torre,:root[data-aba="b2"] #ac-cena .ac-ringue,
+:root:not([data-aba="l"]):not([data-aba="b"]):not([data-aba="b2"]) #ac-cena .ac-janela{opacity:1}
+
+/* placas de aço: um pouco do céu passa por trás, rebites nos quatro cantos, fio de luz em cima */
+:root[data-tema="arena"] :is(.card,.tower,.col,.l-list,.gnav,.hud,.season,.pano-top,.boss-mini,.b2top,.mission,.cofre,.x-kcol){
+  background-color:color-mix(in srgb,var(--panel) 84%,transparent)!important;
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  border:1px solid var(--hair)!important;border-radius:4px!important;
+  background-image:
+    radial-gradient(circle at 7px 7px,var(--rebite) 1.4px,transparent 2px),radial-gradient(circle at calc(100% - 7px) 7px,var(--rebite) 1.4px,transparent 2px),
+    radial-gradient(circle at 7px calc(100% - 7px),var(--rebite) 1.4px,transparent 2px),radial-gradient(circle at calc(100% - 7px) calc(100% - 7px),var(--rebite) 1.4px,transparent 2px),
+    linear-gradient(180deg,color-mix(in srgb,#fff 5%,transparent),transparent 40px)!important;
+  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent)!important}
+:root[data-tema="arena"] .fact{background:color-mix(in srgb,var(--panel) 70%,transparent)!important;border-radius:3px!important}
+:root[data-tema="arena"] .head h1{font-family:"Chakra Petch",sans-serif}
+
+/* painel de elevador: o andar no topo de todas as abas */
+:root[data-tema="arena"] #facts .fact:first-child{background:#05070D!important;border:1px solid #2A3550!important;box-shadow:inset 0 0 10px #000;
+  color:#7A6A4A;text-transform:uppercase;letter-spacing:.14em;font-size:10px;display:inline-flex;align-items:center;gap:8px;padding:2px 10px}
+:root[data-tema="arena"] #facts .fact:first-child b{font:400 20px/1 var(--f-led);color:var(--led);letter-spacing:.06em;text-shadow:0 0 6px color-mix(in srgb,var(--led) 60%,transparent)}
+:root[data-tema="arena"] #facts .fact:first-child::after{content:"▲";color:var(--led-off);font-size:11px}
+:root[data-tema="arena"].ac-sobe #facts .fact:first-child::after{color:var(--led);text-shadow:0 0 6px var(--led)}
+:root[data-tema="arena"].ac-sobe :is(#facts .fact:first-child b,.l-me .l-n){animation:acPisca .35s steps(2) 4}
+@keyframes acPisca{50%{opacity:.2}}
+
+/* a ficha da Lista vira a janela do seu quarto na torre: a vista é a do seu andar */
+:root[data-tema="arena"] .card.l-me{position:relative;overflow:hidden;isolation:isolate;background-color:transparent!important;-webkit-backdrop-filter:none;backdrop-filter:none;
+  border:5px solid #1D2740!important;outline:1px solid var(--aco);outline-offset:-5px;box-shadow:inset 0 0 0 1px #0006, 0 0 0 1px var(--aco)!important}
+:root[data-tema="arena"] .l-me > .ac-vista{position:absolute;inset:0;z-index:-1;width:100%;height:100%}
+:root[data-tema="arena"] .l-me > .ac-vista + .ac-vidro{position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(90deg,#0A0F1Fd9 0,#0A0F1F99 42%,#0A0F1F8c 70%,#0A0F1Fbf 100%),linear-gradient(115deg,transparent 62%,#ffffff0d 62% 66%,transparent 66% 69%,#ffffff08 69% 70%,transparent 70%)}
+:root[data-tema="arena"] .l-me .l-n{font:400 26px/1 var(--f-led)!important;color:var(--led);text-shadow:0 0 6px color-mix(in srgb,var(--led) 55%,transparent);
+  background:#05070Dcc;border:1px solid #2A3550;padding:3px 10px 2px;border-radius:2px;letter-spacing:.04em}
+:root[data-tema="arena"] .l-me .l-n small{font:600 9.5px "Chakra Petch",sans-serif!important;color:#7A6A4A!important;letter-spacing:.16em}
+:root[data-tema="arena"] .l-me .l-mis{background:#05070D99;border-radius:3px;padding:6px 10px}
+
+/* aba atual acesa como botão de elevador */
+:root[data-tema="arena"] .gnav button{border-bottom:0!important;position:relative}
+:root[data-tema="arena"] .gnav button::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px;
+  border:1px solid var(--aco);background:#0A0F1F}
+:root[data-tema="arena"] .gnav button[aria-current="page"]{color:var(--ink)!important}
+:root[data-tema="arena"] .gnav button[aria-current="page"]::before{background:var(--led);border-color:var(--led);box-shadow:0 0 6px var(--led)}
+:root[data-tema="arena"] .gnav button .ic{display:none}
+
+/* concluir: botão redondo de elevador, que acende ao concluir */
+:root[data-tema="arena"] .l-ck{clip-path:none!important;border-radius:50%!important;width:22px!important;height:22px!important;
+  background:radial-gradient(circle at 50% 40%,#2A3550,#141B2E)!important;border:1.5px solid var(--aco)!important;box-shadow:0 1px 0 #0008}
+:root[data-tema="arena"] .l-ck::before{display:none!important}
+:root[data-tema="arena"] .l-task:hover .l-ck{border-color:var(--led)!important}
+:root[data-tema="arena"] :is(.l-task.done,.l-hb.ok) .l-ck{background:radial-gradient(circle at 50% 40%,#FFD58A,var(--led) 60%,#C7801A)!important;border-color:var(--led)!important;box-shadow:0 0 8px color-mix(in srgb,var(--led) 60%,transparent)!important;color:#3A2400!important}
+
+/* barra de XP: luzes de andar, uma por segmento */
+:root[data-tema="arena"] :is(.l-bar,.xpbar){height:8px!important;background:repeating-linear-gradient(90deg,var(--led-off) 0 10px,transparent 10px 13px)!important;border:0!important}
+:root[data-tema="arena"] :is(.l-bar i,.xpbar > b){background:repeating-linear-gradient(90deg,var(--led) 0 10px,transparent 10px 13px)!important;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--led) 70%,transparent))}
+
+/* Progresso: o trilho vira a torre, com as janelas acesas até o seu andar e você na cabine do elevador */
+:root[data-tema="arena"] .shaft{margin-left:64px!important;border-left:0!important}
+:root[data-tema="arena"] .shaft::before{content:"";position:absolute;left:-24px;width:48px;bottom:0;top:-6px;
+  clip-path:polygon(34% 0,66% 0,100% 100%,0 100%);
+  background:repeating-linear-gradient(0deg,transparent 0 54px,#4A5A82 54px 56px),linear-gradient(90deg,#141B2E,#2C3A5C 50%,#121828)}
+:root[data-tema="arena"] .shaft::after{content:"";position:absolute;left:-12px;width:24px;top:-26px;height:22px;border-radius:12px 12px 0 0;background:#2C3A5C;
+  box-shadow:0 -10px 0 -10px #2C3A5C}
+:root[data-tema="arena"] .shaft .fill{left:-3px!important;width:6px!important;background:repeating-linear-gradient(0deg,var(--led) 0 3px,transparent 3px 7px)!important;box-shadow:0 0 8px color-mix(in srgb,var(--led) 50%,transparent)!important}
+:root[data-tema="arena"] .shaft .mk{left:-64px!important;font-family:var(--f-led)!important}
+:root[data-tema="arena"] .shaft .mk.big{color:var(--led)!important}
+:root[data-tema="arena"] .shaft .me{left:-17px!important}
+:root[data-tema="arena"] .shaft .me .av{border-radius:3px!important;box-shadow:0 0 0 2px #05070D,0 0 0 3.5px var(--led)!important}
+:root[data-tema="arena"] .shaft .me b{font:400 18px var(--f-led)!important;color:var(--led);background:#05070D;padding:1px 6px;border:1px solid #2A3550}
+
+/* simulação: controles para ver outros andares (não fazem parte do tema) */
+#ac-sim{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;z-index:50;display:grid;gap:6px;padding:10px 12px;width:min(300px,calc(100vw - 24px));box-sizing:border-box;
+  background:#05070Df2;border:1px dashed #6E80A8;border-radius:4px;font:12px "Inter",system-ui,sans-serif;color:#C9D3E8}
+#ac-sim b{font:600 11px "Chakra Petch",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#FFB547}
+#ac-sim label{display:flex;gap:8px;align-items:center}
+#ac-sim input{flex:1;accent-color:#FFB547}
+#ac-sim output{font:14px var(--f-led);color:#FFB547;min-width:3ch;text-align:right}
+#ac-sim .bt{display:flex;gap:6px;flex-wrap:wrap}
+#ac-sim button{font:12px "Inter",sans-serif;color:#E9EEF8;background:#18233B;border:1px solid #2B3858;border-radius:3px;padding:4px 8px;cursor:pointer}
+#ac-sim button:hover{border-color:#FFB547}
+#ac-sim .x{position:absolute;top:4px;right:6px;border:0;background:none;padding:2px 4px;color:#9AA8C4}
+#ac-sim.min > :not(b):not(.x){display:none}
+#demo-aviso{display:none!important}
+
+@media (prefers-reduced-motion:no-preference){
+  #ac-cena .ac-holo{animation:acVarre 10s ease-in-out infinite alternate;transform-box:view-box}
+  #ac-cena .ac-holo.h2{animation-duration:13s;animation-delay:-5s}
+  #ac-cena .ac-pulso{animation:acPulso 2.4s ease-in-out infinite}
+  #ac-cena .ac-nuvens,.l-me .ac-nuvens{animation:acDeriva 90s linear infinite alternate}
+}
+@keyframes acVarre{from{transform:rotate(-12deg)}to{transform:rotate(12deg)}}
+@keyframes acPulso{50%{opacity:.35}}
+@keyframes acDeriva{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
+@media (prefers-reduced-motion:reduce){:root[data-tema="arena"].ac-sobe *{animation:none!important}}
