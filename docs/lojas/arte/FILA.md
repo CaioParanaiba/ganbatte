@@ -16,7 +16,7 @@ Nota com **⚠ PROVISÓRIO** = aprovado, mas ainda não 100% fechado (pode ser t
 | lic-ouro | moldura |  | gerado | 16/10: EM ABERTO (o Caio decide noutro chat): a do Gemini não agradou (faixa grossa demais, robusta, não encaixa na licença; guardada como tentativas/lic-ouro/gemini-1.png); o Claude desenhou 3 estojos em SVG na proporção exata da licença, ocupando só a borda que ela já tem (nada tampado, mesmo tamanho): claude-1 guilhochê (duas ondas), claude-2 filete (linha no meio, losango com ponto vermelho), claude-3 serrilha (borda de moeda); todos em tentativas/lic-ouro/ com o gerador estojo.py; ver na bancada com tipo=moldura, inteira=1 e img=tentativas/lic-ouro/claude-1.svg,tentativas/lic-ouro/claude-2.svg,tentativas/lic-ouro/claude-3.svg; no jogo o SVG entra por cima da .tt-lf (camada inteira, sem fatiar) |
 | cr-carta | cursor |  | pendente |  |
 | cr-agulha | cursor |  | pendente |  |
-| cr-ioio | cursor |  | pendente |  |
+| cr-ioio | cursor |  | gostei | 16/10: feito em código pelo Claude, sem o Gemini, a pedido do Caio (cursores/ioio.js: desenho e física); a bancada carrega a física pela ficha (fisica:'ioio' no itens.js), sem imagem; 16/10: ⚠ PROVISÓRIO: aprovado como está pelo Caio; o tamanho do fio e do ioiô (hoje raio 15 e fio 170 px) ele decide depois; captura em aprovadas/cr-ioio/ (enrolado e dormindo) |
 | fx-jajanken-pedra | efeito | #9BE15D | pendente |  |
 | fx-jajanken-papel | efeito | #9BE15D | pendente |  |
 | fx-jajanken-tesoura | efeito | #9BE15D | pendente |  |

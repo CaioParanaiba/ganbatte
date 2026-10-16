@@ -45,6 +45,14 @@ que é o jogo real do Caio.
 5. A cada item fechado (gostei ou pulado), faça commit no `~/ganbatte-arte` com `FILA.md`, `aprovadas/ID/` e os
    prompts mudados (adicione os arquivos pelo nome; `entrada/` fica fora do git) e dê push no branch.
 
+## Cursores (feitos em código pelo Claude, com física)
+
+Desde 16/10 os cursores não passam pelo Gemini: o Claude faz cada um em `cursores/NOME.js` (desenho em canvas e física,
+sem dependências, pronto para o jogo usar) e põe `fisica:'NOME'` na ficha do `itens.js`. A bancada com `tipo=cursor` vê a
+ficha, carrega o script e liga o cursor de verdade na tela preta, com prévias paradas do desenho; não há imagem nem
+`prepara`. Abra com `arte.abre` em `bancada.html?id=ID&tipo=cursor` e marque `gerado` na `FILA.md` à mão; o resto do ciclo
+(gostei, refazer, pular) é igual. No `gostei`, guarde em `aprovadas/ID/` uma captura do cursor na bancada.
+
 ## Itens que se melhoram em vez de refazer
 
 Ponha em `refs/ID/` a imagem do item como está hoje (recorte da vitrine `docs/lojas/masadora.html` ou

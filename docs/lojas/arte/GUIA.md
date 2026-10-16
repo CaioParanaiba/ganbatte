@@ -171,6 +171,8 @@ queimado, carimbo redondo pesado, selo quadrado estilo hanko, estêncil). Ficha 
 
 ### Cursores: carta do Hisoka, agulha do Illumi, ioiô do Killua
 Os três sobem de raridade com animação, que fica no código. Daqui saem só as peças.
+**Desde 16/10 os cursores são feitos em código pelo Claude, com física (`cursores/*.js`), sem o Gemini; a ficha abaixo
+fica só como registro.**
 ```
 - Item: Hisoka card / Illumi needle / Killua yo-yo (files: cr-carta.png, cr-agulha.png, cr-ioio.png)
 - Type: cursor (card and needle) and sprite (yo-yo body, separate from the string)

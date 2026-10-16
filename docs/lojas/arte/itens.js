@@ -3,6 +3,7 @@
 //   nome/loja: como aparece na vitrine · vit: onde o card está hoje (arq = associacao|masadora, id = id do item na vitrine;
 //   sem vit = não tem card) · hoje: como é hoje, em uma frase · arte: o que o desenho novo é.
 //   placa (emblema da licença): sem a caixa branca do emblema hunter ('sem') ou com a placa escura do Rei ('rei', como no jogo).
+//   fisica (cursor): o cursor é feito em código, com física, em cursores/NOME.js; a bancada usa ele no lugar da imagem.
 const ITENS = {
   'corrente-tira': {nome:'HP de corrente', loja:'Masadora', onde:'barra de XP e vida do chefão', vit:{arq:'masadora', id:'hp-corrente'},
     hoje:'A vida do chefão vira uma corrente vermelha, desenhada em código.', arte:'Uma tira de corrente que se repete em faixa (vira a barra de XP e a vida do chefão).'},
@@ -26,8 +27,8 @@ const ITENS = {
     hoje:'O cursor vira uma carta branca com um ♦ (desenhada em código).', arte:'Uma carta de baralho de verdade, em ângulo, com um naipe visível, legível em 32 px.'},
   'cr-agulha': {nome:'Agulha do Illumi', loja:'Masadora', onde:'cursor do mouse', vit:{arq:'masadora', id:'cr-agulha'},
     hoje:'O cursor vira uma agulha (um traço com uma argola, em código).', arte:'A agulha longa e fina do Illumi, com cabeça redonda, meio ameaçadora.'},
-  'cr-ioio': {nome:'Ioiô do Killua', loja:'Masadora', onde:'cursor do mouse', vit:{arq:'masadora', id:'cr-ioio'},
-    hoje:'O cursor vira o ioiô (um disco com fio, em código).', arte:'O ioiô pesado de aço do Killua, de lado, um disco grosso e legível.'},
+  'cr-ioio': {nome:'Ioiô do Killua', loja:'Masadora', onde:'cursor do mouse', vit:{arq:'masadora', id:'cr-ioio'}, fisica:'ioio',
+    hoje:'O cursor vira o ioiô (um disco com fio, em código).', arte:'Feito em código pelo Claude, sem o Gemini (cursores/ioio.js): o ioiô de aço do Killua de frente, com três raios recortados na face que giram com ele, pendurado num fio de verdade. Clique desce, segurar deixa esticado (dormindo), soltar volta; o fio balança com o mouse.'},
   'fx-jajanken-pedra': {nome:'Jajanken (pedra)', loja:'Masadora', onde:'efeito ao concluir uma tarefa', vit:{arq:'masadora', id:'fx-jajanken'},
     hoje:'O efeito é só o texto "PEDRA!" em letra de quadrinhos.', arte:'Pedra: o punho fechado do Gon carregado de nen, estilo do anime de 2011, com linhas de energia.'},
   'fx-jajanken-papel': {nome:'Jajanken (papel)', loja:'Masadora', onde:'efeito ao concluir uma tarefa', vit:{arq:'masadora', id:'fx-jajanken'},
