@@ -10,7 +10,7 @@ O `prepara.py` e o `aprova.py` atualizam esta tabela; a coluna `cor` é a cor de
 | bd-corrente | borda |  | gostei | refs: a tira e o elo aprovados; 1ª tentativa (montada da tira) não agradou; 16/10: gostou das 3 (cadeados, argolas, argola+cadeado); guardadas para analisar com calma; espessura e fatia a definir |
 | lic-exame | carimbo |  | gostei | 16/10: aprovou as 3 variações (念 anel duplo, visto, 念 anel triplo); guardadas para analisar; escolha do 念, visto ou 合格 fica para depois |
 | lic-chefao | carimbo |  | gostei | 16/10: aprovou as 3 (1: caveira+torre rachada, miolo cinza; 2: torre de tijolos com coroa e folhas; 3: caveira coroada com torre, mais limpa); guardadas para analisar |
-| lg-exame | carimbo |  | refazer | 16/10: selo de cera destoava da licença (textura); vira carimbo liso, 4 conceitos bem diferentes (queimado, redondo de tinta, hanko, estêncil); ver Variations no prompt |
+| lg-exame | carimbo |  | gerado | 16/10: selo de cera destoava da licença (textura); vira carimbo liso, 4 conceitos bem diferentes (queimado, redondo de tinta, hanko, estêncil); ver Variations no prompt; 16/10: só o conceito 2 (redondo de tinta, ampulheta) saiu; faltam queimado, hanko e estêncil: cota de imagem do agy esgotada até ~16h30 |
 | lic-emb-aranha | emblema |  | pendente |  |
 | lg-rei | emblema |  | pendente |  |
 | lic-ouro | moldura |  | pendente |  |
