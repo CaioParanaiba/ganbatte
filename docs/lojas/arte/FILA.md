@@ -9,7 +9,7 @@ O `prepara.py` e o `aprova.py` atualizam esta tabela; a coluna `cor` é a cor de
 | corrente-elo | emblema |  | gostei | 16/10: elo solto, usado nos cantos e no cursor |
 | bd-corrente | borda |  | gostei | refs: a tira e o elo aprovados; 1ª tentativa (montada da tira) não agradou; 16/10: gostou das 3 (cadeados, argolas, argola+cadeado); guardadas para analisar com calma; espessura e fatia a definir |
 | lic-exame | carimbo |  | gostei | 16/10: aprovou as 3 variações (念 anel duplo, visto, 念 anel triplo); guardadas para analisar; escolha do 念, visto ou 合格 fica para depois |
-| lic-chefao | carimbo |  | pendente |  |
+| lic-chefao | carimbo |  | gostei | 16/10: aprovou as 3 (1: caveira+torre rachada, miolo cinza; 2: torre de tijolos com coroa e folhas; 3: caveira coroada com torre, mais limpa); guardadas para analisar |
 | lg-exame | carimbo |  | pendente |  |
 | lic-emb-aranha | emblema |  | pendente |  |
 | lg-rei | emblema |  | pendente |  |
