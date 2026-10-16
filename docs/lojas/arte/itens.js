@@ -18,7 +18,7 @@ const ITENS = {
     hoje:'Licença holográfica com um carimbo de texto, "EXAME T1".', arte:'Um carimbo de fim de temporada, mais pesado e épico que os comuns, mas liso como a licença (nada de cera ou brilho). Final escolhido: o selo quadrado tipo hanko, vermelho, com um nó entalhado (era 1 de 4 conceitos).'},
   'lic-emb-aranha': {nome:'Emblema da Aranha', loja:'Associação', onde:'emblema da licença', placa:'sem', vit:{arq:'associacao', id:'lic-emb-aranha'},
     hoje:'A aranha de doze patas da Trupe no lugar do emblema hunter da licença.', arte:'Uma aranha estilizada de doze patas, vista de cima, ameaçadora mas simples, como emblema de tatuagem.'},
-  'lg-rei': {nome:'Emblema do Rei', loja:'Associação', onde:'emblema da licença e dos placares', placa:'rei', vit:{arq:'associacao', id:'lg-rei'},
+  'lg-rei': {nome:'Emblema do Rei', loja:'Associação', onde:'emblema da licença e dos placares', placa:'sem', vit:{arq:'associacao', id:'lg-rei'},
     hoje:'A coroa do Rei em ouro no lugar do emblema hunter, e ao lado do nome nos placares.', arte:'A coroa do Rei das Formigas-Quimera: formas orgânicas, meio de inseto, majestosa e estranha.'},
   'lic-ouro': {nome:'Estojo dourado', loja:'Associação', onde:'estojo em volta da licença', vit:{arq:'associacao', id:'lic-ouro'},
     hoje:'Estojo e borda dourados, em código.', arte:'Um estojo de ouro gravado em volta da licença, com ornamentos nos cantos e gravura fina.'},
