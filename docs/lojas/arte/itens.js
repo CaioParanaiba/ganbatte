@@ -14,7 +14,7 @@ const ITENS = {
   'lic-chefao': {nome:'Selo: chefão do grupo', loja:'Associação', onde:'carimbo na licença Hunter', vit:{arq:'associacao', id:'lic-chefao'},
     hoje:'Um carimbo de texto, "CHEFÃO ✓", azul, sobre a licença.', arte:'Um selo retangular oficial (coroa e caveira, ou torre quebrada), no mesmo estilo de carimbo de borracha.'},
   'lg-exame': {nome:'Licença do Exame Hunter', loja:'Associação', onde:'carimbo da licença lendária', vit:{arq:'associacao', id:'lg-exame'},
-    hoje:'Licença holográfica com um carimbo de texto, "EXAME T1".', arte:'Um selo de cera com folha de ouro, como o que fecha uma carta do exame; mais pesado e cerimonial que um carimbo comum.'},
+    hoje:'Licença holográfica com um carimbo de texto, "EXAME T1".', arte:'Um carimbo de fim de temporada, mais pesado e épico que os comuns, mas liso como a licença (nada de cera ou brilho). São 4 conceitos bem diferentes: carimbo queimado, redondo de tinta, selo quadrado tipo hanko e estêncil.'},
   'lic-emb-aranha': {nome:'Emblema da Aranha', loja:'Associação', onde:'emblema da licença', vit:{arq:'associacao', id:'lic-emb-aranha'},
     hoje:'A aranha de doze patas da Trupe no lugar do emblema hunter da licença.', arte:'Uma aranha estilizada de doze patas, vista de cima, ameaçadora mas simples, como emblema de tatuagem.'},
   'lg-rei': {nome:'Emblema do Rei', loja:'Associação', onde:'emblema da licença e dos placares', vit:{arq:'associacao', id:'lg-rei'},

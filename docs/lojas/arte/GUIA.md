@@ -129,16 +129,9 @@ Na reavaliação: "não parece um carimbo, parece só um texto".
 ```
 
 ### Licença do Exame Hunter (`lg-exame`, lendário)
-"Não é tão épico para um desafio em grupo, e não parece carimbo."
-```
-- Item: Legendary Hunter Exam seal (file: lg-exame.png)
-- Type: stamp
-- Canvas: 1024×1024, centered, 12% margin
-- Color: fixed palette: #B8892E gold foil, #5A1A1A wax
-- Freedom: high
-- Description: a wax seal with gold-foil pressing, the kind that closes a sealed exam letter. Heavier and more ceremonial than the common stamps.
-- Avoid: words, glow effects.
-```
+"Não é tão épico para um desafio em grupo, e não parece carimbo." A 1ª tentativa (selo de cera dourado) foi refeita em
+16/10: a textura destoava da licença e o Caio prefere carimbo; a ficha atual pede 4 conceitos bem diferentes (carimbo
+queimado, carimbo redondo pesado, selo quadrado estilo hanko, estêncil). Ficha completa em `prompts/lg-exame.md`.
 
 ### Emblema da Aranha (`lic-emb-aranha`)
 "Refazer aranha."
