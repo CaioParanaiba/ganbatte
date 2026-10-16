@@ -42,6 +42,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   GET  /api/ia                            agentes de terminal achados, a escolha do jogador e os planos de ensino da pasta planos/
   POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini | agy) ou volta ao copiar e colar (chat)
   POST /api/ia/rodar {pedido, anexo?, leve?} roda o agente com o pedido da página → {id}; GET /api/ia/rodar?id= até ficar pronto
+  POST /api/ia/cancela {id}              para o pedido rodando: encerra o agente e libera a vaga (#115)
   POST /api/ia/plano {nome, base64}       guarda um plano de ensino em planos/
   POST /api/conquistas {acao, ...}        conquistas da IA: criar {itens} | resgatar {no, como, j|k} | descartar {no}
   GET  /api/atualizacao[?agora]           versão instalada e as mais novas publicadas no GitHub (confere a cada 6 h; ?agora = na hora)
@@ -77,6 +78,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -1846,7 +1848,7 @@ PEDIDO_ARQ = ".pedido.txt"   # o agy não lê a entrada padrão: o pedido vai nu
 IA_TEMPO = 600   # segundos por pedido
 PLANO_EXT = {".pdf", ".html", ".htm", ".txt", ".md", ".docx"}
 NOME_PLANO = re.compile(r"^[\w .()\-]{1,80}$")
-ia_tarefas = {}   # id → {"estado": rodando|pronto|erro, "texto", "erro", "ini", "seg"}
+ia_tarefas = {}   # id → {"estado": rodando|pronto|erro|cancelado, "texto", "erro", "ini", "seg", "proc"}
 ia_lock = threading.Lock()   # um pedido por vez
 
 
@@ -1965,6 +1967,7 @@ def explica_erro(ag, saida):
 def ia_executa(tid, ag, exe, pedido, anexos, leve):
     import tempfile
     t = ia_tarefas[tid]
+    fim = {"estado": "erro", "erro": "o agente parou sem responder"}   # vale só depois de liberar a vaga (o próximo pedido não leva 409)
     try:
         with tempfile.TemporaryDirectory(prefix="ganbatte-ia-") as pasta:
             if anexos:
@@ -1979,19 +1982,34 @@ def ia_executa(tid, ag, exe, pedido, anexos, leve):
                 pedido = ""
             # GEMINI_CLI_TRUST_WORKSPACE: o Gemini CLI só roda sem perguntar em pasta confiável, e a temporária é nova a cada pedido
             env = dict(os.environ, PATH=os.pathsep.join([str(Path(exe).parent), path_agentes()]), GEMINI_CLI_TRUST_WORKSPACE="true")
-            r = subprocess.run(comando_agente(ag, exe, pasta, saida, leve), input=pedido, capture_output=True, text=True, encoding="utf-8",
-                               errors="replace", cwd=pasta, env=env, timeout=IA_TEMPO)
-            texto = Path(saida).read_text(encoding="utf-8") if ag == "codex" and Path(saida).exists() else r.stdout
-            if r.returncode != 0 or not texto.strip():
-                raise Erro(explica_erro(ag, (r.stderr or "") + " " + (r.stdout or "")))
-            t.update(estado="pronto", texto=texto.strip())
+            # grupo de processos próprio: cancelar (#115) ou estourar o tempo encerra o agente e o que ele abriu
+            grupo = {"creationflags": 0x00000200} if os.name == "nt" else {"start_new_session": True}   # CREATE_NEW_PROCESS_GROUP
+            p = subprocess.Popen(comando_agente(ag, exe, pasta, saida, leve), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace", cwd=pasta, env=env, **grupo)
+            t["proc"] = p
+            if t.get("cancelado"):   # cancelado antes de o agente abrir
+                ia_mata(p)
+            try:
+                out, err = p.communicate(pedido, timeout=IA_TEMPO)
+            except subprocess.TimeoutExpired:
+                ia_mata(p)
+                raise
+            if t.get("cancelado"):
+                fim = {"estado": "cancelado"}
+                return
+            texto = Path(saida).read_text(encoding="utf-8") if ag == "codex" and Path(saida).exists() else out
+            if p.returncode != 0 or not texto.strip():
+                raise Erro(explica_erro(ag, (err or "") + " " + (out or "")))
+            fim = {"estado": "pronto", "texto": texto.strip()}
     except subprocess.TimeoutExpired:
-        t.update(estado="erro", erro=f"o agente passou de {IA_TEMPO // 60} minutos sem responder")
+        fim = {"estado": "erro", "erro": f"o agente passou de {IA_TEMPO // 60} minutos sem responder"}
     except (Erro, OSError) as e:
-        t.update(estado="erro", erro=str(e))
+        fim = {"estado": "erro", "erro": str(e)}
     finally:
         t["seg"] = round(time.time() - t["ini"])
+        t.pop("proc", None)
         ia_lock.release()
+        t.update(fim)
         log("ia:", ag, t["estado"], f"{t['seg']}s")
 
 
@@ -2017,6 +2035,36 @@ def api_ia_rodar(d):
     ia_tarefas[tid] = {"estado": "rodando", "texto": "", "erro": "", "ini": time.time(), "seg": 0, "agente": ag}
     threading.Thread(target=ia_executa, args=(tid, ag, exe, pedido, anexos, bool(d.get("leve"))), daemon=True).start()
     return {"ok": True, "id": tid}
+
+
+def ia_mata(p):
+    """Encerra o agente e os processos que ele abriu (#115): no Windows pela árvore (taskkill /T), nos outros pelo grupo."""
+    if p.poll() is not None:
+        return
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(p.pid)], capture_output=True, timeout=15)
+        else:
+            os.killpg(p.pid, signal.SIGTERM)
+            try:
+                p.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                os.killpg(p.pid, signal.SIGKILL)
+    except (OSError, subprocess.SubprocessError):
+        p.kill()
+
+
+def api_ia_cancela(d):
+    """Botão "cancelar" (#115): {id} do pedido rodando. O agente para e a vaga para o próximo pedido fica livre."""
+    t = ia_tarefas.get(str(d.get("id") or ""))
+    if not t:
+        raise Erro("pedido não encontrado (o servidor reiniciou?)", 404)
+    if t["estado"] == "rodando":
+        t["cancelado"] = True
+        p = t.get("proc")
+        if p:
+            ia_mata(p)
+    return {"ok": True}
 
 
 def api_ia_tarefa(tid):
@@ -2731,7 +2779,7 @@ def api_autostart(d):
 
 ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/reabre": api_reabre, "/api/config": api_config, "/api/ontem": api_ontem, "/api/denovo": api_denovo, "/api/autostart": api_autostart,
          "/api/jogo/nota": api_jogo_nota, "/api/jogo/planos": api_jogo_planos, "/api/jogo/narrada": api_jogo_narrada, "/api/jogo/ajuste": api_jogo_ajuste, "/api/jogo/estado": api_jogo_estado,
-         "/api/cf/mao": api_cf_mao, "/api/contrib": api_contrib, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/plano": api_ia_plano,
+         "/api/cf/mao": api_cf_mao, "/api/contrib": api_contrib, "/api/ia/config": api_ia_config, "/api/ia/rodar": api_ia_rodar, "/api/ia/cancela": api_ia_cancela, "/api/ia/plano": api_ia_plano,
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada, "/api/colecao": api_colecao,
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
          "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,

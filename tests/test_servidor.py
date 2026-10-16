@@ -4,6 +4,7 @@ Cada teste usa uma pasta de dados temporária (nunca a ~/.ganbatte) e um "hoje" 
 (Codeforces, Duolingo, GitHub) é trocado por respostas prontas. Só a biblioteca padrão, como o servidor.
 """
 import json
+import os
 import sys
 import tempfile
 import time
@@ -403,6 +404,59 @@ class TarefasDev(Base):
             self.assertEqual(s.api_contrib({}), {"ok": True})
 
 
+class CancelarIA(Base):
+    """#115: cancelar encerra o agente (e o que ele abriu) e libera a vaga para o próximo pedido."""
+
+    def roda(self, codigo, com_filho=False):
+        pid = Path(self.tmp.name) / "filho.pid"
+        filho = ("f = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'], stdout=subprocess.DEVNULL,"
+                 f" stderr=subprocess.DEVNULL); open({str(pid)!r}, 'w').write(str(f.pid)); ") if com_filho else ""
+        cmd = [sys.executable, "-c", "import subprocess, sys, time; " + filho + codigo]
+        for alvo, valor in (("ia_conf", lambda: {"agente": "claude"}), ("acha_agente", lambda ag: sys.executable),
+                            ("comando_agente", lambda *a, **k: cmd)):
+            p = mock.patch.object(s, alvo, valor)
+            p.start()
+            self.addCleanup(p.stop)
+        tid = s.api_ia_rodar({"pedido": "oi"})["id"]
+        self.addCleanup(lambda: (s.api_ia_cancela({"id": tid}), self.espera(tid, ("pronto", "cancelado", "erro"))))
+        return tid, pid
+
+    def espera(self, tid, estado):
+        for _ in range(100):
+            if s.api_ia_tarefa(tid)["estado"] in ((estado,) if isinstance(estado, str) else estado):
+                return
+            time.sleep(0.1)
+        self.fail(f"o pedido não chegou a {estado}")
+
+    @unittest.skipIf(os.name == "nt", "o processo de teste usa sinais do Linux/Mac")
+    def test_cancelar_para_o_agente_e_o_filho(self):
+        tid, pid = self.roda("time.sleep(60)", com_filho=True)
+        for _ in range(50):
+            if pid.exists() and pid.read_text():
+                break
+            time.sleep(0.1)
+        self.assertEqual(s.api_ia_cancela({"id": tid}), {"ok": True})
+        self.espera(tid, "cancelado")
+        self.assertFalse(s.ia_lock.locked())
+        filho = int(pid.read_text())
+        for _ in range(30):
+            try:
+                os.kill(filho, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.1)
+        else:
+            self.fail("o processo aberto pelo agente continuou rodando")
+
+    def test_cancelar_depois_de_pronto_nao_muda(self):
+        tid, _ = self.roda("print('resposta')")
+        self.espera(tid, "pronto")
+        s.api_ia_cancela({"id": tid})
+        self.assertEqual(s.api_ia_tarefa(tid)["texto"], "resposta")
+        with self.assertRaises(s.Erro):
+            s.api_ia_cancela({"id": "nao-existe"})
+
+
 class ConquistasIA(Base):
     def item(self, rk, n=10):
         return {"regra": "contagem", "n": n, "tipo": "est", "nome": f"Estudo {n}", "texto": "", "rk": rk}
@@ -654,12 +708,16 @@ class Agentes(Base):
     def roda(self, ag, saida="ok", erro="", rc=0):
         visto = {}
 
-        def falso(cmd, input=None, cwd=None, env=None, **kw):
-            visto.update(cmd=cmd, input=input, env=env, arquivos={f.name: f.read_text(encoding="utf-8") for f in Path(cwd).iterdir()})
-            return mock.Mock(returncode=rc, stdout=saida, stderr=erro)
+        def falso(cmd, cwd=None, env=None, **kw):   # Popen do agente (#115: cancelável)
+            arquivos = {f.name: f.read_text(encoding="utf-8") for f in Path(cwd).iterdir()}
+
+            def communicate(input=None, timeout=None):
+                visto.update(cmd=cmd, input=input, env=env, arquivos=arquivos)
+                return saida, erro
+            return mock.Mock(returncode=rc, communicate=communicate, poll=lambda: rc)
         s.ia_tarefas["t"] = {"estado": "rodando", "texto": "", "erro": "", "ini": time.time(), "seg": 0}
         s.ia_lock.acquire()
-        with mock.patch.object(s.subprocess, "run", falso), mock.patch.object(s, "path_agentes", lambda: ""):
+        with mock.patch.object(s.subprocess, "Popen", falso), mock.patch.object(s, "path_agentes", lambda: ""):
             s.ia_executa("t", ag, "/bin/" + ag, "PEDIDO", [], False)
         return visto, s.ia_tarefas["t"]
 
