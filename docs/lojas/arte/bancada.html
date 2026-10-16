@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- bancada da fila de arte: testa uma imagem num pedaço do jogo, sem o jogo inteiro. Aberta pelo link que o arte.py imprime
+<!-- bancada da fila de arte: testa uma imagem num pedaço do jogo, sem o jogo inteiro; no topo, a ficha do item (itens.js). Aberta pelo link que o arte.py imprime
      (?id=…&tipo=tira|borda|moldura|cursor|emblema|carimbo|efeito|textura&cor=hex&img=entrada/ID/pronto-1.png,…) -->
 <title>Bancada de arte</title>
 <style>
@@ -45,6 +45,14 @@ h2{margin:0 0 8px;font:600 12px var(--f-mono);color:var(--dim);letter-spacing:.0
 @keyframes fx{0%{opacity:0;transform:scale(.2) rotate(-12deg)}25%{opacity:1;transform:scale(1.15) rotate(4deg)}45%{transform:scale(1) rotate(0)}100%{opacity:0;transform:translateY(-90px) scale(.9)}}
 .lic{position:relative;width:300px;height:190px;border-radius:12px;background:#E9E4D8;color:#2B1D14;padding:16px;font:700 13px var(--f-mono)}
 .lic .tn,.lic .pura{position:absolute;right:18px;bottom:14px;width:96px;height:96px;transform:rotate(-10deg);mix-blend-mode:multiply}
+.ficha .fi{display:flex;flex-wrap:wrap;gap:18px 26px;align-items:flex-start}
+.ficha .fi-t{flex:1 1 280px;max-width:520px;display:grid;gap:8px}
+.ficha .fi-t b{font:700 17px var(--f-ui)}
+.ficha .fi-t > span{font:600 12px var(--f-mono);color:var(--dim)}
+.ficha p{margin:0}.ficha p i{font-style:normal;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--amb)}
+.ficha .aviso{color:var(--dim);font-size:12.5px}
+.ficha figure{margin:0;display:grid;gap:6px}.ficha figure img{display:block;max-width:min(380px,100%);border-radius:8px;border:1px solid var(--line)}
+.ficha figcaption{font:12px var(--f-mono);color:var(--dim)}
 .mold{position:relative;width:min(360px,100%);aspect-ratio:1.6}
 .mold .dentro{position:absolute;inset:16%;background:#13213A;border-radius:6px;display:grid;place-items:center;color:#9FB2CF;font:600 12px var(--f-mono)}
 .mold .pura{position:absolute;inset:0}
@@ -58,6 +66,7 @@ h2{margin:0 0 8px;font:600 12px var(--f-mono);color:var(--dim);letter-spacing:.0
   <span id="extra"></span>
 </header>
 <main id="main"></main>
+<script src="itens.js"></script>
 <script>
 const Q = new URLSearchParams(location.search);
 const ID = Q.get('id') || '?', TIPO = Q.get('tipo') || 'emblema', IMGS = (Q.get('img') || '').split(',').filter(Boolean);
@@ -67,6 +76,18 @@ document.getElementById('nome').textContent = ID;
 document.getElementById('tipo').textContent = TIPO;
 document.title = 'Bancada · ' + ID;
 const main = document.getElementById('main');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+// ficha do item (itens.js): de qual item da vitrine é a arte, e como ele é hoje (foto do card, tirada pelo hoje.mjs)
+const FICHA = (typeof ITENS !== 'undefined' && ITENS[ID]) || null;
+if(FICHA) document.title = 'Bancada · ' + FICHA.nome;
+function ficha(){
+  if(!FICHA) return '';
+  const f = FICHA, v = f.vit;
+  const foto = v ? `<figure><img src="${encodeURI('hoje/' + v.arq + '-' + v.id + '.png')}" alt="card de ${esc(f.nome)} na vitrine" onerror="this.closest('figure').remove()"><figcaption>o card na vitrine ${v.arq === 'masadora' ? 'da Masadora' : 'da Associação'}, como é hoje</figcaption></figure>` : '';
+  return `<section class="ficha"><h2>de qual item é esta arte</h2><div class="fi"><div class="fi-t"><b>${esc(f.nome)}</b><span>${esc(f.loja)} · ${esc(f.onde)}</span>
+    <p><i>Como é hoje</i><br>${esc(f.hoje)}</p><p><i>A arte nova</i><br>${esc(f.arte)}</p>
+    <p class="aviso">O que a fila gera é só o desenho das variações. O resto da página (licença, tamanhos, card do Killua, barras…) é pedaço de teste para julgar o desenho em uso; nada disso vai para o jogo.</p></div>${foto}</div></section>`;
+}
 const url = () => `url('${encodeURI(IMGS[atual])}')`;
 const usaCor = () => COR && document.getElementById('usa-cor').checked;
 const pinta = (cor) => usaCor() || cor ? `class="tn" style="--u:${url()};--c:${cor || COR}` : `class="pura" style="--u:${url()}`;
@@ -118,7 +139,7 @@ function desenha(){
     h.push(`<section><h2>128 · 64 · 48 · 32 px no escuro</h2><div class="linha">${[128,64,48,32].map(x => `<div ${pinta()};width:${x}px;height:${x}px"></div>`).join('')}</div></section>`);
     h.push(`<section><h2>no card</h2><div class="card" style="display:flex;gap:14px;align-items:center;width:min(360px,100%)"><div ${pinta()};width:44px;height:44px;flex:none"></div><div><b>Killua</b><small>2º da semana · 1.840</small></div></div></section>`);
   }
-  main.innerHTML = h.join('');
+  main.innerHTML = ficha() + h.join('');
   liga();
 }
 
