@@ -7,7 +7,7 @@ O `prepara.py` e o `aprova.py` atualizam esta tabela; a coluna `cor` é a cor de
 |---|---|---|---|---|
 | corrente-tira | tira | #F7768E | gostei | 16/10: tira do Gemini, metade de cima espelhada e cortada em 2 elos; boa na barra de XP e na vida do chefão |
 | corrente-elo | emblema |  | gostei | 16/10: elo solto, usado nos cantos e no cursor |
-| bd-corrente | borda |  | pendente | refs: a tira e o elo aprovados; 1ª tentativa (montada da tira) não agradou |
+| bd-corrente | borda |  | gerado | refs: a tira e o elo aprovados; 1ª tentativa (montada da tira) não agradou |
 | lic-exame | carimbo |  | pendente |  |
 | lic-chefao | carimbo |  | pendente |  |
 | lg-exame | carimbo |  | pendente |  |

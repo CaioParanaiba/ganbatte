@@ -1,5 +1,6 @@
 """Fila de arte das lojas: prepara as imagens que o gerador salvou e registra o que o Caio achou.
 
+  python3 docs/lojas/arte/arte.py gera ID [--espelha]      pede ao Antigravity (agy -p), espera, copia as imagens e prepara
   python3 docs/lojas/arte/arte.py prepara ID [--espelha]   limpa entrada/ID/* (tira o magenta, recorta) e mostra o link da bancada
   python3 docs/lojas/arte/arte.py gostei ID N [nota]       guarda a variação N em aprovadas/ID/ (não é a decisão final)
   python3 docs/lojas/arte/arte.py refazer ID "o que mudar"  volta para o gerador com a nota
@@ -7,7 +8,7 @@
 
 Os tipos e as cores de teste vêm da FILA.md. --espelha (só tira): usa a metade de cima e espelha, quando a de baixo
 veio suja. Precisa de Pillow e numpy."""
-import shutil, sys
+import json, shutil, subprocess, sys
 from datetime import date
 from pathlib import Path
 
@@ -101,6 +102,38 @@ def prepara(ident, espelha):
     print('\nbancada:', url)
 
 
+def gera(ident):
+    """O agy salva as imagens na pasta da conversa dele (~/.gemini/antigravity-cli/brain/ID-DA-CONVERSA/); daqui elas
+    são copiadas para entrada/ID/, continuando a numeração."""
+    linha(ident)
+    pasta = AQUI / 'entrada' / ident
+    pasta.mkdir(parents=True, exist_ok=True)
+    pedido = (f'Leia docs/lojas/arte/AGY.md e siga as instruções dele: gere {ident}. '
+              'Não use o terminal (nenhum comando): só leitura de arquivos e a sua ferramenta de gerar imagem.')
+    r = subprocess.run(['agy', '-p', pedido, '--mode', 'accept-edits', '--output-format', 'stream-json', '--print-timeout', '900s'],
+                       cwd=AQUI.parent.parent.parent, capture_output=True, text=True, timeout=960)
+    conv = None
+    for ln in r.stdout.splitlines():
+        try:
+            ev = json.loads(ln)
+        except ValueError:
+            continue
+        if ev.get('event') == 'result':
+            conv = ev['result'].get('conversation_id')
+            print(ev['result'].get('status'), '·', ev['result'].get('response', '')[:300].replace('\n', ' '))
+    if not conv:
+        sys.exit('o agy não respondeu:\n' + (r.stderr or r.stdout)[-800:])
+    brain = Path.home() / '.gemini' / 'antigravity-cli' / 'brain' / conv
+    novas = sorted((f for f in brain.glob('*') if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.webp')), key=lambda f: f.stat().st_mtime)
+    if not novas:
+        sys.exit(f'nenhuma imagem em {brain}')
+    n = len([f for f in pasta.glob(f'{ident}-*')])
+    for f in novas:
+        n += 1
+        shutil.copy(f, pasta / f'{ident}-{n}{f.suffix.lower()}')
+    print(f'{len(novas)} imagem(ns) copiada(s) para {pasta.relative_to(AQUI)}')
+
+
 def gostei(ident, n, nota):
     src = AQUI / 'entrada' / ident / f'pronto-{n}.png'
     if not src.exists():
@@ -117,7 +150,10 @@ if __name__ == '__main__':
     if len(a) < 2:
         sys.exit(__doc__)
     cmd, ident = a[0], a[1]
-    if cmd == 'prepara':
+    if cmd == 'gera':
+        gera(ident)
+        prepara(ident, '--espelha' in a)
+    elif cmd == 'prepara':
         prepara(ident, '--espelha' in a)
     elif cmd == 'gostei':
         gostei(ident, a[2] if len(a) > 2 else '1', ' '.join(a[3:]))

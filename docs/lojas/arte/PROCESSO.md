@@ -9,8 +9,11 @@ que é o jogo real do Caio.
 
 ## Um ciclo
 
-1. O Caio diz qual item gerou (ou "gerei o próximo"). Confira em `FILA.md` qual é e se existe `entrada/ID/`.
-2. Prepare: `python3 docs/lojas/arte/arte.py prepara ID` (na tira, `--espelha` se só uma metade veio limpa). O script
+1. O Caio diz qual item quer (ou "o próximo": a primeira linha `refazer` ou `pendente` da `FILA.md`).
+2. Gere e prepare: `python3 docs/lojas/arte/arte.py gera ID` (rode em segundo plano; o Antigravity leva 1 a 3 minutos).
+   Ele chama o `agy -p`, que lê o `AGY.md`, gera 3 variações com as referências, e o script copia da pasta da conversa
+   do agy para `entrada/ID/` e já prepara. Se o Caio gerou à mão, use só `arte.py prepara ID`.
+   O preparo (na tira, `--espelha` se só uma metade veio limpa). O script
    tira o magenta, recorta, acerta a emenda das tiras, salva `entrada/ID/pronto-N.png`, marca `gerado` e imprime o link
    da bancada.
 3. Mande ao Caio o link da bancada (`bancada.html?...`). Ela já tem as variações lado a lado, cor do teste, e o pedaço

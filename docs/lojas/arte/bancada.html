@@ -79,7 +79,7 @@ IMGS.forEach((_, i) => { const b = document.createElement('button'); b.textConte
   b.onclick = () => { atual = i; vars.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i))); desenha(); }; vars.append(b); });
 
 // controles que só a borda e o cursor usam
-const st = {esp: 10, fatia: 12, s: 40};
+const st = {esp: 16, fatia: 12, s: 40};
 function controle(k, rot, min, max, un){
   const l = document.createElement('label'); l.innerHTML = `${rot} <input type="range" id="c-${k}" min="${min}" max="${max}" value="${st[k]}"> <output>${st[k]}${un}</output>`;
   l.querySelector('input').oninput = e => { st[k] = +e.target.value; l.querySelector('output').textContent = st[k] + un; desenha(); };

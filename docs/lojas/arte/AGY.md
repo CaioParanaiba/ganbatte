@@ -15,12 +15,13 @@ Todos os caminhos abaixo são relativos a `docs/lojas/arte/`.
    - se o status for `refazer`, mais uma linha: `Changes requested: ` seguida da nota mais recente da coluna `nota`.
 3. Se existir a pasta `refs/ID/`, anexe **todas** as imagens dela à geração como imagens de referência.
 4. Gere **3 variações** com a sua ferramenta de geração de imagem. Tem de ser imagem (PNG ou JPG), nunca SVG nem código.
-5. Salve em `entrada/ID/` (crie a pasta) como `ID-1.png`, `ID-2.png`, `ID-3.png`. Se já existirem arquivos lá, continue
-   a numeração; não sobrescreva nem apague nada.
-6. Responda só com: os arquivos salvos e o prompt exato que usou.
+5. Deixe as imagens onde a ferramenta de imagem salva (a pasta da conversa): o `arte.py gera` copia de lá para
+   `entrada/ID/`. Se estiver rodando numa janela do Antigravity (não pelo `arte.py`), salve você mesmo em `entrada/ID/`
+   como `ID-1.png`, `ID-2.png`, `ID-3.png`, continuando a numeração se já houver arquivos.
+6. Responda só com: os arquivos gerados e o prompt exato que usou.
 
 ## Não faça
 
-- Não edite nenhum arquivo (nem a `FILA.md`), não rode scripts e não faça commit: o Claude cuida disso.
+- Não use o terminal, não edite nenhum arquivo (nem a `FILA.md`), não rode scripts e não faça commit: o Claude cuida disso.
 - Não gere o próximo item sem pedirem.
 - Não troque o fundo magenta (#FF00FF) por transparência nem por outra cor: ele é recortado depois.
