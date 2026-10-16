@@ -1,16 +1,16 @@
 # Fila de arte
 
 Uma linha por imagem. Status: `pendente` → `gerado` (o gerador salvou em `entrada/`) → `gostei` (guardada em `aprovadas/`, para os outros devs verem; não é a decisão final) ou `refazer` (a nota diz o que mudar) ou `pulado` (fica para depois).
-O `prepara.py` e o `aprova.py` atualizam esta tabela; a coluna `cor` é a cor de teste na bancada (vazio = cor própria do desenho).
+Nota com **⚠ PROVISÓRIO** = aprovado, mas ainda não 100% fechado (pode ser trocado). O `prepara.py` e o `aprova.py` atualizam esta tabela; a coluna `cor` é a cor de teste na bancada (vazio = cor própria do desenho).
 
 | id | tipo | cor | status | nota |
 |---|---|---|---|---|
 | corrente-tira | tira | #F7768E | gostei | 16/10: tira do Gemini, metade de cima espelhada e cortada em 2 elos; boa na barra de XP e na vida do chefão |
 | corrente-elo | emblema |  | gostei | 16/10: elo solto, usado nos cantos e no cursor |
-| bd-corrente | borda |  | refazer | refs: a tira e o elo aprovados; 1ª tentativa (montada da tira) não agradou; 16/10: gostou das 3 (cadeados, argolas, argola+cadeado); guardadas para analisar com calma; espessura e fatia a definir; 16/10: melhorar as 3 aprovadas: corrente mais fina e tudo dentro da faixa externa (cadeados/argolas dos cantos não passam dela, sem pedaços de elo cortados ou pontudos invadindo o campo) |
+| bd-corrente | borda |  | gostei | refs: a tira e o elo aprovados; 1ª tentativa (montada da tira) não agradou; 16/10: gostou das 3 (cadeados, argolas, argola+cadeado); guardadas para analisar com calma; espessura e fatia a definir; 16/10: melhorar as 3 aprovadas: corrente mais fina e tudo dentro da faixa externa (cadeados/argolas dos cantos não passam dela, sem pedaços de elo cortados ou pontudos invadindo o campo); 16/10: ⚠ PROVISÓRIO, NÃO 100% FECHADO: variação 1, espessura 11 px e fatia 12 %; a versão refeita com a faixa contida (pasta no Downloads) ainda pode substituir |
 | lic-exame | carimbo |  | gostei | 16/10: aprovou as 3 variações (念 anel duplo, visto, 念 anel triplo); guardadas para analisar; escolha do 念, visto ou 合格 fica para depois; 16/10: FINAL: variação 1 (念, anel duplo) aceita pelo Caio; as outras 2 ficam como alternativas |
 | lic-chefao | carimbo |  | gostei | 16/10: aprovou as 3 (1: caveira+torre rachada, miolo cinza; 2: torre de tijolos com coroa e folhas; 3: caveira coroada com torre, mais limpa); guardadas para analisar; 16/10: FINAL: variação 2 (torre de tijolos, coroa e folhas) aceita pelo Caio; as outras 2 ficam como alternativas |
-| lg-exame | carimbo |  | gerado | 16/10: selo de cera destoava da licença (textura); vira carimbo liso, 4 conceitos bem diferentes (queimado, redondo de tinta, hanko, estêncil); ver Variations no prompt; 16/10: só o conceito 2 (redondo de tinta, ampulheta) saiu; faltam queimado, hanko e estêncil: cota de imagem do agy esgotada até ~16h30 |
+| lg-exame | carimbo |  | gostei | 16/10: selo de cera destoava da licença (textura); vira carimbo liso, 4 conceitos bem diferentes (queimado, redondo de tinta, hanko, estêncil); ver Variations no prompt; 16/10: só o conceito 2 (redondo de tinta, ampulheta) saiu; faltam queimado, hanko e estêncil: cota de imagem do agy esgotada até ~16h30; 16/10: FINAL, 100% aprovado pelo Caio: conceito 3 (selo quadrado hanko, nó entalhado em vermelho); o carimbo redondo da ampulheta fica como alternativa |
 | lic-emb-aranha | emblema |  | pendente |  |
 | lg-rei | emblema |  | pendente |  |
 | lic-ouro | moldura |  | pendente |  |
