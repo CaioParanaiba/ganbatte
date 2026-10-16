@@ -1390,7 +1390,15 @@ def api_jogo_estado(d):
             raise Erro("compra inválida no registro")
     with lock:
         antigo = ler_json("estado.json", {})
+        # recálculo do zero (#126, migra.recalculo): a primeira gravação com ele troca os dias fechados inteiros (podem descer);
+        # depois, uma aba de antes dele não devolve os números antigos
+        recalc = lambda x: isinstance(x, dict) and isinstance(x.get("migra"), dict) and "recalculo" in x["migra"]
+        if recalc(antigo) and not recalc(e):
+            e["migra"] = {**e.get("migra", {}), "recalculo": antigo["migra"]["recalculo"]}
+            e["xpDias"] = antigo.get("xpDias", {})
         for k in RECIBOS:   # recibos da carteira: uma aba antiga aberta não apaga o que outra já gravou
+            if k == "xpDias" and recalc(e) and not recalc(antigo):
+                continue
             if isinstance(antigo, dict) and isinstance(antigo.get(k), dict):
                 e[k] = {**e.get(k, {}), **antigo[k]} if k == "travas" else {**antigo[k], **e.get(k, {})}   # trava de chefão: vale a primeira
                 if k == "xpDias":   # XP de um dia fechado só sobe

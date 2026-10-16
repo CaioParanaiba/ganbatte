@@ -56,7 +56,7 @@ const compras = [{d:'2026-10-14', tipo:'cos', id:'ch-hisoka', j:1500}, {d:'2026-
   {d:'2026-10-14', tipo:'cos', id:'tt-floor', j:800}, {d:'2026-10-14', tipo:'premio', id:'premio', j:500}];
 assert.equal(GB.retratosJ(compras), 3000);
 const api = estado => ({hoje:'2026-10-15', todo:[], done:[], avaliacoes:'temporada | Teste | 2026-09-01 | 2026-12-01 | 2027-01-01', notas:'', jogador:{}, estado});
-const base = {spent:4300, acertos:{'0.5.2':0, '0.6.4':0}};
+const base = {spent:4300, acertos:{'0.5.2':0, '0.6.4':0, recalculo:0}};   // já recalculado (#126): a carteira negativa do teste fica
 const S = e => GB.estado(GB.carregar(api(e)));
 const com = S({...base, compras}), sem = S({...base, compras:compras.slice(2)});
 assert.equal(com.retJ, 3000); assert.equal(sem.retJ, 0);

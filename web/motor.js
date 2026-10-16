@@ -468,6 +468,11 @@ const ESF_XP = {rapido:10, medio:15, demorado:25};
 const DUO_LEGADO = '2026-10-12';
 const duoDesde = C => (C.D.duo && C.D.duo.desde) || DUO_LEGADO;
 const duoAntes = (t, de) => /^duo:/.test(t.rec || '') && String(t.rec).split(':')[1] < de;
+/* corte do XP (#126): só conta o que foi feito a partir do início da temporada. O dia fica gravado no recálculo (estado.json →
+   migra.recalculo.ini) e não anda sozinho na temporada seguinte: o que zera na troca de temporada ainda não foi decidido */
+const RECALC = 'recalculo';
+const xpDesde = C => (C.EST && C.EST.migra && C.EST.migra[RECALC] && C.EST.migra[RECALC].ini) || C.TEMP.ini;
+const antesDe = (t, ini) => !!t.done && t.done < ini;
 /* nível por hábito (0.6.4): cada hábito tem o seu, de 1 a 10, e vale nível + 2 XP (3 a 12). Do 1 ao 6 sobe a cada 7 dias seguidos
    feitos; depois cada nível pede uma semana a mais (6→7: 14 dias, 7→8: 21, 8→9: 28, 9→10: 35). Falhar um dia cai um nível (nunca
    zera) e a contagem recomeça. Hábito semanal: o mesmo em semanas com a meta batida. O nível sai do histórico inteiro; a tabela
@@ -513,18 +518,19 @@ function ten(set, first, HOJE, zetsuExtra, fer, salvo){
   }
   return {cur, max, zet, st};
 }
-/* Duolingo (#51): os dias da ofensiva atual que não estão no done.txt (os de antes da temporada) também sobem o nível do hábito,
-   sem XP: a ofensiva lida (duo.json → ult) menos os dias dela que já estão na lista */
-function duoPre(C, dias){
+/* Duolingo (#51): os dias da ofensiva atual que não estão no done.txt também sobem o nível do hábito, sem XP: a ofensiva lida
+   (duo.json → ult) menos os dias dela que já estão na lista. Só os dias a partir do corte (#126), não a ofensiva inteira */
+function duoPre(C, feitos){
   const o = C.D.duo; if(!o || !o.ini || !(o.ofensiva > 0)) return 0;
-  return Math.max(0, o.ofensiva - new Set(dias.filter(d => d >= o.ini)).size);
+  const ini = xpDesde(C), de = o.ini > ini ? o.ini : ini, n = o.ofensiva - Math.max(0, dias(o.ini, ini));
+  return Math.max(0, n - new Set(feitos.filter(d => d >= de)).size);
 }
 /* nível de cada hábito (ver habPede): linha concluída → XP pela tabela, e por hábito o nível de hoje.
    salvos: {id: Set(dias)} da carta Zetsu escolhendo um hábito (o dia conta como feito, sem dar XP) */
 function niveisHab(C, feitas, fer, salvos){
-  const {HOJE} = C, de = duoDesde(C), xp = new Map(), hoje = {}, porId = {};
+  const {HOJE} = C, de = duoDesde(C), ini = xpDesde(C), xp = new Map(), hoje = {}, porId = {};
   for(const t of feitas){ const r = String(t.rec || '').split(':');   // o Duolingo de antes de ligar sobe o nível, sem XP (#51)
-    if(!t.done || !r[1] || r[0].startsWith('cf')) continue;
+    if(!t.done || !r[1] || r[0].startsWith('cf') || antesDe(t, ini)) continue;   // antes do corte (#126): nem nível
     (porId[r[0]] = porId[r[0]] || []).push([r[1], duoAntes(t, de) ? null : t]); }
   for(const id of new Set([...Object.keys(porId), ...Object.keys(salvos || {})])){
     const L = porId[id] || [], sal = (salvos || {})[id] || new Set(), meta = semanalDe(C.JOG, id);
@@ -757,9 +763,9 @@ function estado(C){
   const feitas = D.feitas.concat(F.extras), abertas = D.abertas.filter(t => !t.done);
   const bs = chefoes(C, feitas, abertas);
   const rec = recibos(C, bs), naFuria = (d, dia) => (rec.furias[d] || []).some(([i, f]) => dia >= i && (!f || dia <= f));
-  // hábito: XP pelo nível (a partir de HAB_DESDE); Duolingo de antes de ligar: nada
-  const duoDe = duoDesde(C), NV = niveisHab(C, feitas, fer, F.salvoHab);
-  const xpBase = (t, nv = NV, ef = F, prazo = true) => { if(duoAntes(t, duoDe)) return 0; if(nv.xp.has(t) && t.done >= HAB_DESDE) return nv.xp.get(t);
+  // hábito: XP pelo nível (a partir de HAB_DESDE); Duolingo de antes de ligar e o feito antes do corte (#126): nada
+  const duoDe = duoDesde(C), ini = xpDesde(C), NV = niveisHab(C, feitas, fer, F.salvoHab);
+  const xpBase = (t, nv = NV, ef = F, prazo = true) => { if(duoAntes(t, duoDe) || antesDe(t, ini)) return 0; if(nv.xp.has(t) && t.done >= HAB_DESDE) return nv.xp.get(t);
     const k = ef.ken.get(norm(t.txt)) || 0; return xpDe(!prazo ? {...t, due:null} : k && t.due ? {...t, due: addD(t.due, k)} : t); };
   // tipos novos (#121): a missão até a semana em que o jogador abriu a versão segue a regra antiga (nenAntes),
   // para o ×1,5 já dado e os feitiços das missões não mudarem; o gráfico de atributos usa a regra nova em tudo
@@ -801,6 +807,7 @@ function estado(C){
   // multiplicadores somaram (missão, fúria, Ko/Acompanhar, hábito acima da meta)
   const fonteDia = {}, somaF = (d, k, x) => { if(!d || !x) return; const f = fonteDia[d] = fonteDia[d] || {}; f[k] = (f[k]||0) + x; };
   feitas.forEach((t,i) => {
+    if(antesDe(t, ini)) return;   // antes do corte (#126): só o heatmap e o histórico
     if(duoAntes(t, duoDe)){ let x = xpDe(t); if(!fer(t.done) && naMissao(t)) x *= 1.5; duoAntesXP[t.done] = (duoAntesXP[t.done]||0) + Math.round(x); return; }
     const {x} = valorFeita(t, i), base = xpBase(t);
     total += x; xs.push({t,x});
@@ -813,17 +820,17 @@ function estado(C){
   // caçadas e expedições (0.5.8): marco fechado e expedição concluída somam o bônus gravado no dia em que fecharam
   const G = grupos(C, D.feitas, abertas), xpDe2 = new Map(xs.map(o => [o.t, o.x]));
   let gXP = 0;
-  const somaG = (d, x) => { if(!d || !(x > 0) || d > HOJE) return; gXP += x; total += x; xpDia[d] = (xpDia[d]||0) + x; somaF(d, 'exp', x); };
+  const somaG = (d, x) => { if(!d || !(x > 0) || d > HOJE || d < ini) return; gXP += x; total += x; xpDia[d] = (xpDia[d]||0) + x; somaF(d, 'exp', x); };
   for(const c of Object.values(G.cac)) if(c.fim && c.exp) somaG(c.fim, c.bonus);
   for(const e of Object.values(G.exp)){ if(e.fim) somaG(e.fim, e.bonus); e.xp = e.tarefas.reduce((s, t) => s + (xpDe2.get(t) || 0), 0); }
   // contribuições (#23): bug corrigido ou ideia feita, aberta pelo jogador no GitHub, dá XP no dia em que o jogo viu a issue fechada
-  const contrib = ((D.contrib && D.contrib.issues) || []).filter(i => CONTRIB[i.tipo] && i.dia && i.dia <= HOJE);
+  const contrib = ((D.contrib && D.contrib.issues) || []).filter(i => CONTRIB[i.tipo] && i.dia && i.dia <= HOJE && i.dia >= ini);
   let contribXP = 0; for(const i of contrib){ const x = CONTRIB[i.tipo].xp; contribXP += x; total += x; xpDia[i.dia] = (xpDia[i.dia]||0) + x; somaF(i.dia, 'contrib', x); }
   const contribJ = contrib.reduce((s, i) => s + CONTRIB[i.tipo].j, 0);
   // dias fechados (0.5.3): o XP de cada dia anterior fica gravado no estado.json (xpDias) e só sobe. Linha concluída que some
   // do todo/done (IA reescrevendo, todo.sh archive) não tira mais XP do passado; "esqueci de marcar ontem" ainda soma.
   rec.xpDias = {...(EST.xpDias || {})};
-  const first = feitas.filter(t => !duoAntes(t, duoDe)).map(t => t.done).filter(Boolean).sort()[0];
+  const first = feitas.filter(t => !duoAntes(t, duoDe) && !antesDe(t, ini)).map(t => t.done).filter(Boolean).sort()[0];
   /* acerto da 0.6.4 (uma vez): tira dos dias fechados o que a regra antiga dava ao Duolingo de antes de ligar e às contribuições,
      e guarda o recorde do Ten pela regra antiga (sem o Duolingo de antes), para a regra nova não tomar conquista já ganha.
      migra[MIGRA] guarda quanto mudou, para a janela da versão mostrar a cada um */
@@ -839,12 +846,20 @@ function estado(C){
   }
   // #121: o dia em que o jogador abriu os tipos novos e os atributos pela regra antiga e pela nova (para a janela da versão)
   if(!rec.migra[TIPOS_MIGRA]){ rec.migra[TIPOS_MIGRA] = {em:HOJE, antes:attrAntes.map(Math.round), depois:attr.map(Math.round)}; rec.mudou = true; }
+  /* recálculo do zero (#126, uma vez): os dias fechados passam a ser o que as regras de agora dão (sem o feito antes do corte e
+     sem o nível do Duolingo pela ofensiva inteira). Linha que sumiu do done.txt perde o XP gravado. migra.recalculo guarda o
+     corte (ini) e o XP dos dias fechados antes e depois, para a janela da versão */
+  if(!rec.migra[RECALC]){
+    const soma = o => Object.entries(o).reduce((s, [d, x]) => s + (d < HOJE ? +x || 0 : 0), 0), antes = soma(rec.xpDias);
+    rec.xpDias = Object.fromEntries(Object.entries(xpDia).filter(([d, x]) => d < HOJE && x > 0));
+    rec.migra[RECALC] = {ini, em:HOJE, antes, depois:soma(rec.xpDias)}; rec.mudou = true;
+  }
   for(const d of new Set([...Object.keys(xpDia), ...Object.keys(rec.xpDias)])){
     if(!(d < HOJE)) continue;
     const g = +rec.xpDias[d] || 0, x = xpDia[d] || 0;
     if(x > g){ rec.xpDias[d] = x; rec.mudou = true; } else if(g > x){ total += g - x; xpDia[d] = g; somaF(d, 'gravado', g - x); }
   }
-  const set = new Set(feitas.filter(t => t.done && !isRec(t)).map(t => t.done));   // Ten: só tarefa que não é hábito
+  const set = new Set(feitas.filter(t => t.done && !isRec(t) && !antesDe(t, ini)).map(t => t.done));   // Ten: só tarefa que não é hábito
   const T = ten(set, first, HOJE, F.zetsu, fer, F.salvoTen); T.max = Math.max(T.max, rec.tenRec);
   const ritmo = first ? total/Math.max(1, dias(first,HOJE)/7) : 0;
   const fraco = fracoSem(HOJE), pausa = fer(HOJE);   // nas férias nenhum atributo rende ×1,5
@@ -872,6 +887,10 @@ function estado(C){
   // 0.6.4: se o acerto (Duolingo de antes, contribuições) deixar a carteira negativa, ela fica em zero
   if(rec.acertos[MIGRA] === undefined){ const a0 = Object.values(rec.acertos).reduce((s, j) => s + (+j || 0), 0);
     rec.acertos[MIGRA] = Math.max(0, (EST.spent||0) - (total*10 + bonusNotas + conqJ + contribJ + a0)); rec.mudou = true; }
+  // #126: se o recálculo deixar a carteira negativa, ela fica em zero (o que foi gasto continua gasto)
+  if(rec.acertos[RECALC] === undefined){ const a0 = Object.entries(rec.acertos).reduce((s, [k, j]) => s + (k === RETRATOS_K ? 0 : +j || 0), 0);
+    const r0 = rec.acertos[RETRATOS_K] === undefined ? retratosJ(EST.compras) : +rec.acertos[RETRATOS_K] || 0;
+    rec.acertos[RECALC] = Math.max(0, (EST.spent||0) - (total*10 + bonusNotas + conqJ + contribJ + a0 + r0 + (EST.devolve && +EST.devolve.j || 0))); rec.mudou = true; }
   // retratos de chefão (#135): a Jenny paga volta uma vez, gravada em acertos (o registro de compras perde as mais antigas)
   if(rec.acertos[RETRATOS_K] === undefined){ rec.acertos[RETRATOS_K] = retratosJ(EST.compras); rec.mudou = true; }
   const retJ = +rec.acertos[RETRATOS_K] || 0;

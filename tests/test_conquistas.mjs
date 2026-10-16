@@ -53,10 +53,10 @@ teste('folga salva o Ten, mas não substitui atividade na nova conquista', () =>
 teste('XP exige semanas completas consecutivas; uma semana forte não basta', () => {
   const v=avalia({regra:'semana',xp:110,semanas:2,rk:'D'}), de=v.r.inicio;
   const xpDias=Object.fromEntries(Array.from({length:14},(_,i)=>[G.addD(de,i),20]));
-  assert.equal(progresso(v,{hoje:G.addD(de,13),estado:{xpDias}}).on,false);
-  assert.equal(progresso(v,{hoje:G.addD(de,14),estado:{xpDias}}).on,true);
+  assert.equal(progresso(v,{hoje:G.addD(de,13),estado:{xpDias, migra:{recalculo:{ini:'2026-08-01'}}}}).on,false);
+  assert.equal(progresso(v,{hoje:G.addD(de,14),estado:{xpDias, migra:{recalculo:{ini:'2026-08-01'}}}}).on,true);
   xpDias[G.addD(de,7)]=0; for(let i=8;i<14;i++) xpDias[G.addD(de,i)]=0;
-  assert.equal(progresso(v,{hoje:G.addD(de,14),estado:{xpDias}}).on,false);
+  assert.equal(progresso(v,{hoje:G.addD(de,14),estado:{xpDias, migra:{recalculo:{ini:'2026-08-01'}}}}).on,false);
 });
 teste('nota leva em conta o peso; prova pequena não vira lendária', () => {
   const plano=peso=>api().avaliacoes+`\n[BD] Boss\nP1 | Prova | ${peso} | 2026-09-30 | |\nP2 | Prova | ${100-peso} | 2026-10-30 | |`;
