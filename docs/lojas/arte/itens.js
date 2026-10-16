@@ -2,6 +2,7 @@
 // Lida pela bancada.html (<script src>) e pelo hoje.mjs, que tira a foto do card da vitrine em hoje/ARQ-ID.png.
 //   nome/loja: como aparece na vitrine · vit: onde o card está hoje (arq = associacao|masadora, id = id do item na vitrine;
 //   sem vit = não tem card) · hoje: como é hoje, em uma frase · arte: o que o desenho novo é.
+//   placa (emblema da licença): sem a caixa branca do emblema hunter ('sem') ou com a placa escura do Rei ('rei', como no jogo).
 const ITENS = {
   'corrente-tira': {nome:'HP de corrente', loja:'Masadora', onde:'barra de XP e vida do chefão', vit:{arq:'masadora', id:'hp-corrente'},
     hoje:'A vida do chefão vira uma corrente vermelha, desenhada em código.', arte:'Uma tira de corrente que se repete em faixa (vira a barra de XP e a vida do chefão).'},
@@ -15,9 +16,9 @@ const ITENS = {
     hoje:'Um carimbo de texto, "CHEFÃO ✓", azul, sobre a licença.', arte:'Um selo retangular oficial (coroa e caveira, ou torre quebrada), no mesmo estilo de carimbo de borracha.'},
   'lg-exame': {nome:'Licença do Exame Hunter', loja:'Associação', onde:'carimbo da licença lendária', vit:{arq:'associacao', id:'lg-exame'},
     hoje:'Licença holográfica com um carimbo de texto, "EXAME T1".', arte:'Um carimbo de fim de temporada, mais pesado e épico que os comuns, mas liso como a licença (nada de cera ou brilho). Final escolhido: o selo quadrado tipo hanko, vermelho, com um nó entalhado (era 1 de 4 conceitos).'},
-  'lic-emb-aranha': {nome:'Emblema da Aranha', loja:'Associação', onde:'emblema da licença', vit:{arq:'associacao', id:'lic-emb-aranha'},
+  'lic-emb-aranha': {nome:'Emblema da Aranha', loja:'Associação', onde:'emblema da licença', placa:'sem', vit:{arq:'associacao', id:'lic-emb-aranha'},
     hoje:'A aranha de doze patas da Trupe no lugar do emblema hunter da licença.', arte:'Uma aranha estilizada de doze patas, vista de cima, ameaçadora mas simples, como emblema de tatuagem.'},
-  'lg-rei': {nome:'Emblema do Rei', loja:'Associação', onde:'emblema da licença e dos placares', vit:{arq:'associacao', id:'lg-rei'},
+  'lg-rei': {nome:'Emblema do Rei', loja:'Associação', onde:'emblema da licença e dos placares', placa:'rei', vit:{arq:'associacao', id:'lg-rei'},
     hoje:'A coroa do Rei em ouro no lugar do emblema hunter, e ao lado do nome nos placares.', arte:'A coroa do Rei das Formigas-Quimera: formas orgânicas, meio de inseto, majestosa e estranha.'},
   'lic-ouro': {nome:'Estojo dourado', loja:'Associação', onde:'estojo em volta da licença', vit:{arq:'associacao', id:'lic-ouro'},
     hoje:'Estojo e borda dourados, em código.', arte:'Um estojo de ouro gravado em volta da licença, com ornamentos nos cantos e gravura fina.'},

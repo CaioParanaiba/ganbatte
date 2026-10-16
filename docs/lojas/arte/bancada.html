@@ -48,6 +48,8 @@ h2{margin:0 0 8px;font:600 12px var(--f-mono);color:var(--dim);letter-spacing:.0
 .lic-w{width:min(520px,100%)} .lic-w .tt-lic{width:100%}
 .lic-w .foto{width:58%;aspect-ratio:1;background:url('../../../web/a/killua-3.png') center/cover}
 .lic-w .emb > div{width:100%;aspect-ratio:1}
+.lic-w .emb.sem{background:none;padding:0;width:70%}  /* o emblema dispensa a caixa branca (a aranha já tem borda clara) */
+.lic-w .emb.rei{background:linear-gradient(160deg,#2A2140,#141418);box-shadow:0 0 0 .5cqw #E8C35A}
 .lic-w .carimbo{position:absolute;right:4cqw;bottom:4cqw;width:30cqw;aspect-ratio:1;transform:rotate(-10deg);mix-blend-mode:multiply;z-index:2}
 .claro{background:#F4F5F9;border-radius:8px;padding:14px}
 .ficha .fi{display:flex;flex-wrap:wrap;gap:18px 26px;align-items:flex-start}
@@ -87,8 +89,8 @@ const FICHA = (typeof ITENS !== 'undefined' && ITENS[ID]) || null;
 if(FICHA) document.title = 'Bancada · ' + FICHA.nome;
 // a licença hunter como no jogo (mesma marcação da vitrine), com o emblema e o carimbo que se quer testar
 const EMBLEMA = '<svg viewBox="0 0 120 70" aria-hidden="true"><path d="M60 10 L84 35 L60 60 L36 35 Z" fill="#C8102E"/><path d="M12 10 L60 60 M60 10 L12 60 M60 10 L108 60 M108 10 L60 60" stroke="#141418" stroke-width="7" fill="none"/><path d="M3 10 H23 M50 10 H70 M97 10 H117 M3 60 H23 M50 60 H70 M97 60 H117" stroke="#141418" stroke-width="3.5"/></svg>';
-const licenca = (emb, car) => `<div class="lic-w"><div class="tt-lic"><div class="tt-lf"><div class="in">
-  <div class="topo"><div class="emb">${emb}</div><i class="foto"></i></div>
+const licenca = (emb, car, placa = '') => `<div class="lic-w"><div class="tt-lic"><div class="tt-lf"><div class="in">
+  <div class="topo"><div class="emb ${placa}">${emb}</div><i class="foto"></i></div>
   <div class="azul"><div class="faixa">TORRE TRICK · T1</div><div class="nomebox"><span>KILLUA</span></div>
   <div class="lls"><span>Nº <b>0012 2026 4817</b></span><span><b>2º</b> NO GERAL</span><span>SEQ. <b>14</b></span></div></div></div>${car}</div></div></div>`;
 function ficha(){
@@ -151,7 +153,7 @@ function desenha(){
     h.push(`<section><h2>fundo repetido, com um card por cima</h2><div class="tex" style="--u:${u}"><div class="card" style="width:min(320px,90%)"><b>Lista</b><small>Ler o que são X.25, Frame Relay e ATM</small></div></div></section>`);
   } else {
     if(TIPO === 'carimbo') h.push(`<section><h2>na licença (girado, como tinta)</h2>${licenca(EMBLEMA, `<div class="carimbo"><div ${pinta()};width:100%;height:100%"></div></div>`)}</section>`);
-    if(TIPO === 'emblema' && /^(lic|lg)-/.test(ID)) h.push(`<section><h2>na licença, no lugar do emblema hunter</h2>${licenca(`<div ${pinta()}"></div>`, '')}</section>`);
+    if(TIPO === 'emblema' && /^(lic|lg)-/.test(ID)){ const pl = (FICHA && FICHA.placa) || ''; h.push(`<section><h2>na licença, no lugar do emblema hunter${pl === 'sem' ? ' (sem a caixa branca)' : pl === 'rei' ? ' (na placa escura do Rei, como no jogo)' : ''}</h2>${licenca(`<div ${pinta()}"></div>`, '', pl)}</section>`); }
     const tam = [128,64,48,32].map(x => `<div ${pinta()};width:${x}px;height:${x}px"></div>`).join('');
     h.push(`<section><h2>128 · 64 · 48 · 32 px, no escuro e no claro</h2><div class="linha">${tam}</div><div class="linha claro" style="margin-top:12px">${tam}</div></section>`);
     h.push(`<section><h2>no card</h2><div class="card" style="display:flex;gap:14px;align-items:center;width:min(360px,100%)"><div ${pinta()};width:44px;height:44px;flex:none"></div><div><b>Killua</b><small>2º da semana · 1.840</small></div></div></section>`);
