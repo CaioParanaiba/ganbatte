@@ -14,6 +14,7 @@ Todos os caminhos abaixo são relativos a `docs/lojas/arte/`.
    - o texto inteiro de `prompts/ID.md`;
    - se o status for `refazer`, mais uma linha: `Changes requested: ` seguida da nota mais recente da coluna `nota`.
 3. Se existir a pasta `refs/ID/`, anexe **todas** as imagens dela à geração como imagens de referência.
+   Abra cada imagem pelo caminho do arquivo (o pedido traz a lista); **nunca tente abrir a pasta**, isso dá erro e a geração para.
 4. Gere **3 variações** com a sua ferramenta de geração de imagem. Tem de ser imagem (PNG ou JPG), nunca SVG nem código.
    Se a ficha tiver uma linha `Variations:` com conceitos numerados, gere **exatamente uma imagem por conceito**, na ordem
    (a mesma ficha, mudando só o conceito), em vez de 3 variações do mesmo prompt. **Espere todas as imagens terminarem

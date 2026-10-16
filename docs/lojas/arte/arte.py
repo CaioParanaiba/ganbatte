@@ -120,6 +120,10 @@ def gera(ident):
     pasta.mkdir(parents=True, exist_ok=True)
     pedido = (f'Leia docs/lojas/arte/AGY.md e siga as instruções dele: gere {ident}. '
               'Não use o terminal (nenhum comando): só leitura de arquivos e a sua ferramenta de gerar imagem.')
+    refs = sorted(f for f in (AQUI / 'refs' / ident).glob('*') if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.webp'))
+    if refs:   # o agy já tentou abrir a pasta como se fosse um arquivo e parou sem gerar: dá os caminhos prontos
+        pedido += (' As imagens de referência deste item são (abra cada arquivo pelo caminho, nunca a pasta): '
+                   + ', '.join(str(f.relative_to(AQUI.parent.parent.parent)) for f in refs) + '.')
     r = subprocess.run(['agy', '-p', pedido, '--mode', 'accept-edits', '--output-format', 'stream-json', '--print-timeout', '900s'],
                        cwd=AQUI.parent.parent.parent, capture_output=True, text=True, timeout=960)
     conv = None
