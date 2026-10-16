@@ -1,6 +1,6 @@
 /* Ganbatte · guia: o assistente da primeira entrada (licença, o ciclo, os 6 tipos, hábitos, matérias), o editor de disciplinas,
  * a aba Chefões vazia e o tutorial de cada aba.
- * Carregado depois do script da página: usa CTX, EST, NEN, HOJE, tab, render, post, recarrega, esc, ic, NC, salvaUI.
+ * Carregado depois do script da página: usa CTX, EST, NEN, HOJE, tab, render, post, recarrega, esc, ic, NC, salvaUI, D, estado, fmt.
  * O assistente grava por POST /api/config {jogador, avaliacoes}; o tutorial lembra as abas já vistas em estado.json (tour).
  */
 (function(){
@@ -8,6 +8,13 @@
 
 /* ---------- estilo ---------- */
 document.head.insertAdjacentHTML('beforeend', `<style>
+#av-contrib{position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:57;width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 120px);overflow-y:auto;background:var(--panel);border:1px solid var(--volt);border-radius:14px;padding:14px 16px;box-shadow:0 20px 50px -20px rgba(0,0,0,.7);font:14px/1.45 var(--f-ui);color:var(--ink)}
+#av-contrib .avc-top{display:flex;gap:8px;align-items:center;font:700 15px var(--f-hud);margin-bottom:8px}
+#av-contrib .avc-top .ic{width:20px;height:20px;color:var(--volt)}
+#av-contrib ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#av-contrib li{padding-top:8px;border-top:1px solid var(--hair)}
+#av-contrib li small{display:block;color:var(--soft);font-size:12.5px}
+#av-contrib .avc-bt{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .wz-bg{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(6px);overflow-y:auto;padding:24px 16px calc(24px + env(safe-area-inset-bottom,0px))}
 .wz{max-width:860px;margin:0 auto;background:var(--panel);border:1px solid var(--hair);border-radius:18px;box-shadow:0 30px 80px -30px rgba(0,0,0,.6)}
 .wz-top{display:flex;gap:14px;align-items:center;padding:18px 22px;border-bottom:1px solid var(--hair)}
@@ -568,18 +575,42 @@ function contribHTML(){
     <button type="button" class="btn" data-contribagora${CONTRIB_IND ? ' disabled' : ''}>${CONTRIB_IND ? 'conferindo…' : 'conferir agora'}</button></p>`;
 }
 let CONTRIB_IND = false;   // o botão "conferir agora" está esperando o GitHub
-/* aviso, uma vez por issue, da recompensa que acabou de entrar; quem joga na versão normal fica sabendo que a correção ou a ideia
-   já está no beta e chega na próxima versão (a recompensa sai no beta, #96). As antigas (mais de 3 dias) só ficam marcadas */
+/* aviso de recompensa (#146): bug corrigido e ideia feita (#23; quem joga na versão normal fica sabendo que já está no beta, #96)
+   e tarefa de dev concluída (#97) num cartão no canto, que fica até o jogador fechar. Só marca como visto (estado.json → tour:
+   contrib:N, dev:N) no "ok", e só aparece com a aba visível. Na primeira vez (tour.avisos146) as tarefas de dev já concluídas
+   ficam vistas sem aviso: só daqui para a frente */
+const AVISO_K = 'avisos146';
+const issueLink = n => `<a href="https://github.com/CaioParanaiba/ganbatte/issues/${n}" target="_blank" rel="noopener">#${n}</a>`;
+function avisosNovos(){
+  const vistas = EST.tour || {}, c = D.contrib, main = ((CTX.SRV && CTX.SRV.canal) || 'main') === 'main', its = [];
+  for(const i of (c && c.issues) || []){ if(vistas['contrib:' + i.n]) continue;
+    const R = GB.CONTRIB[i.tipo] || {xp:0, j:0}, beta = i.beta && main;
+    its.push({k:'contrib:' + i.n, html:(i.tipo === 'bug' ? `Seu bug ${issueLink(i.n)} ${beta ? 'já foi corrigido no beta' : 'foi corrigido'}`
+      : `Sua ideia ${issueLink(i.n)} ${beta ? 'já está no beta' : 'entrou no jogo'}`) + `: <b>+${R.xp} XP e +${fmt(R.j)} J</b>`
+      + (beta ? '<small>chega na sua versão na próxima atualização</small>' : '')}); }
+  for(const {t, x} of estado().xs) if(t.gh && t.done && !vistas['dev:' + t.gh])
+    its.push({k:'dev:' + t.gh, html:`A issue ${issueLink(t.gh)} que você fez entrou no beta: <b>+${x} XP e +${fmt(x*10)} J</b><small>tarefa de dev concluída</small>`});
+  return its;
+}
 function avisaContrib(){
-  const c = D.contrib; if(!c || !c.issues.length) return;
-  const vistas = EST.tour || {}, novas = c.issues.filter(i => !vistas['contrib:' + i.n]); if(!novas.length) return;
-  EST.tour = Object.assign({}, EST.tour, Object.fromEntries(novas.map(i => ['contrib:' + i.n, 1]))); salvaUI();
-  const recentes = novas.filter(i => i.dia >= GB.addD(HOJE, -3)); if(!recentes.length) return;
-  const main = ((CTX.SRV && CTX.SRV.canal) || 'main') === 'main';
-  const frase = i => { const R = GB.CONTRIB[i.tipo] || {xp:0, j:0}, link = `<a href="https://github.com/CaioParanaiba/ganbatte/issues/${i.n}" target="_blank" rel="noopener">#${i.n}</a>`;
-    return (i.tipo === 'bug' ? `Seu bug ${link} ${i.beta && main ? 'já foi corrigido no beta e chega na próxima versão' : 'foi corrigido'}` : `Sua ideia ${link} ${i.beta && main ? 'já está no beta e chega na próxima versão' : 'entrou no jogo'}`)
-      + `: <b>+${R.xp} XP e +${R.j.toLocaleString('pt-BR')} J</b>`; };
-  toast(recentes.map(frase).join('<br>'), 9000);
+  if(!CTX) return;
+  if(!(EST.tour || {})[AVISO_K]){
+    const ja = estado().xs.filter(o => o.t.gh && o.t.done).map(o => ['dev:' + o.t.gh, 1]);
+    EST.tour = Object.assign({}, EST.tour, Object.fromEntries(ja), {[AVISO_K]: 1}); salvaUI();
+  }
+  const its = avisosNovos(); let el = document.getElementById('av-contrib');
+  if(!its.length){ if(el) el.remove(); return; }
+  if(document.hidden){   // a recompensa chegou com a aba escondida: espera ela voltar
+    if(!avisaContrib.espera){ avisaContrib.espera = true;
+      document.addEventListener('visibilitychange', function volta(){ if(document.hidden) return;
+        document.removeEventListener('visibilitychange', volta); avisaContrib.espera = false; avisaContrib(); }); }
+    return;
+  }
+  if(!el){ el = document.createElement('div'); el.id = 'av-contrib'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.dataset.ks = its.map(i => i.k).join(' ');
+  el.innerHTML = `<div class="avc-top">${ic('bug')}<span>${its.length === 1 ? 'Contribuição recompensada' : `${its.length} contribuições recompensadas`}</span></div>
+    <ul>${its.map(i => `<li>${i.html}</li>`).join('')}</ul>
+    <div class="avc-bt"><button type="button" class="btn" data-avcarteira>ver a carteira</button><button type="button" class="btn v" data-avok>ok</button></div>`;
 }
 function cfgHTML(){
   const c = rascunhoCfg();
@@ -682,6 +713,9 @@ document.addEventListener('click', async e => {
   if(q('[data-cfghadd]')){ const c = rascunhoCfg(), n = c.novo.trim(); if(n){ c.habs.push(n); c.hf.push(0); c.hid.push(''); c.novo = ''; } render(); const i = document.getElementById('cfg-novo'); if(i) i.focus(); return; }
   const hd = q('[data-cfghdel]'); if(hd){ const c = rascunhoCfg(); c.habs.splice(+hd.dataset.cfghdel, 1); c.hf.splice(+hd.dataset.cfghdel, 1); c.hid.splice(+hd.dataset.cfghdel, 1); render(); return; }
   if(q('[data-wzdiscabre]')){ abreDisciplinas(); return; }
+  if(q('[data-avcarteira]')){ tab('ms'); return; }
+  if(q('[data-avok]')){ const el = document.getElementById('av-contrib'); if(!el) return;
+    EST.tour = Object.assign({}, EST.tour, Object.fromEntries(el.dataset.ks.split(' ').filter(Boolean).map(k => [k, 1]))); salvaUI(); el.remove(); return; }
   if(q('[data-contribagora]')){ if(CONTRIB_IND) return; CONTRIB_IND = true; render();
     try { const r = await post('/api/contrib', {}); await recarrega(); toast(r.cedo ? 'Acabei de conferir: tente de novo daqui a um minuto' : 'Conferido no GitHub'); }
     catch(err){ toast('Não conferiu: ' + esc(err.message)); }
