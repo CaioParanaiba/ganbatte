@@ -5,5 +5,5 @@ prompt confere antes se a palavra diz mesmo o que a peça quer dizer.
 
 | texto | leitura | significado | onde | observação |
 |---|---|---|---|---|
-| 念 | nen (ねん) | pensamento, atenção, intenção, desejo. Em Hunter x Hunter, é o Nen, a energia vital que os personagens aprendem a controlar | `lic-exame` (variações 1 e 3, ainda sem decisão) | Sozinho **não** quer dizer "aprovado": é uma referência à série. Para "passou no exame" o certo é 合格 (gōkaku) |
+| 念 | nen (ねん) | pensamento, atenção, intenção, desejo. Em Hunter x Hunter, é o Nen, a energia vital que os personagens aprendem a controlar | `lic-exame` (variações 1 e 3, guardadas em `aprovadas/`; o conceito final ainda não foi decidido) | Sozinho **não** quer dizer "aprovado": é uma referência à série. Para "passou no exame" o certo é 合格 (gōkaku) |
 | 合格 | gōkaku (ごうかく) | passar, ser aprovado (em exame ou seleção) | ainda não usado | opção se o carimbo do exame quiser dizer "aprovado" de verdade |
