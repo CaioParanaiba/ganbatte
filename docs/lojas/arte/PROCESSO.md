@@ -40,7 +40,8 @@ que é o jogo real do Caio.
      - refazer: `arte.py refazer ID "o que mudar"`; se fizer sentido, ajuste também `prompts/ID.md` ou ponha
        referências em `refs/ID/`. O Antigravity lê a nota na próxima geração.
      - pular: `arte.py pular ID "motivo"`. Se ele quiser guardar o que saiu, copie de `entrada/ID/` para
-       `tentativas/ID/` (não vai como referência para o Gemini, nem conta como aprovada).
+       `tentativas/ID/` (não vai como referência para o Gemini, nem conta como aprovada). Item em aberto (ele vai decidir
+       depois): guarde as opções em `tentativas/ID/`, deixe o status `gerado` (o `proximo` pula) e escreva "EM ABERTO" na nota.
 5. A cada item fechado (gostei ou pulado), faça commit no `~/ganbatte-arte` com `FILA.md`, `aprovadas/ID/` e os
    prompts mudados (adicione os arquivos pelo nome; `entrada/` fica fora do git) e dê push no branch.
 

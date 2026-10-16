@@ -54,6 +54,8 @@ h2{margin:0 0 8px;font:600 12px var(--f-mono);color:var(--dim);letter-spacing:.0
 /* estojo fatiado em 9 (border-image) por cima da borda que a licença já tem: os cantos encolhem, os lados esticam */
 .lic-w .tt-lf{position:relative}
 .lic-w .estojo{position:absolute;inset:calc(-1px - var(--fora));border-style:solid;border-width:var(--esp);border-image:var(--u) var(--fatia) / var(--esp) stretch;pointer-events:none;z-index:3}
+/* ou a imagem inteira por cima da licença, do tamanho dela (arte feita na proporção da licença, como os SVGs do estojo) */
+.lic-w .estojo.inteira{inset:-1px;border:0;border-image:none;background:var(--u) 0 0/100% 100% no-repeat}
 .claro{background:#F4F5F9;border-radius:8px;padding:14px}
 .ficha .fi{display:flex;flex-wrap:wrap;gap:18px 26px;align-items:flex-start}
 .ficha .fi-t{flex:1 1 280px;max-width:520px;display:grid;gap:8px}
@@ -129,7 +131,9 @@ if(TIPO === 'borda'){
 }
 if(TIPO === 'cursor') controle('s', 'tamanho', 20, 72, 'px');
 if(TIPO === 'moldura'){
-  Object.assign(st, {esp: 11, fatia: 20, fora: 0});
+  Object.assign(st, {esp: 11, fatia: 20, fora: 0, inteira: Q.get('inteira') === '1'});
+  const l = document.createElement('label'); l.innerHTML = `<input type="checkbox" ${st.inteira ? 'checked' : ''}> camada inteira (sem fatiar)`;
+  l.querySelector('input').onchange = e => { st.inteira = e.target.checked; desenha(); }; document.getElementById('extra').append(l);
   controle('esp', 'espessura', 4, 40, 'px'); controle('fatia', 'fatia', 4, 45, '%'); controle('fora', 'cantos para fora', 0, 16, 'px');
 }
 
@@ -155,7 +159,7 @@ function desenha(){
     h.push(`<section><h2>conclua a tarefa (clique no círculo; de novo para repetir)</h2><div class="palco" style="cursor:default"><div class="box" id="box"><button type="button" aria-label="concluir"></button><span>Ler o que são X.25, Frame Relay e ATM</span></div><div class="fx" id="fx"><div ${pinta()};width:100%;height:100%"></div></div></div></section>`);
     h.push(`<section><h2>128 · 64 · 32 px</h2><div class="linha">${[128,64,32].map(x => `<div ${pinta()};width:${x}px;height:${x}px"></div>`).join('')}</div></section>`);
   } else if(TIPO === 'moldura'){
-    if(/^(lic|lg)-/.test(ID)) h.push(`<section><h2>na licença do jogo (520 px): o desenho é fatiado em 9, os cantos encolhem e os lados esticam. Com 11 px o estojo ocupa só a borda que a licença já tem; mais grosso que isso começa a tampar o conteúdo; "cantos para fora" deixa o estojo crescer para fora da licença em vez de para dentro</h2>${licenca(EMBLEMA, `<i class="estojo" style="--u:${u};--esp:${st.esp}px;--fatia:${st.fatia}%;--fora:${st.fora}px"></i>`)}</section>`);
+    if(/^(lic|lg)-/.test(ID)) h.push(`<section><h2>na licença do jogo (520 px): o desenho é fatiado em 9, os cantos encolhem e os lados esticam. Com 11 px o estojo ocupa só a borda que a licença já tem; mais grosso que isso começa a tampar o conteúdo; "cantos para fora" deixa o estojo crescer para fora da licença em vez de para dentro. Com "camada inteira", a imagem entra do tamanho da licença, sem fatiar</h2>${licenca(EMBLEMA, `<i class="estojo${st.inteira ? ' inteira' : ''}" style="--u:${u};--esp:${st.esp}px;--fatia:${st.fatia}%;--fora:${st.fora}px"></i>`).replace('class="tt-lic"', ID === 'lic-ouro' ? 'class="tt-lic tl-est-ouro"' : 'class="tt-lic"')}</section>`);
     h.push(`<section><h2>a imagem inteira, esticada em volta de um retângulo</h2><div class="mold"><div class="dentro">LICENÇA HUNTER</div><div class="pura" style="--u:${u};--tam:100% 100%"></div></div></section>`);
   } else if(TIPO === 'textura'){
     h.push(`<section><h2>fundo repetido, com um card por cima</h2><div class="tex" style="--u:${u}"><div class="card" style="width:min(320px,90%)"><b>Lista</b><small>Ler o que são X.25, Frame Relay e ATM</small></div></div></section>`);
