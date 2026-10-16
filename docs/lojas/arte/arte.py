@@ -78,8 +78,18 @@ def quadrado(im, lado=512):
     return q
 
 
+def licenca_css():
+    """Copia o CSS da licença hunter do jogo (web/grupo.js) para licenca.css: a bancada mostra emblemas e carimbos na
+    licença de verdade, não num quadro de teste."""
+    L = (AQUI.parent.parent.parent / 'web' / 'grupo.js').read_text(encoding='utf-8').split('\n')
+    a = next(i for i, l in enumerate(L) if '/* licença hunter: um objeto' in l)
+    b = next(i for i, l in enumerate(L) if '.tl-pv .tt-lic{width:100%}' in l)
+    (AQUI / 'licenca.css').write_text('/* gerado pelo arte.py a partir de web/grupo.js: não edite à mão */\n' + '\n'.join(L[a:b + 1]) + '\n', encoding='utf-8')
+
+
 def prepara(ident, espelha):
     info, pasta = linha(ident), AQUI / 'entrada' / ident
+    licenca_css()
     cruas = sorted(f for f in pasta.glob('*') if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.webp') and not f.name.startswith('pronto-'))
     if not cruas:
         sys.exit(f'nada em {pasta}')

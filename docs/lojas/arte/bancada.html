@@ -5,9 +5,10 @@
 <!-- bancada da fila de arte: testa uma imagem num pedaço do jogo, sem o jogo inteiro; no topo, a ficha do item (itens.js). Aberta pelo link que o arte.py imprime
      (?id=…&tipo=tira|borda|moldura|cursor|emblema|carimbo|efeito|textura&cor=hex&img=entrada/ID/pronto-1.png,…) -->
 <title>Bancada de arte</title>
+<link rel="stylesheet" href="licenca.css">
 <style>
 :root{color-scheme:dark;--bg:#0F1016;--panel:#161821;--card:#1B1D28;--line:#2A2D3C;--txt:#E6E8F0;--dim:#9197AD;--amb:#E0AF68;--red:#F7768E;--track:#252838;
-  --f-ui:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;--f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+  --f-ui:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;--f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;--f-hud:"Chakra Petch",var(--f-ui)}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 var(--f-ui)}
@@ -43,8 +44,12 @@ h2{margin:0 0 8px;font:600 12px var(--f-mono);color:var(--dim);letter-spacing:.0
 .fx{position:absolute;width:140px;height:140px;left:50%;top:50%;margin:-70px 0 0 -70px;pointer-events:none;opacity:0}
 .fx.vai{animation:fx 1.1s cubic-bezier(.2,.9,.3,1.2) forwards}
 @keyframes fx{0%{opacity:0;transform:scale(.2) rotate(-12deg)}25%{opacity:1;transform:scale(1.15) rotate(4deg)}45%{transform:scale(1) rotate(0)}100%{opacity:0;transform:translateY(-90px) scale(.9)}}
-.lic{position:relative;width:300px;height:190px;border-radius:12px;background:#E9E4D8;color:#2B1D14;padding:16px;font:700 13px var(--f-mono)}
-.lic .tn,.lic .pura{position:absolute;right:18px;bottom:14px;width:96px;height:96px;transform:rotate(-10deg);mix-blend-mode:multiply}
+/* licença de verdade (licenca.css vem do jogo): o emblema entra na caixa branca, o carimbo vai por cima, como tinta */
+.lic-w{width:min(520px,100%)} .lic-w .tt-lic{width:100%}
+.lic-w .foto{width:58%;aspect-ratio:1;background:url('../../../web/a/killua-3.png') center/cover}
+.lic-w .emb > div{width:100%;aspect-ratio:1}
+.lic-w .carimbo{position:absolute;right:4cqw;bottom:4cqw;width:30cqw;aspect-ratio:1;transform:rotate(-10deg);mix-blend-mode:multiply;z-index:2}
+.claro{background:#F4F5F9;border-radius:8px;padding:14px}
 .ficha .fi{display:flex;flex-wrap:wrap;gap:18px 26px;align-items:flex-start}
 .ficha .fi-t{flex:1 1 280px;max-width:520px;display:grid;gap:8px}
 .ficha .fi-t b{font:700 17px var(--f-ui)}
@@ -80,6 +85,12 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', 
 // ficha do item (itens.js): de qual item da vitrine é a arte, e como ele é hoje (foto do card, tirada pelo hoje.mjs)
 const FICHA = (typeof ITENS !== 'undefined' && ITENS[ID]) || null;
 if(FICHA) document.title = 'Bancada · ' + FICHA.nome;
+// a licença hunter como no jogo (mesma marcação da vitrine), com o emblema e o carimbo que se quer testar
+const EMBLEMA = '<svg viewBox="0 0 120 70" aria-hidden="true"><path d="M60 10 L84 35 L60 60 L36 35 Z" fill="#C8102E"/><path d="M12 10 L60 60 M60 10 L12 60 M60 10 L108 60 M108 10 L60 60" stroke="#141418" stroke-width="7" fill="none"/><path d="M3 10 H23 M50 10 H70 M97 10 H117 M3 60 H23 M50 60 H70 M97 60 H117" stroke="#141418" stroke-width="3.5"/></svg>';
+const licenca = (emb, car) => `<div class="lic-w"><div class="tt-lic"><div class="tt-lf"><div class="in">
+  <div class="topo"><div class="emb">${emb}</div><i class="foto"></i></div>
+  <div class="azul"><div class="faixa">TORRE TRICK · T1</div><div class="nomebox"><span>KILLUA</span></div>
+  <div class="lls"><span>Nº <b>0012 2026 4817</b></span><span><b>2º</b> NO GERAL</span><span>SEQ. <b>14</b></span></div></div></div>${car}</div></div></div>`;
 function ficha(){
   if(!FICHA) return '';
   const f = FICHA, v = f.vit;
@@ -139,8 +150,10 @@ function desenha(){
   } else if(TIPO === 'textura'){
     h.push(`<section><h2>fundo repetido, com um card por cima</h2><div class="tex" style="--u:${u}"><div class="card" style="width:min(320px,90%)"><b>Lista</b><small>Ler o que são X.25, Frame Relay e ATM</small></div></div></section>`);
   } else {
-    if(TIPO === 'carimbo') h.push(`<section><h2>na licença (girado, como tinta)</h2><div class="lic">LICENÇA HUNTER<br>Nº 0012 2026 4817<div ${pinta()}"></div></div></section>`);
-    h.push(`<section><h2>128 · 64 · 48 · 32 px no escuro</h2><div class="linha">${[128,64,48,32].map(x => `<div ${pinta()};width:${x}px;height:${x}px"></div>`).join('')}</div></section>`);
+    if(TIPO === 'carimbo') h.push(`<section><h2>na licença (girado, como tinta)</h2>${licenca(EMBLEMA, `<div class="carimbo"><div ${pinta()};width:100%;height:100%"></div></div>`)}</section>`);
+    if(TIPO === 'emblema' && /^(lic|lg)-/.test(ID)) h.push(`<section><h2>na licença, no lugar do emblema hunter</h2>${licenca(`<div ${pinta()}"></div>`, '')}</section>`);
+    const tam = [128,64,48,32].map(x => `<div ${pinta()};width:${x}px;height:${x}px"></div>`).join('');
+    h.push(`<section><h2>128 · 64 · 48 · 32 px, no escuro e no claro</h2><div class="linha">${tam}</div><div class="linha claro" style="margin-top:12px">${tam}</div></section>`);
     h.push(`<section><h2>no card</h2><div class="card" style="display:flex;gap:14px;align-items:center;width:min(360px,100%)"><div ${pinta()};width:44px;height:44px;flex:none"></div><div><b>Killua</b><small>2º da semana · 1.840</small></div></div></section>`);
   }
   main.innerHTML = ficha() + h.join('');
