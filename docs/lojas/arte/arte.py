@@ -1,6 +1,8 @@
 """Fila de arte das lojas: prepara as imagens que o gerador salvou e registra o que o Caio achou.
 
   python3 docs/lojas/arte/arte.py gera ID [--espelha] [--so 1,3,4]   pede ao Antigravity (agy -p), espera, copia as imagens e prepara (--so: só esses conceitos da `Variations:`)
+  python3 docs/lojas/arte/arte.py pasta ID [--so 1,3,4]    monta ~/Downloads/ganbatte-arte/ID/ com o(s) prompt(s) e as refs, para o Caio levar ao Gemini
+  python3 docs/lojas/arte/arte.py importa ID [--espelha]   pega da pasta as imagens novas que o Caio pôs lá, copia para entrada/ID/ e prepara
   python3 docs/lojas/arte/arte.py prepara ID [--espelha]   limpa entrada/ID/* (tira o magenta, recorta) e abre a bancada no navegador
   python3 docs/lojas/arte/arte.py gostei ID N [nota]       guarda a variação N em aprovadas/ID/ (não é a decisão final); N pode ser 1,2,3
   python3 docs/lojas/arte/arte.py refazer ID "o que mudar"  volta para o gerador com a nota
@@ -8,7 +10,7 @@
 
 Os tipos e as cores de teste vêm da FILA.md. --espelha (só tira): usa a metade de cima e espelha, quando a de baixo
 veio suja. Precisa de Pillow e numpy."""
-import json, shutil, subprocess, sys, webbrowser
+import json, re, shutil, subprocess, sys, webbrowser
 from datetime import date
 from pathlib import Path
 
@@ -18,6 +20,8 @@ from PIL import Image
 AQUI = Path(__file__).resolve().parent
 FILA = AQUI / 'FILA.md'
 HOJE = date.today().strftime('%d/%m')
+DOWNLOADS = Path.home() / 'Downloads' / 'ganbatte-arte'   # uma pasta por item: prompt(s), referências e o que o Gemini devolveu
+IMGS = ('.png', '.jpg', '.jpeg', '.webp')
 
 
 def linha(ident):
@@ -103,6 +107,71 @@ def prepara(ident, espelha):
     abre(url)
 
 
+def pasta(ident, so=None):
+    """Monta a pasta do item para o Caio levar ao Gemini: prompt.txt (ou prompt-N.txt, um por conceito, se a ficha tem
+    `Variations:`) e as imagens de referência como ref-*. Pode rodar de novo (depois de um refazer): reescreve os prompts
+    e as refs e não mexe nas imagens que o Caio já pôs lá."""
+    info = linha(ident)
+    estilo = (AQUI / 'prompts' / '_estilo.txt').read_text(encoding='utf-8').strip()
+    ficha = (AQUI / 'prompts' / f'{ident}.md').read_text(encoding='utf-8').strip()
+    destino = DOWNLOADS / ident
+    destino.mkdir(parents=True, exist_ok=True)
+    for f in destino.glob('prompt*.txt'):
+        f.unlink()
+    for f in destino.glob('ref-*'):
+        f.unlink()
+    m = re.search(r'^Variations:.*$', ficha, re.M)
+    textos = {}
+    if m:
+        base = ficha[:m.start()].rstrip()
+        conceitos = {int(n): c for n, c in re.findall(r'^(\d+)\. (.+)$', ficha[m.end():], re.M)}
+        quais = [int(x) for x in so.split(',')] if so else sorted(conceitos)
+        base = base.replace('(see Variations)', '(see Concept)').replace('from the Variations list', 'from the Concept line')
+        for n in quais:
+            textos[f'prompt-{n}.txt'] = f'{estilo}\n\n{base}\n- Concept (draw ONLY this one, a single image): {conceitos[n]}\n'
+    else:
+        extra = ''
+        if info['status'] == 'refazer':
+            notas = re.split(r'(?:^|; )\d\d/\d\d: ', info['nota'])
+            if notas[-1].strip():
+                extra = f'Changes requested: {notas[-1].strip()}\n'
+        textos['prompt.txt'] = f'{estilo}\n\n{ficha}\n' + (f'\n{extra}' if extra else '')
+    refs = sorted(f for f in (AQUI / 'refs' / ident).glob('*') if f.suffix.lower() in IMGS)
+    anexos = ('\nAttached reference images (in this order): ' + ', '.join(f'ref-{f.name}' for f in refs) + '\n') if refs else ''
+    for nome, txt in textos.items():
+        (destino / nome).write_text(txt + anexos, encoding='utf-8')
+    for f in refs:
+        shutil.copy(f, destino / f'ref-{f.name}')
+    print(f'pasta: {destino}')
+    print('prompts:', ', '.join(textos), '| referências:', len(refs))
+
+
+def importa(ident, espelha):
+    """Pega da pasta do item as imagens novas (o que não é ref-* e ainda não foi importado), copia para entrada/ID/
+    continuando a numeração e prepara."""
+    origem = DOWNLOADS / ident
+    if not origem.is_dir():
+        sys.exit(f'não achei {origem}: rode `arte.py pasta {ident}` antes')
+    diario = origem / '.importadas'
+    feitas = diario.read_text(encoding='utf-8').splitlines() if diario.exists() else []
+    ja = {x.split(' -> ')[0] for x in feitas}
+    novas = sorted((f for f in origem.glob('*') if f.suffix.lower() in IMGS and not f.name.startswith('ref-') and f.name not in ja),
+                   key=lambda f: f.stat().st_mtime)
+    if not novas:
+        sys.exit(f'nenhuma imagem nova em {origem}')
+    entrada = AQUI / 'entrada' / ident
+    entrada.mkdir(parents=True, exist_ok=True)
+    n = len(list(entrada.glob(f'{ident}-*')))
+    for f in novas:
+        n += 1
+        dst = entrada / f'{ident}-{n}{f.suffix.lower()}'
+        shutil.copy(f, dst)
+        feitas.append(f'{f.name} -> {dst.name}')
+        print(f'{f.name} -> entrada/{ident}/{dst.name}')
+    diario.write_text('\n'.join(feitas) + '\n', encoding='utf-8')
+    prepara(ident, espelha)
+
+
 def abre(url):
     """Abre a bancada no navegador do Caio, para ele não ter que copiar o link."""
     fx = shutil.which('firefox')
@@ -173,6 +242,10 @@ if __name__ == '__main__':
     if cmd == 'gera':
         gera(ident, a[a.index('--so') + 1] if '--so' in a else None)
         prepara(ident, '--espelha' in a)
+    elif cmd == 'pasta':
+        pasta(ident, a[a.index('--so') + 1] if '--so' in a else None)
+    elif cmd == 'importa':
+        importa(ident, '--espelha' in a)
     elif cmd == 'prepara':
         prepara(ident, '--espelha' in a)
     elif cmd == 'gostei':

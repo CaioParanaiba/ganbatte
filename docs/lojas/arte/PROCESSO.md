@@ -10,7 +10,15 @@ que é o jogo real do Caio.
 ## Um ciclo
 
 1. O Caio diz qual item quer (ou "o próximo": a primeira linha `refazer` ou `pendente` da `FILA.md`).
-2. Gere e prepare: `python3 docs/lojas/arte/arte.py gera ID` (rode em segundo plano; o Antigravity leva 1 a 3 minutos).
+2. **Pelo Gemini (o padrão desde 16/10, porque a cota de imagem do agy acaba rápido): o Caio é o intermediário.**
+   `arte.py pasta ID` monta `~/Downloads/ganbatte-arte/ID/` com o prompt pronto para colar (`prompt.txt`, ou `prompt-N.txt`,
+   um por conceito, quando a ficha tem `Variations:`; `--so 1,3,4` escolhe quais) e as referências como `ref-*`. O Caio
+   cola no Gemini, anexa as refs, baixa o resultado **para essa mesma pasta** e avisa. Aí `arte.py importa ID` copia as
+   imagens novas (tudo que não é `ref-*` nem foi importado antes) para `entrada/ID/`, prepara e abre a bancada. Se ele pedir
+   para refazer: `arte.py refazer ID "o que mudar"` (ajuste também `prompts/ID.md` se fizer sentido) e `arte.py pasta ID`
+   de novo, que reescreve o(s) prompt(s) da pasta e não mexe nas imagens dele. Ao ver as imagens, anote na `FILA.md` qual
+   conceito é qual, se houver `Variations:`.
+   **Pelo agy** (só se houver cota): `python3 docs/lojas/arte/arte.py gera ID` (rode em segundo plano; o Antigravity leva 1 a 3 minutos).
    Ele chama o `agy -p`, que lê o `AGY.md`, gera 3 variações com as referências, e o script copia da pasta da conversa
    do agy para `entrada/ID/` e já prepara. Se o Caio gerou à mão, use só `arte.py prepara ID`.
    O preparo (na tira, `--espelha` se só uma metade veio limpa). O script
