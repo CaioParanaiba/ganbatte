@@ -21,8 +21,8 @@ Nota com **⚠ PROVISÓRIO** = aprovado, mas ainda não 100% fechado (pode ser t
 | fx-jajanken-papel | efeito | #9BE15D | pendente |  |
 | fx-jajanken-tesoura | efeito | #9BE15D | pendente |  |
 | hm-chamas | efeito |  | pendente |  |
-| naipe-espadas | emblema | #E0AF68 | pendente |  |
-| naipe-copas | emblema | #E0AF68 | pendente |  |
-| naipe-ouros | emblema | #E0AF68 | pendente |  |
-| naipe-paus | emblema | #E0AF68 | pendente |  |
-| naipe-coringa | emblema | #E0AF68 | pendente |  |
+| naipe-espadas | emblema | #E0AF68 | gostei | 17/10: feito pelo Claude em SVG, sem o Gemini (tentativas/naipes/naipes.py): ♠ com os traços do cursor da carta (classico-espadas.svg) e uma versão afiada (afiado-espadas.svg); cores de baralho, na cor do texto (máscara pintada com a cor do texto: claro no escuro, escuro no claro), sem contorno; a bancada mostra o conjunto nos placares; 17/10: FINAL, aprovado pelo Caio: a variação 1 (clássico, os traços do cursor da carta); guardado em aprovadas/naipe-espadas/ |
+| naipe-copas | emblema | #E0AF68 | gostei | 17/10: feito pelo Claude em SVG, sem o Gemini (tentativas/naipes/naipes.py): ♥ com os traços do cursor da carta (classico-copas.svg) e uma versão afiada (afiado-copas.svg); cores de baralho, vermelho, sem contorno; a bancada mostra o conjunto nos placares; 17/10: FINAL, aprovado pelo Caio: a variação 1 (clássico, os traços do cursor da carta); guardado em aprovadas/naipe-copas/ |
+| naipe-ouros | emblema | #E0AF68 | gostei | 17/10: feito pelo Claude em SVG, sem o Gemini (tentativas/naipes/naipes.py): ♦ com os traços do cursor da carta (classico-ouros.svg) e uma versão afiada (afiado-ouros.svg); cores de baralho, vermelho, sem contorno; a bancada mostra o conjunto nos placares; 17/10: FINAL, aprovado pelo Caio: a variação 1 (clássico, os traços do cursor da carta); guardado em aprovadas/naipe-ouros/ |
+| naipe-paus | emblema | #E0AF68 | gostei | 17/10: feito pelo Claude em SVG, sem o Gemini (tentativas/naipes/naipes.py): ♣ com os traços do cursor da carta (classico-paus.svg) e uma versão afiada (afiado-paus.svg); cores de baralho, na cor do texto (máscara pintada com a cor do texto: claro no escuro, escuro no claro), sem contorno; a bancada mostra o conjunto nos placares; 17/10: FINAL, aprovado pelo Caio: a variação 1 (clássico, os traços do cursor da carta); guardado em aprovadas/naipe-paus/ |
+| naipe-coringa | emblema | #E0AF68 | gerado | 17/10: feito pelo Claude em SVG (tentativas/naipes/coringa.svg): a estrela amarela e a lágrima rosa do Coringa do cursor da carta, no lugar da máscara que a ficha pedia (em 14 px a máscara vira mancha); contorno claro por fora e tinta por dentro |
