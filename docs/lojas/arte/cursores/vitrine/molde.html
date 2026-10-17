@@ -1,0 +1,112 @@
+<title>{{TITULO}}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* uma coluna: o quadro preto ao vivo é a abertura; os gestos logo abaixo, depois a física e as peças paradas.
+   Um visual só, escuro, porque o cursor foi desenhado para a tela do jogo */
+:root{
+  --fundo:#0C0D12; --tinta:#ECEEF4; --apagado:#8F95A7; --linha:#252834; --palco:#000; --claro:#F2F3F7;
+  --acento:{{ACENTO}};
+  --f-titulo:'Dela Gothic One','Hiragino Sans','Yu Gothic',Impact,sans-serif;
+  --f-texto:'Zen Kaku Gothic New',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  color-scheme:dark;
+}
+body{background:var(--fundo);color:var(--tinta);font:16px/1.65 var(--f-texto);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 56px}
+main{max-width:1080px;margin:0 auto;display:grid;gap:36px}
+header{display:grid;gap:10px}
+.selo{font:500 12px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acento)}
+h1{margin:0;font:400 clamp(38px,7vw,68px)/1.02 var(--f-titulo);letter-spacing:-.01em;text-wrap:balance}
+.abre{margin:0;max-width:62ch;color:var(--apagado);font-size:17px}
+.abre b{color:var(--tinta);font-weight:700}
+
+.quadro{display:grid;gap:10px}
+.palco{position:relative;height:clamp(380px,64vh,620px);background:var(--palco);border:1px solid var(--linha);border-radius:12px;overflow:hidden;
+  cursor:none;touch-action:none;user-select:none;-webkit-user-select:none}
+.palco .est{position:absolute;right:14px;top:12px;left:14px;text-align:right;font:500 12px var(--f-mono);color:#6B7183;pointer-events:none}
+.palco .comeca{position:absolute;inset:auto 0 18px;text-align:center;font:500 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:#4A4F5E;pointer-events:none;transition:opacity .4s}
+.ajustes{display:flex;flex-wrap:wrap;gap:8px 22px;font:500 12px var(--f-mono);color:var(--apagado)}
+.ajustes label{display:flex;align-items:center;gap:8px}
+.ajustes input{accent-color:var(--acento);width:130px}
+.ajustes output{color:var(--tinta);min-width:4ch;font-variant-numeric:tabular-nums}
+
+.gestos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--linha);border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+.gestos li{background:var(--fundo);padding:16px 18px;display:grid;gap:6px;align-content:start}
+.gestos b{font:400 20px/1.1 var(--f-titulo);color:var(--acento)}
+.gestos span{color:var(--apagado);font-size:15px;line-height:1.5}
+
+h2{margin:0 0 14px;font:500 12px/1.4 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--apagado)}
+.fisica{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px 32px;margin:0}
+.fisica div{display:grid;gap:4px;min-width:0}
+.fisica dt{font-weight:700}
+.fisica dd{margin:0;color:var(--apagado);font-size:15px}
+.num{font-family:var(--f-mono);font-size:.92em;color:var(--tinta)}
+
+#prev{display:grid;gap:28px}
+#prev section{min-width:0}
+.linha{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;overflow-x:auto}
+.linha.claro{background:var(--claro);border-radius:10px;padding:14px}
+.prev{display:block;flex:none}
+
+footer{border-top:1px solid var(--linha);padding-top:18px;color:var(--apagado);font-size:14px;display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
+input:focus-visible{outline:2px solid var(--acento);outline-offset:3px}
+</style>
+
+<main>
+  <header>
+    <div class="selo">Ganbatte · loja Masadora · cursor do mouse</div>
+    <h1>{{TITULO}}</h1>
+    <p class="abre">{{ABRE}}</p>
+  </header>
+
+  <div class="quadro">
+    <div class="palco" id="palco"><span class="est" id="est"></span><span class="comeca" id="comeca">{{COMECA}}</span></div>
+    <div class="ajustes" id="ajustes"></div>
+  </div>
+
+  <ul class="gestos">
+{{GESTOS}}
+  </ul>
+
+  <section>
+    <h2>O que tem de física</h2>
+    <dl class="fisica">
+{{FISICA}}
+    </dl>
+  </section>
+
+  <div id="prev"></div>
+
+  <footer>
+    <span>Desenhado e simulado em código, sem nenhuma imagem.</span>
+    <span>Ganbatte, o jogo de tarefas · item da loja Masadora</span>
+  </footer>
+</main>
+
+<script>
+{{MODULO}}
+</script>
+<script>
+(() => {
+  const M = CURSORES['{{NOME}}'], st = {toque: true};
+  M.controles.forEach(c => { st[c.k] = c.padrao; });
+  const palco = document.getElementById('palco'), prev = document.getElementById('prev'), est = document.getElementById('est');
+  const fis = M.liga(palco, st);
+  M.previas(prev, st);
+  const aj = document.getElementById('ajustes');
+  M.controles.forEach(c => {
+    const l = document.createElement('label');
+    l.innerHTML = `${c.rot} <input type="range" id="aj-${c.k}" min="${c.min}" max="${c.max}" value="${c.padrao}"> <output>${c.padrao}${c.un}</output>`;
+    l.querySelector('input').oninput = e => { st[c.k] = +e.target.value; l.querySelector('output').textContent = st[c.k] + c.un; fis.ajusta(st); M.previas(prev, st); };
+    aj.append(l);
+  });
+  const comeca = document.getElementById('comeca');
+  palco.addEventListener('pointerdown', () => { comeca.style.opacity = 0; });
+  palco.addEventListener('pointermove', () => { comeca.style.opacity = 0; });
+  const mostra = () => { est.textContent = fis.legenda(); setTimeout(mostra, 150); };
+  mostra();
+})();
+</script>
