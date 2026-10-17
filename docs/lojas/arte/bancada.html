@@ -38,7 +38,7 @@ h2{margin:0 0 8px;font:600 12px var(--f-mono);color:var(--dim);letter-spacing:.0
 /* cursor com física (ficha com fisica): a tela é maior, para o fio esticar e o ioiô andar no chão */
 .palco.fis{height:min(74vh,640px);user-select:none;-webkit-user-select:none;touch-action:none}
 .palco .est{position:absolute;right:16px;top:12px;font:12px var(--f-mono);color:#666;text-align:right}
-.palco.fis .dica{top:12px;bottom:auto;max-width:calc(100% - 230px)}  /* o chão é do ioiô (ele anda nele) */
+.dica-fis{margin:0 0 10px;font:12px/1.6 var(--f-mono);color:var(--dim)}  /* fora da tela preta: as bordas e o chão são do cursor */
 .prev{display:block}
 .cur{position:absolute;left:0;top:0;width:var(--s);height:var(--s);pointer-events:none;transform-origin:0 0;transition:transform .12s}
 .cur.pop{transform:scale(.8)}
@@ -88,8 +88,10 @@ h2{margin:0 0 8px;font:600 12px var(--f-mono);color:var(--dim);letter-spacing:.0
 const Q = new URLSearchParams(location.search);
 const ID = Q.get('id') || '?', TIPO = Q.get('tipo') || 'emblema', IMGS = (Q.get('img') || '').split(',').filter(Boolean);
 const COR = Q.get('cor') ? '#' + Q.get('cor') : '';
-// cursor com física: a ficha diz qual (cursores/NOME.js, que se registra em CURSORES.NOME); o desenho é em código, sem imagem
-let FISICA = '', fis = null;
+// cursor com física: a ficha diz qual (cursores/NOME.js, que se registra em CURSORES.NOME); o desenho é em código, sem imagem.
+// O módulo traz liga(palco, cfg) → {ajusta, legenda, desliga}, titulo, dica, controles [{k, rot, min, max, un, padrao}] e
+// previas(el, cfg), que monta as seções de prévias paradas com as classes desta página (section, h2, .linha, .claro)
+let FISICA = '', fis = null, comControles = false;
 let atual = 0;
 document.getElementById('nome').textContent = ID;
 document.getElementById('tipo').textContent = TIPO;
@@ -137,12 +139,7 @@ if(TIPO === 'borda'){
   const l = document.createElement('label'); l.innerHTML = '<input type="checkbox" id="por-cima"> corrente sobre o campo';
   l.querySelector('input').onchange = e => { st.por = e.target.checked; desenha(); }; document.getElementById('extra').append(l);
 }
-if(FISICA){
-  // mexem no cursor ao vivo, sem refazer a página (o ioiô continua onde está)
-  Object.assign(st, {raio: 15, fio: 170});
-  controle('raio', 'raio do ioiô', 9, 26, 'px', () => { fis && fis.ajusta(st); previas(); });
-  controle('fio', 'fio', 90, 320, 'px', () => fis && fis.ajusta(st));
-} else if(TIPO === 'cursor') controle('s', 'tamanho', 20, 72, 'px');
+if(TIPO === 'cursor' && !FISICA) controle('s', 'tamanho', 20, 72, 'px');
 if(TIPO === 'moldura'){
   Object.assign(st, {esp: 11, fatia: 20, fora: 0, inteira: Q.get('inteira') === '1'});
   const l = document.createElement('label'); l.innerHTML = `<input type="checkbox" ${st.inteira ? 'checked' : ''}> camada inteira (sem fatiar)`;
@@ -188,37 +185,22 @@ function desenha(){
   liga();
 }
 
-// cursor com física: a tela preta com o cursor de verdade, e prévias paradas do desenho (o mesmo código, sem a física)
-const FASES = {mao: 'enrolado na mão', desce: 'descendo', sono: 'dormindo', sobe: 'subindo'};
+// cursor com física: a tela preta com o cursor de verdade, e as prévias paradas que o módulo monta
 function desenhaFisica(){
   if(fis){ fis.desliga(); fis = null; }
-  main.innerHTML = ficha() + `<section><h2>mexa o mouse na tela preta · clique · segure · solte</h2><div class="palco fis" id="palco">
-      <span class="est" id="est"></span>
-      <span class="dica">clique: desce · segurando: fica esticado, dormindo · soltando: volta · balance o mouse e o fio balança<br>segurando, gire o mouse em círculos (volta ao mundo) ou encoste o ioiô no chão (ele anda com o giro)</span></div></section>
-    <section><h2>parado, de 120 a 24 px de diâmetro, no escuro e no claro</h2><div class="linha" id="prev-e"></div><div class="linha claro" id="prev-c" style="margin-top:12px"></div></section>
-    <section><h2>o borrão do giro (o mesmo ioiô, cada vez mais rápido)</h2><div class="linha" id="prev-g"></div></section>`;
-  const vai = () => {
-    const palco = document.getElementById('palco');
-    fis = CURSORES[FISICA].liga(palco, st);
-    previas();
-    const est = document.getElementById('est');
-    const mostra = () => { if(!document.body.contains(est)) return; const e = fis.estado(), v = Math.abs(e.voltas);
-      est.textContent = FASES[e.fase] + (v >= .5 ? ` · ${v.toFixed(v < 10 ? 1 : 0)} voltas/s` : '')
-        + (e.noChao && v > 1 ? ' · passeando com o cachorro' : '') + (e.mundo && e.fase !== 'mao' ? ` · volta ao mundo ×${e.mundo}` : '');
-      setTimeout(mostra, 120); };
-    mostra();
-  };
-  if(window.CURSORES && CURSORES[FISICA]) vai();
-  else { const s = document.createElement('script'); s.src = `cursores/${FISICA}.js`; s.onload = vai; document.head.append(s); }
-}
-function previas(){
-  const des = window.CURSORES && CURSORES[FISICA] && CURSORES[FISICA].desenha;
-  if(!des || !document.getElementById('prev-e')) return;
-  const tela = (lado, ang, varre) => { const c = document.createElement('canvas'), d = devicePixelRatio || 1;
-    c.className = 'prev'; c.width = c.height = Math.ceil(lado * d); c.style.width = c.style.height = lado + 'px';
-    const x = c.getContext('2d'); x.scale(d, d); des(x, lado / 2, lado / 2, lado / 2 - 1, ang, varre); return c; };
-  ['prev-e', 'prev-c'].forEach(id => document.getElementById(id).replaceChildren(...[120, 64, 48, 2 * st.raio, 24].map(l => tela(l, -.3, 0))));
-  document.getElementById('prev-g').replaceChildren(...[0, .4, 1.1, 2.1, 6].map(v => tela(96, -.3, v)));
+  const M = window.CURSORES && CURSORES[FISICA];
+  if(!M){ const s = document.createElement('script'); s.src = `cursores/${FISICA}.js`; s.onload = desenhaFisica; document.head.append(s); return; }
+  if(!comControles){
+    // mexem no cursor ao vivo, sem refazer a página (o que está na tela continua onde está)
+    comControles = true;
+    (M.controles || []).forEach(c => { st[c.k] = c.padrao; controle(c.k, c.rot, c.min, c.max, c.un, () => { fis && fis.ajusta(st); M.previas && M.previas(document.getElementById('prev'), st); }); });
+  }
+  main.innerHTML = ficha() + `<section><h2>${M.titulo}</h2><p class="dica-fis">${M.dica}</p><div class="palco fis" id="palco"><span class="est" id="est"></span></div></section><div id="prev" style="display:grid;gap:22px"></div>`;
+  fis = M.liga(document.getElementById('palco'), st);
+  if(M.previas) M.previas(document.getElementById('prev'), st);
+  const est = document.getElementById('est');
+  const mostra = () => { if(!document.body.contains(est)) return; est.textContent = fis.legenda(); setTimeout(mostra, 120); };
+  mostra();
 }
 
 function liga(){

@@ -6,6 +6,7 @@
 // chão enquanto dorme, anda (walk the dog) gastando o giro. O borrão do giro é a média de cópias do ioiô girado no quadro.
 //   const io = CURSORES.ioio.liga(elemento, {raio: 15, fio: 170})   io.ajusta({fio: 220})   io.estado()   io.desliga()
 //   CURSORES.ioio.desenha(ctx, x, y, raio, angulo, varredura)       só o ioiô, para as prévias paradas
+//   titulo, dica, controles, previas(el, cfg) e io.legenda(): o que a bancada mostra
 (() => {
 const TINTA = '#11131A', ARO = '#8CC8FF', FACE = '#EAF2FF', FIO = '#E8ECF4';
 const PASSO = 1 / 240, N = 16, VOLTAS = 10;
@@ -219,6 +220,11 @@ function liga(alvo, op = {}){
   return {
     ajusta(o){ Object.assign(cfg, o); medidas(); acorda(); },
     estado: () => ({fase, voltas: giro / (2 * Math.PI), fio: L, preso, x: px[N], y: py[N], mundo, noChao}),
+    legenda(){
+      const v = Math.abs(giro / (2 * Math.PI));
+      return FASES[fase] + (v >= .5 ? ` · ${v.toFixed(v < 10 ? 1 : 0)} voltas/s` : '')
+        + (noChao && v > 1 ? ' · passeando com o cachorro' : '') + (mundo && fase !== 'mao' ? ` · volta ao mundo ×${mundo}` : '');
+    },
     desliga(){
       ouvintes.forEach(([n, f]) => ev.removeEventListener(n, f));
       if(obs) obs.disconnect(); else removeEventListener('resize', mede);
@@ -227,5 +233,20 @@ function liga(alvo, op = {}){
   };
 }
 
-(window.CURSORES = window.CURSORES || {}).ioio = {liga, desenha};
+// o que a bancada mostra: legenda das fases, controles e prévias paradas (com as classes da bancada)
+const FASES = {mao: 'enrolado na mão', desce: 'descendo', sono: 'dormindo', sobe: 'subindo'};
+function previas(el, cfg){
+  const tela = (lado, ang, varre) => { const c = document.createElement('canvas'), d = devicePixelRatio || 1;
+    c.className = 'prev'; c.width = c.height = Math.ceil(lado * d); c.style.width = c.style.height = lado + 'px';
+    const x = c.getContext('2d'); x.scale(d, d); desenha(x, lado / 2, lado / 2, lado / 2 - 1, ang, varre); return c; };
+  el.innerHTML = '<section><h2>parado, de 120 a 24 px de diâmetro, no escuro e no claro</h2><div class="linha"></div><div class="linha claro" style="margin-top:12px"></div></section>'
+    + '<section><h2>o borrão do giro (o mesmo ioiô, cada vez mais rápido)</h2><div class="linha"></div></section>';
+  const [e, c, g] = el.querySelectorAll('.linha');
+  [e, c].forEach(l => l.append(...[120, 64, 48, 2 * cfg.raio, 24].map(t => tela(t, -.3, 0))));
+  g.append(...[0, .4, 1.1, 2.1, 6].map(v => tela(96, -.3, v)));
+}
+(window.CURSORES = window.CURSORES || {}).ioio = {liga, desenha, previas,
+  titulo: 'mexa o mouse na tela preta · clique · segure · solte',
+  dica: 'clique: desce · segurando: fica esticado, dormindo · soltando: volta · balance o mouse e o fio balança<br>segurando, gire o mouse em círculos (volta ao mundo) ou encoste o ioiô no chão (ele anda com o giro)',
+  controles: [{k: 'raio', rot: 'raio do ioiô', min: 9, max: 26, un: 'px', padrao: 15}, {k: 'fio', rot: 'fio', min: 90, max: 320, un: 'px', padrao: 170}]};
 })();
