@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Licença Hunter: prévia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Prévia da licença (#134/#136), 2ª rodada: o cartão segue a licença do anime (painel preto com o emblema na caixa
+   branca e a foto; à direita o azul-claro com a faixa, o nome na caixa e as linhas; no verso a tarja e o número em
+   caixinhas). Entram só os lugares fixos dos itens (encaixes de estrela, campo do carimbo) e um guilhochê leve.
+   O estojo é uma moldura de verdade em volta do cartão (SVG), sem aba nem furo. Nada aqui é do jogo. */
+:root{--bg:#14141A;--ink:#E6E6EC;--soft:#9A9AA8;--line:#2A2A34;--card:#1C1C24;--f-hud:"Chakra Petch","JetBrains Mono",monospace;--f-mono:"JetBrains Mono",ui-monospace,monospace}
+:root.claro{--bg:#ECEDF1;--ink:#17171B;--soft:#5A5D6A;--line:#D2D4DC;--card:#FFFFFF}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-mono);padding:24px 16px 60px}
+main{max-width:1240px;margin:0 auto}
+h1{font:700 22px var(--f-hud);letter-spacing:.04em;margin:0 0 4px}
+h2{font:700 15px var(--f-hud);letter-spacing:.08em;text-transform:uppercase;margin:34px 0 12px;color:var(--soft)}
+p.sub{color:var(--soft);margin:0 0 16px;max-width:900px}
+.ctl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--card);border:1px solid var(--line);padding:12px 14px;position:sticky;top:0;z-index:20}
+.ctl label{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.06em}
+.ctl select{font:600 13px var(--f-mono);background:var(--bg);color:var(--ink);border:1px solid var(--line);padding:3px 6px}
+.par{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.par figure{margin:0;display:grid;gap:8px;justify-items:center}
+.par figcaption{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.08em;text-align:center}
+.galeria .peca{cursor:pointer}
+.galeria figure.on figcaption{color:var(--ink);font-weight:800}
+.galeria figure.on figcaption::before{content:"▸ "}
+.notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.notas div{background:var(--card);border:1px solid var(--line);padding:12px 14px;font-size:13px}
+.notas b{display:block;font-family:var(--f-hud);letter-spacing:.06em;margin-bottom:4px}
+.hoje img{width:340px;max-width:100%;border:1px solid var(--line)}
+
+/* ---------- a peça: moldura (SVG atrás e na frente) com o cartão no meio ---------- */
+.peca{position:relative;flex:none;max-width:100%;filter:drop-shadow(0 10px 18px rgba(0,0,0,.35))}
+.peca>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.peca>svg.frente{pointer-events:none;z-index:3}
+
+/* ---------- o cartão: medidas em cqw (largura do cartão = 100cqw) ---------- */
+.cartao{position:relative;container-type:inline-size;--lk:#17171B;--lb:#BBDDF5;--lb2:#EEF7FD;--gl:#9CCBEC;--ac:#1F5FA8;--lt:#141418;
+  color:var(--lt);background:#E2E4EA;overflow:hidden;font-family:var(--f-mono);display:grid}
+.cartao.h{aspect-ratio:1.56;border-radius:3%/4.7%;grid-template-columns:38% 1fr}
+.cartao.v{aspect-ratio:.641;border-radius:4%/2.56%;grid-template-rows:48% 1fr}
+.cartao.cor-verde{--lb:#BFE8CF;--lb2:#EEFBF2;--gl:#93D3AC;--ac:#1E7A47}
+.cartao.cor-escarlate{--lb:#F5C2C8;--lb2:#FDF0F2;--lk:#2A0A10;--gl:#E9A4AF;--ac:#A3203A}
+/* frente: painel preto */
+.cartao .topo{background:var(--lk);position:relative;display:grid;justify-items:center;align-content:center}
+.h .topo{gap:3.2cqw;padding:3cqw 0 8cqw}
+.v .topo{gap:4cqw;padding:5cqw 0 13cqw}
+.cartao .emb{background:#fff;display:grid;place-items:center;padding:1.3cqw 2.4cqw;width:24cqw}
+.v .emb{width:36cqw;padding:2cqw 3.6cqw}
+.cartao .emb svg,.cartao .emb img{width:100%;height:auto;display:block}
+.cartao .emb.solto{background:none;padding:0}
+.h .emb.solto{width:17cqw} .v .emb.solto{width:26cqw}
+.cartao .av{width:22cqw;aspect-ratio:1;display:block;object-fit:contain}
+.v .av{width:30cqw}
+.cartao .estrelas{position:absolute;left:0;right:0;display:flex;justify-content:center}
+.h .estrelas{bottom:2.6cqw;gap:1.6cqw} .v .estrelas{bottom:4cqw;gap:3cqw}
+.cartao .estrelas svg{width:4.4cqw;height:4.4cqw} .v .estrelas svg{width:7.6cqw;height:7.6cqw}
+.cartao .estrelas .vazia{fill:none;stroke:#ffffff45;stroke-width:1.3;stroke-dasharray:2 1.7}
+.cartao .estrelas .cheia{fill:#E8C35A;stroke:#7A5A12;stroke-width:1}
+/* frente: o azul */
+.cartao .azul{position:relative;background:linear-gradient(180deg,#FFFFFF 0%,var(--lb) 100%);display:grid;align-content:start;min-width:0}
+.h .azul{padding:3.6cqw 4cqw;gap:2cqw}
+.v .azul{padding:5cqw 7cqw;gap:3cqw}
+.cartao .guil{position:absolute;inset:0;width:100%;height:100%;color:var(--gl);pointer-events:none}
+.cartao .azul>:not(.guil){position:relative}
+.cartao .faixa{background:repeating-linear-gradient(90deg,#666 0 .35cqw,transparent .35cqw 1.3cqw) left/11% 100% no-repeat,repeating-linear-gradient(90deg,transparent 0 .9cqw,#666 .9cqw 1.25cqw) right/11% 100% no-repeat,#F2F2F2;
+  color:#222;text-align:center;font-weight:700;letter-spacing:.06em;white-space:nowrap;overflow:hidden;font-size:1.9cqw;padding:1.6cqw 6.5cqw}
+.v .faixa{font-size:3cqw;padding:2.4cqw 10cqw}
+.cartao .nomebox{border:.7cqw solid var(--lt);background:#FFFFFF;font:700 5cqw/1.2 var(--f-hud);letter-spacing:.06em;padding:1cqw 2.2cqw;white-space:nowrap;overflow:hidden}
+.v .nomebox{font-size:8cqw;border-width:1cqw;padding:1.4cqw 3.4cqw}
+.cartao .lls{display:grid;font-weight:600;color:#222;font-size:2.2cqw;gap:.8cqw} .cartao .lls b{font-weight:800;color:var(--lt)}
+.v .lls{font-size:3.1cqw;gap:1.3cqw;white-space:nowrap}
+.cartao .tt-glifo{display:block;max-width:100%;height:1.9cqw;width:auto;color:#2A2A30}
+.v .tt-glifo{height:2.9cqw;max-width:52%}
+.cartao .visto{position:absolute!important;border:.3cqw dashed color-mix(in srgb,var(--ac) 40%,transparent);border-radius:1.4cqw}
+.h .visto{right:3.4cqw;bottom:3.4cqw;width:18cqw;height:18cqw}
+.v .visto{right:6cqw;bottom:5cqw;width:30cqw;height:30cqw}
+.cartao .visto img{position:absolute;left:50%;top:50%;width:104%;transform:translate(-50%,-50%) rotate(-11deg);mix-blend-mode:multiply;opacity:.88}
+/* verso */
+.cartao.verso{display:block;background:linear-gradient(180deg,var(--lb2),var(--lb))}
+.cartao.verso>*{position:absolute}
+.cartao .tarja{left:0;right:0;background:#1A0B0B}
+.h .tarja{top:7cqw;height:10cqw} .v .tarja{top:10cqw;height:14cqw}
+.cartao .numq{display:flex;gap:.8cqw}
+.cartao .numq i{font-style:normal;display:grid;place-items:center;border:.5cqw solid var(--lt);border-radius:1.2cqw;font-weight:800;width:4.4cqw;height:4.4cqw;font-size:2.4cqw}
+.cartao .numq .esp{width:2.4cqw}
+.h .numq{left:4cqw;top:21cqw}
+.v .numq{left:6cqw;top:30cqw;gap:.9cqw} .v .numq i{width:6cqw;height:6.6cqw;font-size:3.6cqw} .v .numq .esp{width:2cqw}
+.cartao .vinfo{display:grid;gap:2cqw 4cqw;font-size:2.1cqw}
+.h .vinfo{left:4cqw;right:4cqw;top:30cqw;grid-template-columns:1fr 1fr}
+.v .vinfo{left:7cqw;right:7cqw;top:44cqw;grid-template-columns:1fr;font-size:3.4cqw;gap:4cqw}
+.cartao h5{margin:0 0 .8cqw;font-size:.85em;letter-spacing:.14em;color:#3A3D4A}
+.cartao .vinfo ul{list-style:none;margin:0;padding:0;display:grid;gap:.6cqw} .cartao .vinfo li{display:flex;gap:1.6cqw;align-items:baseline;white-space:nowrap;overflow:hidden}
+.cartao .vinfo .q{display:inline-grid;place-items:center;min-width:1.9em;height:1.5em;border-radius:99px;font-weight:800;background:#FFFFFFAA;font-size:.9em}
+.cartao .vinfo .q.m1{background:#E8C35A} .cartao .vinfo .q.m2{background:#D5D9E2} .cartao .vinfo .q.m3{background:#E2A877}
+/* efeitos: só no cartão (o holo pega o azul e o verso, como no jogo) */
+.cartao .fx{position:absolute;inset:0;pointer-events:none;z-index:5}
+.cartao .fx.holo{background:linear-gradient(115deg,#BFE8FF,#E4D2FF,#FFD2E6,#FFF1BF,#D2F5C4,#BFE8FF);background-size:300% 100%;mix-blend-mode:multiply;opacity:.75}
+.cartao .fx.brilho{background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);background-size:250% 100%;background-position:120% 0}
+@media (prefers-reduced-motion:no-preference){
+  .cartao .fx.holo{animation:holo 6s linear infinite}
+  .cartao .fx.brilho{animation:brilho 2.8s ease-in-out infinite}
+}
+@keyframes holo{to{background-position:300% 0}}
+@keyframes brilho{from{background-position:120% 0}to{background-position:-120% 0}}
+</style>
+</head>
+<body>
+<main>
+<h1>Licença Hunter: o cartão do anime + estojos</h1>
+<p class="sub">O cartão volta para a licença do anime: painel preto com o emblema na caixa branca e a foto; o azul com a faixa, o nome na caixa e as linhas em escrita hunter; no verso, a tarja e o número em caixinhas. De novo entram só os <b>lugares dos itens</b> (3 encaixes de estrela no painel preto, campo do carimbo no canto do azul) e um guilhochê leve. O estojo é uma <b>moldura de verdade</b> em volta, com tema. Clique num estojo da galeria para vê-lo grande.</p>
+
+<div class="ctl">
+  <label>estojo <select id="est"><option value="padrao">padrão</option><option value="preto">preto (couro)</option><option value="ouro">dourado: filete</option><option value="ouro-chanfro">dourado: chanfro</option><option value="ouro-losangos">dourado: losangos</option><option value="corrente">corrente</option></select></label>
+  <label>cor <select id="cor"><option value="azul">azul (padrão)</option><option value="verde">verde-caçador</option><option value="escarlate">escarlate</option></select></label>
+  <label>emblema <select id="emb"><option value="hunter">hunter</option><option value="aranha">aranha</option><option value="rei">rei (provisório)</option></select></label>
+  <label>carimbo <select id="car"><option value="">nenhum</option><option value="lic-exame">exame aprovado 念</option><option value="lic-chefao">chefão</option><option value="lg-exame">exame T1 (hanko)</option></select></label>
+  <label>estrelas <select id="st"><option>0</option><option>1</option><option>2</option><option>3</option></select></label>
+  <label>efeito <select id="fx"><option value="">nenhum</option><option value="brilho">brilho</option><option value="holo">holográfica</option></select></label>
+  <label>fundo <select id="fundo"><option value="escuro">escuro</option><option value="claro">claro</option></select></label>
+</div>
+
+<h2>Horizontal (a do anime)</h2>
+<div class="par" id="horiz"></div>
+<h2>Vertical (a mesma licença em pé, para o placar)</h2>
+<div class="par" id="vert"></div>
+<h2>Dourado: 3 versões novas</h2>
+<div class="par galeria" id="ouro"></div>
+<div class="par galeria" id="ouro2" style="margin-top:22px"></div>
+<h2>Os estojos lado a lado</h2>
+<div class="par galeria" id="gal"></div>
+<div class="par galeria" id="gal2" style="margin-top:22px"></div>
+<h2>Pequena, perto do tamanho do placar</h2>
+<div class="par" id="peq"></div>
+<h2>Como é hoje</h2>
+<div class="par hoje"><figure><img src="../hoje/associacao-lic-ouro.png" alt="licença atual com o estojo dourado"><figcaption>o estojo é só a margem pintada</figcaption></figure></div>
+<h2>O que muda</h2>
+<div class="notas">
+  <div><b>Cartão fiel ao anime</b>A estrutura é a da licença do anime (a mesma do jogo hoje). Saíram o chip, a assinatura, a medalha e a aba com furo, que davam cara de cartão de crédito.</div>
+  <div><b>Itens com lugar</b>As estrelas preenchem 3 encaixes no pé do painel preto; o carimbo cai no campo tracejado do canto. A aranha e a coroa entram soltas no preto, sem a caixa branca.</div>
+  <div><b>Estojo é moldura</b>Uma moldura com espessura em volta do cartão, que pode segurar os cantos dele: couro com costura, metal com cantoneiras, a corrente do Kurapika dando a volta.</div>
+</div>
+</main>
+
+<script>
+const AV = '../../../../web/a/killua-3.png', APR = '../aprovadas/';
+const EMBLEMA = '<svg viewBox="0 0 120 70" aria-hidden="true"><path d="M60 10 L84 35 L60 60 L36 35 Z" fill="#C8102E"/><path d="M12 10 L60 60 M60 10 L12 60 M60 10 L108 60 M108 10 L60 60" stroke="#141418" stroke-width="7" fill="none"/><path d="M3 10 H23 M50 10 H70 M97 10 H117 M3 60 H23 M50 60 H70 M97 60 H117" stroke="#141418" stroke-width="3.5"/></svg>';
+const COROA = '<svg viewBox="20 6 80 60" aria-hidden="true"><path d="M28 54 L22 18 L42 36 L60 10 L78 36 L98 18 L92 54 Z" fill="#E8C35A" stroke="#6E5418" stroke-width="2"/><rect x="27" y="54" width="66" height="8" rx="2" fill="#E8C35A" stroke="#6E5418" stroke-width="2"/><circle cx="60" cy="40" r="5" fill="#C8102E"/><circle cx="42" cy="44" r="3.4" fill="#2F6FD0"/><circle cx="78" cy="44" r="3.4" fill="#2F6FD0"/></svg>';
+const ESTRELA = 'M12 2l2.9 6.5 7.1.7-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.7z';
+let UID = 0;
+const $ = id => document.getElementById(id);
+const op = () => ({est:$('est').value, cor:$('cor').value, emb:$('emb').value, car:$('car').value, st:+$('st').value, fx:$('fx').value});
+
+function glifos(txt){   // a "escrita hunter" do jogo (web/grupo.js): cada letra vira três traços
+  const segs = [[0,0,6,0],[0,0,0,8],[6,0,6,8],[0,8,6,8],[0,4,6,4],[3,0,3,8],[0,0,6,8],[6,0,0,8],[0,4,3,8],[3,0,6,4]];
+  let x = 0, d = '';
+  for(const ch of txt.toLowerCase()){ if(ch === ' '){ x += 7; continue; } const c = ch.charCodeAt(0);
+    for(let j = 0; j < 3; j++){ const s = segs[(c * (j + 3) + j * 7) % segs.length]; d += `M${x + s[0]} ${s[1]}L${x + s[2]} ${s[3]}`; } x += 10; }
+  return `<svg class="tt-glifo" viewBox="-1 -1 ${x + 1} 10" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/></svg>`;
+}
+
+/* guilhochê leve: ondas entrelaçadas, só no azul e no verso */
+function guilloche(w, h){
+  let d = '';
+  for(let y0 = 30; y0 < h; y0 += 120) for(let k = 0; k < 3; k++){
+    let p = '';
+    for(let x = 0; x <= w; x += 12){ const y = y0 + 30 * Math.sin(2 * Math.PI * x / 240 + k * Math.PI * 2 / 3); p += (p ? 'L' : 'M') + x + ' ' + y.toFixed(1); }
+    d += p;
+  }
+  return `<svg class="guil" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"/></svg>`;
+}
+
+const emblema = e => e === 'aranha' ? `<div class="emb solto"><img src="${APR}lic-emb-aranha/lic-emb-aranha.png" alt=""></div>`
+  : e === 'rei' ? `<div class="emb solto">${COROA}</div>` : `<div class="emb">${EMBLEMA}</div>`;
+const estrelas = n => `<div class="estrelas">${[0,1,2].map(i => `<svg viewBox="0 0 24 24"><path class="${i < n ? 'cheia' : 'vazia'}" d="${ESTRELA}"/></svg>`).join('')}</div>`;
+const fx = o => o.fx ? `<div class="fx ${o.fx}"></div>` : '';
+
+function frente(or, o){
+  return `<div class="cartao ${or} frente cor-${o.cor}">
+    <div class="topo">${emblema(o.emb)}<img class="av" src="${AV}" alt="">${estrelas(o.st)}</div>
+    <div class="azul">${guilloche(or === 'h' ? 970 : 1000, or === 'h' ? 1000 : 870)}<div class="faixa">TORRE TRICK · T1</div><div class="nomebox">KILLUA</div>
+      <div class="lls"><span>Nº <b>0012 2026 4817</b></span><span><b>2º</b> NO GERAL · <b>34</b> ANDARES</span><span>SEQ. <b>14</b> · <b>3 TÍTULOS</b></span><span>LÍDER EM <b>LEITURA</b></span></div>
+      ${glifos('hunter killua torre trick')}
+      <div class="visto">${o.car ? `<img src="${APR}${o.car}/${o.car}.png" alt="">` : ''}</div></div>${fx(o)}</div>`;
+}
+
+function verso(or, o){
+  const num = ['0012','2026','4817'].map((n, i) => [...n].map(c => `<i>${c}</i>`).join('') + (i < 2 ? '<span class="esp"></span>' : '')).join('');
+  const pl = [[1,'Leitura'],[2,'Corrida'],[2,'Geral'],[3,'Água'],[5,'Inglês'],[7,'Sono']];
+  return `<div class="cartao ${or} verso cor-${o.cor}">${guilloche(or === 'h' ? 1560 : 1000, or === 'h' ? 1000 : 1560)}
+    <div class="tarja"></div><div class="numq">${num}</div>
+    <div class="vinfo"><div><h5>PLACARES</h5><ul>${pl.map(([k, n]) => `<li><span class="q${k <= 3 ? ' m' + k : ''}">${k}º</span>${n}</li>`).join('')}</ul></div>
+      <div><h5>EM CURSO</h5><ul><li>superação: +6 andares</li><li>(entra quando o período fechar)</li></ul><h5 style="margin-top:2cqw">REGISTRO</h5><ul><li>41 dias com XP</li><li>admin do grupo</li></ul></div></div>${fx(o)}</div>`;
+}
+
+/* ---------- estojo em SVG: moldura com sobra m em volta do cartão ---------- */
+function rrect(x, y, w, h, r){ return `M${x + r},${y}H${x + w - r}A${r},${r} 0 0 1 ${x + w},${y + r}V${y + h - r}A${r},${r} 0 0 1 ${x + w - r},${y + h}H${x + r}A${r},${r} 0 0 1 ${x},${y + h - r}V${y + r}A${r},${r} 0 0 1 ${x + r},${y}Z`; }
+
+function estojo(or, tipo){
+  const cw = or === 'h' ? 1560 : 1000, ch = or === 'h' ? 1000 : 1560, m = 64;
+  const rc = or === 'h' ? 47 : 40, R = rc + m;
+  const W = cw + 2 * m, H = ch + 2 * m;
+  const card = {x: m, y: m, w: cw, h: ch};
+  const corpo = i => rrect(i, i, W - 2 * i, H - 2 * i, R - i);
+  const jan = k => rrect(card.x - k, card.y - k, card.w + 2 * k, card.h + 2 * k, rc + k);
+  const u = 'e' + (UID++);
+  let tras = '', frente = '';
+
+  if(tipo === 'padrao'){   // o cinza de hoje, com espessura
+    tras = `<path d="${corpo(0)}" fill="#E2E4EA" stroke="#9AA0B0" stroke-width="5"/>
+      <path d="${corpo(10)}" fill="none" stroke="#fff" stroke-width="4" opacity=".7"/>
+      <path d="${jan(6)}" fill="#9AA0B0"/>`;
+  }
+  if(tipo === 'preto'){   // couro com costura, a borda cobre um pouco do cartão
+    tras = `<filter id="${u}g"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .09 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+      <path d="${corpo(0)}" fill="#24252B" stroke="#0E0E11" stroke-width="6"/>
+      <path d="${corpo(0)}" fill="#fff" filter="url(#${u}g)"/>
+      <path d="${corpo(20)}" fill="none" stroke="#B89A6A" stroke-width="4" stroke-dasharray="16 11" stroke-linecap="round"/>
+      <path d="${jan(6)}" fill="#0E0E11"/>`;
+    frente = `<path d="${jan(0)}" fill="none" stroke="#24252B" stroke-width="18"/>
+      <path d="${jan(20)}" fill="none" stroke="#B89A6A" stroke-width="4" stroke-dasharray="16 11" stroke-linecap="round"/>`;
+  }
+  if(tipo.startsWith('ouro')){   // dourado chapado, como os carimbos: ouro liso, contorno de tinta, um detalhe só
+    const OURO = '#D9AC4E', ESC = '#9C7224', TINTA = '#2B1D14', VERM = '#C8102E';
+    const los = (x, y, s, cor, tr) => `<path d="M${x},${y - s}L${x + s},${y}L${x},${y + s}L${x - s},${y}Z" fill="${cor}"${tr ? ` stroke="${TINTA}" stroke-width="${tr}"` : ''}/>`;
+    const c = m / 2, rr = R - c, dg = R - rr * Math.SQRT1_2;   // meio da faixa e o ponto da curva no canto
+    if(tipo === 'ouro'){   // filete: uma linha no meio da faixa, o losango vermelho do emblema em cima e embaixo
+      tras = `<path d="${corpo(0)}" fill="${OURO}" stroke="${TINTA}" stroke-width="6"/>
+        <path d="${corpo(c)}" fill="none" stroke="${ESC}" stroke-width="4"/>
+        ${los(W / 2, c, 22, OURO)}${los(W / 2, H - c, 22, OURO)}${los(W / 2, c, 13, VERM, 3)}${los(W / 2, H - c, 13, VERM, 3)}
+        <path d="${jan(5)}" fill="${TINTA}"/>`;
+    }
+    if(tipo === 'ouro-chanfro'){   // cantos cortados retos (o visual Nen), filete e um cravo em cada canto
+      const k = or === 'h' ? 96 : 84;
+      const chanfro = i => { const x0 = i, y0 = i, x1 = W - i, y1 = H - i, q = k - i * .41;
+        return `M${x0 + q},${y0}H${x1 - q}L${x1},${y0 + q}V${y1 - q}L${x1 - q},${y1}H${x0 + q}L${x0},${y1 - q}V${y0 + q}Z`; };
+      const p = 70;
+      tras = `<path d="${chanfro(0)}" fill="${OURO}" stroke="${TINTA}" stroke-width="6" stroke-linejoin="miter"/>
+        <path d="${chanfro(c - 6)}" fill="none" stroke="${ESC}" stroke-width="4"/>
+        <path d="${jan(5)}" fill="${TINTA}"/>`;
+      frente = [[p, p], [W - p, p], [p, H - p], [W - p, H - p]].map(([x, y]) => los(x, y, 13, ESC, 3)).join('');
+    }
+    if(tipo === 'ouro-losangos'){   // uma fileira de losangos gravados (o do emblema), vermelhos nos cantos
+      let fila = '';
+      const reta = (x0, y0, x1, y1) => { const n = Math.round(Math.hypot(x1 - x0, y1 - y0) / 46);
+        for(let t = 0; t <= n; t++) fila += los(x0 + (x1 - x0) * t / n, y0 + (y1 - y0) * t / n, 8, ESC); };
+      reta(R + 30, c, W - R - 30, c); reta(R + 30, H - c, W - R - 30, H - c); reta(c, R + 30, c, H - R - 30); reta(W - c, R + 30, W - c, H - R - 30);
+      tras = `<path d="${corpo(0)}" fill="${OURO}" stroke="${TINTA}" stroke-width="6"/>${fila}
+        ${[[dg, dg], [W - dg, dg], [dg, H - dg], [W - dg, H - dg]].map(([x, y]) => los(x, y, 15, VERM, 3)).join('')}
+        <path d="${jan(5)}" fill="${TINTA}"/>`;
+    }
+    frente = `<path d="${jan(0)}" fill="none" stroke="${TINTA}" stroke-width="4"/>` + frente;
+  }
+  if(tipo === 'corrente'){   // a corrente do Kurapika dando a volta na moldura, com os elos da arte aprovada
+    tras = `<path d="${corpo(0)}" fill="#3A3D46" stroke="#17181D" stroke-width="6"/>
+      <path d="${corpo(12)}" fill="none" stroke="#5A5E6A" stroke-width="3"/>
+      <path d="${jan(6)}" fill="#17181D"/>`;
+    const face = (x, y, a) => `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${a})"><ellipse rx="31" ry="17" fill="none" stroke="#2E3038" stroke-width="16"/><ellipse rx="31" ry="17" fill="none" stroke="#ECEDF1" stroke-width="9"/><ellipse rx="29" ry="15" cx="1.5" cy="1.5" fill="none" stroke="#A9AEB9" stroke-width="2.5"/></g>`;
+    const lado = (x, y, a) => `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${a})"><rect x="-33" y="-7" width="66" height="14" rx="7" fill="#ECEDF1" stroke="#2E3038" stroke-width="5"/><path d="M-22,2H22" stroke="#A9AEB9" stroke-width="3" stroke-linecap="round"/></g>`;
+    const reta = (x0, y0, x1, y1) => { const n = Math.round(Math.hypot(x1 - x0, y1 - y0) / 52), a = Math.atan2(y1 - y0, x1 - x0) * 180 / Math.PI; let s = '';
+      for(let k = 0; k <= n; k++){ const x = x0 + (x1 - x0) * k / n, y = y0 + (y1 - y0) * k / n; s += k % 2 ? lado(x, y, a) : face(x, y, a); } return s; };
+    const c = m / 2, r = R - c;
+    let elos = reta(R, c, W - R, c) + reta(W - c, R, W - c, H - R) + reta(W - R, H - c, R, H - c) + reta(c, H - R, c, R);
+    for(const [x, y, a] of [[R, R, 225], [W - R, R, 315], [W - R, H - R, 45], [R, H - R, 135]]){
+      const t = a * Math.PI / 180; elos += lado(x + r * Math.cos(t), y + r * Math.sin(t), a + 90);
+    }
+    frente = elos;
+  }
+  return {W, H, card, tras, frente};
+}
+
+function peca(or, face, o, largura, extra){
+  const e = estojo(or, o.est);
+  const pc = (v, t) => (v / t * 100).toFixed(3) + '%';
+  return `<div class="peca" ${extra || ''} style="width:${largura}px;aspect-ratio:${e.W}/${e.H}">
+    <svg viewBox="0 0 ${e.W} ${e.H}" aria-hidden="true">${e.tras}</svg>
+    <div style="position:absolute;z-index:2;left:${pc(e.card.x, e.W)};top:${pc(e.card.y, e.H)};width:${pc(e.card.w, e.W)}">${face === 'frente' ? frente(or, o) : verso(or, o)}</div>
+    <svg class="frente" viewBox="0 0 ${e.W} ${e.H}" aria-hidden="true">${e.frente}</svg></div>`;
+}
+
+const fig = (html, cap, cls) => `<figure${cls ? ` class="${cls}"` : ''}>${html}<figcaption>${cap}</figcaption></figure>`;
+const NOMES = {padrao:'padrão (grátis)', preto:'preto (couro)', ouro:'dourado: filete', 'ouro-chanfro':'dourado: chanfro', 'ouro-losangos':'dourado: losangos', corrente:'corrente do Kurapika'};
+const TIPOS = ['padrao', 'preto', 'ouro', 'corrente'], OUROS = ['ouro', 'ouro-chanfro', 'ouro-losangos'];
+
+function desenha(){
+  const o = op();
+  document.documentElement.classList.toggle('claro', $('fundo').value === 'claro');
+  $('horiz').innerHTML = fig(peca('h', 'frente', o, 560), 'frente') + fig(peca('h', 'verso', o, 560), 'verso');
+  $('vert').innerHTML = fig(peca('v', 'frente', o, 340), 'frente') + fig(peca('v', 'verso', o, 340), 'verso');
+  $('gal').innerHTML = TIPOS.map(t => fig(peca('h', 'frente', {...o, est:t}, 280, `data-est="${t}"`), NOMES[t], t === o.est ? 'on' : '')).join('');
+  $('gal2').innerHTML = TIPOS.map(t => fig(peca('v', 'frente', {...o, est:t}, 170, `data-est="${t}"`), NOMES[t], t === o.est ? 'on' : '')).join('');
+  $('ouro').innerHTML = OUROS.map(t => fig(peca('h', 'frente', {...o, est:t}, 400, `data-est="${t}"`), NOMES[t], t === o.est ? 'on' : '')).join('');
+  $('ouro2').innerHTML = OUROS.map(t => fig(peca('v', 'frente', {...o, est:t}, 220, `data-est="${t}"`), NOMES[t], t === o.est ? 'on' : '')).join('');
+  $('peq').innerHTML = fig(peca('h', 'frente', o, 260), 'horizontal, 260 px') + fig(peca('v', 'frente', o, 150), 'vertical, 150 px')
+    + fig(peca('h', 'frente', o, 200), 'horizontal, 200 px') + fig(peca('v', 'frente', o, 110), 'vertical, 110 px');
+}
+document.querySelectorAll('.ctl select').forEach(s => s.addEventListener('change', desenha));
+for(const g of ['gal', 'gal2', 'ouro', 'ouro2']) $(g).addEventListener('click', ev => { const p = ev.target.closest('[data-est]'); if(p){ $('est').value = p.dataset.est; desenha(); window.scrollTo({top:0, behavior:'smooth'}); } });
+desenha();
+</script>
+</body>
+</html>
