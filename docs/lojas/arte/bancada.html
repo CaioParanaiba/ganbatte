@@ -98,9 +98,10 @@ h2{margin:0 0 8px;font:600 12px var(--f-mono);color:var(--dim);letter-spacing:.0
 const Q = new URLSearchParams(location.search);
 const ID = Q.get('id') || '?', TIPO = Q.get('tipo') || 'emblema', IMGS = (Q.get('img') || '').split(',').filter(Boolean);
 const COR = Q.get('cor') ? '#' + Q.get('cor') : '';
-// cursor com física: a ficha diz qual (cursores/NOME.js, que se registra em CURSORES.NOME); o desenho é em código, sem imagem.
-// O módulo traz liga(palco, cfg) → {ajusta, legenda, desliga}, titulo, dica, controles [{k, rot, min, max, un, padrao}] e
-// previas(el, cfg), que monta as seções de prévias paradas com as classes desta página (section, h2, .linha, .claro)
+// item feito em código: a ficha diz qual (fisica:'NOME', em PASTA/NOME.js, pasta = cursores ou a da ficha; o módulo se
+// registra em CURSORES.NOME); o desenho é em código, sem imagem. O módulo traz titulo, dica, controles [{k, rot, min, max,
+// un, padrao}] e previas(el, cfg), que monta as seções de prévias com as classes desta página (section, h2, .linha,
+// .claro); o cursor traz também liga(palco, cfg) → {ajusta, legenda, desliga}, e só com ele a tela preta aparece
 let FISICA = '', fis = null, comControles = false;
 let atual = 0;
 document.getElementById('nome').textContent = ID;
@@ -111,7 +112,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', 
 // ficha do item (itens.js): de qual item da vitrine é a arte, e como ele é hoje (foto do card, tirada pelo hoje.mjs)
 const FICHA = (typeof ITENS !== 'undefined' && ITENS[ID]) || null;
 if(FICHA) document.title = 'Bancada · ' + FICHA.nome;
-if(TIPO === 'cursor' && FICHA && FICHA.fisica) FISICA = FICHA.fisica;
+if(FICHA && FICHA.fisica) FISICA = FICHA.fisica;
 // a licença hunter como no jogo (mesma marcação da vitrine), com o emblema e o carimbo que se quer testar
 const EMBLEMA = '<svg viewBox="0 0 120 70" aria-hidden="true"><path d="M60 10 L84 35 L60 60 L36 35 Z" fill="#C8102E"/><path d="M12 10 L60 60 M60 10 L12 60 M60 10 L108 60 M108 10 L60 60" stroke="#141418" stroke-width="7" fill="none"/><path d="M3 10 H23 M50 10 H70 M97 10 H117 M3 60 H23 M50 60 H70 M97 60 H117" stroke="#141418" stroke-width="3.5"/></svg>';
 const licenca = (emb, car, placa = '') => `<div class="lic-w"><div class="tt-lic"><div class="tt-lf"><div class="in">
@@ -209,11 +210,15 @@ function desenha(){
 function desenhaFisica(){
   if(fis){ fis.desliga(); fis = null; }
   const M = window.CURSORES && CURSORES[FISICA];
-  if(!M){ const s = document.createElement('script'); s.src = `cursores/${FISICA}.js`; s.onload = desenhaFisica; document.head.append(s); return; }
+  if(!M){ const s = document.createElement('script'); s.src = `${FICHA.pasta || 'cursores'}/${FISICA}.js`; s.onload = desenhaFisica; document.head.append(s); return; }
   if(!comControles){
     // mexem no cursor ao vivo, sem refazer a página (o que está na tela continua onde está)
     comControles = true;
     (M.controles || []).forEach(c => { st[c.k] = c.padrao; controle(c.k, c.rot, c.min, c.max, c.un, () => { fis && fis.ajusta(st); M.previas && M.previas(document.getElementById('prev'), st); }); });
+  }
+  if(!M.liga){
+    main.innerHTML = ficha() + `<p class="dica-fis">${M.dica || ''}</p><div id="prev" style="display:grid;gap:22px"></div>`;
+    M.previas(document.getElementById('prev'), st); return;
   }
   main.innerHTML = ficha() + `<section><h2>${M.titulo}</h2><p class="dica-fis">${M.dica}</p><div class="palco fis" id="palco"><span class="est" id="est"></span></div></section><div id="prev" style="display:grid;gap:22px"></div>`;
   fis = M.liga(document.getElementById('palco'), st);

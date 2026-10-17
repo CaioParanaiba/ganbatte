@@ -37,6 +37,8 @@ const ITENS = {
     hoje:'O efeito é só o texto "PEDRA!" em letra de quadrinhos.', arte:'Tesoura: dois dedos esticados como uma lâmina, com linhas de energia.'},
   'hm-chamas': {nome:'Constância em chamas', loja:'Masadora', onde:'heatmap de dias jogados', vit:{arq:'masadora', id:'hm-chamas'},
     hoje:'Os dias jogados viram chamas acesas (em código).', arte:'Uma chama de anime com línguas afiadas, legível entre 16 e 24 px.'},
+  'hm-cartas': {nome:'Constância em cartas', loja:'Masadora', onde:'heatmap de dias jogados', vit:{arq:'masadora', id:'hm-cartas'}, fisica:'cartas', pasta:'heatmap',
+    hoje:'Os quadradinhos do heatmap ficam mais estreitos, com uma borda (em código).', arte:'Feita em código pelo Claude, sem o Gemini (heatmap/cartas.js, em CSS): cada dia é uma carta. Jogado, de frente com o naipe do emblema da pessoa, maior e mais forte quanto mais forte o dia, na cor do hábito; sem nada, virada (verso vinho); dia salvo, o Coringa.'},
   'naipe-espadas': {nome:'Emblema de naipe: espadas ♠', loja:'Associação', onde:'ao lado do nome nos placares', vit:{arq:'associacao', id:'emb-naipe'},
     hoje:'Um naipe de texto (♠ ♥ ♦ ♣, à escolha) ao lado do nome.', arte:'Espadas no estilo do Hisoka, grossas e um pouco afiadas.'},
   'naipe-copas': {nome:'Emblema de naipe: copas ♥', loja:'Associação', onde:'ao lado do nome nos placares', vit:{arq:'associacao', id:'emb-naipe'},
