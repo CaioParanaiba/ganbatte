@@ -1448,7 +1448,7 @@ function faixaProva(){
   let el = document.getElementById('faixa-prova');
   if(!UI.prova){ if(el) el.remove(); return; }
   const it = COS.find(i => i.id === UI.prova), nome = it ? it.n : UI.prova;
-  const html = `<span>Provando <b>${esc(nome)}</b>: ande pelas abas para ver como fica. Nada foi comprado, e o jogo fica travado (tarefas, caçadas, notas) até você voltar.</span><button type="button" class="btn" data-prova="" style="background:#0b0d12;color:#fff;border-color:#0b0d12">voltar ao que é meu</button>`;
+  const html = `<span>Provando <b>${esc(nome)}</b>: ande pelas abas para ver como fica. Nada foi comprado, e o jogo fica travado (tarefas, caçadas, notas) até você voltar.</span>${window.GB_ARTE ? GB_ARTE.faixa(UI.prova) : ''}<button type="button" class="btn" data-prova="" style="background:#0b0d12;color:#fff;border-color:#0b0d12">voltar ao que é meu</button>`;
   if(el){ el.innerHTML = html; return; }
   document.body.insertAdjacentHTML('afterbegin', `<div id="faixa-prova" role="status" style="position:sticky;top:0;z-index:68;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:8px 16px;background:var(--aura);color:#0b0d12;font:600 13.5px var(--f-ui)">${html}</div>`);
 }
@@ -1479,7 +1479,7 @@ function devolve(){
   EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.9.2-beta1';
+const VERSAO_PAGINA = '0.9.2-beta2';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1548,6 +1548,7 @@ function vista(){
   const v = {theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, font:UI.font, ...Object.fromEntries(SLOTS.map(k => [k, UI[k]]))};
   if(it.cat === 'fx') v.fx = UI.fx.concat(it.fx);
   else { Object.assign(v, it.eq); if(it.fxs) v.fx = UI.fx.concat(it.fxs); }
+  if(window.GB_ARTE) GB_ARTE.vista(v, it);   // arte nova (#134): provando com a nova, o atributo do <html> ganha "-nova"
   return v;
 }
 const visNen = () => document.documentElement.classList.contains('vis-nen');   // visual Nen (padrão) ou clássico: por computador, como efeitos e sons
@@ -1826,8 +1827,9 @@ const CUR7 = {ioio:'<svg viewBox="0 0 40 48"><path d="M20 0v28" stroke="var(--so
   agulha:'<svg viewBox="0 0 40 40"><path d="M6 34 34 6" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/><circle cx="33" cy="7" r="3.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/></svg>'};
 const HM7 = '0110111011100111110110100111101101111101111011101111'.slice(0, 48);
 function pvNovo(it){
-  const k = it.eq[it.cat], st = `style="${palStyle(UI.theme)}"`;
-  if(it.cat === 'cursor') return `<div class="pv pvc" ${st}><div class="cur7">${CUR7[k]}</div></div>`;
+  const k = window.GB_ARTE ? GB_ARTE.k(it) : it.eq[it.cat], st = `style="${palStyle(UI.theme)}"`, nv = window.GB_ARTE ? GB_ARTE.pv(it) : '';   // arte nova (#134)
+  if(it.cat === 'cursor') return `<div class="pv pvc" ${st}><div class="cur7">${nv || CUR7[k]}</div></div>`;
+  if(it.cat === 'heat' && nv) return `<div class="pv pvc" ${st}>${nv}</div>`;
   if(it.cat === 'hp') return `<div class="pv pvc hp-${k}" ${st}><div class="hp7"><span>Chrollo · 62%</span><i><b></b></i></div></div>`;
   if(it.cat === 'heat') return `<div class="pv pvc hm-${k}" ${st}><div class="hm7">${[...HM7].map(o => `<i class="${o === '1' ? 'h3' : ''}"></i>`).join('')}</div></div>`;
   if(it.cat === 'trans') return `<div class="pv pvc tr-${k}" ${st}><div class="tr7">${k === 'deslizar' ? '<div class="mc tA">Missões</div><div class="mc tB">Chefões</div>' : '<div class="mc">Chefões</div>'}</div></div>`;
@@ -1869,7 +1871,7 @@ function itemHTML(S, it){
   const pr = it.chefao ? 'chefão derrotado' : it.fora ? 'da sua coleção' : pk ? (pk.completo ? 'pacote completo' : `${pk.p < it.p ? `<s>${fmt(it.p)}</s> ` : ''}${fmt(pk.p)} J`)
     : GBx.padrao(it) ? (it.cat === 'chefe' ? 'grátis' : 'vem com o jogo') : it.prova ? 'só para provar' : it.grupo ? 'Trick Coin' : it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis';
   const sl = selos(it), tem = pk && pk.tem && !pk.completo ? `<p>Você já tem ${pk.tem} de ${pk.n} peças: paga só o que falta.</p>` : '';
-  return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need||(it.grupo&&!own)?' lock':''}">${pvHTML(it)}<div class="info">${sl ? `<div class="sl7">${sl}</div>` : ''}<b>${esc(it.n)}</b><p>${esc(it.d)}</p>${tem}<div class="buy7"><span class="pr${preco || it.prova ? '' : ' free'}">${pr}${own && !GBx.padrao(it) && !it.fora && !it.chefao && !pk ?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
+  return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need||(it.grupo&&!own)?' lock':''}">${pvHTML(it)}<div class="info">${sl ? `<div class="sl7">${sl}</div>` : ''}<b>${esc(it.n)}</b><p>${esc(it.d)}</p>${tem}${window.GB_ARTE ? GB_ARTE.aviso(it.id) : ''}<div class="buy7"><span class="pr${preco || it.prova ? '' : ' free'}">${pr}${own && !GBx.padrao(it) && !it.fora && !it.chefao && !pk ?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
 }
 const SECS = {
   aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['chefe','Ícones dos chefões','Retratos para os cards dos chefões, no lugar do ícone. São grátis: todos estão em Comprados, onde você escolhe o chefão de cada um. Derrote o chefão que está com ele e o retrato vira foto de perfil.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez.'],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações.'],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
@@ -1906,15 +1908,16 @@ function rMS(S){
   if(UI.cat === 'comprados') main = compradosHTML(S);
   else if(SECS[UI.cat]){
     /* vitrine: o que não é seu (o pacote fica sempre, para equipar tudo), pelos filtros de faixa e de tema (#135) */
-    const filtro = i => (!UI.ffa || i.fa === UI.ffa) && (!UI.fte || (UI.fte === 'hxh') === !!i.hxh);
+    const arte = window.GB_ARTE && UI.cat === 'aparencia' ? GB_ARTE : null;   // arte nova em teste (#134): o resumo e o filtro
+    const filtro = i => (!UI.ffa || i.fa === UI.ffa) && (!UI.fte || (UI.fte === 'hxh') === !!i.hxh) && (!arte || !arte.so || arte.tem(i.id));
     const naVitrine = i => (i.parts || !meu(i)) && !i.fora && !i.chefao && !i.grupo;
     const fil = UI.cat === 'aparencia' ? `<div class="fil7"><span>faixa</span>${[['','todas'], ...GBx.FAIXAS_LOJA].map(([k,n]) => `<button data-ffa="${k}" aria-pressed="${UI.ffa === k}">${n.toLowerCase()}</button>`).join('')}<span>tema</span>${[['','tudo'],['hxh','<i class="nen7">念</i> HxH'],['basico','básicos']].map(([k,n]) => `<button data-fte="${k}" aria-pressed="${UI.fte === k}">${n}</button>`).join('')}</div>` : '';
     const secs = SECS[UI.cat].map(([c,t,d]) => { const l = daSec(COS, c), vit = l.filter(i => naVitrine(i) && filtro(i));
-      if(!vit.length && (UI.ffa || UI.fte)) return '';
+      if(!vit.length && (UI.ffa || UI.fte || (arte && arte.so))) return '';
       return `<div class="sec7"><h3>${t}</h3>${d?`<p>${d}</p>`:''}${vit.length ? `<div class="items">${vit.map(i => itemHTML(S,i)).join('')}</div>` : '<p class="sub">Tudo desta prateleira já é seu: está em <button class="go" data-cat="comprados">Comprados</button>.</p>'}</div>`; }).join('');
     const vao = UI.cat === 'aparencia' && !UI.ffa && !UI.fte ? COS.filter(i => i.grupo && !OWN.has(i.id)) : [];
-    main = fil + (secs || '<p class="sub">Nenhum item com esses filtros.</p>')
-      + (vao.length ? `<div class="sec7"><h3>Vão para a Loja da Associação</h3><p>Molduras especiais e efeitos em volta do perfil passam para a loja do grupo, a Trick Coin. Não se compram mais aqui; quem já tem continua com eles.</p><div class="items">${vao.map(i => itemHTML(S,i)).join('')}</div></div>` : '')
+    main = fil + (arte ? arte.resumo(COS.filter(naVitrine).map(i => i.id)) : '') + (secs || '<p class="sub">Nenhum item com esses filtros.</p>')
+      + (vao.length && !(arte && arte.so) ? `<div class="sec7"><h3>Vão para a Loja da Associação</h3><p>Molduras especiais e efeitos em volta do perfil passam para a loja do grupo, a Trick Coin. Não se compram mais aqui; quem já tem continua com eles.</p><div class="items">${vao.map(i => itemHTML(S,i)).join('')}</div></div>` : '')
       + (UI.cat==='aparencia' ? '<div class="sec7"><h3>Na próxima temporada</h3><p>Em 2027-1 chegam os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p></div>' : '');
   }
   else if(UI.cat === 'premios') main = UI.pedit ? premiosEditor(S) : premiosHTML(S);
@@ -2710,7 +2713,7 @@ function confete(forcado){
 }
 /* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
-const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-teste],summary';
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-arte],[data-arteso],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-teste],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
 let avisoProvaAtual = null;
 function avisoProva(){
@@ -2835,6 +2838,15 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 <script src="novidades.js"></script>
 <script src="feedback.js"></script>
 <script src="efeitos.js"></script>
+<script src="arte/carta.js"></script>
+<script src="arte/agulha.js"></script>
+<script src="arte/ioio.js"></script>
+<script src="arte/godspeed.js"></script>
+<script src="arte/jajanken.js"></script>
+<script src="arte/cartas.js"></script>
+<script src="arte/chamas.js"></script>
+<script src="arte/licenca.js"></script>
+<script src="arte.js"></script>
 <script src="grupo.js"></script>
 <!-- ---------- visual Nen (0.6.6-beta3): o padrão. O <html> nasce com .vis-nen; "clássico" em Configurações tira a classe.
      Fica no fim do <body> para vir depois do CSS que os módulos põem no <head>. :where() não soma especificidade: paleta,

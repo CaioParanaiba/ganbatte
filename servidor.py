@@ -93,7 +93,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.9.2-beta1"
+VERSAO = "0.9.2-beta2"
 VERSAO_NOME = "atualização da Torre Trick"   # nome da série 0.9 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -2791,7 +2791,8 @@ ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("i
              "/ia.js": ("ia.js", "text/javascript; charset=utf-8"), "/conquistas.js": ("conquistas.js", "text/javascript; charset=utf-8"),
              "/novidades.js": ("novidades.js", "text/javascript; charset=utf-8"), "/expedicoes.js": ("expedicoes.js", "text/javascript; charset=utf-8"),
              "/feedback.js": ("feedback.js", "text/javascript; charset=utf-8"), "/temporadas.js": ("temporadas.js", "text/javascript; charset=utf-8"),
-             "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8"), "/grupo.js": ("grupo.js", "text/javascript; charset=utf-8")}
+             "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8"), "/grupo.js": ("grupo.js", "text/javascript; charset=utf-8"),
+             "/arte.js": ("arte.js", "text/javascript; charset=utf-8")}
 
 
 class H(BaseHTTPRequestHandler):
@@ -2836,6 +2837,12 @@ class H(BaseHTTPRequestHandler):
             if (WEB / "a" / caminho[3:]).is_file():
                 return self._arquivo(WEB / "a" / caminho[3:], "image/png", "max-age=3600")
             return self._json(404, {"ok": False, "error": "foto não encontrada"})
+        m = re.match(r"^/arte/([a-z0-9-]{1,40})\.(js|png)$", caminho)
+        if m:   # a arte nova das lojas em teste (#134): módulos em código e imagens aprovadas, em web/arte/
+            arq = WEB / "arte" / f"{m.group(1)}.{m.group(2)}"
+            if arq.is_file():
+                return self._arquivo(arq, "text/javascript; charset=utf-8" if m.group(2) == "js" else "image/png", "max-age=3600" if m.group(2) == "png" else "no-cache")
+            return self._json(404, {"ok": False, "error": "arquivo não encontrado"})
         m = re.match(r"^/(chefoes|colecao)/([A-Za-z0-9_-][A-Za-z0-9_.-]{0,99})\.png$", caminho)
         if m:   # retratos dos chefões (web/chefoes/) e as imagens da coleção permanente (colecao/arquivos/ da pasta de dados)
             pasta = WEB / "chefoes" if m.group(1) == "chefoes" else DADOS / "colecao" / "arquivos"

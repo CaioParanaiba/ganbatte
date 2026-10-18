@@ -28,6 +28,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-17",
+   "resumo": "A arte nova das lojas chegou para provar: cursores com física, efeitos refeitos, heatmaps em cartas e chamas, carimbos desenhados e a licença hunter redesenhada. Cada item mostra se a arte já está fechada ou o que ainda falta, e dá para comparar a versão de hoje com a nova. Nada da arte nova se compra ainda, e o que você já tem continua igual.",
+   "itens": [
+     {"ic": "card", "t": "Antiga ou nova, lado a lado", "d": "Na Masadora, os itens com arte nova ganham o aviso \"arte\" (fechado, falta finalizar ou em aberto), uma frase do que falta e a troca antiga | nova. Com a nova escolhida, o provar e o ▶ mostram o desenho novo. O botão no alto da loja mostra só esses itens (#134)."},
+     {"ic": "antenna", "t": "Cursores com física", "d": "A carta do Hisoka atira e gruda na Bungee Gum, a agulha do Illumi crava e volta em leque, e o ioiô do Killua desce, dorme e volta. Prove na Masadora, em Cursores (#134)."},
+     {"ic": "tower", "t": "Godspeed, Jajanken, cartas e chamas", "d": "O Godspeed virou um raio de verdade caindo no card, e o Jajanken tem as três mãos com o grito em japonês: o ▶ da nova passa por pedra, papel e tesoura. A constância ganhou as cartas de baralho e as chamas de anime; provando as chamas, \"acender hoje\" mostra o acender. Quem tem o Godspeed ou o Jajanken continua com a versão de hoje (#134)."},
+     {"ic": "crown", "t": "A licença redesenhada", "d": "No provador da Loja da Associação, a troca antiga | nova mostra o cartão novo, fiel ao do anime, com os estojos de couro, de corrente e os três dourados para escolher, os carimbos desenhados, a Aranha e os naipes novos. Só na sua tela, como o resto do provador (#134)."}
+   ]},
   {"versao": "0.9.2-beta1", "nome": "atualização da Torre Trick", "data": "2026-10-15", "aviso": "0.9.2-beta1",
    "cap": "lojas em faixas · retratos de chefão grátis",
    "resumo": "As duas lojas foram reorganizadas. Os retratos de chefão ficaram grátis, e quem comprou recebe a Jenny de volta. Três pacotes ficaram mais baratos porque perderam peças que foram para a loja do grupo. O resto do seu XP e da sua Jenny continua igual, e o que você comprou continua seu.",
