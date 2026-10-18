@@ -223,34 +223,65 @@ const LOJA_TT = [
 ];
 const TTPV = {};   // provador: o que está aplicado na licença agora (só na memória desta tela)
 const provando = it => it[7] && Object.entries(it[7]).every(([k, v]) => TTPV[k] === v);
+/* arte nova em teste (#134, web/arte.js): TT.nova troca a licença inteira (o cartão novo, os estojos em SVG, os carimbos e
+   o emblema desenhados) e TT.ouro escolhe um dos três dourados. Só nesta tela, como o resto do provador */
+TT.nova = true; TT.ouro = 'ouro';
+const ARTE = () => window.GB_ARTE && window.GB_LIC;
+const comArte = id => ARTE() && GB_ARTE.tem(id) && !GB_ARTE.ARTE[id].sem;
+const OUROS = [['ouro', 'filete'], ['ouro-chanfro', 'chanfro'], ['ouro-losangos', 'losangos']];
+function licNova(P, id, pv, or, face, larg){
+  const m = membroDe(P, id), k = posGeral(P, id), g = geralDe(P)[k - 1] || {andares:0, projecao:0}, tit = titulosDe(P, id);
+  const pos = P.torre.placares.map(p => [p, p.linhas.findIndex(l => l.membro === +id) + 1]).filter(x => x[1]).sort((a, b) => a[1] - b[1]);
+  const d = {foto: m.avatar ? avSrc(m.avatar) : LOGO, nome: esc(m.nome.toUpperCase()), faixa: `${esc(P.grupo.nome.toUpperCase())} · ${temporadaDe(P)}`, num: numeroDe(P, id, pv),
+    linhas: [`Nº <b>${numeroDe(P, id, pv).join(' ')}</b>`, `<b>${k}º</b> NO GERAL · <b>${andaresTxt(g.andares)}</b> ANDARES`, `SEQ. <b>${m.sequencia || 0}</b> · <b>${tit.length} ${tit.length === 1 ? 'TÍTULO' : 'TÍTULOS'}</b>`,
+      tit[0] ? `LÍDER EM <b>${esc(tit[0].nome.toUpperCase())}</b>` : 'SEM TÍTULO AGORA'],
+    glifo: glifos('hunter ' + m.nome + ' torre trick'), placares: pos.slice(0, 6).map(([p, k]) => [k, pl(p.id, p.nome)]),
+    curso: [`superação: +${andaresTxt((geralDe(P).find(x => x.membro === +id) || {projecao:0}).projecao)} andares`, '(entra quando o período fechar)'],
+    registro: [`${m.dias_com_xp || 0} dias com XP`].concat(m.admin ? ['admin do grupo'] : [])};
+  const est = pv.bd === 'corrente' ? 'corrente' : pv.est === 'preto' ? 'preto' : pv.est === 'ouro' ? TT.ouro : 'padrao';
+  const car = {'APROVADO':'lic-exame', 'CHEFÃO ✓':'lic-chefao', 'EXAME · T1':'lg-exame'}[pv.car] || '';
+  return GB_LIC.peca(or, face, {est, cor: pv.cor || 'azul', emb: pv.emb || 'hunter', car, st: (pv.st || '').length, fx: pv.fx || '', d}, larg);
+}
 const licClasses = pv => ['cor','est','bd','fx','vs'].filter(k => pv[k]).map(k => 'tl-' + k + '-' + pv[k]).join(' ');
 function cardLoja(P, it){
-  const [id, n, cat, fa, hx, lib, d, ap, de] = it, me = P.voce.membro, ph = avMe(56);
-  const pv = ap ? `<div class="tt-lic ${licClasses(ap)}">${ap.vs ? verso(P, me, ap) : frente(P, me, false, ap)}</div>`
+  const [id, n, cat, fa, hx, lib, d, ap, de] = it, me = P.voce.membro, ph = avMe(56), nv = TT.nova && ARTE();
+  const pv = ap && nv && !ap.vs ? licNova(P, me, ap, 'h', 'frente', 520)
+    : ap ? `<div class="tt-lic ${licClasses(ap)}">${ap.vs ? verso(P, me, ap) : frente(P, me, false, ap)}</div>`
     : cat === 'mold' ? `<div class="tl-av ${{'mold-hunter':'fr-hunter','mold-carta':'fr-carta','mold-escarlate':'fr-escarlate','mold-aranha':'fr-aranha','mold-giro':'fr-giro'}[id]}">${ph}</div>`
     : cat === 'aura' ? `<div class="tl-av ${id === 'pf-aura' ? 'fxd aura' : 'tl-' + id}">${ph}</div>`
     : cat === 'fundo' ? `<div class="tl-av tl-${id}${id === 'fd-arena' ? ' tex-arena' : ''}">${ph}</div>`
-    : cat === 'emb' || cat === 'nome' ? `<div class="tl-pod"><div><em>1</em><span>Gon</span><b>1.920</b></div><div class="eu tl-${id}"><em>2</em>${cat === 'emb' ? `<i class="tl-emb">${id === 'emb-naipe' ? '♠' : '<span class="nen7">念</span>'}</i>` : ''}<span class="tl-nm">${esc(nomeDe(P, me))}</span><b>1.840</b></div><div><em>3</em><span>Leorio</span><b>1.205</b></div></div>`
+    : cat === 'emb' || cat === 'nome' ? `<div class="tl-pod"><div><em>1</em><span>Gon</span><b>1.920</b></div><div class="eu tl-${id}"><em>2</em>${cat === 'emb' ? `<i class="tl-emb">${id === 'emb-naipe' ? (nv && comArte(id) ? GB_ARTE.naipe('espadas') : '♠') : '<span class="nen7">念</span>'}</i>` : ''}<span class="tl-nm">${esc(nomeDe(P, me))}</span><b>1.840</b></div><div><em>3</em><span>Leorio</span><b>1.205</b></div></div>`
     : `<div class="tl-tit"><b>${esc(nomeDe(P, me))}</b><span>${esc(n)}</span></div>`;
+  const naipes = id === 'emb-naipe' && nv && comArte(id) ? `<div class="tl-naipes">${['espadas', 'copas', 'ouros', 'paus', 'coringa'].map(GB_ARTE.naipe).join('')}</div>` : '';
   return `<div class="tl-it${ap ? ' prov' : ''}${ap && provando(it) ? ' on' : ''}"${ap ? ` data-ttprova="${id}" role="button" tabindex="0" title="provar na sua licença"` : ''}>
-    <div class="tl-pv">${pv}</div><div class="tl-info"><div class="tl-sl"><span class="tl-fa tl-${fa}">${FAIXA_TT[fa]}</span>${hx ? '<span class="tl-hx"><i class="nen7">念</i> HxH</span>' : ''}</div>
-    <b>${esc(n).replace('念', '<i class="nen7">念</i>')}</b><p>${esc(d)}</p>${de ? `<p class="tl-de">${esc(de)}; quem já tem continua com ele.</p>` : ''}
+    <div class="tl-pv">${pv}${naipes}</div><div class="tl-info"><div class="tl-sl"><span class="tl-fa tl-${fa}">${FAIXA_TT[fa]}</span>${hx ? '<span class="tl-hx"><i class="nen7">念</i> HxH</span>' : ''}</div>
+    <b>${esc(n).replace('念', '<i class="nen7">念</i>')}</b><p>${esc(d)}</p>${de ? `<p class="tl-de">${esc(de)}; quem já tem continua com ele.</p>` : ''}${ARTE() ? GB_ARTE.aviso(id, true) : ''}
     <div class="tl-lib"><span>${lib === 'col' ? 'grátis para quem participar' : lib === 'tc' ? 'compra direta' : 'compra depois do desafio'}</span><span class="tl-l-${lib}">${LIB_TT[lib]}</span></div>
     ${ap ? `<span class="tl-prov">${provando(it) ? '✓ na sua licença' : 'clique para provar'}</span>` : ''}</div></div>`;
 }
 function subLoja(P){
   const me = P.voce.membro, on = LOJA_TT.filter(provando);
-  const filtro = it => (!TT.llib || it[5] === TT.llib) && (!TT.lcat || it[2] === TT.lcat);
+  const filtro = it => (!TT.llib || it[5] === TT.llib) && (!TT.lcat || it[2] === TT.lcat) && (!TT.larte || (ARTE() && GB_ARTE.tem(it[0])));
   const bt = (k, v, t) => `<button type="button" data-ttlf="${k}:${v}" aria-pressed="${(TT[k] || '') === v}">${t}</button>`;
-  const fil = `<div class="tl-fil"><span>liberação</span>${bt('llib', '', 'todas')}${Object.entries(LIB_TT).map(([k, t]) => bt('llib', k, t)).join('')}<span>categoria</span>${bt('lcat', '', 'todas')}${Object.entries(CAT_TT).map(([k, t]) => bt('lcat', k, t.toLowerCase())).join('')}</div>`;
+  const fil = `<div class="tl-fil"><span>liberação</span>${bt('llib', '', 'todas')}${Object.entries(LIB_TT).map(([k, t]) => bt('llib', k, t)).join('')}<span>categoria</span>${bt('lcat', '', 'todas')}${Object.entries(CAT_TT).map(([k, t]) => bt('lcat', k, t.toLowerCase())).join('')}${ARTE() ? `<span>arte</span>${bt('larte', '', 'todos')}${bt('larte', '1', 'só com arte nova')}` : ''}</div>`;
   const prats = Object.keys(FAIXA_TT).map(fa => { const l = LOJA_TT.filter(it => it[3] === fa && filtro(it)); return l.length ? `<div class="tl-prat"><h3>${FAIXA_TT[fa]} <small>${l.length} ${l.length === 1 ? 'item' : 'itens'}</small></h3><div class="tl-grade">${l.map(it => cardLoja(P, it)).join('')}</div></div>` : ''; }).join('');
   return `<div class="tt-stack">
     <section class="card"><h2><span class="c">~/</span>provador da licença <span class="r">só na sua tela: nada vai para o servidor e ninguém mais vê</span></h2>
       <p class="sub" style="margin:0 0 12px">${on.length ? 'Provando: ' + on.map(it => esc(it[1])).join(' · ') : 'Licença padrão, que é grátis: preto, branco e azul-claro. Clique num item da licença, aqui embaixo, para provar.'}${on.length ? ' <button type="button" class="btn" data-ttlimpa style="margin-left:6px">tirar tudo</button>' : ''}</p>
-      <div class="tt-duas"><div><span class="rot">frente</span><div class="tt-lic grande ${licClasses(TTPV)}">${frente(P, me, true, TTPV)}</div></div><div><span class="rot">verso</span><div class="tt-lic grande ${licClasses(TTPV)}">${verso(P, me, TTPV)}</div></div></div></section>
+      ${ARTE() ? provaArte() : ''}
+      ${TT.nova && ARTE() ? `<div class="tt-duas"><div><span class="rot">frente</span>${licNova(P, me, TTPV, 'h', 'frente', 600)}</div><div><span class="rot">verso</span>${licNova(P, me, TTPV, 'h', 'verso', 600)}</div></div>
+        <div class="tt-duas" style="margin-top:14px"><div><span class="rot">em pé (a ideia para o placar)</span><div style="display:flex;gap:18px;flex-wrap:wrap">${licNova(P, me, TTPV, 'v', 'frente', 230)}${licNova(P, me, TTPV, 'v', 'verso', 230)}</div></div></div>`
+      : `<div class="tt-duas"><div><span class="rot">frente</span><div class="tt-lic grande ${licClasses(TTPV)}">${frente(P, me, true, TTPV)}</div></div><div><span class="rot">verso</span><div class="tt-lic grande ${licClasses(TTPV)}">${verso(P, me, TTPV)}</div></div></div>`}</section>
     <section class="card"><h2><span class="c">~/</span>loja da associação <span class="r">vitrine: a compra chega com a Trick Coin (#43)</span></h2>
       <p style="margin:0 0 10px;font-size:14px">O que os outros veem de você: licença, molduras, o que fica em volta do perfil, emblema e nome no placar, títulos de grupo. Os itens de desafio levam a marca da temporada e ficam só para quem participou.</p>
       ${fil}${prats || '<p class="sub">Nenhum item com esses filtros.</p>'}</section></div>`;
+}
+/* a troca antiga | nova do provador, o status do cartão e a escolha do dourado */
+function provaArte(){
+  const c = GB_ARTE.CARTAO, bt = (v, t) => `<button type="button" data-ttnova="${v}" aria-pressed="${TT.nova === !!v}">${t}</button>`;
+  return `<div class="ar7" style="margin:0 0 12px"><span class="ar-l"><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="color:var(--ink)">Licença</b><span class="ar-tg" role="group" aria-label="versão">${bt('', 'antiga')}${bt('1', 'nova')}</span>
+    ${TT.nova && TTPV.est === 'ouro' ? `<span class="ar-tg" role="group" aria-label="dourado">${OUROS.map(([k, t]) => `<button type="button" data-ttouro="${k}" aria-pressed="${TT.ouro === k}">${t}</button>`).join('')}</span>` : ''}</span>
+    <span class="ar-st ${c.st}">cartão novo: ${GB_ARTE.ST[c.st]}</span></span><span>${TT.nova ? esc(c.tx) + ' A troca vale para tudo o que você provar aqui: na nova, os carimbos, o emblema da Aranha, os estojos e os naipes já são os desenhos da fila de arte.' : 'A licença de hoje, como está no jogo. A nova mostra o cartão redesenhado e os desenhos da fila de arte.'}</span></div>`;
 }
 const licenca = (P, id) => `<div class="tt-lic tt-flip" data-ttvirar title="clique para virar"><div class="flip-in"><div class="face">${frente(P, id)}</div><div class="face tras">${verso(P, id)}</div></div></div>`;
 
@@ -493,6 +524,8 @@ document.addEventListener('click', async e => {
     if(it && provando(it)) Object.keys(it[7]).forEach(k => delete TTPV[k]); else if(it) Object.assign(TTPV, it[7]); render(); return; }
   if(q('[data-ttlimpa]')){ Object.keys(TTPV).forEach(k => delete TTPV[k]); render(); return; }
   if((b = q('[data-ttlf]'))){ const [k, v] = b.dataset.ttlf.split(':'); TT[k] = v; render(); return; }
+  if((b = q('[data-ttnova]'))){ TT.nova = !!b.dataset.ttnova; render(); return; }
+  if((b = q('[data-ttouro]'))){ TT.ouro = b.dataset.ttouro; render(); return; }
   if(q('[data-gpoutro]')){ G.entrarAberto = !G.entrarAberto; render(); if(G.entrarAberto){ const i = document.querySelector('#tt-root [data-gpconvite]'); if(i) i.focus(); } return; }
   if((b = q('[data-gpsel]'))){ G.sel = b.dataset.gpsel; G.adm = null; G.link = ''; if(G.aba === 'admin') abreAdmin(); else render(); return; }
   if((b = q('[data-gpaba]'))){ G.aba = b.dataset.gpaba; G.link = ''; if(G.aba === 'admin') abreAdmin(); else render(); return; }
@@ -770,6 +803,8 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tl-fd-liso{background:color-mix(in srgb,var(--aura) 22%,var(--panel))} .tl-fd-cena{background-image:radial-gradient(circle at 20% 30%,color-mix(in srgb,var(--aura) 30%,transparent),transparent 40%),radial-gradient(circle at 80% 70%,color-mix(in srgb,var(--volt) 25%,transparent),transparent 45%)}
 .tl-pod{display:grid;gap:4px;width:100%;font:600 12.5px var(--f-mono)} .tl-pod > div{display:grid;grid-template-columns:20px auto minmax(0,1fr) auto;gap:6px;align-items:center;padding:4px 8px;border-radius:3px;color:var(--soft)}
 .tl-pod > div > span{grid-column:3} .tl-pod > div:not(.eu) > span{grid-column:2/4} .tl-pod em{font-style:normal;color:var(--faint)} .tl-pod b{font-weight:600}
+.tl-naipes{display:flex;gap:10px;justify-content:center;padding:8px 0 0;font-size:20px;color:var(--ink)}
+.tl-pv .lic2{width:100%!important}
 .tl-pod .eu{background:color-mix(in srgb,var(--volt) 9%,transparent);color:var(--ink)} .tl-pod .tl-emb{font-style:normal;color:var(--amb)} .tl-nm-cor .tl-nm{color:var(--grn)}
 .tl-tit{display:grid;gap:2px;text-align:center} .tl-tit b{font:700 15px var(--f-hud)} .tl-tit span{font:600 12px var(--f-mono);color:var(--amb)}
 .tl-info{padding:10px 12px;display:grid;gap:6px;flex:1;align-content:start} .tl-info b{font-size:14px} .tl-info p{margin:0;font-size:12.5px;color:var(--soft)} .tl-info .tl-de{color:var(--faint)}

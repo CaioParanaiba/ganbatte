@@ -72,3 +72,15 @@ se ele diz mesmo o que a peça quer dizer. Faça isso ao escrever o prompt, e de
 Imagem de terceiros (arte oficial, sticker, foto) só serve de **referência de estrutura** para o Gemini; o prompt pede um
 desenho original, sem traçar nem copiar. Salve-a em `refs/ID/` com `local-` no nome (ex.: `2-local-aranha.png`): o
 `.gitignore` a deixa fora do repositório público, e o `arte.py pasta` a leva para a pasta do Gemini como as outras.
+
+## Levar para o jogo (beta, só para provar)
+
+Desde a 0.9.2-beta2 a arte da fila aparece no jogo para os devs provarem, sem venda. O que vai:
+
+- `python3 docs/lojas/arte/leva.py` copia os módulos em código (cursores, efeitos, heatmaps) e as imagens aprovadas
+  (reduzidas, com o `magick`) para `web/arte/`. Rode de novo quando um módulo ou uma imagem aprovada mudar.
+- `web/arte.js` (à mão): a tabela `ARTE` com o status de cada item da loja (`fechado`, `finalizar`, `aberto`) e a frase
+  do que falta. **Ao mudar o status de um item na `FILA.md`, mude também aqui.** `CARTAO` é o status da licença inteira.
+- `web/arte/licenca.js`: o cartão novo e os estojos do `licenca/prototipo.html`, com os dados reais do jogador. Mudou o
+  protótipo? Leve a mudança para lá.
+- A versão nova só aparece no provar, no ▶ e no provador da Associação; ninguém compra nem equipa a arte nova.

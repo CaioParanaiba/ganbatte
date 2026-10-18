@@ -785,3 +785,30 @@ class Renomear(unittest.TestCase):
             r.__enter__.return_value = r
             with mock.patch.object(s.urllib.request, "urlopen", return_value=r), mock.patch.object(s.json, "load", return_value={"app": app}):
                 self.assertEqual(s.ping(1) is not None, app != "outro")
+
+
+class ArteNova(Base):
+    """A arte nova das lojas em teste (#134): web/arte.js e os arquivos de web/arte/, só .js e .png com nome simples."""
+
+    def test_serve_a_arte_e_mais_nada(self):
+        import threading
+        import urllib.error
+        import urllib.request
+        srv = s.ThreadingHTTPServer(("127.0.0.1", 0), s.H)
+        s.H.porta = srv.server_address[1]
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.server_close)
+        self.addCleanup(srv.shutdown)
+        base = f"http://127.0.0.1:{s.H.porta}"
+
+        def get(c):
+            try:
+                with urllib.request.urlopen(base + c, timeout=5) as r:
+                    return r.status, r.headers["Content-Type"]
+            except urllib.error.HTTPError as e:
+                return e.code, None
+        self.assertEqual(get("/arte.js"), (200, "text/javascript; charset=utf-8"))
+        self.assertEqual(get("/arte/carta.js"), (200, "text/javascript; charset=utf-8"))
+        self.assertEqual(get("/arte/bd-corrente.png"), (200, "image/png"))
+        for c in ("/arte/nada.js", "/arte/..%2Fservidor.py", "/arte/carta.css", "/arte/Carta.js"):
+            self.assertEqual(get(c)[0], 404, c)
