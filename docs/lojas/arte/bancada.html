@@ -209,8 +209,13 @@ function desenha(){
 // cursor com física: a tela preta com o cursor de verdade, e as prévias paradas que o módulo monta
 function desenhaFisica(){
   if(fis){ fis.desliga(); fis = null; }
-  const M = window.CURSORES && CURSORES[FISICA];
-  if(!M){ const s = document.createElement('script'); s.src = `${FICHA.pasta || 'cursores'}/${FISICA}.js`; s.onload = desenhaFisica; document.head.append(s); return; }
+  const M = (window.CURSORES && CURSORES[FISICA]) || (window.TRANSICOES && TRANSICOES[FISICA]);
+  if(!M){
+    // a ficha pode pedir scripts de apoio antes (antes:['transicoes/base.js']), carregados na ordem
+    const carrega = src => new Promise(ok => { const s = document.createElement('script'); s.src = src; s.onload = ok; document.head.append(s); });
+    (async () => { for(const a of FICHA.antes || []) await carrega(a); await carrega(`${FICHA.pasta || 'cursores'}/${FISICA}.js`); desenhaFisica(); })();
+    return;
+  }
   if(!comControles){
     // mexem no cursor ao vivo, sem refazer a página (o que está na tela continua onde está)
     comControles = true;

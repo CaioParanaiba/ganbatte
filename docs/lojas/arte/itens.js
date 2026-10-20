@@ -71,4 +71,8 @@ const ITENS = {
     hoje:'Um naipe de texto (♠ ♥ ♦ ♣, à escolha) ao lado do nome.', arte:'Paus no estilo do Hisoka.'},
   'naipe-coringa': {nome:'Emblema de naipe: coringa', loja:'Associação', onde:'ao lado do nome nos placares (dia de descanso)', vit:{arq:'associacao', id:'emb-naipe'},
     hoje:'Não existe coringa hoje: o emblema só tem ♠ ♥ ♦ ♣.', arte:'Uma máscara de coringa no estilo do Hisoka, usada nos dias de descanso.'},
+  'tr-fumaca': {nome:'Fumaça do Morel', loja:'Masadora', onde:'transição ao trocar de aba', vit:null, fisica:'fumaca', pasta:'transicoes', antes:['transicoes/base.js', 'transicoes/palco.js'],
+    hoje:'Não existe: a troca de aba é seca, ou o Deslizar e o Glitch (a aba nova entra mexendo).', arte:'Feita em código pelo Claude, sem o Gemini (transicoes/fumaca.js, canvas): a fumaça do Deep Purple sai do ponto onde você clicou, incha em baforadas de ruído até cobrir a tela e é levada para cima e para a esquerda, já mostrando a aba nova. Sem os soldados de fumaça. Raro.'},
+  'tr-aspira': {nome:'Deme-chan', loja:'Masadora', onde:'transição ao trocar de aba', vit:null, fisica:'aspira', pasta:'transicoes', antes:['transicoes/base.js', 'transicoes/palco.js'],
+    hoje:'Não existe: a troca de aba é seca, ou o Deslizar e o Glitch (a aba nova entra mexendo).', arte:'Feita em código pelo Claude, sem o Gemini (transicoes/aspira.js): a aba velha é sugada para o canto mais perto do clique, como pelo bocal da Deme-chan (ela não aparece, só o redemoinho no canto): os cards de verdade saem um a um, do mais perto ao mais longe, curvando, esticando e girando; a aba nova aparece atrás.'},
 };
