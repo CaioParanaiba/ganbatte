@@ -11,7 +11,8 @@ WEB = ARTE.parent.parent.parent / "web" / "arte"
 WEB.mkdir(exist_ok=True)
 
 for pasta, nome in [("cursores", "carta"), ("cursores", "agulha"), ("cursores", "ioio"), ("efeitos", "godspeed"),
-                    ("efeitos", "jajanken"), ("heatmap", "cartas"), ("heatmap", "chamas")]:
+                    ("efeitos", "jajanken"), ("heatmap", "cartas"), ("heatmap", "chamas"), ("hover", "bungee"),
+                    ("hover", "en"), ("hover", "vira"), ("hover", "shu"), ("hover", "contorno"), ("prazo", "countdown")]:
     shutil.copyfile(ARTE / pasta / f"{nome}.js", WEB / f"{nome}.js")
 
 # [id da fila, largura no jogo]: os carimbos e o emblema aparecem a ~100 px na licença grande; a borda é fatiada (12 %)

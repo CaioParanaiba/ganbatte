@@ -5,12 +5,14 @@
  * - Os módulos em código (cursores, efeitos, heatmaps) e as imagens aprovadas ficam em web/arte/, copiados da bancada pelo
  *   docs/lojas/arte/leva.py; a licença nova é o web/arte/licenca.js.
  * - Provando com a nova, o atributo do <html> ganha "-nova" (data-cursor="carta-nova"...): o CSS daqui pega esse valor,
- *   e os cursores em código ligam pelo GB_FX.aplica.
+ *   e os cursores e os hovers em código ligam pelo GB_FX.aplica.
+ * - Ideias da fila ainda não feitas (status `ideia` na FILA.md) entram na vitrine como card "em desenvolvimento" (IDEIAS):
+ *   não se compram nem se provam, só mostram o que vem e a faixa decidida. Mudou a FILA.md, mudar aqui também.
  * Carregado depois do efeitos.js e antes do grupo.js: usa UI, COS (via GBx), GB_FX, CURSORES, render, esc, vista.
  */
 (() => {
 const IMG = n => (window.GB_ARTE_IMG || {})[n] || `arte/${n}.png`;   // no modo demonstração (standalone.py) as imagens vêm embutidas
-const ST = {fechado:'fechado', finalizar:'falta finalizar', aberto:'em aberto'};
+const ST = {fechado:'fechado', finalizar:'falta finalizar', aberto:'em aberto', dev:'em desenvolvimento'};
 /* id do item na loja → st: o status da arte; tx: o que é e o que falta; sem: true quando ainda não há versão nova para ver */
 const ARTE = {
   'hp-corrente':   {st:'fechado', tx:'A tira de corrente aprovada (16/10). Na nova, a vida do chefão vira a corrente desenhada.'},
@@ -20,6 +22,11 @@ const ARTE = {
   'cr-ioio':       {st:'fechado', tx:'Aprovado (20/10). Feito em código: dois ioiôs; clique desce, segurar dorme e carrega os fios de eletricidade, soltar volta (carregado, como raio).'},
   'fx-godspeed':   {st:'fechado', tx:'Aprovado (20/10). O Kanmuru acende no card, o raio cai com quadro negativo, o 神速 entra com rastros e a marca do raio fica no card.'},
   'fx-jajanken':   {st:'fechado', tx:'Aprovado (20/10): as três mãos, com o grito em japonês. O ▶ da nova passa por pedra, papel e tesoura, nessa ordem.'},
+  'hv-bungee':     {st:'finalizar', tx:'Quase fechado: espera a resposta final. A goma cobre o contorno do card; ao sair, a borda vira membrana, estica e rasga como elástico.'},
+  'hv-en':         {st:'finalizar', tx:'Quase fechado: espera a resposta final. O card acende o Ten e o En da Pitou se abre do ponto tocado; os cards alcançados acendem os cantos.'},
+  'hv-vira':       {st:'fechado', tx:'Aprovado (20/10). A volta dispara ao entrar e sempre termina, passando pelo verso de Greed Island; os cards baixos viram deitados e o painel grande só inclina.'},
+  'hv-shu':        {st:'fechado', tx:'Aprovado (20/10). A aura corre o contorno a partir do ponto tocado, duas faíscas correm a borda e ela escorre ao sair.'},
+  'hv-contorno':   {st:'fechado', tx:'Aprovado (20/10). O contorno acende em 120 ms e apaga em 350 ms, sem piscar ao passar por vários cards.'},
   'hm-cartas':     {st:'fechado', tx:'Aprovada (17/10): carta de frente por nível, carta de figura no dia mais forte, verso no dia vazio e Coringa no dia salvo.'},
   'hm-chamas':     {st:'fechado', tx:'Aprovada (20/10): chama maior por nível, cinza no dia vazio, nen no dia salvo, fogo laranja. Provando, "acender hoje" mostra o acender.'},
   'lic-exame':     {st:'fechado', tx:'Carimbo 念 com anel duplo (16/10).'},
@@ -32,6 +39,31 @@ const ARTE = {
   'lic-corrente':  {st:'finalizar', tx:'A corrente do Kurapika dando a volta no estojo. Aprovada, mas ainda provisória.'},
   'emb-naipe':     {st:'finalizar', tx:'Os quatro naipes estão fechados, com os traços do cursor da carta. Falta o veredito do Coringa (estrela e lágrima).'},
 };
+/* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
+   nome, descrição, status, o que falta]. A Marca de prazo (prazo) é uma categoria inteira em teste: sai se não agradar */
+const PRAZO = ' Faz parte da Marca de prazo, categoria em teste: se os estilos não agradarem, ela sai inteira.';
+const IDEIAS = [
+  ['cr-vara', 'cursor', 'epico', 'Gon', 'Vara de pescar do Gon', 'O cursor vira a vara de pescar: o clique lança a linha e fisga o card.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, com física como a carta e o ioiô: linha com anzol e boia, segurar recolhe.'],
+  ['fx-borboletas', 'fx', 'epico', 'Pouf', 'Borboletas do Pouf', 'Borboletas de aura voam devagar pelo fundo, juntam-se perto do mouse e se espalham no clique.', 'dev', 'Ideia aprovada, ainda sem arte. Entra no lugar da Poeira de Nen; falta decidir se os pacotes que têm a poeira ficam com ela.'],
+  ['fx-costura', 'ev', 'epico', 'Machi', 'Costura da Machi', 'Ao concluir, o card racha no meio e os fios de nen o costuram de volta, ponto a ponto.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, com o fio puxado no fim.'],
+  ['fx-dragao', 'ev', 'epico', 'Zeno', 'Dragon Dive', 'No andar novo, o dragão de aura sobe, curva no alto e desce em chuva de dragõezinhos.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, como alternativa aos fogos.'],
+  ['fx-soco', 'ev', 'raro', 'Leorio', 'Soco remoto do Leorio', 'No andar novo, um portal de nen abre perto do card e o punho do Leorio sai dele.', 'dev', 'A decidir: anotada como raro, só no andar novo; o Caio quer ver na prática antes de decidir se fica.'],
+  ['bd-costura', 'borda', 'raro', 'Machi', 'Costura de nen', 'A borda dos cards vira uma costura de fio de nen, em zigue-zague.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS ou SVG.'],
+  ['hm-gungi', 'heat', 'raro', 'Meruem e Komugi', 'Constância no Gungi', 'O heatmap vira um tabuleiro de Gungi: cada dia jogado é uma peça, mais alta quanto mais forte o dia; o dia salvo é o Rei.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS.'],
+  ['tr-fumaca', 'trans', 'raro', 'Morel', 'Fumaça do Morel', 'Ao trocar de aba, a fumaça do Deep Purple cobre a tela por meio segundo e se desfaz na aba nova.', 'dev', 'Ideia aprovada, ainda sem arte. Curta, em CSS.'],
+  ['tr-aspira', 'trans', '', 'Shizuku', 'Deme-chan', 'Ao trocar de aba, a Deme-chan suga a tela antiga pelo bocal e a aba nova aparece atrás.', 'dev', 'A decidir: falta uma prévia para ver antes de decidir (faixa sugerida: raro).'],
+  ['tt-medico', 'title', 'comum', 'Leorio', 'Futuro Médico', 'Título para quem estuda.', 'dev', 'Ideia aprovada, ainda não entrou no catálogo.'],
+  ['at-countdown', 'prazo', 'raro', 'Genthru', 'Countdown do Genthru', 'A bomba do Countdown na tarefa com prazo, com os dias que faltam; amanhã e hoje o número fica vermelho, e atrasada ela estoura.', 'aberto', 'Primeira versão feita, em aberto: a prévia mostra 5 dias, amanhã, hoje e 2 dias de atraso.' + PRAZO],
+  ['at-carimbo', 'prazo', 'comum', 'Exame Hunter', 'Carimbo de atrasada', 'Um carimbo vermelho torto na tarefa atrasada, no estilo dos carimbos da licença.', 'dev', 'Ideia, ainda sem arte.' + PRAZO],
+  ['fx-hakoware', 'prazo', 'raro', 'Knuckle', 'Hakoware', 'O selo do Hakoware com os dias de juros, parado na tarefa atrasada.', 'dev', 'Ideia, ainda sem arte (a versão simples, sem o Potclean animado).' + PRAZO],
+  ['at-agulha', 'prazo', 'raro', 'Illumi', 'Agulha na atrasada', 'Uma agulha do Illumi espetada no canto da tarefa atrasada, com uma trinca leve.', 'dev', 'Ideia, ainda sem arte (reaproveita o desenho do cursor da agulha).' + PRAZO],
+  ['at-ampulheta', 'prazo', 'raro', 'Exame Hunter', 'Ampulheta do Exame', 'Uma ampulheta na tarefa com prazo, que esvazia conforme o prazo chega.', 'dev', 'Ideia, ainda sem arte.' + PRAZO],
+];
+const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
+  ARTE[id] = {st, tx, sem: true, ideia: true};
+  return {id, cat: c === 'ev' ? 'fx' : c, ...(c === 'ev' ? {ev: 1} : {}), fa, hxh: 1, quem, n, d, dev: 1, prova: 1, p: 0};   // prova: não é "vem com o jogo" nem se compra
+});
+
 /* a licença inteira (o cartão novo), que não é item da loja: aparece no provador da Associação */
 const CARTAO = {st:'finalizar', tx:'O cartão novo, fiel ao do anime, com lugar para as estrelas, o carimbo e o emblema, foi aprovado como provisório. Falta decidir como a versão em pé entra no placar.'};
 const VER = {};   // id → 'antiga' ou 'nova', só nesta tela (o padrão é a nova)
@@ -53,7 +85,11 @@ const CSS = `
 .ar7{display:grid;gap:5px;margin:6px 0 2px;padding:7px 9px;border-radius:8px;border:1px dashed var(--hair);font-size:12.5px;line-height:1.4;color:var(--soft)}
 .ar7 .ar-l{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between}
 .ar-st{font:700 10.5px var(--f-mono);letter-spacing:.04em;text-transform:uppercase;padding:1px 8px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
-.ar-st.fechado{color:var(--grn)} .ar-st.finalizar{color:var(--amb)} .ar-st.aberto{color:var(--red)}
+.ar-st.fechado{color:var(--grn)} .ar-st.finalizar{color:var(--amb)} .ar-st.aberto{color:var(--red)} .ar-st.dev{color:var(--soft);border-style:dashed}
+/* card em desenvolvimento: a prévia vazia, com de quem é; e a bomba do Countdown */
+.it7 .pv.dev7{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;border:1px dashed var(--hair);background:var(--panel)}
+.pv.dev7 b{font:700 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)} .pv.dev7 span{font-size:13px;color:var(--faint)}
+.pv.at7{display:flex;gap:10px;align-items:center;justify-content:center}
 .ar-tg{display:inline-flex;border:1px solid var(--hair);border-radius:99px;overflow:hidden}
 .ar-tg button{all:unset;cursor:pointer;font:600 11px var(--f-mono);padding:2px 9px;color:var(--soft)}
 .ar-tg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
@@ -99,9 +135,18 @@ function cursor(){
   curK = k;
   if(k && window.CURSORES && CURSORES[k]){ cur = CURSORES[k].liga(document.body, {}); if(k === 'agulha') fonte(); }
 }
+/* ---------- hovers em código: colam nos cards quando o <html> pede um "-nova" (o tamanho do card já muda o efeito) ---------- */
+let hov = null, hovK = '';
+function hover(){
+  const v = document.documentElement.getAttribute('data-hover') || '', k = v.endsWith('-nova') ? v.slice(0, -5) : '';
+  if(k === hovK) return;
+  if(hov){ hov.desliga(); hov = null; }
+  hovK = k;
+  if(k && window.CURSORES && CURSORES[k] && CURSORES[k].cola) hov = CURSORES[k].cola(document.documentElement, {seletor: '.card'});
+}
 if(window.GB_FX){
   const aplica = GB_FX.aplica, ver = GB_FX.ver;
-  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); };
+  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); };
   /* ▶ na loja: com a nova escolhida, o efeito novo cai no card do item */
   let mao = 0;
   GB_FX.ver = function(id, r){
@@ -119,8 +164,14 @@ const troca = id => `<span class="ar-tg" role="group" aria-label="versão">${['a
 window.GB_ARTE = {
   ARTE, CARTAO, ST, tem, nova, naipe, fonte, troca,
   so: false,   // o filtro "arte nova" da Masadora
+  /* os cards em desenvolvimento da vitrine (não se compram nem se provam) e a prévia deles */
+  ideias: ITENS_DEV,
+  pvDev(it){
+    if(it.id === 'at-countdown' && window.CURSORES && CURSORES.countdown) return `<div class="pv at7">${[5, 1, 0, -2].map(k => CURSORES.countdown.marca(k, 40)).join('')}</div>`;
+    return `<div class="pv dev7"><b>em desenvolvimento</b><span>${esc(it.quem)}</span></div>`;
+  },
   /* provando com a nova: o valor do atributo ganha "-nova" (vista() no index.html) */
-  vista(v, it){ if(nova(it.id) && it.eq && v[it.cat] === it.eq[it.cat] && ['borda','cursor','hp','heat'].includes(it.cat)) v[it.cat] += '-nova'; },
+  vista(v, it){ if(nova(it.id) && it.eq && v[it.cat] === it.eq[it.cat] && ['borda','cursor','hp','heat','hover'].includes(it.cat)) v[it.cat] += '-nova'; },
   /* a classe da prévia do card (pvNovo): a nova, se for a escolhida */
   k(it){ const k = it.eq[it.cat]; return nova(it.id) && ['borda','hp','heat'].includes(it.cat) ? k + '-nova' : k; },
   /* a prévia do cursor e do heatmap novos no card */
@@ -133,12 +184,12 @@ window.GB_ARTE = {
   },
   /* o aviso do card: status, a frase e a troca (na Associação, sem troca: ela fica no provador, para a licença inteira) */
   aviso(id, semTroca){ const a = ARTE[id]; if(!a) return '';
-    return `<div class="ar7"><span class="ar-l"><span class="ar-st ${a.st}" title="arte nova (#134)">arte: ${ST[a.st]}</span>${a.sem ? '<span class="sub">ainda sem versão nova</span>' : semTroca ? '<span class="sub">antiga | nova no provador</span>' : troca(id)}</span><span>${esc(a.tx)}</span></div>`; },
+    return `<div class="ar7"><span class="ar-l"><span class="ar-st ${a.st}" title="arte nova (#134)">arte: ${ST[a.st]}</span>${a.ideia ? '' : a.sem ? '<span class="sub">ainda sem versão nova</span>' : semTroca ? '<span class="sub">antiga | nova no provador</span>' : troca(id)}</span><span>${esc(a.tx)}</span></div>`; },
   /* o resumo no alto da Masadora */
   resumo(ids){
     const l = ids.filter(tem), n = s => l.filter(id => ARTE[id].st === s).length;
-    return `<div class="sec7"><h3>Arte nova em teste</h3><p>Os itens com o aviso "arte" ganharam um desenho novo na fila de arte (#134). Use a troca <b>antiga | nova</b> e o provar (ou o ▶) para comparar. A versão nova ainda não se compra: quem compra ou já tem fica com a de hoje.</p>
-      <div class="ar-res"><span class="ar-st fechado">fechado ${n('fechado')}</span><span class="ar-st finalizar">falta finalizar ${n('finalizar')}</span><span class="ar-st aberto">em aberto ${n('aberto')}</span>
+    return `<div class="sec7"><h3>Arte nova em teste</h3><p>Os itens com o aviso "arte" ganharam um desenho novo na fila de arte (#134). Use a troca <b>antiga | nova</b> e o provar (ou o ▶) para comparar. A versão nova ainda não se compra: quem compra ou já tem fica com a de hoje. Os cards "em desenvolvimento" são ideias aprovadas que ainda não têm arte: mostram o que vem e a faixa.</p>
+      <div class="ar-res"><span class="ar-st fechado">fechado ${n('fechado')}</span><span class="ar-st finalizar">falta finalizar ${n('finalizar')}</span><span class="ar-st aberto">em aberto ${n('aberto')}</span><span class="ar-st dev">em desenvolvimento ${n('dev')}</span>
       <button type="button" class="btn${this.so ? ' v' : ''}" data-arteso>${this.so ? 'mostrar todos os itens' : 'só os itens com arte nova'}</button></div></div>`;
   },
   /* na faixa do provar: a troca e, nas chamas, o acender */

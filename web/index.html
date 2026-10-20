@@ -987,6 +987,7 @@ a.btn{display:inline-block;text-decoration:none}
 .it7 .sl7{display:flex;gap:5px;flex-wrap:wrap}
 .it7 .sl7 span{font:600 10px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--hair);border-radius:4px;padding:1px 6px;color:var(--soft)}
 .it7 .sl7 .fa-raro{color:var(--volt);border-color:color-mix(in srgb,var(--volt) 50%,var(--hair))} .it7 .sl7 .fa-epico{color:var(--aura);border-color:color-mix(in srgb,var(--aura) 50%,var(--hair))}
+.it7 .sl7 .ja7{color:var(--grn);border-color:color-mix(in srgb,var(--grn) 50%,var(--hair))}
 .it7 .sl7 .fa-lenda{color:var(--amb);border-color:color-mix(in srgb,var(--amb) 50%,var(--hair))} .it7 .sl7 .hx7{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,var(--hair));text-transform:none}
 .it7 .pr s{color:var(--faint);font-weight:400}
 .nen7{font:700 1.1em/1 "Noto Serif JP",serif;font-style:normal}
@@ -995,7 +996,7 @@ a.btn{display:inline-block;text-decoration:none}
 .shopc .fil7 span:first-child{margin-left:0}
 .shopc .fil7 button{border:1px solid var(--hair);background:var(--panel);border-radius:99px;padding:3px 11px;cursor:pointer;font:600 12px var(--f-ui);color:var(--soft)}
 .shopc .fil7 button[aria-pressed="true"]{color:var(--ink);border-color:var(--volt)}
-.it7 .info{padding:10px 12px;display:grid;gap:6px;flex:1}
+.it7 .info{padding:10px 12px;display:flex;flex-direction:column;gap:6px;flex:1} .it7 .info > .buy7{margin-top:auto}
 .it7 .info b{font-size:14px} .it7 .info p{margin:0;font-size:12.5px;color:var(--soft)}
 .it7 .buy7{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto}
 .it7 .pr{font:700 13px var(--f-mono);color:var(--amb)} .it7 .pr.free{color:var(--grn)}
@@ -1396,7 +1397,7 @@ let TESTE = null;   // modo teste da Masadora (só nos canais beta e grupo): {ow
 const R = {dif:'normal'};
 /* itens novos da #135: um por vez em cada um destes lugares, cada um com o seu atributo no <html> (efeitos.js) */
 const SLOTS = ['borda','hover','cursor','hp','heat','trans'];
-const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', ffa:'', fte:'', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
+const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', ffa:'', fte:'', vis7:'cat', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
   borda:'', hover:'', cursor:'', hp:'', heat:'', trans:'', avatar:'logo', lic:'l2', hud:'logo', chefes:{}, anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
 try { UI.fxOff = localStorage.getItem('gb-fxoff') === '1'; } catch(e){}
 try { UI.cfold = JSON.parse(localStorage.getItem('gb-cfold') || '{}') || {}; } catch(e){ UI.cfold = {}; }   // caçadas recolhidas na Lista, por navegador
@@ -1479,7 +1480,7 @@ function devolve(){
   EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.9.2-beta2';
+const VERSAO_PAGINA = '0.9.2-beta3';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1836,6 +1837,7 @@ function pvNovo(it){
   return `<div class="pv pvc ${it.cat === 'borda' ? 'bd' : 'hv'}-${k}" ${st}><div class="mc">Missão da semana</div>${k === 'en' ? '<i class="en7"></i>' : ''}</div>`;
 }
 function pvHTML(it){
+  if(it.dev) return GB_ARTE.pvDev(it);   // ideia da fila de arte ainda sem arte (#134): card em desenvolvimento
   if(SLOTS.includes(it.cat)) return pvNovo(it);
   if(it.cat === 'chefe') return `<div class="pv av8" style="${palStyle(UI.theme)}"><span class="av bs ret" style="--s:76px"><img src="${retSrc(it)}" alt=""></span></div>`;
   if(it.cat === 'avatar') return `<div class="pv av8" style="${palStyle(UI.theme)}"><span class="plate" style="width:76px;height:76px;background:${it.eq.avatar === 'logo' ? '#F6F3EC' : 'transparent'};box-shadow:none"><img src="${it.eq.avatar === 'logo' ? LOGO : avSrc(it.eq.avatar)}" alt="" style="width:100%"></span></div>`;
@@ -1848,13 +1850,16 @@ function pvHTML(it){
 }
 /* selos do card (#135): a faixa (o pacote não tem) e o 念 HxH dos itens do tema */
 const FA_NOME = Object.fromEntries(GBx.FAIXAS_LOJA);
-const selos = it => (it.fa ? `<span class="fa7 fa-${it.fa}">${FA_NOME[it.fa]}</span>` : it.cat === 'full' && it.parts ? '<span class="fa7">pacote</span>' : '')
-  + (it.hxh ? '<span class="hx7" title="Item do tema HxH"><i class="nen7">念</i> HxH</span>' : '');
+const selos = it => (it.fa ? `<span class="fa7 fa-${it.fa}">${FA_NOME[it.fa]}</span>` : it.cat === 'full' && it.parts ? '<span class="fa7">pacote</span>' : it.dev ? '<span class="fa7">faixa a decidir</span>' : '')
+  + (it.hxh ? '<span class="hx7" title="Item do tema HxH"><i class="nen7">念</i> HxH</span>' : '')
+  + (UI.vis7 === 'faixa' && UI.cat === 'aparencia' && prateleira(it) ? `<span>${esc(prateleira(it))}</span>` : '')
+  + (UI.cat !== 'comprados' && meu(it) && !GBx.padrao(it) && !it.fora && !it.chefao && !(it.parts && !GBx.pacote(it, OWN).completo) ? '<span class="ja7">já comprado</span>' : '');
 function itemHTML(S, it){
   const pk = it.cat === 'full' && it.parts ? GBx.pacote(it, OWN) : null, preco = pk ? pk.p : it.p;
   const own = pk ? pk.completo : OWN.has(it.id) || GBx.padrao(it), eq = own && equipado(it), lk = it.lock && it.lock(S), need = it.need && !OWN.has(it.need);
   let btn;
-  if(it.lend) btn = `<button class="btn" disabled>${S.jenny >= it.p ? 'sob encomenda' : `faltam ${fmt(it.p - S.jenny)} J`}</button>`;
+  if(it.dev) btn = '';   // ideia da fila de arte (#134): nem compra nem provar
+  else if(it.lend) btn = `<button class="btn" disabled>${S.jenny >= it.p ? 'sob encomenda' : `faltam ${fmt(it.p - S.jenny)} J`}</button>`;
   else if(own && it.cat === 'chefe') btn = `<span class="sub">${eq ? 'em uso' : 'escolha o chefão em Comprados'}</span>`;
   else if(!own && it.chefao) btn = '<span class="sub">derrote um chefão com este retrato</span>';
   else if(own && pk) btn = `<button class="btn v" data-equip="${it.id}">${eq ? 'equipado' : 'equipar tudo'}</button>`;
@@ -1866,20 +1871,23 @@ function itemHTML(S, it){
   else if(need) btn = `<button class="btn" disabled>abra o mundo pixel</button>`;
   else btn = `<button class="btn" data-cos="${it.id}" ${S.jenny >= preco ? '' : 'disabled'}>${!preco ? 'pegar' : S.jenny >= preco ? 'comprar' : `faltam ${fmt(preco - S.jenny)} J`}</button>`;
   const prova = UI.prova === it.id;
-  const ver = !own && provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
+  const ver = it.dev ? '' : !own && provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
     : it.ev || it.cat === 'som' ? `<button class="btn gb-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
-  const pr = it.chefao ? 'chefão derrotado' : it.fora ? 'da sua coleção' : pk ? (pk.completo ? 'pacote completo' : `${pk.p < it.p ? `<s>${fmt(it.p)}</s> ` : ''}${fmt(pk.p)} J`)
+  const pr = it.dev ? 'em desenvolvimento' : it.chefao ? 'chefão derrotado' : it.fora ? 'da sua coleção' : pk ? (pk.completo ? 'pacote completo' : `${pk.p < it.p ? `<s>${fmt(it.p)}</s> ` : ''}${fmt(pk.p)} J`)
     : GBx.padrao(it) ? (it.cat === 'chefe' ? 'grátis' : 'vem com o jogo') : it.prova ? 'só para provar' : it.grupo ? 'Trick Coin' : it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis';
   const sl = selos(it), tem = pk && pk.tem && !pk.completo ? `<p>Você já tem ${pk.tem} de ${pk.n} peças: paga só o que falta.</p>` : '';
-  return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need||(it.grupo&&!own)?' lock':''}">${pvHTML(it)}<div class="info">${sl ? `<div class="sl7">${sl}</div>` : ''}<b>${esc(it.n)}</b><p>${esc(it.d)}</p>${tem}${window.GB_ARTE ? GB_ARTE.aviso(it.id) : ''}<div class="buy7"><span class="pr${preco || it.prova ? '' : ' free'}">${pr}${own && !GBx.padrao(it) && !it.fora && !it.chefao && !pk ?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
+  return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need||(it.grupo&&!own)?' lock':''}">${pvHTML(it)}<div class="info">${sl ? `<div class="sl7">${sl}</div>` : ''}<b>${esc(it.n)}</b><p>${esc(it.d)}</p>${tem}${window.GB_ARTE ? GB_ARTE.aviso(it.id) : ''}<div class="buy7"><span class="pr${preco || it.prova || it.dev ? '' : ' free'}">${pr}${own && !GBx.padrao(it) && !it.fora && !it.chefao && !pk ?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
 }
 const SECS = {
-  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['chefe','Ícones dos chefões','Retratos para os cards dos chefões, no lugar do ícone. São grátis: todos estão em Comprados, onde você escolhe o chefão de cada um. Derrote o chefão que está com ele e o retrato vira foto de perfil.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez.'],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações.'],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
+  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['prazo','Marca de prazo','Em teste: a marca na tarefa com prazo ou atrasada. Se os estilos não agradarem, a categoria sai inteira.'],['chefe','Ícones dos chefões','Retratos para os cards dos chefões, no lugar do ícone. São grátis: todos estão em Comprados, onde você escolhe o chefão de cada um. Derrote o chefão que está com ele e o retrato vira foto de perfil.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez.'],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações.'],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
   pixel:[['px','Mundo pixel','Primeiro desbloqueie o mundo; depois as peles.']],
 };
 /* itens de uma prateleira (c = categoria; fxev = os efeitos da hora da conquista) */
 const daSec = (l, c) => l.filter(i => c === 'fxev' ? i.cat === 'fx' && i.ev && !i.sec : (i.sec || i.cat) === c && !(c === 'fx' && i.ev));
-/* o que é do jogador (#33): comprado (estado.json ou a coleção permanente) ou que vem com o jogo. Sai da vitrine e fica em Comprados */
+/* o nome da prateleira de um item da Aparência (na vista por faixa, vira um selo do card) */
+const prateleira = it => (SECS.aparencia.find(([c]) => daSec([it], c).length) || [])[1];
+/* o que é do jogador (#33): comprado (estado.json ou a coleção permanente) ou que vem com o jogo. Fica em Comprados e continua na
+   vitrine com o selo "já comprado" */
 const meu = it => OWN.has(it.id) || GBx.padrao(it);
 /* Comprados: escolher o ícone de cada chefão (o padrão ou um retrato da coleção) */
 function chefesHTML(S){
@@ -1907,16 +1915,22 @@ function rMS(S){
   let main = '';
   if(UI.cat === 'comprados') main = compradosHTML(S);
   else if(SECS[UI.cat]){
-    /* vitrine: o que não é seu (o pacote fica sempre, para equipar tudo), pelos filtros de faixa e de tema (#135) */
+    /* vitrine: tudo, o que é seu com o selo "já comprado" (também está em Comprados), pelos filtros de faixa e de tema (#135).
+       Duas vistas na Aparência: por categoria (as prateleiras) ou por faixa (comum → lendário, e no fim o que não tem faixa;
+       dentro de cada faixa, na ordem das prateleiras). As ideias da fila de arte entram como card em desenvolvimento (#134) */
     const arte = window.GB_ARTE && UI.cat === 'aparencia' ? GB_ARTE : null;   // arte nova em teste (#134): o resumo e o filtro
     const filtro = i => (!UI.ffa || i.fa === UI.ffa) && (!UI.fte || (UI.fte === 'hxh') === !!i.hxh) && (!arte || !arte.so || arte.tem(i.id));
-    const naVitrine = i => (i.parts || !meu(i)) && !i.fora && !i.chefao && !i.grupo;
-    const fil = UI.cat === 'aparencia' ? `<div class="fil7"><span>faixa</span>${[['','todas'], ...GBx.FAIXAS_LOJA].map(([k,n]) => `<button data-ffa="${k}" aria-pressed="${UI.ffa === k}">${n.toLowerCase()}</button>`).join('')}<span>tema</span>${[['','tudo'],['hxh','<i class="nen7">念</i> HxH'],['basico','básicos']].map(([k,n]) => `<button data-fte="${k}" aria-pressed="${UI.fte === k}">${n}</button>`).join('')}</div>` : '';
-    const secs = SECS[UI.cat].map(([c,t,d]) => { const l = daSec(COS, c), vit = l.filter(i => naVitrine(i) && filtro(i));
-      if(!vit.length && (UI.ffa || UI.fte || (arte && arte.so))) return '';
-      return `<div class="sec7"><h3>${t}</h3>${d?`<p>${d}</p>`:''}${vit.length ? `<div class="items">${vit.map(i => itemHTML(S,i)).join('')}</div>` : '<p class="sub">Tudo desta prateleira já é seu: está em <button class="go" data-cat="comprados">Comprados</button>.</p>'}</div>`; }).join('');
+    const naVitrine = i => !i.fora && !i.chefao && !i.grupo;
+    const todos = arte ? COS.concat(arte.ideias) : COS;
+    const fil = UI.cat === 'aparencia' ? `<div class="fil7"><span>ver</span>${[['cat','por categoria'],['faixa','por raridade']].map(([k,n]) => `<button data-fvis="${k}" aria-pressed="${UI.vis7 === k}">${n}</button>`).join('')}<span>faixa</span>${[['','todas'], ...GBx.FAIXAS_LOJA].map(([k,n]) => `<button data-ffa="${k}" aria-pressed="${UI.ffa === k}">${n.toLowerCase()}</button>`).join('')}<span>tema</span>${[['','tudo'],['hxh','<i class="nen7">念</i> HxH'],['basico','básicos']].map(([k,n]) => `<button data-fte="${k}" aria-pressed="${UI.fte === k}">${n}</button>`).join('')}</div>` : '';
+    const sec = (t, d, vit) => `<div class="sec7"><h3>${t}</h3>${d?`<p>${d}</p>`:''}<div class="items">${vit.map(i => itemHTML(S,i)).join('')}</div></div>`;
+    const ordem = SECS[UI.cat].flatMap(([c]) => daSec(todos, c)).filter(i => naVitrine(i) && filtro(i));
+    const secs = UI.cat === 'aparencia' && UI.vis7 === 'faixa'
+      ? [...GBx.FAIXAS_LOJA, ['', 'Sem faixa', 'Pacotes, peças que só vêm num pacote e ideias com a faixa a decidir.']].map(([k, n, d]) => { const vit = ordem.filter(i => (i.fa || '') === k);
+          return vit.length ? sec(n, d, vit) : ''; }).join('')
+      : SECS[UI.cat].map(([c,t,d]) => { const vit = daSec(todos, c).filter(i => naVitrine(i) && filtro(i)); return vit.length ? sec(t, d, vit) : ''; }).join('');
     const vao = UI.cat === 'aparencia' && !UI.ffa && !UI.fte ? COS.filter(i => i.grupo && !OWN.has(i.id)) : [];
-    main = fil + (arte ? arte.resumo(COS.filter(naVitrine).map(i => i.id)) : '') + (secs || '<p class="sub">Nenhum item com esses filtros.</p>')
+    main = fil + (arte ? arte.resumo(todos.filter(naVitrine).map(i => i.id)) : '') + (secs || '<p class="sub">Nenhum item com esses filtros.</p>')
       + (vao.length && !(arte && arte.so) ? `<div class="sec7"><h3>Vão para a Loja da Associação</h3><p>Molduras especiais e efeitos em volta do perfil passam para a loja do grupo, a Trick Coin. Não se compram mais aqui; quem já tem continua com eles.</p><div class="items">${vao.map(i => itemHTML(S,i)).join('')}</div></div>` : '')
       + (UI.cat==='aparencia' ? '<div class="sec7"><h3>Na próxima temporada</h3><p>Em 2027-1 chegam os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p></div>' : '');
   }
@@ -2755,6 +2769,7 @@ document.addEventListener('click', async e => {
   const pr = q('[data-prova]'); if(pr){ UI.prova = pr.dataset.prova; render(); return; }
   const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; render(); return; }
   const ff = q('[data-ffa]'); if(ff){ UI.ffa = ff.dataset.ffa; render(); return; }
+  const fv = q('[data-fvis]'); if(fv){ UI.vis7 = fv.dataset.fvis; render(); return; }
   const ft = q('[data-fte]'); if(ft){ UI.fte = ft.dataset.fte; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(), pk = it && it.parts ? GBx.pacote(it, OWN) : null, p = pk ? pk.p : it && it.p;
     if(!it || it.prova || it.grupo || it.excl || (it.lock && it.lock(S)) || (pk && pk.completo) || S.jenny < p) return;
@@ -2845,6 +2860,12 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 <script src="arte/jajanken.js"></script>
 <script src="arte/cartas.js"></script>
 <script src="arte/chamas.js"></script>
+<script src="arte/bungee.js"></script>
+<script src="arte/en.js"></script>
+<script src="arte/vira.js"></script>
+<script src="arte/shu.js"></script>
+<script src="arte/contorno.js"></script>
+<script src="arte/countdown.js"></script>
 <script src="arte/licenca.js"></script>
 <script src="arte.js"></script>
 <script src="grupo.js"></script>
