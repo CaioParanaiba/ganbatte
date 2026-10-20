@@ -2705,7 +2705,8 @@ const RENDER = {l:rL, b:rB, b2:rB2, x:S => window.GB_EXP && GB_EXP.aba(S), d2:rD
 let cur = 'l';
 function render(){
   if(!CTX) return;
-  const S = estado(); aplicaTema(); RENDER[cur](S); faixaTeste(); faixaProva();
+  const S = estado(); aplicaTema(); document.documentElement.style.setProperty('--nen-forte', NC(S.attr.indexOf(Math.max(...S.attr))));   // a Borda de aura viva usa a cor do tipo forte
+  RENDER[cur](S); faixaTeste(); faixaProva();
   const gn = document.getElementById('gnav-'+cur); if(gn) gn.innerHTML = gnav(cur);
   document.getElementById('facts').innerHTML = `<span class="fact">Andar <b>${S.a.n}</b></span><span class="fact">hoje <b>+${S.hojeXP}</b></span><span class="fact"><b>${fmt(S.jenny)}</b> J</span><span class="fact">${esc(TEMP.nome)} · ${S.pausa ? `férias até <b>${ddmm(addD(TEMP.volta, -1))}</b>` : `semana <b>${S.sem.n}/${S.sem.tot}</b>`}</span>`;
 }
