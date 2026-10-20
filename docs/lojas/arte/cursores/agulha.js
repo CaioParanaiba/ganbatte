@@ -8,6 +8,8 @@
 // e voltam puxadas pela cabeça, fazendo a curva; entram entre os dedos abrindo um leque, e o que faltar ele tira da manga.
 // Soltar atira o leque inteiro de uma vez, cada agulha no seu ângulo. Cravadas, afrouxam depois de 20 s e caem. Com o
 // mouse parado uns segundos, a agulha treme sozinha: カタカタ (kata kata), o barulho do Gittarackur.
+// O nen se vê: chamando, um fio violeta liga os dedos a cada agulha que volta (ondula, e estica reto quando ela arranca);
+// cravada, a agulha trinca a borda em volta do furo, e a trinca some quando ela sai.
 //   const a = CURSORES.agulha.liga(elemento, {comprimento: 44, leque: 5, toque: false})   a.ajusta({leque: 7})   a.legenda()   a.desliga()
 //   (toque: true também aceita o dedo no celular: tocar atira, segurar chama as agulhas)
 //   CURSORES.agulha.desenha(ctx, x, y, comprimento, angulo, curva, dentro)   (x, y = ponta; angulo = para onde a ponta aponta;
@@ -93,6 +95,7 @@ function liga(alvo, op = {}){
   const mao = {n: 1, a: A0, w: 0, abre: [0], va: [0], s: 1, pop: 0, recua: 0, vr: 0, kata: 0, volta: 0};
   const fora = [];        // agulhas fora da mão: livre (voando, quicando), cravada, quieta (no chão), some, volta
   const riscos = [];      // os risquinhos de quando bate
+  const furos = [];       // a trinca em volta de cada agulha cravada: {g, x, y, nx, ny, tr, alfa}
   let rajada = [];        // o leque saindo, uma agulha a cada 18 ms
   let mx = 0, my = 0, fx = 0, fy = 0, dentro = false, larg = 0, alt = 0, dpr = 1, antes = 0, sobra = 0, pedido = 0, parado = 0;
   let vx = 0, vy = 0, mira = A0, mvx = 0, mvy = 0, axs = 0, ays = 0, preso = false, tPreso = 0, chamando = false, tTira = 0;
@@ -165,6 +168,7 @@ function liga(alvo, op = {}){
       .forEach(([, g], k) => { g.puxa = (g.fase === 'cravada' ? .1 : 0) + k * .045; });
   }
   function arranca(g){
+    delete g.t0;
     if(g.fase === 'cravada'){ const [c, s] = dir(g.a); g.x -= c * g.enterrada; g.y -= s * g.enterrada; g.vx = -c * 650; g.vy = -s * 650; }
     else if(g.fase !== 'livre'){ g.vy = -500; g.vx = 0; }
     Object.assign(g, {fase: 'volta', t: 0, alfa: 1, d: 0, vd: 0}); delete g.puxa;
@@ -198,6 +202,15 @@ function liga(alvo, op = {}){
     Object.assign(g, {fase: 'cravada', t: 0, vx: 0, vy: 0, w: 0, nx, ny, enterrada: fundo / cos, desde: performance.now(),
       d: 0, vd: Math.max(-700, Math.min(700, lado * .25 + vn * .14 * (Math.random() < .5 ? -1 : 1)))});
     const [px, py] = ponta(g); risca(px + nx * fundo, py + ny * fundo, nx, ny, 1);
+    if(!calmo){
+      // a trinca: quatro rachas curtas saindo do furo, ao longo da borda e um pouco para dentro
+      const tr = [-1, 1, -.5, .6].map((l, i) => {
+        const pts = [[0, 0]]; let u = 0, w = 0;
+        for(let k = 0; k < (i < 2 ? 3 : 2); k++){ u += l * (2 + Math.random() * 2.6) * Math.min(1.4, vn / 1400 + .5); w += (i < 2 ? .5 : 2.2) + Math.random() * 1.4; pts.push([u, w]); }
+        return pts;
+      });
+      furos.push({g, x: px + nx * fundo, y: py + ny * fundo, nx, ny, tr, alfa: 1});
+    }
     // a borda treme: as vizinhas cravadas nela vibram também
     for(const o of fora) if(o !== g && o.fase === 'cravada' && o.nx === nx && o.ny === ny){
       const [ox, oy] = ponta(o), d = Math.hypot(ox - px, oy - py);
@@ -272,6 +285,8 @@ function liga(alvo, op = {}){
     }
     for(let i = fora.length - 1; i >= 0; i--) if(fora[i]) passoAgulha(fora[i], h);
     for(let i = riscos.length - 1; i >= 0; i--){ riscos[i].t += h; if(riscos[i].t > .18) riscos.splice(i, 1); }
+    // a agulha saiu do furo: a trinca some
+    for(let i = furos.length - 1; i >= 0; i--){ const f = furos[i]; if(f.g.fase !== 'cravada' && (f.alfa -= h / .5) <= 0) furos.splice(i, 1); }
   }
 
   // ---- pintura
@@ -301,8 +316,33 @@ function liga(alvo, op = {}){
     }
     ctx.stroke();
   }
+  function pintaFuro(f){
+    const tx = -f.ny, ty = f.nx; ctx.beginPath();
+    for(const tr of f.tr) tr.forEach(([u, w], i) => { const x = f.x + tx * u + f.nx * w, y = f.y + ty * u + f.ny * w; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.lineCap = ctx.lineJoin = 'round'; ctx.strokeStyle = `rgba(150,160,180,${.85 * f.alfa})`; ctx.lineWidth = 1; ctx.stroke();
+  }
+  // o fio de nen: dos dedos à cabeça da agulha chamada. Enquanto ela treme na borda, ondula frouxo e vai chegando; quando
+  // arranca, estica quase reto e afina com a distância
+  function pintaNen(g, hx, hy, agora){
+    const [gx, gy] = cabeca(g), dx = gx - hx, dy = gy - hy, d = Math.hypot(dx, dy) || 1, qx = -dy / d, qy = dx / d;
+    const frouxo = g.puxa !== undefined, chega = frouxo ? Math.min(1, (g.t0 === undefined ? (g.t0 = agora) : agora - g.t0) / 90) : 1;
+    const onda = (frouxo ? 7 : 2.2) * Math.min(1, d / 120), fase = agora / 70 + (g.x + g.y) * .05;
+    ctx.beginPath(); ctx.moveTo(hx, hy);
+    for(let i = 1; i <= 16; i++){
+      const u = i / 16 * chega, o = Math.sin(u * Math.PI) * Math.sin(u * 9 - fase) * onda;
+      ctx.lineTo(hx + dx * u + qx * o, hy + dy * u + qy * o);
+    }
+    ctx.lineCap = ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(8,10,16,.5)'; ctx.lineWidth = 2.6; ctx.stroke();
+    ctx.strokeStyle = NEN; ctx.lineWidth = Math.max(.7, 1.4 - d / 900); ctx.stroke();
+  }
   function pinta(){
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, larg, alt);
+    furos.forEach(pintaFuro);
+    if(dentro && !calmo){
+      const [hx, hy] = maoCabeca(), agora = performance.now();
+      for(const g of fora) if(g.fase === 'volta' || g.puxa !== undefined) pintaNen(g, hx, hy, agora);
+    }
     for(const fase of ['cravada', 'quieta', 'some', 'livre', 'volta']) for(const g of fora) if(g.fase === fase) pintaAgulha(g);
     riscos.forEach(pintaRisco);
     if(dentro && mao.n){
@@ -331,7 +371,7 @@ function liga(alvo, op = {}){
     for(const g of fora) if(g.fase === 'cravada' && g.puxa === undefined && t - g.desde > CRAVADA * 1000) desprende(g);
     pinta();
     // nada mexendo e o mouse parado: o laço para; parado uns segundos, ele faz o カタカタ
-    const quieto = !rajada.length && !riscos.length && !chamando && !preso && mao.n && mao.s === 1 && !mao.pop && !mao.kata
+    const quieto = !rajada.length && !riscos.length && !furos.some(f => f.g.fase !== 'cravada') && !chamando && !preso && mao.n && mao.s === 1 && !mao.pop && !mao.kata
       && Math.abs(mao.w) < .01 && Math.abs(ang(mao.a - A0)) < .002 && Math.abs(mao.recua) < .01 && mao.abre.every((o, i) => Math.abs(o - (mao.n > 1 ? ORDEM[i] : 0) * ABRE) < .001)
       && fora.every(g => g.fase === 'cravada' && g.puxa === undefined && Math.abs(g.d) < .05 && Math.abs(g.vd) < 2)
       && Math.abs(mx - bx) + Math.abs(my - by) < .01 && Math.hypot(vx, vy) < 1;
@@ -417,7 +457,7 @@ function previas(el, cfg){
 
 (window.CURSORES = window.CURSORES || {}).agulha = {liga, desenha, previas,
   titulo: 'mexa o mouse na tela preta · clique · segure · solte',
-  dica: 'andando, a ponta aponta para onde o mouse vai (é a mira) · clique: atira a agulha (de ponta e rápida, crava na borda)<br>segurando: o nen chama de volta as agulhas e forma o leque entre os dedos · soltando: atira o leque inteiro · parado uns segundos: kata kata',
+  dica: 'andando, a ponta aponta para onde o mouse vai (é a mira) · clique: atira a agulha (de ponta e rápida, crava na borda)<br>segurando: o fio de nen chama de volta as agulhas (cravadas trincam a borda) e forma o leque entre os dedos · soltando: atira o leque inteiro · parado uns segundos: kata kata',
   controles: [{k: 'comprimento', rot: 'comprimento da agulha', min: 30, max: 64, un: 'px', padrao: 44},
     {k: 'leque', rot: 'agulhas no leque', min: 1, max: 7, un: '', padrao: 5}]};
 })();

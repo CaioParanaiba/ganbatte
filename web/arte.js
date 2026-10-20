@@ -16,7 +16,7 @@ const ARTE = {
   'hp-corrente':   {st:'fechado', tx:'A tira de corrente aprovada (16/10). Na nova, a vida do chefão vira a corrente desenhada.'},
   'bd-corrente':   {st:'finalizar', tx:'Provisória: variação 1, com 11 px de espessura. Falta decidir se a versão refeita, com a corrente toda dentro da faixa, substitui esta.'},
   'cr-carta':      {st:'fechado', tx:'Aprovada (17/10). Feita em código: clique atira a carta, segurar prende na Bungee Gum, parado ele vira a carta.'},
-  'cr-agulha':     {st:'aberto', tx:'Feita em código e o Caio gostou, mas falta o veredito final. Clique atira e crava; segurar chama de volta e abre o leque.'},
+  'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
   'cr-ioio':       {st:'finalizar', tx:'Aprovado como está. Falta decidir o tamanho do fio (hoje 170 px) e do ioiô (raio 15). Clique desce, segurar dorme, soltar volta.'},
   'fx-godspeed':   {st:'finalizar', tx:'Quase fechado: espera a opinião de mais uma pessoa. A nova é um raio de verdade caindo no card.'},
   'fx-jajanken':   {st:'finalizar', tx:'As três mãos estão aprovadas, mas ainda provisórias. O ▶ da nova passa por pedra, papel e tesoura, nessa ordem.'},
