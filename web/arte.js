@@ -18,7 +18,7 @@ const ARTE = {
   'cr-carta':      {st:'fechado', tx:'Aprovada (17/10). Feita em código: clique atira a carta, segurar prende na Bungee Gum, parado ele vira a carta.'},
   'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
   'cr-ioio':       {st:'fechado', tx:'Aprovado (20/10). Feito em código: dois ioiôs; clique desce, segurar dorme e carrega os fios de eletricidade, soltar volta (carregado, como raio).'},
-  'fx-godspeed':   {st:'finalizar', tx:'Quase fechado: espera a opinião de mais uma pessoa. A nova é um raio de verdade caindo no card.'},
+  'fx-godspeed':   {st:'fechado', tx:'Aprovado (20/10). O Kanmuru acende no card, o raio cai com quadro negativo, o 神速 entra com rastros e a marca do raio fica no card.'},
   'fx-jajanken':   {st:'fechado', tx:'Aprovado (20/10): as três mãos, com o grito em japonês. O ▶ da nova passa por pedra, papel e tesoura, nessa ordem.'},
   'hm-cartas':     {st:'fechado', tx:'Aprovada (17/10): carta de frente por nível, carta de figura no dia mais forte, verso no dia vazio e Coringa no dia salvo.'},
   'hm-chamas':     {st:'fechado', tx:'Aprovada (20/10): chama maior por nível, cinza no dia vazio, nen no dia salvo, fogo laranja. Provando, "acender hoje" mostra o acender.'},
@@ -77,11 +77,11 @@ if(window.CURSORES){
   document.head.appendChild(h);
 }
 
-/* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ): Dela Gothic One, só com essas letras */
+/* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ, 神速 カンムル): Dela Gothic One, só com essas letras */
 let fonteOk = null;
 function fonte(){
   if(fonteOk) return fonteOk;
-  const txt = 'グーパーチー！ボッカタPEDRAPAPELTESOURA';
+  const txt = 'グーパーチー！ボッカタ神速ンムルPEDRAPAPELTESOURA';
   if(!document.querySelector('link[href*="Dela+Gothic+One"]')){
     const l = document.createElement('link'); l.rel = 'stylesheet';
     l.href = 'https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap&text=' + encodeURIComponent(txt); document.head.append(l);
@@ -108,7 +108,7 @@ if(window.GB_FX){
     const k = {'fx-godspeed':'godspeed', 'fx-jajanken':'jajanken'}[id];
     if(!k || !nova(id) || !window.CURSORES) return ver.apply(this, arguments);
     const b = document.querySelector(`[data-fxver="${id}"]`), card = b && b.closest('.it7'), rr = card ? card.getBoundingClientRect() : r;
-    if(k === 'godspeed') return CURSORES.godspeed.dispara(rr, {el: card});
+    if(k === 'godspeed') return fonte().then(() => CURSORES.godspeed.dispara(rr, {el: card}));
     const m = ['pedra', 'papel', 'tesoura'][mao++ % 3];
     fonte().then(() => CURSORES.jajanken.dispara(rr, {el: card, mao: m}));
   };
