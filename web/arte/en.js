@@ -8,10 +8,11 @@
 // para o lado do cursor e solta pulsos de tempos em tempos, como um sonar: a onda corre do card até a borda e reacende os
 // cantos que passa. Ao sair, o En recolhe para dentro do card e o Ten dá um último lampejo. O padrão é o En da Pitou
 // (escolha do Caio): o campo fica irregular e solta tentáculos que vão até os cards por perto e os tocam; pitou: 0 = redondo.
-// O alcance cai com o tamanho do card: num painel enorme o En mal sai dele. O campo não pinta por cima do próprio card.
+// O alcance cai com o tamanho do card (num painel enorme o En mal sai dele) e nunca passa muito do lado curto do card:
+// o campo fica perto, chega só aos vizinhos. O campo não pinta por cima do próprio card.
 // Física de verdade a 240 Hz: cada ponto da borda do campo é uma mola (abre passando do ponto, recolhe sem passar); o
 // tremor dos cards sentidos é uma mola curta, só pelas propriedades translate do estilo, que somam com o transform do jogo.
-//   const h = CURSORES.en.cola(raiz, {seletor: '.card', alcance: 200, lento: 1, pitou: 1, cor: '#B4A0FF'})   h.ajusta({pitou: 1})   h.desliga()
+//   const h = CURSORES.en.cola(raiz, {seletor: '.card', alcance: 80, lento: 1, pitou: 1, cor: '#B4A0FF'})   h.ajusta({pitou: 1})   h.desliga()
 //   (raiz = document.documentElement no jogo, com o desenho numa camada fixa da tela inteira; ou um elemento, como a tela
 //   preta da bancada, com a camada dentro dele; alcance = até quantos px o campo passa do card pequeno; cor = a da aura,
 //   sem ela vem do --aura da página; lento = câmera lenta; um elemento com data-sem-en, e o que estiver dentro dele, fica de fora)
@@ -20,13 +21,13 @@
 (() => {
 const DT = 1 / 240, PASSO = 6, CANTO = 10;   // passo da física (s), espaçamento das retas do contorno (px), pontos por quina
 const ABRE = .2;                   // segundos para o En dar a volta no card, saindo do ponto tocado
-const W_ABRE = 2 * Math.PI * 2.2, Z_ABRE = .5;   // a borda abrindo: mola mole, passa do ponto e volta
+const W_ABRE = 2 * Math.PI * 2.4, Z_ABRE = .62;  // a borda abrindo: mola mole, passa um pouco do ponto e volta
 const W_FECHA = 2 * Math.PI * 3.4, Z_FECHA = 1;   // recolhendo: sem passar do ponto
 const ESPERA = .14;                // segundos depois de entrar até o En abrir (o Ten acende antes)
 const PULSO = 1.6, ONDA = 1;       // de quanto em quanto tempo sai um pulso de sonar, e quanto ele leva até a borda
-const PENDE = .2;                  // quanto o campo cresce para o lado do cursor
+const PENDE = .25;                 // quanto o campo cresce para o lado do cursor
 const MAXEN = 2;                   // campos ao mesmo tempo (o mais velho fecha na hora)
-const MAXT = 4;                    // tentáculos da Pitou
+const MAXT = 2;                    // tentáculos da Pitou
 const LIGA = .12;                  // quanto cada ponto da borda puxa os vizinhos a cada passo (0 a .5)
 const TAU = Math.PI * 2;
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -56,7 +57,7 @@ function sdf(x, y, hw, hh, r){
 }
 
 function cola(raiz, cfg){
-  cfg = Object.assign({seletor: '.card', alcance: 200, lento: 1, pitou: 1}, cfg);
+  cfg = Object.assign({seletor: '.card', alcance: 80, lento: 1, pitou: 1}, cfg);
   const tela = raiz === document.documentElement || raiz === document.body;
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.style.cssText = `position:${tela ? 'fixed' : 'absolute'};left:0;top:0;pointer-events:none;z-index:${tela ? 2147482000 : 5}`;
@@ -88,8 +89,9 @@ function cola(raiz, cfg){
   const ens = [], sentidos = new Map(), fumos = [];
   let tSentir = 0, abertos = 0, nid = 0;
 
-  // o alcance do card: cheio nos pequenos; nos painéis grandes, o En mal sai deles
-  const alcance = g => cfg.alcance * lim(1.25 - Math.sqrt(g.hw * g.hh) / 380, .18, 1);
+  // o alcance do card: cheio nos pequenos; nos painéis grandes, o En mal sai deles; e nunca muito mais que o lado curto
+  // do card (uma linha larga e baixa não abre um campo do tamanho da tela)
+  const alcance = g => Math.min(cfg.alcance * lim(1.2 - Math.sqrt(g.hw * g.hh) / 320, .2, 1), 26 + 1.6 * Math.min(g.hw, g.hh));
   function abre(el){
     let v = ens.find(e => e.el === el);
     if(v){ v.fase = 'abre'; v.fechou = false; return v; }
@@ -118,8 +120,8 @@ function cola(raiz, cfg){
     const u = k.S[i] / k.L * TAU, t = v.t, pi = cfg.pitou;
     let f = 1 + PENDE * (p[2] * v.bx + p[3] * v.by);
     f += (1 - pi) * (.035 * Math.sin(3 * u + t * 1.3 + v.f[0]) + .025 * Math.sin(5 * u - t * 2.1 + v.f[1]));
-    f += pi * (.13 * Math.sin(2 * u + t * 1.7 + v.f[0]) + .09 * Math.sin(5 * u - t * 2.9 + v.f[1]) + .06 * Math.sin(11 * u + t * 4.3 + v.f[2]) + .02 * Math.sin(17 * u - t * 6 + v.f[3]));
-    return A * Math.max(.2, f);
+    f += pi * (.1 * Math.sin(2 * u + t * 1.4 + v.f[0]) + .07 * Math.sin(5 * u - t * 2.3 + v.f[1]) + .035 * Math.sin(9 * u + t * 3.4 + v.f[2]));
+    return A * Math.max(.3, f);
   }
 
   let tmp = new Float32Array(0);
@@ -174,13 +176,13 @@ function cola(raiz, cfg){
     // as labaredas do Ten: línguas de aura presas ao contorno, que sobem, balançam e baixam (mais em cima e nos lados)
     for(const v of ens){
       if(v.ten < .3 || v.fase === 'fecha') continue;
-      v.fumoAcc = (v.fumoAcc || 0) + h * Math.min(90, v.k.L / 22);
+      v.fumoAcc = (v.fumoAcc || 0) + h * Math.min(50, v.k.L / 30);
       while(v.fumoAcc >= 1){
         v.fumoAcc--;
         let i, p, tenta = 0; do { i = Math.floor(Math.random() * v.k.n); p = v.k.P[i]; } while(p[3] > .2 && tenta++ < 8);
         if(p[3] > .2) continue;
         const cima = Math.max(0, -p[3]);
-        fumos.push({v, i, t: 0, T: .3 + Math.random() * .35, H: (5 + Math.random() * 9) * (.55 + .45 * cima), w: 2.5 + Math.random() * 2.5, ph: Math.random() * TAU});
+        fumos.push({v, i, t: 0, T: .35 + Math.random() * .35, H: (3 + Math.random() * 6) * (.5 + .5 * cima), w: 1.6 + Math.random() * 1.6, ph: Math.random() * TAU});
       }
     }
     for(let k = fumos.length - 1; k >= 0; k--) if((fumos[k].t += h) > fumos[k].T) fumos.splice(k, 1);
@@ -217,7 +219,7 @@ function cola(raiz, cfg){
         let s = sentidos.get(el);
         // pula os cards bem longe do alcance (nada a sentir)
         const dc = sdf(g.cx - v.g.cx, g.cy - v.g.cy, v.g.hw + g.hw, v.g.hh + g.hh, 0);
-        if(dc > A * 1.9 && !s) continue;
+        if(dc > A * 1.5 && !s) continue;
         if(!s){ s = {el, id: ++nid, g, a: [0, 0, 0, 0], fl: [0, 0, 0, 0], em: [0, 0, 0, 0], antes: [0, 0, 0, 0], sinal: -1, tinha: false, u: [0, 0, 0, 0]}; sentidos.set(el, s); }
         visto.add(el);
         let algum = false;
@@ -225,7 +227,7 @@ function cola(raiz, cfg){
           const X = g.cx + sx * (g.bw - g.r * .3), Y = g.cy + sy * (g.bh - g.r * .3), [i, d] = frente(v, X, Y), Dv = v.D[i];
           // dentro do campo, ou tocado por um tentáculo da Pitou; os de fora, não muito longe, são alvo dos tentáculos
           const chave = s.id * 4 + c, tn = v.tent.get(chave), noCampo = !fechando && Dv > 4 && d < Dv, den = noCampo || !!(tn && tn.vivo && tn.q > .95);
-          if(garras && !noCampo && d < A * 1.8) cands.push({chave, X, Y, d});
+          if(garras && !noCampo && d < A * 1.35) cands.push({chave, X, Y, d});
           if(den){ algum = true; s.em[c] = 1; if(!s.antes[c]) s.fl[c] = 1; }
           // o pulso do sonar passando pelo canto o reacende
           for(const p of v.pulsos){ const u = suave(0, 1, p.t / ONDA) ** .7; if(den && s.u[c] < d / Dv && u >= d / Dv) s.fl[c] = Math.max(s.fl[c], .75); s.u[c] = u; }
@@ -280,24 +282,25 @@ function cola(raiz, cfg){
     const g = v.g, k = v.k, A = alcance(g), ab = suave(0, A * .25, v.maior);
     if(ab <= 0) return;
     const pts = k.P.map((p, i) => [g.cx + p[0] + p[2] * v.D[i] - ox, g.cy + p[1] + p[3] * v.D[i] - oy]);
-    // o campo: aura bem fraca, mais forte perto do card; sem pintar por cima dele
-    const gr = ctx.createRadialGradient(g.cx - ox, g.cy - oy, Math.min(g.hw, g.hh), g.cx - ox, g.cy - oy, Math.max(g.hw, g.hh) + A * 1.1);
-    const fundo = (claro ? .1 : .08) * ab * (1 + cfg.pitou * .5);
-    gr.addColorStop(0, rgba(cor, fundo * 1.8)); gr.addColorStop(.6, rgba(cor, fundo)); gr.addColorStop(1, rgba(cor, fundo * .5));
+    // o campo: uma bolha de aura, quase transparente perto do card e mais densa junto da borda (como uma película),
+    // sem pintar por cima do card
+    const R0 = Math.min(g.bw, g.bh), R1 = Math.max(g.bw, g.bh) + A;
+    const gr = ctx.createRadialGradient(g.cx - ox, g.cy - oy, R0, g.cx - ox, g.cy - oy, R1);
+    const fundo = (claro ? .09 : .07) * ab;
+    gr.addColorStop(0, rgba(cor, fundo * .5)); gr.addColorStop(.7, rgba(cor, fundo)); gr.addColorStop(1, rgba(cor, fundo * 1.8));
     ctx.beginPath(); caminho(pts, true); furo(g, ox, oy); ctx.fillStyle = gr; ctx.fill('evenodd');
-    // os pulsos do sonar: um anel do card até a borda, que some no caminho
+    // os pulsos do sonar: um anel fino do card até a borda, que some no caminho
     for(const p of v.pulsos){
-      const u = suave(0, 1, p.t / ONDA) ** .7, q = (1 - u) ** 1.4;
+      const u = suave(0, 1, p.t / ONDA) ** .7, q = (1 - u) ** 1.6;
       ctx.beginPath(); caminho(k.P.map((pp, i) => [g.cx + pp[0] + pp[2] * v.D[i] * u - ox, g.cy + pp[1] + pp[3] * v.D[i] * u - oy]), true);
-      ctx.strokeStyle = rgba(cor, .55 * q * ab); ctx.lineWidth = 1 + 1.5 * q; ctx.stroke();
+      ctx.strokeStyle = rgba(cor, .4 * q * ab); ctx.lineWidth = .8 + q; ctx.stroke();
     }
-    // a borda: um halo largo e fraco e o fio forte; recolhendo, ela brilha mais (a aura voltando)
+    // a borda: um fio contínuo com brilho; recolhendo, ela brilha mais (a aura voltando)
     const forte = (v.fase === 'fecha' ? 1 : .8) * ab;
     ctx.beginPath(); caminho(pts, true);
-    ctx.lineJoin = 'round'; ctx.strokeStyle = rgba(cor, .16 * forte); ctx.lineWidth = 7; ctx.stroke();
-    ctx.strokeStyle = rgba(cor, (claro ? 1 : .85) * forte); ctx.lineWidth = 1.4; ctx.stroke();
-    // uns tracinhos correndo pela borda, para ela parecer viva
-    ctx.setLineDash([2, 14]); ctx.lineDashOffset = -v.t * 30; ctx.strokeStyle = rgba(cor, .9 * forte); ctx.lineWidth = 2.6; ctx.stroke(); ctx.setLineDash([]);
+    ctx.lineJoin = 'round'; ctx.shadowColor = rgba(cor, .8 * forte); ctx.shadowBlur = 8;
+    ctx.strokeStyle = rgba(cor, (claro ? .95 : .75) * forte); ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.shadowBlur = 0;
   }
   // um tentáculo da Pitou: sai da borda do campo de frente para o card e vai até ele, afinando e serpenteando
   // (a ponta vai até o canto que o campo não alcançou e o toca)
@@ -307,16 +310,19 @@ function cola(raiz, cfg){
     if(dc <= D) return;   // o campo já chegou lá
     const ax = v.g.cx + p[0] + p[2] * D, ay = v.g.cy + p[1] + p[3] * D, bx = tn.X, by = tn.Y;
     const dx = bx - ax, dy = by - ay, d = Math.hypot(dx, dy); if(d < 4) return;
-    const q = tn.q, ux = dx / d, uy = dy / d, nx = -uy, ny = ux, N = 22, base = Math.min(9, 3 + d * .06);
+    const q = tn.q, ux = dx / d, uy = dy / d, nx = -uy, ny = ux, N = 22, base = Math.min(4.5, 2 + d * .05);
     const c = [], lar = [];
     for(let j = 0; j <= N; j++){
-      const u = j / N * q, ond = Math.sin(u * 9 - tn.t * 6 + tn.ph) * Math.sin(Math.PI * u) * Math.min(14, d * .14) * tn.lado;
+      const u = j / N * q, ond = Math.sin(u * 7 - tn.t * 5 + tn.ph) * Math.sin(Math.PI * u) * Math.min(7, d * .12) * tn.lado;
       c.push([ax + dx * u + nx * ond - ox, ay + dy * u + ny * ond - oy]); lar.push(base * (1 - u / Math.max(q, .01)) ** 1.3 + .6);
     }
     const lado = sg => c.map(([x, y], j) => { const a = c[Math.max(0, j - 1)], b = c[Math.min(N, j + 1)], tx = b[0] - a[0], ty = b[1] - a[1], t = Math.hypot(tx, ty) || 1; return [x - ty / t * lar[j] * sg, y + tx / t * lar[j] * sg]; });
     const e = lado(1), di = lado(-1);
     ctx.beginPath(); e.forEach(([x, y], j) => j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); for(let j = N; j >= 0; j--) ctx.lineTo(di[j][0], di[j][1]); ctx.closePath();
-    ctx.fillStyle = rgba(cor, .32); ctx.fill(); ctx.strokeStyle = rgba(cor, .9); ctx.lineWidth = 1; ctx.stroke();
+    ctx.shadowColor = rgba(cor, .7); ctx.shadowBlur = 6;
+    ctx.fillStyle = rgba(cor, .55 * Math.min(1, q * 1.5)); ctx.fill(); ctx.shadowBlur = 0;
+    // a ponta que toca o canto acende
+    if(q > .9){ const [px, py] = c[N]; ctx.beginPath(); ctx.arc(px, py, 2.2, 0, TAU); ctx.fillStyle = rgba(cor, (q - .9) * 10); ctx.fill(); }
   }
   // o Ten no card tocado: a aura cobre o contorno e sobe como chama (mais alta em cima, tremulando)
   function pintaTen(v, ox, oy, cor){
@@ -326,19 +332,20 @@ function cola(raiz, cfg){
     for(let i = 0; i < k.n; i++){
       const p = k.P[i], cima = Math.max(0, -p[3]), lado = Math.abs(p[2]) * suave(-g.hh, g.hh * .2, -p[1]);
       const chama = .5 + .5 * Math.sin(p[0] * .11 - v.t * 7 + v.f[0]) * Math.sin(p[1] * .09 + v.t * 9.5 + v.f[1]);
-      const th = q * (1.4 + (cima * 3.8 + lado * 2.2) * chama + .6 * Math.sin(k.S[i] * .07 + v.t * 5)) + lp * 7;
+      const th = q * (1.2 + (cima * 2.6 + lado * 1.4) * chama + .4 * Math.sin(k.S[i] * .07 + v.t * 5)) + lp * 5;
       fora.push([g.cx + p[0] + p[2] * Math.max(.4, th) - ox, g.cy + p[1] + p[3] * Math.max(.4, th) - oy]);
       dentro.push([g.cx + p[0] - p[2] * .6 - ox, g.cy + p[1] - p[3] * .6 - oy]);
     }
     ctx.beginPath(); caminho(fora, true); caminho(dentro, true);
-    ctx.fillStyle = rgba(cor, .5 * q + .5 * lp); ctx.fill('evenodd');
-    ctx.beginPath(); caminho(fora, true); ctx.strokeStyle = rgba(cor, .9 * q + lp); ctx.lineWidth = 1; ctx.stroke();
+    ctx.shadowColor = rgba(cor, .9); ctx.shadowBlur = 6 * (q + lp);
+    ctx.fillStyle = rgba(cor, .42 * q + .5 * lp); ctx.fill('evenodd'); ctx.shadowBlur = 0;
+    ctx.beginPath(); caminho(fora, true); ctx.strokeStyle = rgba(cor, .7 * q + lp); ctx.lineWidth = .8; ctx.stroke();
   }
   // os cantos que sentiram o En: cantoneira que dá a volta na quina, um pouco fora do card
   function pintaSentidos(ox, oy, cor){
     for(const s of sentidos.values()){
       const g = s.g, x0 = g.cx - g.bw - 3 - ox, y0 = g.cy - g.bh - 3 - oy, x1 = g.cx + g.bw + 3 - ox, y1 = g.cy + g.bh + 3 - oy, t = tremores.get(s.el);
-      const tx = t ? t.x : 0, ty = t ? t.y : 0, r = Math.min(g.r + 3, g.bw, g.bh), L = Math.min(16, g.bw * .3, g.bh * .6) + r;
+      const tx = t ? t.x : 0, ty = t ? t.y : 0, r = Math.min(g.r + 3, g.bw, g.bh), L = Math.min(10, g.bw * .25, g.bh * .5) + r;
       const qs = [[x0, y0, 1, 1], [x1, y0, -1, 1], [x1, y1, -1, -1], [x0, y1, 1, -1]];
       ctx.lineCap = 'round';
       qs.forEach(([x, y, sx, sy], c) => {
@@ -346,8 +353,8 @@ function cola(raiz, cfg){
         const px = x + tx, py = y + ty, ex = s.fl[c] * 3;   // no lampejo, a cantoneira abre um pouco
         ctx.beginPath(); ctx.moveTo(px + sx * L, py - sy * ex); ctx.lineTo(px + sx * r, py - sy * ex);
         ctx.arcTo(px - sx * ex, py - sy * ex, px - sx * ex, py + sy * r, r); ctx.lineTo(px - sx * ex, py + sy * L);
-        ctx.strokeStyle = rgba(cor, .25 * Math.min(1, a)); ctx.lineWidth = 5; ctx.stroke();
-        ctx.strokeStyle = rgba(cor, Math.min(1, a)); ctx.lineWidth = 1.8; ctx.stroke();
+        ctx.shadowColor = rgba(cor, Math.min(1, a)); ctx.shadowBlur = 6;
+        ctx.strokeStyle = rgba(cor, Math.min(1, a)); ctx.lineWidth = 1.5; ctx.stroke(); ctx.shadowBlur = 0;
       });
       // o sinal: o contorno do card acende e se afasta um pouco, sumindo
       if(s.sinal >= 0){
@@ -358,7 +365,7 @@ function cola(raiz, cfg){
     }
   }
   function pintaFumos(ox, oy, cor){
-    ctx.fillStyle = rgba(cor, .6);
+    ctx.fillStyle = rgba(cor, .45);
     for(const p of fumos){
       const v = p.v, pp = v.k.P[p.i]; if(!pp) continue;
       const q = Math.sin(Math.PI * p.t / p.T) ** .8 * suave(0, 1, v.ten); if(q <= .02) continue;
@@ -490,7 +497,7 @@ function liga(palco, cfg){
 (window.CURSORES = window.CURSORES || {}).en = {cola, liga,
   titulo: 'passe o mouse pelos cards · fique parado num card pequeno e veja os vizinhos',
   dica: 'ao entrar, o card acende o Ten (a aura sobe pelo contorno) e o En se abre do ponto tocado, passando dos limites do card · os cards que o campo alcança sentem: os cantos travam e acendem, o contorno dá um sinal e o card estremece<br>com o mouse dentro, o campo pende para o cursor e solta pulsos de sonar · ao sair, o En recolhe e o Ten dá um lampejo · Pitou: campo irregular, com tentáculos que tocam os cards perto · o painel grande da constância quase não abre',
-  controles: [{k: 'alcance', rot: 'alcance', min: 100, max: 360, un: ' px', padrao: 200},
+  controles: [{k: 'alcance', rot: 'alcance', min: 40, max: 200, un: ' px', padrao: 80},
     {k: 'pitou', rot: 'Pitou', min: 0, max: 1, un: '', padrao: 1},
     {k: 'lento', rot: 'câmera lenta', min: 1, max: 6, un: '×', padrao: 1},
     {k: 'claro', rot: 'fundo claro', min: 0, max: 1, un: '', padrao: 0}]};

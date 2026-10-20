@@ -19,12 +19,11 @@ const ARTE = {
   'bd-corrente':   {st:'finalizar', tx:'Provisória: variação 1, com 11 px de espessura. Falta decidir se a versão refeita, com a corrente toda dentro da faixa, substitui esta.'},
   'cr-carta':      {st:'fechado', tx:'Aprovada (17/10). Feita em código: clique atira a carta, segurar prende na Bungee Gum, parado ele vira a carta.'},
   'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
-  'cr-ioio':       {st:'fechado', tx:'Aprovado (20/10). Feito em código: dois ioiôs; clique desce, segurar dorme e carrega os fios de eletricidade, soltar volta (carregado, como raio).'},
+  'cr-ioio':       {st:'finalizar', tx:'Voltou a um ioiô só (20/10), para não atrapalhar os truques. Clique desce, segurar dorme; segurando com a mão parada o fio carrega de eletricidade e ele volta como raio. Falta o Caio aprovar.'},
   'fx-godspeed':   {st:'fechado', tx:'Aprovado (20/10). O Kanmuru acende no card, o raio cai com quadro negativo, o 神速 entra com rastros e a marca do raio fica no card.'},
   'fx-jajanken':   {st:'fechado', tx:'Aprovado (20/10): as três mãos, com o grito em japonês. O ▶ da nova passa por pedra, papel e tesoura, nessa ordem.'},
-  'hv-bungee':     {st:'finalizar', tx:'Quase fechado: espera a resposta final. A goma cobre o contorno do card; ao sair, a borda vira membrana, estica e rasga como elástico.'},
-  'hv-en':         {st:'finalizar', tx:'Quase fechado: espera a resposta final. O card acende o Ten e o En da Pitou se abre do ponto tocado; os cards alcançados acendem os cantos.'},
-  'hv-vira':       {st:'fechado', tx:'Aprovado (20/10). A volta dispara ao entrar e sempre termina, passando pelo verso de Greed Island; os cards baixos viram deitados e o painel grande só inclina.'},
+  'hv-bungee':     {st:'fechado', tx:'Aprovado (20/10). A goma cobre o contorno do card; ao sair, a borda vira membrana, estica e rasga como elástico.'},
+  'hv-en':         {st:'fechado', tx:'Aprovado (20/10). O card acende o Ten e o En da Pitou se abre do ponto tocado, só até os vizinhos; os cards alcançados acendem os cantos.'},
   'hv-shu':        {st:'fechado', tx:'Aprovado (20/10). A aura corre o contorno a partir do ponto tocado, duas faíscas correm a borda e ela escorre ao sair.'},
   'hv-contorno':   {st:'fechado', tx:'Aprovado (20/10). O contorno acende em 120 ms e apaga em 350 ms, sem piscar ao passar por vários cards.'},
   'hm-cartas':     {st:'fechado', tx:'Aprovada (17/10): carta de frente por nível, carta de figura no dia mais forte, verso no dia vazio e Coringa no dia salvo.'},
@@ -37,7 +36,7 @@ const ARTE = {
   'lic-ouro':      {st:'finalizar', tx:'Três dourados chapados para escolher: filete, chanfro e losangos. O provador da nova mostra os três.'},
   'lic-estojo':    {st:'finalizar', tx:'Couro preto com costura, em volta do cartão novo. Aprovado, mas ainda provisório.'},
   'lic-corrente':  {st:'finalizar', tx:'A corrente do Kurapika dando a volta no estojo. Aprovada, mas ainda provisória.'},
-  'emb-naipe':     {st:'finalizar', tx:'Os quatro naipes estão fechados, com os traços do cursor da carta. Falta o veredito do Coringa (estrela e lágrima).'},
+  'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
    nome, descrição, status, o que falta]. A Marca de prazo (prazo) é uma categoria inteira em teste: sai se não agradar */
@@ -135,10 +134,13 @@ function cursor(){
   curK = k;
   if(k && window.CURSORES && CURSORES[k]){ cur = CURSORES[k].liga(document.body, {}); if(k === 'agulha') fonte(); }
 }
-/* ---------- hovers em código: colam nos cards quando o <html> pede um "-nova" (o tamanho do card já muda o efeito) ---------- */
+/* ---------- hovers em código: colam nos cards quando o <html> pede um "-nova" (o tamanho do card já muda o efeito) ----------
+   TROCADO: os que a versão de hoje tinha defeito e o código já a substituiu: ligam com ou sem "-nova" (vira: o giro em CSS
+   reiniciava a cada ~130 ms e girava painéis inteiros, #142) */
+const TROCADO = ['vira'];
 let hov = null, hovK = '';
 function hover(){
-  const v = document.documentElement.getAttribute('data-hover') || '', k = v.endsWith('-nova') ? v.slice(0, -5) : '';
+  const v = document.documentElement.getAttribute('data-hover') || '', k = v.endsWith('-nova') ? v.slice(0, -5) : TROCADO.includes(v) ? v : '';
   if(k === hovK) return;
   if(hov){ hov.desliga(); hov = null; }
   hovK = k;

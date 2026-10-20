@@ -375,13 +375,21 @@ function liga(alvo, op = {}){
     if(!dentro){ dentro = true; fx = mx; fy = my; vx = vy = axs = ays = 0; mao.s = 0; mao.a = A0 - .9; mao.w = 0; }
     acorda();
   }
+  // segurar não pode marcar texto: apertando, a página não começa seleção (user-select e selectstart); e num campo de texto o
+  // clique é do campo, o cursor não segura nem atira ali
+  const campo = e => !!(e.target.closest && e.target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])'));
+  const semSel = e => e.preventDefault();
+  const trava = on => {
+    document.documentElement.style.userSelect = on ? 'none' : '';
+    document.removeEventListener('selectstart', semSel); if(on) document.addEventListener('selectstart', semSel);
+  };
   function aperta(e){
-    if((e.pointerType === 'touch' && !cfg.toque) || e.button !== 0) return;
-    move(e); preso = true; tPreso = 0; aguarda = atira();
+    if((e.pointerType === 'touch' && !cfg.toque) || e.button !== 0 || campo(e)) return;
+    move(e); preso = true; tPreso = 0; aguarda = atira(); trava(true);
     if(!tela) try { alvo.setPointerCapture(e.pointerId); } catch {}
     acorda();
   }
-  function solta(){ if(!preso) return; preso = false; aguarda = null; if(goma && !goma.solta) contrai(); acorda(); }
+  function solta(){ if(!preso) return; preso = false; trava(false); aguarda = null; if(goma && !goma.solta) contrai(); acorda(); }
   function sai(){ if(preso) return; dentro = false; clearTimeout(ocioso); acorda(); }
   const ev = tela ? document.documentElement : alvo;
   const ouvintes = [['pointermove', move], ['pointerdown', aperta], ['pointerup', solta], ['pointercancel', solta], ['pointerleave', sai]];
@@ -403,7 +411,7 @@ function liga(alvo, op = {}){
     desliga(){
       ouvintes.forEach(([n, f]) => ev.removeEventListener(n, f));
       if(obs) obs.disconnect(); else removeEventListener('resize', mede);
-      cancelAnimationFrame(pedido); clearTimeout(ocioso); cv.remove();
+      trava(false); cancelAnimationFrame(pedido); clearTimeout(ocioso); cv.remove();
     },
   };
 }
