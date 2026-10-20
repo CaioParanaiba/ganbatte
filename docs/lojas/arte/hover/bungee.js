@@ -1,32 +1,54 @@
 // Hover Bungee Gum do Hisoka (hv-bungee), feito em código, sem imagem: o que acontece quando o mouse passa pelos cards.
-// A Bungee Gum tem as propriedades da borracha e do chiclete. Ao entrar num card, uma bolinha de goma rosa gruda no ponto
-// onde o cursor tocou, e um fio curto liga o card ao cursor. Dentro do card a goma escorrega pela superfície atrás do
-// cursor (chiclete arrastado), e o card se inclina um pouco para onde ela puxa. Ao sair, a goma fica presa na borda: o
-// fio estica e afina, e o card é puxado para o cursor, inclinando pelo ponto onde a goma está. Passando do limite, ela
-// solta do cursor e contrai de uma vez, chicoteando de volta para o card, onde vira uma gota que some; o card, solto,
-// volta balançando como mola até parar. Entrar noutro card solta a goma do anterior; parado fora do card, ela solta sozinha.
-// Tudo é física de verdade (mola com pouco amortecimento nos cards, massa pelo tamanho: card pequeno pula, painel grande
-// mal mexe; o fio é uma corda de nós a 240 Hz, como a goma do cursor da carta). O card só se move pelas propriedades
-// translate e rotate do estilo, que somam com o transform que o jogo já usa.
-//   const h = CURSORES.bungee.cola(raiz, {seletor: '.card', rompe: 170, lento: 1})   h.ajusta({rompe: 200})   h.desliga()
+// A Bungee Gum tem as propriedades da borracha e do chiclete, e quem a ganha é o card, não o cursor (nada se desenha no
+// cursor). Ao entrar, a goma cobre o contorno do card a partir do ponto tocado: corre pela borda nos dois sentidos, com a
+// frente embolada, até fechar a volta; grossa, irregular (calombos de chiclete) e com brilho. Dentro do card, a borda mais
+// perto do cursor incha, como se quisesse alcançá-lo. Ao sair, a própria borda é puxada: uma membrana larga nasce no
+// contorno, afina até o cursor, cede com o peso e atrasa quando ele mexe, e abre buracos quando estica muito, até virar
+// teia de fios. O card vai junto, puxado e inclinado pelo ponto de onde a goma sai. Passando do limite, a membrana rasga:
+// a parte presa ao card volta como elástico (passa do ponto e volta), a ponta solta some, uma onda corre a borda inteira e
+// o card balança como mola até parar; depois a goma se recolhe. Voltar para dentro do card antes de rasgar recolhe a
+// membrana sem rasgo; parado fora do card, ela rasga sozinha.
+// Física de verdade a 240 Hz: mola com pouco amortecimento nos cards e massa pelo tamanho (card pequeno pula, painel
+// grande mal mexe); o meio da membrana é um ponto com massa e mola, por isso ela atrasa e balança. O card só se move pelas
+// propriedades translate e rotate do estilo, que somam com o transform que o jogo já usa.
+//   const h = CURSORES.bungee.cola(raiz, {seletor: '.card', rompe: 160, lento: 1})   h.ajusta({rompe: 200})   h.desliga()
 //   (raiz = document.documentElement no jogo, com o desenho numa camada fixa da tela inteira; ou um elemento, como a tela
-//   preta da bancada, com a camada dentro dele; rompe = até quantos px o fio estica antes de soltar; lento = câmera lenta)
+//   preta da bancada, com a camada dentro dele; rompe = até quantos px a membrana estica antes de rasgar; lento = câmera
+//   lenta; um elemento com data-sem-goma, e o que estiver dentro dele, fica de fora)
 //   CURSORES.bungee.liga(palco, cfg) → {ajusta, legenda, estado, desliga}: a bancada, um pedaço do jogo de mentira
 //   titulo, dica e controles: o que a bancada mostra
 (() => {
-const ROSA = '#FF5C8A', VINHO = '#8E2457', BRILHO = 'rgba(255,214,228,.75)';
-const DT = 1 / 240, NG = 12, G = 2000;
+const ROSA = '#FF5C8A', ROSA_ESC = '#E8457A', VINHO = '#8E2457', BRILHO = 'rgba(255,220,232,.8)';
+const DT = 1 / 240, PASSO = 4;     // passo da física (s) e o espaçamento dos pontos do contorno (px)
 const OMEGA = 2 * Math.PI * 2.6;   // a mola do card: uns 2,6 balanços por segundo
 const ZETA = .14;                  // pouco amortecimento: solto, o card balança algumas vezes antes de parar
-const KG = 60, L0 = 4;             // a goma: força por px esticado e o comprimento solto
-const MU = 1500;                   // acima dessa força a goma escorrega pelo card (atrito do chiclete)
+const KG = 55, L0 = 10;            // a membrana: força por px esticado e o quanto estica sem puxar
 const MASSA = 26000;               // px² de card por unidade de massa
 const GIRO = .45;                  // quanto do torque vira giro (o card é preso no layout; girar muito parece quebrado)
-const PARADO = 2.5;                // segundos com o cursor parado fora do card até a goma soltar sozinha
+const GROSSO = 4.4;                // grossura média da goma no contorno (px)
+const COBRE = .34;                 // segundos para a goma dar a volta no card
+const PARADO = 2.5;                // segundos com o cursor parado fora do card até a membrana rasgar sozinha
+const TAU = Math.PI * 2;
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
+const suave = (a, b, x) => { const t = lim((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+// o contorno do card (retângulo de cantos redondos, centrado em 0,0), em pontos a cada ~4 px, com a normal para fora
+function contorno(hw, hh, r){
+  r = Math.min(r, hw, hh);
+  const P = [], peca = (n, f) => { for(let i = 0; i < n; i++) P.push(f(i / n)); };
+  const reta = (x0, y0, x1, y1, nx, ny) => peca(Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / PASSO)), u => [x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, nx, ny]);
+  const arco = (cx, cy, a0) => peca(Math.max(1, Math.ceil(r * Math.PI / 2 / PASSO)), u => { const a = a0 + u * Math.PI / 2; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r, Math.cos(a), Math.sin(a)]; });
+  reta(-hw + r, -hh, hw - r, -hh, 0, -1); arco(hw - r, -hh + r, -Math.PI / 2);
+  reta(hw, -hh + r, hw, hh - r, 1, 0); arco(hw - r, hh - r, 0);
+  reta(hw - r, hh, -hw + r, hh, 0, 1); arco(-hw + r, hh - r, Math.PI / 2);
+  reta(-hw, hh - r, -hw, -hh + r, -1, 0); arco(-hw + r, -hh + r, Math.PI);
+  let L = 0;
+  P.forEach((p, i) => { L += Math.hypot(P[(i + 1) % P.length][0] - p[0], P[(i + 1) % P.length][1] - p[1]); });
+  return {P, n: P.length, L, ds: L / P.length};
+}
 
 function cola(raiz, cfg){
-  cfg = Object.assign({seletor: '.card', rompe: 170, lento: 1}, cfg);
+  cfg = Object.assign({seletor: '.card', rompe: 160, lento: 1}, cfg);
   const tela = raiz === document.documentElement || raiz === document.body;
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.style.cssText = `position:${tela ? 'fixed' : 'absolute'};left:0;top:0;pointer-events:none;z-index:${tela ? 2147482000 : 5}`;
@@ -45,20 +67,29 @@ function cola(raiz, cfg){
   const corpos = new Map();
   function corpo(el){
     let c = corpos.get(el);
-    if(!c){ c = {el, x: 0, y: 0, a: 0, vx: 0, vy: 0, w: 0}; corpos.set(el, c); medeCorpo(c); }
+    if(!c){ c = {el, x: 0, y: 0, a: 0, vx: 0, vy: 0, w: 0, r: parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0}; corpos.set(el, c); medeCorpo(c); }
     return c;
   }
-  // o centro sem o nosso deslocamento (o giro é em volta do centro, então não o muda), o tamanho e a massa
+  // o centro sem o nosso deslocamento (o giro é em volta do centro, então não o muda), o tamanho, a massa e o contorno
   function medeCorpo(c){
-    const r = c.el.getBoundingClientRect();
-    c.hw = c.el.offsetWidth / 2; c.hh = c.el.offsetHeight / 2;
+    const r = c.el.getBoundingClientRect(), hw = c.el.offsetWidth / 2, hh = c.el.offsetHeight / 2;
     c.cx = r.left + r.width / 2 - c.x; c.cy = r.top + r.height / 2 - c.y;
-    c.m = lim(4 * c.hw * c.hh / MASSA, .8, 60); c.I = c.m * (c.hw * c.hw + c.hh * c.hh) / 3;
-    c.amax = 10 / Math.max(20, Math.hypot(c.hw, c.hh));   // a quina mais longe anda no máximo 10 px pelo giro
+    if(hw !== c.hw || hh !== c.hh){
+      c.hw = hw; c.hh = hh; c.k = contorno(hw, hh, c.r);
+      c.m = lim(4 * hw * hh / MASSA, .8, 60); c.I = c.m * (hw * hw + hh * hh) / 3;
+      c.amax = 8 / Math.max(20, Math.hypot(hw, hh));   // a quina mais longe anda no máximo 8 px pelo giro
+    }
   }
   const mundo = (c, lx, ly) => { const s = Math.sin(c.a), k = Math.cos(c.a); return [c.cx + c.x + lx * k - ly * s, c.cy + c.y + lx * s + ly * k]; };
   const local = (c, X, Y) => { const s = Math.sin(c.a), k = Math.cos(c.a), dx = X - c.cx - c.x, dy = Y - c.cy - c.y; return [dx * k + dy * s, -dx * s + dy * k]; };
-  const prende = (c, lx, ly) => [lim(lx, -c.hw + 3, c.hw - 3), lim(ly, -c.hh + 3, c.hh - 3)];
+  // um ponto do contorno no mundo: [x, y, nx, ny] (o índice dá a volta)
+  const borda = (c, i) => { const n = c.k.n, p = c.k.P[((Math.round(i) % n) + n) % n], s = Math.sin(c.a), k = Math.cos(c.a);
+    const [x, y] = mundo(c, p[0], p[1]); return [x, y, p[2] * k - p[3] * s, p[2] * s + p[3] * k]; };
+  function maisPerto(c, X, Y){
+    const [lx, ly] = local(c, X, Y); let mi = 0, md = Infinity;
+    c.k.P.forEach((p, i) => { const d = (p[0] - lx) ** 2 + (p[1] - ly) ** 2; if(d < md){ md = d; mi = i; } });
+    return [mi, Math.sqrt(md)];
+  }
   function empurra(c, X, Y, Fx, Fy, h){
     c.vx += Fx / c.m * h; c.vy += Fy / c.m * h;
     const rx = X - c.cx - c.x, ry = Y - c.cy - c.y;
@@ -66,75 +97,89 @@ function cola(raiz, cfg){
   }
 
   // ---- o cursor
-  let mx = -1e4, my = -1e4, mvx = 0, mvy = 0, tMove = 0, sobre = null, dentro = false;
-  // ---- a goma presa ao cursor (uma só), as que estão contraindo de volta e as gotas que ficaram nos cards
-  let goma = null;
-  const voltando = [], gotas = [];
-  let soltas = 0;
+  let mx = -1e4, my = -1e4, mvx = 0, mvy = 0, tMove = 0, sobre = null;
+  // ---- a goma: a capa de cada card (no contorno), a membrana puxada (uma só) e as que rasgaram e estão voltando
+  const capas = new Map();
+  let memb = null, soltas = 0;
+  const rasgos = [];
 
-  function gruda(el){
+  function capa(el){
     const c = corpo(el); medeCorpo(c);
-    const [lx, ly] = prende(c, ...local(c, mx, my)), [ax, ay] = mundo(c, lx, ly), nos = new Float64Array(4 * (NG + 1));
-    for(let i = 0; i <= NG; i++){ const u = i / NG; nos[4 * i] = nos[4 * i + 2] = ax + (mx - ax) * u; nos[4 * i + 1] = nos[4 * i + 3] = ay + (my - ay) * u; }
-    goma = {c, lx, ly, nos, cresce: 0, t: 0, d: 0, parado: 0};
-    // o tranco de grudar: o card leva um pouco da velocidade do cursor
-    const v = Math.min(1600, Math.hypot(mvx, mvy)) / (Math.hypot(mvx, mvy) || 1);
-    empurra(c, ax, ay, mvx * v * .9, mvy * v * .9, 1 / 60);
+    let v = capas.get(el);
+    if(!v){
+      const [i0] = maisPerto(c, mx, my);
+      v = {c, i0, cobre: 0, qtd: 1, fase: 'cobre', t: 0, ondas: [], f: [0, 0, 0].map(() => Math.random() * TAU), bojo: null, gotas: penduradas(c)};
+      capas.set(el, v);
+      // o tranco de grudar: o card leva um pouco da velocidade do cursor, e a goma espirra a partir do ponto tocado
+      const sp = Math.hypot(mvx, mvy), q = Math.min(1500, sp) / (sp || 1);
+      const [ax, ay] = borda(c, i0); empurra(c, ax, ay, mvx * q * .8, mvy * q * .8, 1 / 60);
+    } else if(v.fase === 'sai') v.fase = 'cobre';
+    return v;
   }
-  // solta do cursor e contrai: o fio vira uma corda com a ponta livre, cada vez mais curta, que chicoteia de volta
-  function solta(){
-    if(!goma) return;
-    const g = goma; goma = null; soltas++;
-    let L = 0; for(let i = 0; i < NG; i++){ const a = 4 * i, b = a + 4; L += Math.hypot(g.nos[b] - g.nos[a], g.nos[b + 1] - g.nos[a + 1]); }
-    // a ponta sai com a velocidade do cursor (em px por passo do Verlet)
-    const b = 4 * NG; g.nos[b + 2] = g.nos[b] - mvx * DT * .5; g.nos[b + 3] = g.nos[b + 1] - mvy * DT * .5;
-    voltando.push({c: g.c, lx: g.lx, ly: g.ly, nos: g.nos, rest: L / NG, L0: L, t: 0});
+  // as gotas penduradas na borda de baixo (2 ou 3, longe dos cantos): pêndulos de goma que esticam e balançam com o card
+  function penduradas(c){
+    const baixo = [];
+    c.k.P.forEach((p, i) => { if(p[3] > .99 && Math.abs(p[0]) < c.hw - c.r - 10) baixo.push(i); });
+    if(baixo.length < 6) return [];
+    const n = c.hw > 90 ? 3 : 2, fr = Array.from({length: n}, (_, j) => (j + .25 + Math.random() * .5) / n);
+    return fr.map(f => { const L = 9 + Math.random() * 7; return {i: baixo[Math.floor(f * (baixo.length - 1))], L0: L, L, vL: 0, th: 0, w: 0, r: 2.8 + Math.random() * 1.2}; });
   }
+  // o cursor saiu do card: a borda é puxada a partir do ponto mais perto dele
+  function puxa(v){
+    const [ia] = maisPerto(v.c, mx, my), [ax, ay] = borda(v.c, ia);
+    memb = {v, ia, t: 0, d: Math.hypot(mx - ax, my - ay), Mx: (ax + mx) / 2, My: (ay + my) / 2, Mvx: 0, Mvy: 0};
+  }
+  // passou do limite (ou entrou noutro card, ou ficou parado): a membrana rasga
+  function rasga(){
+    if(!memb) return;
+    const m = memb; memb = null; soltas++;
+    rasgos.push({v: m.v, ia: m.ia, t: 0, Tx: mx, Ty: my, Mx: m.Mx, My: m.My, d: m.d});
+    onda(m.v, m.ia, 1.5);
+  }
+  // voltou para dentro antes de rasgar: a membrana se recolhe sem rasgo
+  function recolhe(){ if(!memb) return; onda(memb.v, memb.ia, .8); memb = null; }
+  const onda = (v, i, a) => { v.ondas.push({s: i * v.c.k.ds, t: 0, a}); if(v.ondas.length > 6) v.ondas.shift(); };
 
   function passo(h){
-    // a goma presa: escorrega pelo card se puxar mais que o atrito (só até a borda), puxa o card e o fio segue
-    if(goma){
-      const g = goma, c = g.c;
-      g.t += h; g.cresce = Math.min(1, g.cresce + h / .07);
-      let [ax, ay] = mundo(c, g.lx, g.ly), dx = mx - ax, dy = my - ay, d = Math.hypot(dx, dy) || 1e-6;
-      const desliza = d - L0 - MU / KG;
-      if(desliza > 0){
-        const [lx, ly] = prende(c, ...local(c, ax + dx / d * desliza, ay + dy / d * desliza));
-        g.lx = lx; g.ly = ly; [ax, ay] = mundo(c, lx, ly); dx = mx - ax; dy = my - ay; d = Math.hypot(dx, dy) || 1e-6;
-      }
-      // dentro do card, a goma é viscosa: com o cursor parado ela escorre até ele e para de puxar (o card volta ao lugar)
-      if(dentro && d > L0){
-        const q = (d - L0) * (1 - Math.exp(-h * 5)), [lx, ly] = prende(c, ...local(c, ax + dx / d * q, ay + dy / d * q));
-        g.lx = lx; g.ly = ly; [ax, ay] = mundo(c, lx, ly); dx = mx - ax; dy = my - ay; d = Math.hypot(dx, dy) || 1e-6;
-      }
-      g.d = d;
-      const F = Math.max(0, KG * (d - L0)) * g.cresce;
+    // a capa: corre pelo contorno até fechar; sem cursor nem membrana, se recolhe (fica mais fina até sumir)
+    for(const [el, v] of capas){
+      v.t += h; v.cobre = Math.min(1, v.cobre + h / COBRE);
+      const presa = sobre === el || (memb && memb.v === v) || rasgos.some(r => r.v === v);
+      if(!presa && v.fase === 'cobre' && v.cobre >= 1) v.fase = 'espera', v.te = 0;
+      if(v.fase === 'espera' && !presa && (v.te += h) > .35) v.fase = 'sai';
+      if(presa && v.fase !== 'cobre') v.fase = 'cobre';
+      v.qtd = v.fase === 'sai' ? v.qtd - h / .45 : Math.min(1, v.qtd + h / .2);
+      for(let k = v.ondas.length - 1; k >= 0; k--) if((v.ondas[k].t += h) > 1.4) v.ondas.splice(k, 1);
+      // o bojo: a borda mais perto do cursor incha (só com o cursor dentro)
+      if(sobre === el){ const [i, d] = maisPerto(v.c, mx, my), a = 1 - suave(6, 46, d); v.bojo = {s: i * v.c.k.ds, a: v.bojo ? v.bojo.a + (a - v.bojo.a) * Math.min(1, h * 14) : a}; }
+      else if(v.bojo){ v.bojo.a *= Math.exp(-h * 8); if(v.bojo.a < .01) v.bojo = null; }
+      if(v.qtd <= 0) capas.delete(el);
+    }
+    // a membrana: o meio tem massa e mola (atrasa e cede com o peso); puxa o card pelo ponto de onde sai
+    if(memb){
+      const m = memb, c = m.v.c, [ax, ay] = borda(c, m.ia), dx = mx - ax, dy = my - ay, d = Math.hypot(dx, dy) || 1e-6;
+      m.t += h; m.d = d;
+      const w = 2 * Math.PI * 3.2, alvoX = (ax + mx) / 2, alvoY = (ay + my) / 2 + d * .07;
+      m.Mvx += (w * w * (alvoX - m.Mx) - 2 * .3 * w * m.Mvx) * h; m.Mvy += (w * w * (alvoY - m.My) - 2 * .3 * w * m.Mvy) * h;
+      m.Mx += m.Mvx * h; m.My += m.Mvy * h;
+      const F = Math.max(0, KG * (d - L0));
       empurra(c, ax, ay, dx / d * F, dy / d * F, h);
-      g.parado = !dentro && performance.now() - tMove > PARADO * 1000 ? 1 : 0;
-      if(d > cfg.rompe || g.parado) solta();
-      else fio(g.nos, h, ax, ay, d);
+      if(d > cfg.rompe || performance.now() - tMove > PARADO * 1000) rasga();
     }
-    // as que contraem: a ponta livre vem chicoteando, o resto encurta; curta o bastante, vira gota no card
-    for(let k = voltando.length - 1; k >= 0; k--){
-      const v = voltando[k], n = v.nos, [ax, ay] = mundo(v.c, v.lx, v.ly);
-      v.t += h; v.rest *= Math.exp(-h * 16);
-      const am = Math.exp(-h * 3);
-      for(let i = 1; i <= NG; i++){
-        const b = 4 * i, x = n[b], y = n[b + 1];
-        n[b] += (x - n[b + 2]) * am; n[b + 1] += (y - n[b + 3]) * am + G * .1 * h * h; n[b + 2] = x; n[b + 3] = y;
+    for(let k = rasgos.length - 1; k >= 0; k--) if((rasgos[k].t += h) > .45) rasgos.splice(k, 1);
+    // as gotas: o card acelerando para um lado empurra a gota para o outro (pêndulo); a gravidade e o tranco esticam
+    for(const v of capas.values()){
+      const c = v.c, ax = c.pvx === undefined ? 0 : (c.vx - c.pvx) / h, ay = c.pvy === undefined ? 0 : (c.vy - c.pvy) / h;
+      for(const g of v.gotas){
+        // no referencial do card: gravidade menos a aceleração dele (th > 0 = gota para a esquerda)
+        const ge = 1400 - ay, sn = Math.sin(g.th), cs = Math.cos(g.th);
+        g.w += (-(ge * sn - ax * cs) / g.L - 3 * g.w) * h; g.th = lim(g.th + g.w * h, -1.2, 1.2);
+        g.vL += (300 * (g.L0 - g.L) + (ge * cs + ax * sn - 1400) * .012 - 9 * g.vL) * h; g.L = lim(g.L + g.vL * h, 4, 34);
       }
-      n[0] = ax; n[1] = ay;
-      restricoes(n, v.rest, false);
-      let L = 0; for(let i = 0; i < NG; i++){ const a = 4 * i, b = a + 4; L += Math.hypot(n[b] - n[a], n[b + 1] - n[a + 1]); }
-      v.L = L;
-      // a goma voltando dá um puxão de leve no card, para o lado de onde ela vem
-      const tx = n[4] - ax, ty = n[5] - ay, td = Math.hypot(tx, ty) || 1, F = Math.min(900, 14 * L);
-      empurra(v.c, ax, ay, tx / td * F, ty / td * F, h);
-      if(L < 7 || v.t > 1.2){ voltando.splice(k, 1); gotas.push({c: v.c, lx: v.lx, ly: v.ly, t: 0}); }
     }
-    for(let k = gotas.length - 1; k >= 0; k--) if((gotas[k].t += h) > 1.1) gotas.splice(k, 1);
     // os cards: mola de volta ao lugar, com pouco amortecimento
     for(const c of corpos.values()){
+      c.pvx = c.vx; c.pvy = c.vy;
       c.vx += (-OMEGA * OMEGA * c.x - 2 * ZETA * OMEGA * c.vx) * h; c.vy += (-OMEGA * OMEGA * c.y - 2 * ZETA * OMEGA * c.vy) * h;
       c.w += (-OMEGA * OMEGA * c.a - 2 * ZETA * OMEGA * c.w) * h;
       c.x += c.vx * h; c.y += c.vy * h; c.a += c.w * h;
@@ -144,82 +189,121 @@ function cola(raiz, cfg){
       if(Math.abs(c.a) > c.amax){ c.a = Math.sign(c.a) * c.amax; if(c.w * c.a > 0) c.w = 0; }
     }
   }
-  // o fio preso: nós leves entre o card e o cursor, um pouco mais curtos que a reta (fica esticado, mas ondula e cede com
-  // o peso quando o cursor mexe)
-  function fio(n, h, ax, ay, d){
-    const am = Math.exp(-h * 6), g = G * .15 * h * h;
-    for(let i = 1; i < NG; i++){
-      const b = 4 * i, x = n[b], y = n[b + 1];
-      n[b] += (x - n[b + 2]) * am; n[b + 1] += (y - n[b + 3]) * am + g; n[b + 2] = x; n[b + 3] = y;
-    }
-    n[0] = ax; n[1] = ay; n[4 * NG] = mx; n[4 * NG + 1] = my;
-    restricoes(n, d * .96 / NG, true);
-  }
-  function restricoes(n, rest, presaNaPonta){
-    for(let k = 0; k < 4; k++) for(let i = 0; i < NG; i++){
-      const a = 4 * i, b = a + 4, ex = n[b] - n[a], ey = n[b + 1] - n[a + 1], e = Math.hypot(ex, ey) || 1e-6;
-      const q = (e - rest) / e * .5 * .8, wa = i === 0 ? 0 : 1, wb = i + 1 === NG && presaNaPonta ? 0 : 1, ws = wa + wb;
-      if(!ws) continue;
-      n[a] += ex * q * wa * 2 / ws; n[a + 1] += ey * q * wa * 2 / ws; n[b] -= ex * q * wb * 2 / ws; n[b + 1] -= ey * q * wb * 2 / ws;
-    }
-  }
 
   // ---- desenho
-  // a goma: grossa nas pontas (onde gruda) e fina no meio, mais fina quanto mais estica, com um brilho de chiclete
-  function pintaFio(n, ate, pe, meio, ox, oy){
-    const pts = [], no = i => { i = lim(i, 0, ate); return [n[4 * i] - ox, n[4 * i + 1] - oy]; };
-    for(let i = 0; i < ate; i++){
-      const [p0, p1, p2, p3] = [no(i - 1), no(i), no(i + 1), no(i + 2)];
-      for(let k = 0; k < 4; k++){
-        const t = k / 4, t2 = t * t, t3 = t2 * t;
-        pts.push([0, 1].map(j => .5 * (2 * p1[j] + (p2[j] - p0[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (3 * p1[j] - p0[j] - 3 * p2[j] + p3[j]) * t3)));
-      }
+  // grossura da capa no ponto i: calombos fixos do card, a frente embolada enquanto corre, as ondas e o bojo
+  function grossura(v, i, meia, cheia){
+    const k = v.c.k, s = i * k.ds, di = Math.abs(((s - v.i0 * k.ds) % k.L + k.L) % k.L), dist = Math.min(di, k.L - di);
+    let g = GROSSO * (1 + .3 * Math.sin(s * .09 + v.f[0]) + .2 * Math.sin(s * .031 + v.f[1]) + .14 * Math.sin(s * .21 + v.f[2]));
+    if(!cheia){ const falta = meia - dist; g = g * suave(0, 10, falta) + 3.2 * Math.exp(-((falta - 7) ** 2) / 24); }
+    for(const o of v.ondas){
+      const dd = Math.abs(((s - o.s) % k.L + k.L) % k.L), od = Math.min(dd, k.L - dd), frente = 420 * o.t;
+      g += o.a * 3.4 * Math.exp(-o.t * 2.6) * Math.exp(-((od - frente) ** 2) / 260);
     }
-    pts.push(no(ate));
-    const esq = [], dir = [];
-    pts.forEach((p, i) => {
-      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], tx = b[0] - a[0], ty = b[1] - a[1], t = Math.hypot(tx, ty) || 1;
-      const u = i / (pts.length - 1 || 1), l = (meio + (pe - meio) * Math.pow(1 - Math.sin(Math.PI * u), 2)) / 2;
-      esq.push([p[0] - ty / t * l, p[1] + tx / t * l]); dir.push([p[0] + ty / t * l, p[1] - tx / t * l]);
-    });
-    ctx.beginPath(); esq.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); dir.reverse().forEach(([x, y]) => ctx.lineTo(x, y)); ctx.closePath();
-    ctx.fillStyle = ROSA; ctx.fill(); ctx.strokeStyle = VINHO; ctx.lineWidth = .8; ctx.lineJoin = 'round'; ctx.stroke();
-    ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y - .4) : ctx.moveTo(x, y - .4));
-    ctx.strokeStyle = BRILHO; ctx.lineWidth = Math.max(.6, meio * .3); ctx.lineCap = 'round'; ctx.stroke();
+    if(v.bojo){ const dd = Math.abs(((s - v.bojo.s) % k.L + k.L) % k.L), od = Math.min(dd, k.L - dd); g += v.bojo.a * 4.5 * Math.exp(-od * od / 900); }
+    return g * suave(0, 1, v.qtd);
   }
-  // a bolinha onde a goma gruda: achata e volta como gelatina quando gruda (t = segundos desde que grudou)
-  function bolinha(x, y, r, t, ang){
-    const j = t < .6 ? Math.exp(-t * 7) * Math.sin(t * 38) * .35 : 0;
-    ctx.save(); ctx.translate(x, y); ctx.rotate(ang || 0); ctx.scale(1 + j, 1 - j);
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, 2 * Math.PI); ctx.fillStyle = ROSA; ctx.fill(); ctx.strokeStyle = VINHO; ctx.lineWidth = .8; ctx.stroke();
-    ctx.beginPath(); ctx.arc(-r * .3, -r * .35, r * .32, 0, 2 * Math.PI); ctx.fillStyle = BRILHO; ctx.fill();
+  // uma gota pendurada: base larga presa na borda, pescoço e a bolinha na ponta, com brilho
+  function pintaGotas(v, ox, oy, meia, cheia){
+    const k = v.c.k;
+    for(const g of v.gotas){
+      const s = g.i * k.ds, di = Math.abs(((s - v.i0 * k.ds) % k.L + k.L) % k.L), q = (cheia ? 1 : suave(0, 14, meia - Math.min(di, k.L - di))) * suave(0, 1, v.qtd);
+      if(q < .05) continue;
+      const [x, y, nx, ny] = borda(v.c, g.i), tx = -ny, ty = nx, ang = Math.atan2(ny, nx) - Math.PI / 2 + g.th;
+      const L = g.L * q, r = g.r * (.5 + .5 * q), px = x + Math.cos(ang + Math.PI / 2) * L - ox, py = y + Math.sin(ang + Math.PI / 2) * L - oy, b = 6 * q;
+      ctx.beginPath();
+      ctx.moveTo(x - ox + tx * b, y - oy + ty * b);
+      ctx.quadraticCurveTo(x - ox + tx * b * .2 + (px - x + ox) * .5, y - oy + ty * b * .2 + (py - y + oy) * .5, px + Math.cos(ang) * r, py + Math.sin(ang) * r);
+      ctx.arc(px, py, r, ang, ang + Math.PI);
+      ctx.quadraticCurveTo(x - ox - tx * b * .2 + (px - x + ox) * .5, y - oy - ty * b * .2 + (py - y + oy) * .5, x - ox - tx * b, y - oy - ty * b);
+      ctx.closePath(); ctx.fillStyle = ROSA; ctx.fill(); ctx.strokeStyle = VINHO; ctx.lineWidth = .9; ctx.stroke();
+      ctx.beginPath(); ctx.arc(px - r * .3, py - r * .3, r * .32, 0, TAU); ctx.fillStyle = BRILHO; ctx.fill();
+    }
+  }
+  function pintaCapa(v, ox, oy){
+    const k = v.c.k, cheia = v.cobre >= 1, e = 1 - (1 - v.cobre) ** 2, meia = e * k.L / 2;
+    const K = cheia ? Math.floor(k.n / 2) : Math.floor(meia / k.ds) + 2, ids = [];
+    for(let j = -K; j <= (cheia ? k.n - K - 1 : K); j++) ids.push(v.i0 + j);
+    pintaGotas(v, ox, oy, meia, cheia);
+    const fora = [], dentro = [], meio = [];
+    for(const i of ids){
+      const g = grossura(v, i, meia, cheia), [x, y, nx, ny] = borda(v.c, i);
+      fora.push([x - ox + nx * g * .55, y - oy + ny * g * .55]); dentro.push([x - ox - nx * g * .45, y - oy - ny * g * .45]);
+      meio.push([x - ox + nx * g * .22, y - oy + ny * g * .22, g]);
+    }
+    ctx.beginPath();
+    fora.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    if(cheia){ ctx.closePath(); dentro.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); }
+    else { for(let i = dentro.length - 1; i >= 0; i--) ctx.lineTo(dentro[i][0], dentro[i][1]); ctx.closePath(); }
+    ctx.fillStyle = ROSA; ctx.fill('evenodd');
+    ctx.strokeStyle = VINHO; ctx.lineWidth = .9; ctx.lineJoin = 'round'; ctx.stroke();
+    // o brilho de chiclete: um risco claro do lado de fora, só onde a goma é grossa
+    ctx.strokeStyle = BRILHO; ctx.lineCap = 'round';
+    for(let i = 1; i < meio.length; i++){
+      const [x0, y0, g0] = meio[i - 1], [x1, y1, g1] = meio[i];
+      if(g0 < 2.6 || g1 < 2.6) continue;
+      ctx.lineWidth = Math.min(1.6, (g0 + g1) * .14); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    }
+  }
+  // a membrana: uma faixa ao longo de uma curva que sai do contorno na direção da normal e vai até a ponta; larga e
+  // abaulada na base (no card), fina na ponta; esticada, abre buracos e vira teia
+  function membrana(c, ia, Tx, Ty, Mx, My, base, ponta, buracos, ox, oy){
+    const [ax, ay, nx, ny] = borda(c, ia), d = Math.hypot(Tx - ax, Ty - ay), hb = Math.min(d * .4, 36);
+    const P = [[ax, ay], [ax + nx * hb, ay + ny * hb], [Mx, My], [Tx, Ty]];
+    const B = u => { const a = 1 - u; return [0, 1].map(j => a * a * a * P[0][j] + 3 * a * a * u * P[1][j] + 3 * a * u * u * P[2][j] + u * u * u * P[3][j]); };
+    const N = 28, cen = [], nor = [], lar = [];
+    for(let i = 0; i <= N; i++){
+      const u = i / N, p = B(u), q = B(Math.min(1, u + .01)), r = B(Math.max(0, u - .01)), tx = q[0] - r[0], ty = q[1] - r[1], t = Math.hypot(tx, ty) || 1;
+      cen.push(p); nor.push([-ty / t, tx / t]); lar.push(ponta + (base - ponta) * (1 - u) ** 2.4);
+    }
+    const lado = s => cen.map((p, i) => [p[0] + nor[i][0] * lar[i] * s - ox, p[1] + nor[i][1] * lar[i] * s - oy]);
+    const e = lado(1), di = lado(-1);
+    ctx.save();
+    ctx.beginPath(); e.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    for(let i = di.length - 1; i >= 0; i--) ctx.lineTo(di[i][0], di[i][1]); ctx.closePath();
+    ctx.fillStyle = ROSA_ESC; ctx.fill(); ctx.strokeStyle = VINHO; ctx.lineWidth = .9; ctx.lineJoin = 'round'; ctx.stroke();
+    // buracos: elipses no espaço da faixa (u ao longo, v de lado, -1 a 1), recortados e contornados
+    for(const [u1, u2, vc, vm] of buracos){
+      if(vm < .04) continue;
+      const pts = [], M = 14;
+      for(let s = 0; s <= 1; s += 1 / M){ const u = u1 + (u2 - u1) * s, i = Math.round(u * N), a = Math.sin(Math.PI * s) * vm; pts.push([i, vc + a]); }
+      for(let s = 1; s >= 0; s -= 1 / M){ const u = u1 + (u2 - u1) * s, i = Math.round(u * N), a = Math.sin(Math.PI * s) * vm; pts.push([i, vc - a]); }
+      ctx.beginPath(); pts.forEach(([i, v], j) => { const x = cen[i][0] + nor[i][0] * lar[i] * v - ox, y = cen[i][1] + nor[i][1] * lar[i] * v - oy; j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.closePath();
+      ctx.globalCompositeOperation = 'destination-out'; ctx.fill(); ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = VINHO; ctx.lineWidth = .8; ctx.stroke();
+    }
+    // o brilho: um risco claro do lado de cima da faixa, da base até perto da ponta
+    ctx.beginPath(); for(let i = 1; i < N - 4; i++){ const x = cen[i][0] + nor[i][0] * lar[i] * .5 - ox, y = cen[i][1] + nor[i][1] * lar[i] * .5 - oy; i > 1 ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.strokeStyle = BRILHO; ctx.lineWidth = 1.1; ctx.lineCap = 'round'; ctx.stroke();
     ctx.restore();
   }
+  const furos = k => [[.14, .46, 0, .5 * suave(.3, .55, k)], [.42, .68, -.42, .36 * suave(.5, .75, k)], [.4, .64, .44, .3 * suave(.6, .85, k)], [.62, .8, .05, .32 * suave(.75, .95, k)]];
   function pinta(){
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, larg, alt);
     const [ox, oy] = origem();
-    for(const p of gotas){
-      const [x, y] = mundo(p.c, p.lx, p.ly), q = Math.max(0, 1 - p.t / 1.1);
-      ctx.globalAlpha = Math.min(1, q * 2); bolinha(x - ox, y - oy, 4.4 * (.4 + .6 * q), p.t, 0); ctx.globalAlpha = 1;
+    if(memb){
+      const m = memb, c = m.v.c, k = m.d / cfg.rompe, base = Math.min(lim(34 - 20 * k, 14, 34), c.hw, c.hh + 6);
+      membrana(c, m.ia, mx, my, m.Mx, m.My, base, 1.2 + 2.4 * (1 - k), furos(k), ox, oy);
     }
-    for(const v of voltando){
-      const pe = Math.min(6, 4.2 * Math.sqrt(v.L0 / Math.max(8, v.L)) * .8 + 1);   // o volume volta para a goma: engrossa ao encurtar
-      pintaFio(v.nos, NG, pe, Math.max(1.2, pe * .6), ox, oy);
-      bolinha(v.nos[0] - ox, v.nos[1] - oy, pe * .62, v.t, 0);
-      bolinha(v.nos[4 * NG] - ox, v.nos[4 * NG + 1] - oy, pe * .7, 1, 0);
+    for(const r of rasgos){
+      // a parte presa ao card volta como elástico (passa do ponto e volta); a ponta solta encolhe até sumir
+      const c = r.v.c, [ax, ay] = borda(c, r.ia), q = .62 * Math.exp(-r.t * 9) * Math.cos(r.t * 24);
+      if(q > .02){
+        const tx = ax + (r.Tx - ax) * q, ty = ay + (r.Ty - ay) * q;
+        membrana(c, r.ia, tx, ty, ax + (r.Mx - ax) * q, ay + (r.My - ay) * q, Math.min(18, c.hw), 2.6, [], ox, oy);
+      }
+      if(r.t < .16){
+        const cx = ax + (r.Tx - ax) * .62, cy = ay + (r.Ty - ay) * .62, f = Math.exp(-r.t * 26), sx = r.Tx + (cx - r.Tx) * f, sy = r.Ty + (cy - r.Ty) * f;
+        ctx.beginPath(); ctx.moveTo(sx - ox, sy - oy); ctx.lineTo(r.Tx - ox, r.Ty - oy);
+        ctx.strokeStyle = ROSA_ESC; ctx.lineWidth = 2.4 * (1 - r.t / .16); ctx.lineCap = 'round'; ctx.stroke();
+      }
     }
-    if(goma){
-      const g = goma, pe = 5.2, meio = Math.max(1, Math.min(pe, pe * Math.sqrt(70 / Math.max(1, g.d))));
-      const ate = Math.max(1, Math.round(NG * g.cresce)), ang = Math.atan2(my - g.nos[1], mx - g.nos[0]);
-      if(g.d > 3) pintaFio(g.nos, ate, pe, meio, ox, oy);
-      bolinha(g.nos[0] - ox, g.nos[1] - oy, pe * .62 * 1.2, g.t, ang);
-      bolinha(mx - ox, my - oy, pe * .55, 1, 0);
-    }
+    for(const v of capas.values()) pintaCapa(v, ox, oy);
   }
   // os cards: só translate e rotate (somam com o transform do jogo); parado, devolve o estilo e o corpo some
   function move(){
     for(const [el, c] of corpos){
-      const preso = (goma && goma.c === c) || voltando.some(v => v.c === c) || gotas.some(p => p.c === c);
+      const preso = capas.has(el);
       if(!preso && Math.abs(c.x) < .03 && Math.abs(c.y) < .03 && Math.abs(c.a) < 2e-5 && Math.hypot(c.vx, c.vy) < .5 && Math.abs(c.w) < 1e-3){
         el.style.translate = ''; el.style.rotate = ''; corpos.delete(el); continue;
       }
@@ -236,7 +320,7 @@ function cola(raiz, cfg){
     sobra += dt / Math.max(1, cfg.lento);
     while(sobra >= DT){ passo(DT); sobra -= DT; }
     move(); pinta();
-    if(goma || voltando.length || gotas.length || corpos.size) pedido = requestAnimationFrame(quadro);
+    if(capas.size || memb || rasgos.length || corpos.size) pedido = requestAnimationFrame(quadro);
     else { antes = 0; sobra = 0; }
   }
   const acorda = () => { if(!pedido) pedido = requestAnimationFrame(quadro); };
@@ -249,12 +333,17 @@ function cola(raiz, cfg){
     if(t - tMove < 100){ mvx = mvx * .5 + (e.clientX - mx) / dt * .5; mvy = mvy * .5 + (e.clientY - my) / dt * .5; } else { mvx = mvy = 0; }
     mx = e.clientX; my = e.clientY; tMove = t;
     const el = e.target.closest ? e.target.closest(cfg.seletor) : null, card = el && raiz.contains(el) && !el.closest('[data-sem-goma]') ? el : null;
-    if(card && card !== sobre){ sobre = card; if(!goma || goma.c.el !== card){ solta(); gruda(card); } }
-    if(!card) sobre = null;
-    dentro = !!card && !!goma && goma.c.el === card;
+    if(card !== sobre){
+      const antigo = sobre; sobre = card;
+      if(card){
+        if(memb && memb.v.c.el === card) recolhe(); else rasga();
+        capa(card);
+      }
+      if(antigo && capas.has(antigo) && !memb && antigo !== card && !(card && antigo.contains(card))) puxa(capas.get(antigo));
+    }
     acorda();
   }
-  function sai(e){ if(tela && e.relatedTarget) return; sobre = null; dentro = false; solta(); acorda(); }
+  function sai(e){ if(tela && e.relatedTarget) return; sobre = null; rasga(); acorda(); }
   const ouvintes = [['pointermove', mexe], [tela ? 'mouseout' : 'pointerleave', sai]];
   ouvintes.forEach(([n, f]) => ev.addEventListener(n, f, {passive: true}));
   const obs = tela ? null : new ResizeObserver(mede);
@@ -263,12 +352,12 @@ function cola(raiz, cfg){
 
   return {
     ajusta(o){ Object.assign(cfg, o); acorda(); },
-    estado: () => ({goma: goma && {d: goma.d, lx: goma.lx, ly: goma.ly}, voltando: voltando.length, gotas: gotas.length, soltas,
+    estado: () => ({memb: memb && {d: memb.d, ia: memb.ia}, capas: [...capas.values()].map(v => ({cobre: v.cobre, qtd: v.qtd, fase: v.fase})), rasgos: rasgos.length, soltas,
       cards: [...corpos.values()].map(c => ({x: c.x, y: c.y, a: c.a, m: c.m}))}),
     legenda(){
       const mx2 = Math.max(0, ...[...corpos.values()].map(c => Math.hypot(c.x, c.y)));
-      return (goma ? `Bungee Gum ${Math.round(goma.d)} de ${cfg.rompe} px` : voltando.length ? 'contraindo' : 'sem goma')
-        + ` · card a ${mx2.toFixed(1)} px do lugar · soltou ${soltas}×`;
+      return (memb ? `membrana ${Math.round(memb.d)} de ${cfg.rompe} px` : rasgos.length ? 'rasgou' : capas.size ? 'goma no card' : 'sem goma')
+        + ` · card a ${mx2.toFixed(1)} px do lugar · rasgou ${soltas}×`;
     },
     desliga(){
       ouvintes.forEach(([n, f]) => ev.removeEventListener(n, f));
@@ -279,6 +368,7 @@ function cola(raiz, cfg){
     },
   };
 }
+
 
 // ---- bancada: um pedaço do jogo de mentira na tela preta (o card do jogador, a caixa de tarefa nova, as tarefas, a
 // constância e os cards do lado), com cards de tamanhos bem diferentes para ver a massa
@@ -330,8 +420,8 @@ function liga(palco, cfg){
 
 (window.CURSORES = window.CURSORES || {}).bungee = {cola, liga,
   titulo: 'passe o mouse pelos cards · saia de um card devagar e vá longe',
-  dica: 'a goma gruda onde o cursor entra e escorrega atrás dele dentro do card · ao sair, o fio estica e puxa o card · passando do limite, solta e contrai, e o card balança<br>cards pequenos pulam mais; o painel grande da constância é pesado · parado fora do card, a goma solta sozinha',
-  controles: [{k: 'rompe', rot: 'o fio solta com', min: 80, max: 320, un: ' px', padrao: 170},
+  dica: 'ao entrar, a goma corre pelo contorno do card a partir do ponto tocado · dentro, a borda incha para o lado do cursor · ao sair, a borda é puxada numa membrana que vira teia<br>passando do limite, ela rasga, a parte do card volta como elástico, uma onda corre a borda e o card balança · cards pequenos pulam mais; o painel grande da constância é pesado',
+  controles: [{k: 'rompe', rot: 'rasga com', min: 80, max: 320, un: ' px', padrao: 160},
     {k: 'lento', rot: 'câmera lenta', min: 1, max: 6, un: '×', padrao: 1},
     {k: 'claro', rot: 'fundo claro', min: 0, max: 1, un: '', padrao: 0}]};
 })();
