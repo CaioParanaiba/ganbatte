@@ -25,7 +25,7 @@ assert.ok(!GB.padrao(item('fr-hunter')), 'item do grupo não vem com o jogo');
 ok('itens que saem da Masadora');
 
 const novos = COS.filter(i => i.prova);
-assert.ok(novos.length >= 30, 'itens novos para provar');
+assert.ok(novos.length >= 28, 'itens novos para provar');
 for(const it of novos) assert.ok(!GB.padrao(it) && it.p === 0 && it.eq, it.id + ': só para provar, não vem com o jogo');
 ok('itens novos só para provar');
 

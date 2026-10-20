@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Correntes do Kurapika</title>
+<!-- Vitrine de avaliação (#134, #142): todas as correntes da família lado a lado, a nova (do corrente.js) e as de hoje.
+     Abre direto do disco (file://). Não é do jogo: ao aprovar, o corrente.js vai para web/arte/ e o CSS para o web/arte.js. -->
+<style>
+:root{
+  --bg:#13141B;--panel:#1B1D28;--panel2:#222536;--ink:#E6E8F0;--soft:#9197AD;--faint:#5A6078;--hair:#2A2D3C;--track:#252838;
+  --red:#F7768E;--amb:#E0AF68;--grn:#73C991;--volt:#9FD3FF;--aura:#B4A0FF;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;--f-hud:"Chakra Petch","JetBrains Mono",ui-monospace,monospace;
+  --bw:9px;--esc:0}
+:root[data-tema="claro"]{color-scheme:light;--bg:#F4F5F9;--panel:#FFFFFF;--panel2:#F3F4FA;--ink:#1B1E2E;--soft:#5B6180;--faint:#989EB6;--hair:#E1E4EE;--track:#E8EAF2;--red:#D6455D;--amb:#B7812A;--grn:#2F8A55;--volt:#1F78C8;--aura:#6B4FD8}
+:root[data-tema="kurapika"]{--bg:#140D12;--panel:#1D1219;--panel2:#261822;--ink:#F6EAF0;--soft:#B49BA8;--faint:#76606C;--hair:#3A2632;--track:#2E1E28;--red:#FF3D5E;--amb:#F5C26B;--grn:#7DD8A4;--volt:#FF4D6D;--aura:#F5C26B}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:22px 16px 80px}
+h1{font:700 22px var(--f-hud);margin:0 0 4px}
+h2{font:700 16px var(--f-hud);margin:0}
+.sub{color:var(--soft);margin:0 0 16px;max-width:760px}
+.cap{font:600 11px var(--f-mono);color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin:0 0 8px}
+.ctl{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 12px;margin:0 0 22px;
+  background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--hair);border-radius:10px;backdrop-filter:blur(6px);font-size:13px}
+.ctl label{display:flex;gap:6px;align-items:center;color:var(--soft)}
+.ctl select,.ctl input{accent-color:var(--volt)}
+.ctl output{font:600 12px var(--f-mono);color:var(--ink);min-width:34px}
+section{margin:0 0 34px;padding:0 0 26px;border-bottom:1px solid var(--hair)}
+.hd{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:0 0 6px}
+.tag{font:500 10px var(--f-mono);border:1px solid var(--hair);border-radius:99px;padding:1px 8px;color:var(--soft)}
+.tag.nova{color:var(--grn);border-color:color-mix(in srgb,var(--grn) 50%,transparent)}
+.tag.hoje{color:var(--amb);border-color:color-mix(in srgb,var(--amb) 50%,transparent)}
+.nota{color:var(--soft);font-size:13px;margin:0 0 14px;max-width:820px}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:26px 22px;align-items:start}
+figure{margin:0} figcaption{font:500 11px var(--f-mono);color:var(--faint);margin-top:10px}
+
+/* ---------- o card de mentira (como o .card do jogo) ---------- */
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:14px 16px;min-width:0}
+.card .t{font-weight:600;margin:0 0 6px} .card .m{color:var(--soft);font-size:12.5px} .card .ln{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.card .ln span{font:500 10.5px var(--f-mono);color:var(--soft);background:var(--panel2);border-radius:6px;padding:2px 7px}
+.card.alto{min-height:260px}
+
+/* a borda nova: border-image do gerador; o fundo fica dentro da corrente */
+.bd-nova{position:relative;border:var(--bw) solid transparent;border-image:var(--ch-borda) 64 / var(--bw) round;background-clip:padding-box;border-radius:calc(var(--bw) * .9)}
+.bd-nova.solta{background-clip:border-box;border-radius:14px}
+/* Dowsing Chain: o ponto (ax, ay) do desenho cai no centro da argola de baixo à direita (bw/2 de fora da caixa do conteúdo) */
+.bd-nova[data-pend]::after{--u:calc(var(--bw) / 64);content:"";position:absolute;pointer-events:none;z-index:3;
+  background:var(--ch-pend) 0 0/100% 100% no-repeat;width:calc(var(--pw) * var(--u));height:calc(var(--ph) * var(--u));
+  right:calc(var(--bw) / -2 - var(--pw) * var(--u) / 2);top:calc(100% + var(--bw) / 2 - var(--pay) * var(--u));
+  transform-origin:50% calc(var(--pay) * var(--u))}
+@media (prefers-reduced-motion:no-preference){
+  :root:not([data-mov="0"]) .bd-nova[data-pend]::after{animation:dows 1.6s ease-in-out infinite alternate}
+  :root:not([data-mov="0"]) .bd-nova[data-pend]:hover::after{animation:dowsBusca .55s ease-in-out infinite alternate}
+}
+@keyframes dows{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+@keyframes dowsBusca{from{transform:rotate(-26deg)}to{transform:rotate(26deg)}}
+
+/* as de hoje, para comparar */
+.bd-antiga{border:5px solid transparent;border-image:repeating-linear-gradient(90deg,var(--amb) 0 7px,transparent 7px 9px,color-mix(in srgb,var(--amb) 60%,var(--bg)) 9px 16px,transparent 16px 18px) 5}
+.bd-png{border:11px solid transparent;border-image:url(../aprovadas/bd-corrente/bd-corrente.png) 12% / 11px round}
+
+/* ---------- barras ---------- */
+.xpbar{height:10px;border-radius:99px;background:var(--track);overflow:hidden;position:relative}
+.xpbar > b{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:linear-gradient(90deg,var(--aura),var(--volt));box-shadow:0 0 12px -2px var(--volt)}
+.xpbar.h7{height:7px} .xpbar.h6{height:6px} .xpbar.h14{height:14px}
+.l-bar{height:9px;border-radius:99px;background:var(--track);overflow:hidden} .l-bar i{display:block;height:100%;border-radius:inherit;background:var(--volt);position:relative}
+.barras{display:grid;gap:16px;max-width:560px}
+.barras .rot{display:flex;justify-content:space-between;font:500 11px var(--f-mono);color:var(--faint);margin:0 0 5px}
+/* fx-corrente nova: a tira corre para a lâmina (Judgment Chain) na ponta */
+.xp-nova > :is(b,i){--h:10px;--s:calc(var(--h) * 1.9 / 64);--ida:calc(var(--h) * .55);
+  background:var(--ch-faixa) right 0 center/auto 100% repeat-x,color-mix(in srgb,var(--soft) 26%,var(--track));box-shadow:none}
+.xp-nova.h7 > b{--h:7px} .xp-nova.h6 > b{--h:6px} .xp-nova.h14 > b{--h:14px} .xp-nova > i{--h:9px}
+.xp-nova{overflow:visible} .xp-nova > i{overflow:visible}
+/* a corrente fica presa pela ponta (alinhada à direita) e o ilhós da lâmina fica em cima do último elo: os dois andam juntos */
+.xp-nova > :is(b,i)::after{content:"";position:absolute;left:calc(100% - var(--lix) * var(--s));top:50%;height:calc(var(--h) * 1.9);translate:0 -50%;
+  width:calc(var(--lw) * var(--s));background:var(--ch-lamina) 0 0/100% 100% no-repeat}
+.xp-nova.esc > :is(b,i){background:var(--ch-faixa) right 0 center/auto 100% repeat-x,color-mix(in srgb,var(--red) 22%,var(--track))}
+@media (prefers-reduced-motion:no-preference){
+  :root:not([data-mov="0"]) .xp-nova > :is(b,i){animation:chPuxa 1.5s ease-in-out infinite alternate}
+  :root:not([data-mov="0"]) .xp-nova > :is(b,i)::after{animation:chPuxaL 1.5s ease-in-out infinite alternate}
+}
+/* ida e volta: recua um pouco e avança até a ponta de verdade (nunca passa do XP que a pessoa tem) */
+@keyframes chPuxa{from{background-position:right 0 center,0 0}to{background-position:right var(--ida) center,0 0}}
+@keyframes chPuxaL{from{transform:none}to{transform:translateX(calc(var(--ida) * -1))}}
+.xp-antiga > b{background:repeating-linear-gradient(90deg,var(--amb) 0 9px,color-mix(in srgb,var(--amb) 30%,transparent) 9px 11px,color-mix(in srgb,var(--amb) 70%,var(--bg)) 11px 20px,color-mix(in srgb,var(--amb) 30%,transparent) 20px 22px);
+  background-size:44px 100%;box-shadow:0 0 8px -1px var(--amb)}
+@media (prefers-reduced-motion:no-preference){ :root:not([data-mov="0"]) .xp-antiga > b{animation:hjCorrente 1.1s linear infinite} }
+@keyframes hjCorrente{to{background-position:44px 0}}
+
+/* vida do chefão (.hp4 do jogo) */
+.hp4{position:relative;height:12px;border-radius:4px;background:var(--track);overflow:visible;margin-top:18px}
+.hp4 > b{position:absolute;inset:0 auto 0 0;border-radius:4px;background:var(--red)}
+.hp4 > i{position:absolute;top:-4px;bottom:-4px;border-left:2px solid var(--grn)}
+.hp4 > i::after{content:"aprovação";position:absolute;top:-15px;left:-24px;font:600 9.5px var(--f-mono);color:var(--grn);white-space:nowrap}
+.hp-png > b{background:url(../aprovadas/corrente-tira/corrente-tira.png) 0 50%/auto 100% repeat-x}
+.hp-nova > b{background:var(--ch-esc) right 0 center/auto 100% repeat-x}   /* presa pela ponta: a vida termina num elo inteiro */
+.hp-brilho > b{filter:drop-shadow(0 0 4px color-mix(in srgb,#FF3D5E 70%,transparent))}
+.hp-perdida{background:var(--ch-faixa) 0 50%/auto 100% repeat-x,var(--track)} .hp-perdida::before{content:"";position:absolute;inset:0;border-radius:inherit;background:color-mix(in srgb,var(--track) 72%,transparent)}
+@media (prefers-reduced-motion:no-preference){
+  :root:not([data-mov="0"]) .hp-pulsa > b{animation:hpPulsa 2.2s ease-in-out infinite}
+}
+@keyframes hpPulsa{50%{filter:drop-shadow(0 0 6px #FF3D5E) brightness(1.12)}}
+.hp-antiga > b{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='14'%3E%3Cellipse cx='7.5' cy='7' rx='6.2' ry='4' fill='none' stroke='%23596069' stroke-width='3.2'/%3E%3Cellipse cx='7.5' cy='7' rx='6.2' ry='4' fill='none' stroke='%23B9BFC8' stroke-width='1.8'/%3E%3Crect x='12.5' y='5.6' width='10' height='2.8' rx='1.4' fill='%23D5D9DF' stroke='%23596069' stroke-width='.8'/%3E%3C/svg%3E") repeat-x left center/22px 100%}
+
+.lic img{max-width:100%;border-radius:10px;display:block}
+.pecas{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end}
+.pecas div{background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:14px;display:grid;place-items:center;min-width:120px;min-height:120px}
+.pecas img{display:block}
+</style>
+</head>
+<body>
+<main>
+<h1>Correntes do Kurapika</h1>
+<p class="sub">A família inteira num lugar só. As <b>novas</b> saem todas de um gerador (<code>corrente.js</code>): o mesmo elo da licença,
+prateado, e cada item com a marca de uma corrente da mão dele. As <b>de hoje</b> ficam ao lado para comparar.</p>
+
+<div class="ctl">
+  <label>tema <select id="tema"><option value="">escuro</option><option value="claro">claro</option><option value="kurapika">Kurapika</option></select></label>
+  <label>espessura da borda <input id="bw" type="range" min="5" max="16" value="9"><output id="bwo">9 px</output></label>
+  <label>esfera <select id="pend"><option value="pendurada">pendurada (balança)</option><option value="curta">curta (só a esfera)</option><option value="">sem</option></select></label>
+  <label><input id="esc" type="checkbox"> brilho escarlate na esfera</label>
+  <label><input id="mov" type="checkbox" checked> movimento</label>
+</div>
+
+<section>
+  <div class="hd"><h2>Borda · Dowsing Chain</h2><span class="tag nova">nova</span><span class="tag">bd-corrente · raro</span></div>
+  <p class="nota">Elo de frente e de lado alternados, uma argola em cada canto recebendo as duas pontas, nada passa da faixa.
+  A espessura é fixa em px, então o card grande não engrossa. A esfera da Dowsing Chain fica no canto de baixo à direita;
+  ela balança sem parar e, com o mouse por cima, acelera e abre mais (a Dowsing "procurando").</p>
+  <div class="grade">
+    <figure><div class="card bd-nova" data-pend><p class="t">Revisar a lista 3 de Cálculo</p><p class="m">Hoje · 40 min</p><div class="ln"><span>estudo</span><span>+30 XP</span></div></div><figcaption>card da Lista</figcaption></figure>
+    <figure><div class="card bd-nova" data-pend><p class="t">Projeto pessoal</p><p class="m">Ler o capítulo 4 e anotar as dúvidas para a monitoria de quinta.</p><div class="ln"><span>projeto</span><span>prazo sex</span><span>+60 XP</span></div></div><figcaption>card médio</figcaption></figure>
+    <figure><div class="card alto bd-nova" data-pend><p class="t">Painel grande</p><p class="m">Um card alto, como o do chefão ou do resumo, para ver se a corrente fica fina e os cantos fecham.</p></div><figcaption>card grande (a espessura não muda)</figcaption></figure>
+    <figure><div class="card bd-nova solta" data-pend><p class="t">Variação: fundo por baixo</p><p class="m">O fundo do card vai até a borda de fora; a corrente fica por cima.</p></div><figcaption>variação: fundo inteiro</figcaption></figure>
+  </div>
+  <p class="cap" style="margin-top:26px">as de hoje</p>
+  <div class="grade">
+    <figure><div class="card bd-antiga"><p class="t">Antiga (CSS)</p><p class="m">A que está à venda hoje: listras douradas.</p></div><figcaption>bd-corrente hoje · "a deformada" da #142</figcaption></figure>
+    <figure><div class="card bd-png"><p class="t">Provisória (Gemini)</p><p class="m">bd-corrente-nova: 11 px, cadeados nos cantos.</p></div><figcaption>bd-corrente-nova · provisória</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <div class="hd"><h2>Barra de XP · Judgment Chain</h2><span class="tag nova">nova</span><span class="tag">fx-corrente · raro</span></div>
+  <p class="nota">A corrente vai e volta presa ao ilhós da lâmina da Judgment Chain: as duas andam juntas, então o encaixe nunca muda. Ela recua um pouco e volta até a ponta, sem passar do XP de verdade.
+  O trecho cheio ganha um fundo levemente mais claro para a barra continuar legível. Abaixo, as alturas que o jogo usa.</p>
+  <div class="barras">
+    <div><div class="rot"><span>nível 12 · topo (10 px)</span><span>15%</span></div><div class="xpbar xp-nova"><b style="width:15%"></b></div></div>
+    <div><div class="rot"><span>topo (10 px)</span><span>58%</span></div><div class="xpbar xp-nova"><b style="width:58%"></b></div></div>
+    <div><div class="rot"><span>topo (10 px)</span><span>93%</span></div><div class="xpbar xp-nova"><b style="width:93%"></b></div></div>
+    <div><div class="rot"><span>variação: fundo escarlate</span><span>58%</span></div><div class="xpbar xp-nova esc"><b style="width:58%"></b></div></div>
+    <div><div class="rot"><span>barra grande (14 px)</span><span>66%</span></div><div class="xpbar h14 xp-nova"><b style="width:66%"></b></div></div>
+    <div><div class="rot"><span>visão geral, .l-bar (9 px)</span><span>40%</span></div><div class="l-bar xp-nova"><i style="width:40%"></i></div></div>
+    <div><div class="rot"><span>hub (7 px)</span><span>70%</span></div><div class="xpbar h7 xp-nova"><b style="width:70%"></b></div></div>
+    <div><div class="rot"><span>prévia mini (6 px)</span><span>50%</span></div><div class="xpbar h6 xp-nova"><b style="width:50%"></b></div></div>
+  </div>
+  <p class="cap" style="margin-top:26px">a de hoje</p>
+  <div class="barras">
+    <div><div class="rot"><span>fx-corrente hoje (listras douradas)</span><span>58%</span></div><div class="xpbar xp-antiga"><b style="width:58%"></b></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="hd"><h2>Vida do chefão · escarlate</h2><span class="tag nova">nova</span><span class="tag">hp-corrente · raro</span></div>
+  <p class="nota">A corrente vira vermelha, o escarlate dos olhos (Emperor Time): é a vida do chefão, e fica claro na hora que
+  não é a barra de XP. Mesmo elo das outras. Nas variações, o trecho perdido mostra a corrente apagada, e o brilho pulsa como os olhos.</p>
+  <div class="barras">
+    <div><div class="rot"><span>escarlate</span><span>72%</span></div><div class="hp4 hp-nova"><b style="width:72%"></b><i style="left:40%"></i></div></div>
+    <div><div class="rot"><span>escarlate, quase no fim</span><span>18%</span></div><div class="hp4 hp-nova"><b style="width:18%"></b><i style="left:40%"></i></div></div>
+    <div><div class="rot"><span>+ trecho perdido apagado</span><span>55%</span></div><div class="hp4 hp-nova hp-perdida"><b style="width:55%"></b><i style="left:40%"></i></div></div>
+    <div><div class="rot"><span>+ brilho dos olhos</span><span>55%</span></div><div class="hp4 hp-nova hp-perdida hp-brilho"><b style="width:55%"></b><i style="left:40%"></i></div></div>
+    <div><div class="rot"><span>+ brilho que pulsa</span><span>55%</span></div><div class="hp4 hp-nova hp-perdida hp-pulsa"><b style="width:55%"></b><i style="left:40%"></i></div></div>
+  </div>
+  <p class="cap" style="margin-top:26px">as de hoje</p>
+  <div class="barras">
+    <div><div class="rot"><span>aprovada em 16/10 (tira do Gemini, prateada)</span><span>72%</span></div><div class="hp4 hp-png"><b style="width:72%"></b><i style="left:40%"></i></div></div>
+    <div><div class="rot"><span>a de hoje (CSS)</span><span>72%</span></div><div class="hp4 hp-antiga"><b style="width:72%"></b><i style="left:40%"></i></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="hd"><h2>Licença · estojo de corrente</h2><span class="tag">lic-corrente · parada (multiplayer off)</span></div>
+  <p class="nota">É de onde veio o elo. Fica como está até o multiplayer voltar.</p>
+  <figure class="lic" style="max-width:420px"><img src="../aprovadas/lic-corrente/horizontal.png" alt="licença com o estojo de corrente"><figcaption>aprovada em 17/10 (provisória)</figcaption></figure>
+</section>
+
+<section>
+  <div class="hd"><h2>As peças</h2><span class="tag">o vocabulário da família</span></div>
+  <p class="nota">Tudo acima é montado com estas peças. Um item novo do Kurapika (cursor, transição, tema) usa as mesmas,
+  com a marca de outra corrente: Holy Chain (polegar, cruz), Chain Jail (médio), Steal Chain (mínimo).</p>
+  <div class="pecas" id="pecas"></div>
+</section>
+</main>
+
+<script src="corrente.js"></script>
+<script>
+const K = GB_CORRENTE, R = document.documentElement;
+const ESC = '#FF3D5E';
+function monta(){
+  const esc = document.getElementById('esc').checked;
+  const pend = document.getElementById('pend').value, p = K.pendulo(pend === 'curta' ? 0 : 2, K.COR, esc ? ESC : '');
+  R.style.setProperty('--ch-borda', K.uri(K.borda()));
+  R.style.setProperty('--ch-faixa', K.uri(K.faixa()));
+  const lm = K.lamina(); R.style.setProperty('--ch-lamina', K.uri(lm.svg)); R.style.setProperty('--lw', lm.W); R.style.setProperty('--lix', lm.ix);
+  R.style.setProperty('--ch-esc', K.uri(K.faixa(K.ESCARLATE)));
+  R.style.setProperty('--ch-pend', K.uri(p.svg));
+  R.style.setProperty('--pw', p.W); R.style.setProperty('--ph', p.H); R.style.setProperty('--pay', p.ay);
+  document.querySelectorAll('.bd-nova').forEach(c => pend ? c.dataset.pend = pend : delete c.dataset.pend);
+  document.getElementById('pecas').innerHTML = [
+    [K.faixa(), 'a tira (×2)', 2], [K.borda(), 'a borda inteira', .9], [p.svg, 'Dowsing Chain', 1.6], [K.lamina().svg, 'Judgment Chain', 1.4], [K.faixa(K.ESCARLATE), 'a tira escarlate (×2)', 2]
+  ].map(([s, n, z]) => { const w = +s.match(/width="([\d.]+)"/)[1] * z;
+    return `<figure><div><img src="data:image/svg+xml,${encodeURIComponent(s)}" width="${w}" alt=""></div><figcaption>${n}</figcaption></figure>`; }).join('');
+}
+const bw = document.getElementById('bw');
+bw.oninput = () => { R.style.setProperty('--bw', bw.value + 'px'); document.getElementById('bwo').textContent = bw.value + ' px'; };
+document.getElementById('tema').onchange = e => e.target.value ? R.dataset.tema = e.target.value : delete R.dataset.tema;
+document.getElementById('mov').onchange = e => R.dataset.mov = e.target.checked ? '1' : '0';
+document.getElementById('pend').onchange = monta;
+document.getElementById('esc').onchange = monta;
+monta();
+</script>
+</body>
+</html>

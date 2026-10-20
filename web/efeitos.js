@@ -38,7 +38,7 @@ const CSS = `
 :root[data-font="arcade"] :is(h1,h3,.wal7),:root[data-font="arcade"] h2:not(.card h2){font-family:var(--f-dot);font-weight:400}
 /* ---------- efeitos na tela ---------- */
 @media (prefers-reduced-motion:no-preference){
-  :root[data-fx~="corrente"] :is(.xpbar > b,.l-bar i),.fxd.corrente .xpbar > b{
+  :root[data-fx~="corrente"] :is(.xpbar > b,.l-bar i):not(.fxd *),.fxd.corrente .xpbar > b{   /* :not(.fxd *): não vaza para as prévias da loja (#142) */
     background:repeating-linear-gradient(90deg,var(--amb) 0 9px,color-mix(in srgb,var(--amb) 30%,transparent) 9px 11px,color-mix(in srgb,var(--amb) 70%,var(--bg)) 11px 20px,color-mix(in srgb,var(--amb) 30%,transparent) 20px 22px);
     background-size:44px 100%;animation:hjCorrente 1.1s linear infinite;box-shadow:0 0 8px -1px var(--amb)}
   :root[data-fx~="digita"].gb-entra :is(h1,h3,.card h2),:root[data-fx~="digita"].gb-entra h2:not(.card h2),.fxd.digita .mini b{animation:hjDigita .75s steps(22) both}
@@ -85,16 +85,18 @@ const CSS = `
 .pvc .hm7{position:absolute;inset:14px 18px;display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(4,1fr);gap:4px}
 .pvc .hm7 i{background:var(--track);border-radius:2px} .pvc .hm7 i.h3{background:var(--grn)}
 :root[data-borda="dupla"] .card,.bd-dupla .mc{border:4px double var(--soft)}
-:root[data-borda="trac"] .card,.bd-trac .mc{border:2px dashed var(--soft)}
-:root[data-borda="cantos"] .card,.bd-cantos .mc{border-color:transparent;background-image:linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink));
-  background-size:14px 2px,2px 14px,14px 2px,2px 14px;background-position:0 0,0 0,100% 100%,100% 100%;background-repeat:no-repeat}
+:root[data-borda="corte"] .card,.bd-corte .mc{--cc:12px;border-color:transparent;border-radius:2px;background:
+    linear-gradient(var(--soft),var(--soft)) right top/calc(100% - var(--cc)) 1px,linear-gradient(var(--soft),var(--soft)) left bottom/1px calc(100% - var(--cc)),
+    linear-gradient(var(--soft),var(--soft)) left bottom/calc(100% - var(--cc)) 1px,linear-gradient(var(--soft),var(--soft)) right top/1px calc(100% - var(--cc)),
+    linear-gradient(to bottom right,transparent calc(50% - .8px),var(--soft) 0 calc(50% + .8px),transparent 0) left top/var(--cc) var(--cc),
+    linear-gradient(to bottom right,transparent calc(50% - .8px),var(--soft) 0 calc(50% + .8px),transparent 0) right bottom/var(--cc) var(--cc),
+    linear-gradient(135deg,transparent calc(var(--cc) * .7071 + .5px),var(--panel) 0) left top/100% 51%,linear-gradient(-45deg,transparent calc(var(--cc) * .7071 + .5px),var(--panel) 0) right bottom/100% 51%;
+  background-repeat:no-repeat;background-origin:border-box}
+:root[data-borda="cantos"] .card,.bd-cantos .mc{border-color:color-mix(in srgb,var(--hair) 55%,transparent);border-radius:2px;background-origin:border-box;background-repeat:no-repeat;
+  background-image:linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink)),linear-gradient(var(--ink),var(--ink));
+  background-size:16px 2px,2px 16px,16px 2px,2px 16px,16px 2px,2px 16px,16px 2px,2px 16px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%}
 :root[data-borda="corrente"] .card,.bd-corrente .mc{border:5px solid transparent;border-image:repeating-linear-gradient(90deg,var(--amb) 0 7px,transparent 7px 9px,color-mix(in srgb,var(--amb) 60%,var(--bg)) 9px 16px,transparent 16px 18px) 5}
-:root[data-borda="teia"] .card,.bd-teia .mc{border-color:var(--soft);background-image:repeating-radial-gradient(circle at 0 0,transparent 0 10px,color-mix(in srgb,var(--ink) 25%,transparent) 10px 11px),repeating-conic-gradient(from 90deg at 0 0,color-mix(in srgb,var(--ink) 25%,transparent) 0 .6deg,transparent .6deg 15deg);background-size:56px 56px;background-repeat:no-repeat}
-:root[data-borda="naipes"] .card,.bd-naipes .mc{border-color:var(--amb);position:relative}
-:root[data-borda="naipes"] .card::before,:root[data-borda="naipes"] .card::after,.bd-naipes .mc::before,.bd-naipes .mc::after{position:absolute;font:700 13px Georgia,serif;pointer-events:none}
-:root[data-borda="naipes"] .card::before,.bd-naipes .mc::before{content:"♠";top:4px;left:7px;color:var(--ink)}
-:root[data-borda="naipes"] .card::after,.bd-naipes .mc::after{content:"♥";bottom:4px;right:7px;color:var(--red)}
-:root[data-borda="aura"] .card,.bd-aura .mc{border-color:var(--n2)}
+:root[data-borda="aura"] .card,.bd-aura .mc{border-color:var(--nen-forte,var(--n2))}
 :root[data-hover="contorno"] .card:hover{border-color:var(--ink)}
 :root[data-hover="shu"] .card:hover{border-color:var(--aura);box-shadow:0 0 0 2px color-mix(in srgb,var(--aura) 50%,transparent),0 0 16px -2px var(--aura)}
 .gb-en{position:fixed;z-index:58;pointer-events:none;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2px solid var(--aura);animation:hjEn .7s ease-out forwards}
@@ -121,7 +123,7 @@ const CSS = `
   .tr-deslizar .tA{animation:hjSlideA 3s ease-in-out infinite} .tr-deslizar .tB{animation:hjSlideB 3s ease-in-out infinite}
   .tr-glitch .mc{animation:hjGlitchPv 2.6s steps(1) infinite}
 }
-@keyframes hjBordaAura{0%,100%{box-shadow:0 0 0 1px var(--n2),0 0 6px -2px var(--n2)}50%{box-shadow:0 0 0 2px var(--n2),0 0 18px 2px var(--n2)}}
+@keyframes hjBordaAura{0%,100%{box-shadow:0 0 0 1px var(--nen-forte,var(--n2)),0 0 6px -2px var(--nen-forte,var(--n2))}50%{box-shadow:0 0 0 2px var(--nen-forte,var(--n2)),0 0 18px 2px var(--nen-forte,var(--n2))}}
 @keyframes hjContorno{0%,40%{border-color:var(--hair)}50%,90%{border-color:var(--ink)}}
 @keyframes hjShu{0%,40%{box-shadow:none;border-color:var(--hair)}55%,90%{box-shadow:0 0 0 2px color-mix(in srgb,var(--aura) 50%,transparent),0 0 16px -2px var(--aura);border-color:var(--aura)}}
 @keyframes hjVira{0%{transform:perspective(600px) rotateY(0)}100%{transform:perspective(600px) rotateY(360deg)}}
