@@ -6,12 +6,14 @@
 // contorno, afina até o cursor, cede com o peso e atrasa quando ele mexe, e abre buracos quando estica muito, até virar
 // teia de fios. O card vai junto, puxado e inclinado pelo ponto de onde a goma sai. Passando do limite, a membrana rasga:
 // a parte presa ao card volta como elástico (passa do ponto e volta), a ponta solta some, uma onda corre a borda inteira e
-// o card balança como mola até parar; depois a goma se recolhe. Voltar para dentro do card antes de rasgar recolhe a
-// membrana sem rasgo; parado fora do card, ela rasga sozinha.
+// o card balança como mola até parar; depois a goma se recolhe. A puxada sempre aparece: a membrana dura ao menos
+// 0,22 s, por mais rápido que o cursor saia, e o card a segue firme (até 16 px, menos nos cards pesados); entrar noutro card
+// não rasga a anterior (até 3 membranas ao mesmo tempo). O rasgo dá ao card o tranco do elástico e solta respingos.
+// Voltar para dentro do card antes de rasgar recolhe a membrana sem rasgo; parado fora do card, ela rasga sozinha.
 // Física de verdade a 240 Hz: mola com pouco amortecimento nos cards e massa pelo tamanho (card pequeno pula, painel
 // grande mal mexe); o meio da membrana é um ponto com massa e mola, por isso ela atrasa e balança. O card só se move pelas
 // propriedades translate e rotate do estilo, que somam com o transform que o jogo já usa.
-//   const h = CURSORES.bungee.cola(raiz, {seletor: '.card', rompe: 160, lento: 1})   h.ajusta({rompe: 200})   h.desliga()
+//   const h = CURSORES.bungee.cola(raiz, {seletor: '.card', rompe: 130, lento: 1})   h.ajusta({rompe: 200})   h.desliga()
 //   (raiz = document.documentElement no jogo, com o desenho numa camada fixa da tela inteira; ou um elemento, como a tela
 //   preta da bancada, com a camada dentro dele; rompe = até quantos px a membrana estica antes de rasgar; lento = câmera
 //   lenta; um elemento com data-sem-goma, e o que estiver dentro dele, fica de fora)
@@ -22,12 +24,14 @@ const ROSA = '#FF5C8A', ROSA_ESC = '#E8457A', VINHO = '#8E2457', BRILHO = 'rgba(
 const DT = 1 / 240, PASSO = 4;     // passo da física (s) e o espaçamento dos pontos do contorno (px)
 const OMEGA = 2 * Math.PI * 2.6;   // a mola do card: uns 2,6 balanços por segundo
 const ZETA = .14;                  // pouco amortecimento: solto, o card balança algumas vezes antes de parar
-const KG = 55, L0 = 10;            // a membrana: força por px esticado e o quanto estica sem puxar
+const L0 = 10;                     // a membrana estica isso sem puxar o card
+const SEGURA = .22;                // segundos que a membrana dura no mínimo, por mais rápido que o cursor saia
+const MAXM = 3;                    // membranas puxando ao mesmo tempo (a mais velha rasga)
 const MASSA = 26000;               // px² de card por unidade de massa
 const GIRO = .45;                  // quanto do torque vira giro (o card é preso no layout; girar muito parece quebrado)
 const GROSSO = 4.4;                // grossura média da goma no contorno (px)
 const COBRE = .34;                 // segundos para a goma dar a volta no card
-const PARADO = 2.5;                // segundos com o cursor parado fora do card até a membrana rasgar sozinha
+const PARADO = 1.2;                // segundos com o cursor parado fora do card até a membrana rasgar sozinha
 const TAU = Math.PI * 2;
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 const suave = (a, b, x) => { const t = lim((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -48,7 +52,7 @@ function contorno(hw, hh, r){
 }
 
 function cola(raiz, cfg){
-  cfg = Object.assign({seletor: '.card', rompe: 160, lento: 1}, cfg);
+  cfg = Object.assign({seletor: '.card', rompe: 130, lento: 1}, cfg);
   const tela = raiz === document.documentElement || raiz === document.body;
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.style.cssText = `position:${tela ? 'fixed' : 'absolute'};left:0;top:0;pointer-events:none;z-index:${tela ? 2147482000 : 5}`;
@@ -98,10 +102,9 @@ function cola(raiz, cfg){
 
   // ---- o cursor
   let mx = -1e4, my = -1e4, mvx = 0, mvy = 0, tMove = 0, sobre = null;
-  // ---- a goma: a capa de cada card (no contorno), a membrana puxada (uma só) e as que rasgaram e estão voltando
-  const capas = new Map();
-  let memb = null, soltas = 0;
-  const rasgos = [];
+  // ---- a goma: a capa de cada card (no contorno), as membranas puxadas, as que rasgaram e estão voltando e os respingos
+  const capas = new Map(), membs = [], rasgos = [], respingos = [];
+  let soltas = 0;
 
   function capa(el){
     const c = corpo(el); medeCorpo(c);
@@ -126,25 +129,39 @@ function cola(raiz, cfg){
   }
   // o cursor saiu do card: a borda é puxada a partir do ponto mais perto dele
   function puxa(v){
+    if(membs.some(m => m.v === v)) return;
     const [ia] = maisPerto(v.c, mx, my), [ax, ay] = borda(v.c, ia);
-    memb = {v, ia, t: 0, d: Math.hypot(mx - ax, my - ay), Mx: (ax + mx) / 2, My: (ay + my) / 2, Mvx: 0, Mvy: 0};
+    membs.push({v, ia, t: 0, d: Math.hypot(mx - ax, my - ay), Mx: (ax + mx) / 2, My: (ay + my) / 2, Mvx: 0, Mvy: 0});
+    if(membs.length > MAXM) rasga(membs[0]);
   }
-  // passou do limite (ou entrou noutro card, ou ficou parado): a membrana rasga
-  function rasga(){
-    if(!memb) return;
-    const m = memb; memb = null; soltas++;
+  // quanto o card vai junto com a membrana: até Dp px, conforme ela estica
+  const puxada = c => Math.min(16, 22 / Math.sqrt(c.m));
+  const tensao = m => suave(0, cfg.rompe, m.d - L0);
+  // passou do limite (ou ficou parado, ou o cursor saiu): a membrana rasga. O card leva o tranco do elástico (passa do
+  // lugar para o outro lado) e respingos de goma voam do ponto do rasgo
+  function rasga(m){
+    const i = membs.indexOf(m); if(i < 0) return;
+    membs.splice(i, 1); soltas++;
+    const c = m.v.c, [ax, ay] = borda(c, m.ia), dx = mx - ax, dy = my - ay, d = Math.hypot(dx, dy) || 1;
+    const tranco = puxada(c) * tensao(m) * OMEGA * .9; c.vx -= dx / d * tranco; c.vy -= dy / d * tranco;
     rasgos.push({v: m.v, ia: m.ia, t: 0, Tx: mx, Ty: my, Mx: m.Mx, My: m.My, d: m.d});
-    onda(m.v, m.ia, 1.5);
+    onda(m.v, m.ia, 1.6);
+    const rx = ax + dx * .62, ry = ay + dy * .62;
+    for(let k = 0; k < 7; k++){
+      const lado = k % 2 ? 1 : -1, v = 160 + Math.random() * 260, ang = Math.atan2(dy, dx) + lado * (.9 + Math.random() * 1.1) + (k < 2 ? Math.PI * (k ? 0 : 1) - lado * 1.4 : 0);
+      respingos.push({x: rx, y: ry, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v - 120, r: 1.4 + Math.random() * 1.8, t: 0});
+    }
   }
+  const rasgaTudo = () => { while(membs.length) rasga(membs[0]); };
   // voltou para dentro antes de rasgar: a membrana se recolhe sem rasgo
-  function recolhe(){ if(!memb) return; onda(memb.v, memb.ia, .8); memb = null; }
+  function recolhe(m){ const i = membs.indexOf(m); if(i < 0) return; onda(m.v, m.ia, .8); membs.splice(i, 1); }
   const onda = (v, i, a) => { v.ondas.push({s: i * v.c.k.ds, t: 0, a}); if(v.ondas.length > 6) v.ondas.shift(); };
 
   function passo(h){
     // a capa: corre pelo contorno até fechar; sem cursor nem membrana, se recolhe (fica mais fina até sumir)
     for(const [el, v] of capas){
       v.t += h; v.cobre = Math.min(1, v.cobre + h / COBRE);
-      const presa = sobre === el || (memb && memb.v === v) || rasgos.some(r => r.v === v);
+      const presa = sobre === el || membs.some(m => m.v === v) || rasgos.some(r => r.v === v);
       if(!presa && v.fase === 'cobre' && v.cobre >= 1) v.fase = 'espera', v.te = 0;
       if(v.fase === 'espera' && !presa && (v.te += h) > .35) v.fase = 'sai';
       if(presa && v.fase !== 'cobre') v.fase = 'cobre';
@@ -156,17 +173,17 @@ function cola(raiz, cfg){
       if(v.qtd <= 0) capas.delete(el);
     }
     // a membrana: o meio tem massa e mola (atrasa e cede com o peso); puxa o card pelo ponto de onde sai
-    if(memb){
-      const m = memb, c = m.v.c, [ax, ay] = borda(c, m.ia), dx = mx - ax, dy = my - ay, d = Math.hypot(dx, dy) || 1e-6;
+    // (rasga passando do limite, mas só depois de SEGURA s, para a puxada sempre aparecer; o dobro do limite rasga já)
+    for(const m of [...membs]){
+      const c = m.v.c, [ax, ay] = borda(c, m.ia), d = Math.hypot(mx - ax, my - ay) || 1e-6;
       m.t += h; m.d = d;
       const w = 2 * Math.PI * 3.2, alvoX = (ax + mx) / 2, alvoY = (ay + my) / 2 + d * .07;
       m.Mvx += (w * w * (alvoX - m.Mx) - 2 * .3 * w * m.Mvx) * h; m.Mvy += (w * w * (alvoY - m.My) - 2 * .3 * w * m.Mvy) * h;
       m.Mx += m.Mvx * h; m.My += m.Mvy * h;
-      const F = Math.max(0, KG * (d - L0));
-      empurra(c, ax, ay, dx / d * F, dy / d * F, h);
-      if(d > cfg.rompe || performance.now() - tMove > PARADO * 1000) rasga();
+      if((d > cfg.rompe && m.t > SEGURA) || d > cfg.rompe * 2.2 || performance.now() - tMove > PARADO * 1000) rasga(m);
     }
-    for(let k = rasgos.length - 1; k >= 0; k--) if((rasgos[k].t += h) > .45) rasgos.splice(k, 1);
+    for(let k = rasgos.length - 1; k >= 0; k--) if((rasgos[k].t += h) > .6) rasgos.splice(k, 1);
+    for(let k = respingos.length - 1; k >= 0; k--){ const p = respingos[k]; p.t += h; p.vy += 1600 * h; p.vx *= Math.exp(-h * 1.5); p.x += p.vx * h; p.y += p.vy * h; if(p.t > .6) respingos.splice(k, 1); }
     // as gotas: o card acelerando para um lado empurra a gota para o outro (pêndulo); a gravidade e o tranco esticam
     for(const v of capas.values()){
       const c = v.c, ax = c.pvx === undefined ? 0 : (c.vx - c.pvx) / h, ay = c.pvy === undefined ? 0 : (c.vy - c.pvy) / h;
@@ -177,14 +194,23 @@ function cola(raiz, cfg){
         g.vL += (300 * (g.L0 - g.L) + (ge * cs + ax * sn - 1400) * .012 - 9 * g.vL) * h; g.L = lim(g.L + g.vL * h, 4, 34);
       }
     }
-    // os cards: mola de volta ao lugar, com pouco amortecimento
+    // os cards: puxados, seguem a membrana firme (quanto mais esticada, mais longe, até Dp px, inclinando pelo ponto de
+    // onde ela sai); soltos, mola de volta ao lugar com pouco amortecimento
     for(const c of corpos.values()){
       c.pvx = c.vx; c.pvy = c.vy;
-      c.vx += (-OMEGA * OMEGA * c.x - 2 * ZETA * OMEGA * c.vx) * h; c.vy += (-OMEGA * OMEGA * c.y - 2 * ZETA * OMEGA * c.vy) * h;
-      c.w += (-OMEGA * OMEGA * c.a - 2 * ZETA * OMEGA * c.w) * h;
+      let px = 0, py = 0, pa = 0, puxado = false;
+      for(const m of membs){
+        if(m.v.c !== c) continue;
+        const [ax, ay] = borda(c, m.ia), dx = mx - ax, dy = my - ay, d = Math.hypot(dx, dy) || 1, s = tensao(m), D = puxada(c);
+        const rx = ax - c.cx - c.x, ry = ay - c.cy - c.y;
+        px += dx / d * D * s; py += dy / d * D * s; pa += c.amax * s * (rx * dy - ry * dx) / ((Math.hypot(rx, ry) || 1) * d); puxado = true;
+      }
+      const om = puxado ? 2 * Math.PI * 4.5 : OMEGA, ze = puxado ? .55 : ZETA;
+      c.vx += (om * om * (px - c.x) - 2 * ze * om * c.vx) * h; c.vy += (om * om * (py - c.y) - 2 * ze * om * c.vy) * h;
+      c.w += (om * om * (pa - c.a) - 2 * ze * om * c.w) * h;
       c.x += c.vx * h; c.y += c.vy * h; c.a += c.w * h;
       // por segurança: um card nunca sai mais que uns px do lugar (o painel do lado não pode ser tampado)
-      const D = 20 / Math.sqrt(c.m), dd = Math.hypot(c.x, c.y);
+      const D = puxada(c) * 1.3, dd = Math.hypot(c.x, c.y);
       if(dd > D){ c.x *= D / dd; c.y *= D / dd; const vr = (c.vx * c.x + c.vy * c.y) / D; if(vr > 0){ c.vx -= vr * c.x / D; c.vy -= vr * c.y / D; } }
       if(Math.abs(c.a) > c.amax){ c.a = Math.sign(c.a) * c.amax; if(c.w * c.a > 0) c.w = 0; }
     }
@@ -281,22 +307,28 @@ function cola(raiz, cfg){
   function pinta(){
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, larg, alt);
     const [ox, oy] = origem();
-    if(memb){
-      const m = memb, c = m.v.c, k = m.d / cfg.rompe, base = Math.min(lim(34 - 20 * k, 14, 34), c.hw, c.hh + 6);
+    for(const m of membs){
+      const c = m.v.c, k = Math.min(1, m.d / cfg.rompe), base = Math.min(lim(34 - 20 * k, 14, 34), c.hw, c.hh + 6);
       membrana(c, m.ia, mx, my, m.Mx, m.My, base, 1.2 + 2.4 * (1 - k), furos(k), ox, oy);
     }
     for(const r of rasgos){
       // a parte presa ao card volta como elástico (passa do ponto e volta); a ponta solta encolhe até sumir
-      const c = r.v.c, [ax, ay] = borda(c, r.ia), q = .62 * Math.exp(-r.t * 9) * Math.cos(r.t * 24);
+      const c = r.v.c, [ax, ay] = borda(c, r.ia), q = .62 * Math.exp(-r.t * 6) * Math.cos(r.t * 19);
       if(q > .02){
         const tx = ax + (r.Tx - ax) * q, ty = ay + (r.Ty - ay) * q;
-        membrana(c, r.ia, tx, ty, ax + (r.Mx - ax) * q, ay + (r.My - ay) * q, Math.min(18, c.hw), 2.6, [], ox, oy);
+        membrana(c, r.ia, tx, ty, ax + (r.Mx - ax) * q, ay + (r.My - ay) * q, Math.min(24, c.hw), 3.4, [], ox, oy);
       }
       if(r.t < .16){
         const cx = ax + (r.Tx - ax) * .62, cy = ay + (r.Ty - ay) * .62, f = Math.exp(-r.t * 26), sx = r.Tx + (cx - r.Tx) * f, sy = r.Ty + (cy - r.Ty) * f;
         ctx.beginPath(); ctx.moveTo(sx - ox, sy - oy); ctx.lineTo(r.Tx - ox, r.Ty - oy);
         ctx.strokeStyle = ROSA_ESC; ctx.lineWidth = 2.4 * (1 - r.t / .16); ctx.lineCap = 'round'; ctx.stroke();
       }
+    }
+    for(const p of respingos){
+      const q = 1 - p.t / .6, sp = Math.hypot(p.vx, p.vy) || 1, est = 1 + Math.min(1.4, sp / 500);
+      ctx.save(); ctx.translate(p.x - ox, p.y - oy); ctx.rotate(Math.atan2(p.vy, p.vx)); ctx.scale(est, 1 / Math.sqrt(est));
+      ctx.beginPath(); ctx.arc(0, 0, p.r * (.4 + .6 * q), 0, TAU); ctx.fillStyle = ROSA; ctx.fill(); ctx.strokeStyle = VINHO; ctx.lineWidth = .7; ctx.stroke();
+      ctx.restore();
     }
     for(const v of capas.values()) pintaCapa(v, ox, oy);
   }
@@ -320,7 +352,7 @@ function cola(raiz, cfg){
     sobra += dt / Math.max(1, cfg.lento);
     while(sobra >= DT){ passo(DT); sobra -= DT; }
     move(); pinta();
-    if(capas.size || memb || rasgos.length || corpos.size) pedido = requestAnimationFrame(quadro);
+    if(capas.size || membs.length || rasgos.length || respingos.length || corpos.size) pedido = requestAnimationFrame(quadro);
     else { antes = 0; sobra = 0; }
   }
   const acorda = () => { if(!pedido) pedido = requestAnimationFrame(quadro); };
@@ -336,14 +368,14 @@ function cola(raiz, cfg){
     if(card !== sobre){
       const antigo = sobre; sobre = card;
       if(card){
-        if(memb && memb.v.c.el === card) recolhe(); else rasga();
+        const volta = membs.find(m => m.v.c.el === card); if(volta) recolhe(volta);
         capa(card);
       }
-      if(antigo && capas.has(antigo) && !memb && antigo !== card && !(card && antigo.contains(card))) puxa(capas.get(antigo));
+      if(antigo && capas.has(antigo) && antigo !== card && !(card && antigo.contains(card))) puxa(capas.get(antigo));
     }
     acorda();
   }
-  function sai(e){ if(tela && e.relatedTarget) return; sobre = null; rasga(); acorda(); }
+  function sai(e){ if(tela && e.relatedTarget) return; sobre = null; rasgaTudo(); acorda(); }
   const ouvintes = [['pointermove', mexe], [tela ? 'mouseout' : 'pointerleave', sai]];
   ouvintes.forEach(([n, f]) => ev.addEventListener(n, f, {passive: true}));
   const obs = tela ? null : new ResizeObserver(mede);
@@ -352,11 +384,11 @@ function cola(raiz, cfg){
 
   return {
     ajusta(o){ Object.assign(cfg, o); acorda(); },
-    estado: () => ({memb: memb && {d: memb.d, ia: memb.ia}, capas: [...capas.values()].map(v => ({cobre: v.cobre, qtd: v.qtd, fase: v.fase})), rasgos: rasgos.length, soltas,
+    estado: () => ({membs: membs.map(m => ({d: m.d, t: m.t})), capas: [...capas.values()].map(v => ({cobre: v.cobre, qtd: v.qtd, fase: v.fase})), rasgos: rasgos.length, soltas,
       cards: [...corpos.values()].map(c => ({x: c.x, y: c.y, a: c.a, m: c.m}))}),
     legenda(){
       const mx2 = Math.max(0, ...[...corpos.values()].map(c => Math.hypot(c.x, c.y)));
-      return (memb ? `membrana ${Math.round(memb.d)} de ${cfg.rompe} px` : rasgos.length ? 'rasgou' : capas.size ? 'goma no card' : 'sem goma')
+      return (membs.length ? membs.map(m => `membrana ${Math.round(m.d)} de ${cfg.rompe} px`).join(' + ') : rasgos.length ? 'rasgou' : capas.size ? 'goma no card' : 'sem goma')
         + ` · card a ${mx2.toFixed(1)} px do lugar · rasgou ${soltas}×`;
     },
     desliga(){
@@ -421,7 +453,7 @@ function liga(palco, cfg){
 (window.CURSORES = window.CURSORES || {}).bungee = {cola, liga,
   titulo: 'passe o mouse pelos cards · saia de um card devagar e vá longe',
   dica: 'ao entrar, a goma corre pelo contorno do card a partir do ponto tocado · dentro, a borda incha para o lado do cursor · ao sair, a borda é puxada numa membrana que vira teia<br>passando do limite, ela rasga, a parte do card volta como elástico, uma onda corre a borda e o card balança · cards pequenos pulam mais; o painel grande da constância é pesado',
-  controles: [{k: 'rompe', rot: 'rasga com', min: 80, max: 320, un: ' px', padrao: 160},
+  controles: [{k: 'rompe', rot: 'rasga com', min: 80, max: 320, un: ' px', padrao: 130},
     {k: 'lento', rot: 'câmera lenta', min: 1, max: 6, un: '×', padrao: 1},
     {k: 'claro', rot: 'fundo claro', min: 0, max: 1, un: '', padrao: 0}]};
 })();
