@@ -28,6 +28,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta4", "nome": "atualização da Torre Trick", "data": "2026-10-20",
+   "resumo": "A Masadora ficou mais fácil de navegar: a Aparência agora vem em quatro famílias, o card é enxuto e o detalhe abre ao lado. Chegaram para provar as transições de aba novas (a fumaça do Morel e a aba sugada da Deme-chan) e as correntes do Kurapika refeitas, e várias bordas, hovers e cursores foram ajustados.",
+   "itens": [
+     {"ic": "coin", "t": "Loja em famílias", "d": "A Aparência agora tem quatro famílias (Perfil, Cores e fundo, Cards e telas, Efeitos e sons), com um chip por prateleira. O card mostra só prévia, nome, preço e o botão; clique nele para ver o detalhe ao lado. Uma busca e os filtros numa linha só, e o que você já tem fica escondido de início (continua em Comprados)."},
+     {"ic": "card", "t": "Transições de aba novas", "d": "Prove em Troca de aba: a Fumaça do Morel cobre a tela e se desfaz já na aba nova, e na Deme-chan a aba velha é sugada para o canto. O Deslizar agora vai no sentido das abas e o Glitch rasga a tela de verdade (na versão nova). A aba troca na hora do clique, a animação não atrasa nada (#134)."},
+     {"ic": "spider", "t": "Correntes do Kurapika e bordas", "d": "A corrente virou uma família só: na borda, com a esfera da Dowsing Chain balançando; na barra de XP, com a Judgment Chain; e escarlate na vida do chefão. A corrente que você usa não vaza mais para as prévias da loja. Bordas: Canto cortado no lugar da tracejada, Cantos nos quatro lados, e a Aura viva na cor do seu tipo de Nen; a Carta de baralho e a Teia saíram para serem repensadas (#134, #142)."},
+     {"ic": "tower", "t": "Ajustes rápidos", "d": "A Carta que vira não reinicia o giro quando você mexe o mouse. Segurar o clique com a agulha, a carta ou o ioiô não marca mais o texto. O En ficou mais contido, o ioiô voltou a ser um só (o raio carrega segurando parado) e os Fogos passaram a raro. Os ícones dos chefões saíram da loja: escolha cada um direto na aba Chefões (#134, #142)."}
+   ]},
   {"versao": "0.9.2-beta3", "nome": "atualização da Torre Trick", "data": "2026-10-20",
    "resumo": "A Masadora mostra tudo de novo: o que você já comprou continua na vitrine com o selo \"já comprado\" (e segue em Comprados), e dá para ver a loja por categoria ou por raridade. Os hovers ganharam arte nova para provar, o Godspeed foi refeito, a agulha, o ioiô, o Jajanken e as chamas fecharam, e as ideias que ainda não têm arte aparecem como \"em desenvolvimento\".",
    "itens": [
