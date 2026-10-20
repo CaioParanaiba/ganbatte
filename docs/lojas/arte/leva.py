@@ -12,11 +12,12 @@ WEB.mkdir(exist_ok=True)
 
 for pasta, nome in [("cursores", "carta"), ("cursores", "agulha"), ("cursores", "ioio"), ("efeitos", "godspeed"),
                     ("efeitos", "jajanken"), ("heatmap", "cartas"), ("heatmap", "chamas"), ("hover", "bungee"),
-                    ("hover", "en"), ("hover", "vira"), ("hover", "shu"), ("hover", "contorno"), ("prazo", "countdown")]:
+                    ("hover", "en"), ("hover", "vira"), ("hover", "shu"), ("hover", "contorno"), ("prazo", "countdown"),
+                    ("correntes", "corrente")]:
     shutil.copyfile(ARTE / pasta / f"{nome}.js", WEB / f"{nome}.js")
 
-# [id da fila, largura no jogo]: os carimbos e o emblema aparecem a ~100 px na licença grande; a borda é fatiada (12 %)
-for id_, larg in [("bd-corrente", 384), ("corrente-tira", 372), ("lic-exame", 200), ("lic-chefao", 200), ("lg-exame", 200),
+# [id da fila, largura no jogo]: os carimbos e o emblema aparecem a ~100 px na licença grande (as correntes são desenhadas no correntes/corrente.js)
+for id_, larg in [("lic-exame", 200), ("lic-chefao", 200), ("lg-exame", 200),
                   ("lic-emb-aranha", 240)]:
     subprocess.run(["magick", str(ARTE / "aprovadas" / id_ / f"{id_}.png"), "-resize", f"{larg}x", "-strip",
                     "-define", "png:compression-level=9", str(WEB / f"{id_}.png")], check=True)

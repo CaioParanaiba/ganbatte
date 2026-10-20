@@ -38,7 +38,7 @@ const CSS = `
 :root[data-font="arcade"] :is(h1,h3,.wal7),:root[data-font="arcade"] h2:not(.card h2){font-family:var(--f-dot);font-weight:400}
 /* ---------- efeitos na tela ---------- */
 @media (prefers-reduced-motion:no-preference){
-  :root[data-fx~="corrente"] :is(.xpbar > b,.l-bar i),.fxd.corrente .xpbar > b{
+  :root[data-fx~="corrente"] :is(.xpbar > b,.l-bar i):not(.fxd *),.fxd.corrente .xpbar > b{   /* :not(.fxd *): não vaza para as prévias da loja (#142) */
     background:repeating-linear-gradient(90deg,var(--amb) 0 9px,color-mix(in srgb,var(--amb) 30%,transparent) 9px 11px,color-mix(in srgb,var(--amb) 70%,var(--bg)) 11px 20px,color-mix(in srgb,var(--amb) 30%,transparent) 20px 22px);
     background-size:44px 100%;animation:hjCorrente 1.1s linear infinite;box-shadow:0 0 8px -1px var(--amb)}
   :root[data-fx~="digita"].gb-entra :is(h1,h3,.card h2),:root[data-fx~="digita"].gb-entra h2:not(.card h2),.fxd.digita .mini b{animation:hjDigita .75s steps(22) both}

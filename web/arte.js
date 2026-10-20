@@ -15,8 +15,9 @@ const IMG = n => (window.GB_ARTE_IMG || {})[n] || `arte/${n}.png`;   // no modo 
 const ST = {fechado:'fechado', finalizar:'falta finalizar', aberto:'em aberto', dev:'em desenvolvimento'};
 /* id do item na loja → st: o status da arte; tx: o que é e o que falta; sem: true quando ainda não há versão nova para ver */
 const ARTE = {
-  'hp-corrente':   {st:'fechado', tx:'A tira de corrente aprovada (16/10). Na nova, a vida do chefão vira a corrente desenhada.'},
-  'bd-corrente':   {st:'finalizar', tx:'Provisória: variação 1, com 11 px de espessura. Falta decidir se a versão refeita, com a corrente toda dentro da faixa, substitui esta.'},
+  'hp-corrente':   {st:'fechado', tx:'Aprovada (20/10): a vida do chefão vira a corrente escarlate, presa pela ponta; o trecho perdido fica com a corrente apagada.'},
+  'bd-corrente':   {st:'fechado', tx:'Aprovada (20/10): a corrente da licença, fina, com uma argola em cada canto e a esfera da Dowsing Chain balançando no canto de baixo (acelera com o mouse).'},
+  'fx-corrente':   {st:'fechado', tx:'Aprovada (20/10): a corrente vai e volta presa à lâmina da Judgment Chain, na ponta da barra de XP.'},
   'cr-carta':      {st:'fechado', tx:'Aprovada (17/10). Feita em código: clique atira a carta, segurar prende na Bungee Gum, parado ele vira a carta.'},
   'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
   'cr-ioio':       {st:'fechado', tx:'Aprovado (20/10). Feito em código: dois ioiôs; clique desce, segurar dorme e carrega os fios de eletricidade, soltar volta (carregado, como raio).'},
@@ -66,6 +67,11 @@ const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
 
 /* a licença inteira (o cartão novo), que não é item da loja: aparece no provador da Associação */
 const CARTAO = {st:'finalizar', tx:'O cartão novo, fiel ao do anime, com lugar para as estrelas, o carimbo e o emblema, foi aprovado como provisório. Falta decidir como a versão em pé entra no placar.'};
+/* efeitos (data-fx, uma lista) cuja nova é só CSS: provando com a nova, o efeito vira "X-nova" no <html> e na prévia */
+const FX_NOVA = ['fx-corrente'];
+/* a corrente do Kurapika (web/arte/corrente.js): as imagens saem do gerador, a borda com a Dowsing Chain, a barra de XP
+   com a Judgment Chain e a vida do chefão escarlate */
+const CH = window.GB_CORRENTE, CHP = CH && CH.pendulo(2), CHL = CH && CH.lamina(), CHU = s => CH ? CH.uri(s) : 'none';
 const VER = {};   // id → 'antiga' ou 'nova', só nesta tela (o padrão é a nova)
 const tem = id => !!ARTE[id];
 const nova = id => tem(id) && !ARTE[id].sem && VER[id] !== 'antiga';
@@ -98,8 +104,31 @@ const CSS = `
 #faixa-prova .ar-tg{border-color:#0b0d12} #faixa-prova .ar-tg button{color:#0b0d12} #faixa-prova .ar-tg button[aria-pressed="true"]{background:#0b0d12;color:#fff}
 .ar-naipe{width:1.05em;height:1.05em;vertical-align:-.15em;display:inline-block} .tl-emb .ar-naipe{color:var(--ink)}
 /* ---------- a versão nova no jogo (provando) e nas prévias da loja ---------- */
-:root[data-borda="corrente-nova"] .card,.bd-corrente-nova .mc{border:11px solid transparent;border-image:url(${IMG('bd-corrente')}) 12% / 11px round}
-:root[data-hp="corrente-nova"] :is(.hp4 > b,.l-boss .hp i),.hp-corrente-nova .hp7 > i > b{background:url(${IMG('corrente-tira')}) 0 50%/auto 100% repeat-x}
+${CH ? `
+:root[data-borda="corrente-nova"] .card{position:relative}
+:root[data-borda="corrente-nova"] .card,.bd-corrente-nova .mc{border:9px solid transparent;border-image:${CHU(CH.borda())} 64 / 9px round;background-clip:padding-box;border-radius:8px}
+:root[data-borda="corrente-nova"] .card::after,.bd-corrente-nova .mc::after{--u:calc(9px / 64);content:"";position:absolute;pointer-events:none;z-index:3;
+  background:${CHU(CHP.svg)} 0 0/100% 100% no-repeat;width:calc(${CHP.W} * var(--u));height:calc(${CHP.H} * var(--u));
+  right:calc(-4.5px - ${CHP.W} * var(--u) / 2);top:calc(100% + 4.5px - ${CHP.ay} * var(--u));transform-origin:50% calc(${CHP.ay} * var(--u))}
+:root[data-hp="corrente-nova"] :is(.hp4,.l-boss .hp),.hp-corrente-nova .hp7 > i{background:linear-gradient(color-mix(in srgb,var(--track) 72%,transparent),color-mix(in srgb,var(--track) 72%,transparent)),${CHU(CH.faixa())} 0 50%/auto 100% repeat-x,var(--track)}
+:root[data-hp="corrente-nova"] :is(.hp4 > b,.l-boss .hp i),.hp-corrente-nova .hp7 > i > b{background:${CHU(CH.faixa(CH.ESCARLATE))} right 0 center/auto 100% repeat-x}
+:root[data-fx~="corrente-nova"] :is(.xpbar,.l-bar):not(.fxd *),.fxd.corrente-nova .xpbar{overflow:visible}
+:root[data-fx~="corrente-nova"] .l-bar i:not(.fxd *){position:relative}
+:root[data-fx~="corrente-nova"] :is(.xpbar > b,.l-bar i):not(.fxd *),.fxd.corrente-nova .xpbar > b{--ida:5px;box-shadow:none;
+  background:${CHU(CH.faixa())} right 0 center/auto 100% repeat-x,color-mix(in srgb,var(--soft) 26%,var(--track))}
+:root[data-fx~="corrente-nova"] :is(.xpbar > b,.l-bar i):not(.fxd *)::after,.fxd.corrente-nova .xpbar > b::after{content:"";position:absolute;left:100%;top:50%;height:190%;
+  aspect-ratio:${CHL.W}/${CH.B};translate:${(-CHL.ix / CHL.W * 100).toFixed(2)}% -50%;background:${CHU(CHL.svg)} 0 0/100% 100% no-repeat}
+@media (prefers-reduced-motion:no-preference){
+  :root[data-borda="corrente-nova"] .card::after,.bd-corrente-nova .mc::after{animation:chDows 1.6s ease-in-out infinite alternate}
+  :root[data-borda="corrente-nova"] .card:hover::after,.bd-corrente-nova:hover .mc::after{animation:chDowsBusca .55s ease-in-out infinite alternate}
+  :root[data-fx~="corrente-nova"] :is(.xpbar > b,.l-bar i):not(.fxd *),.fxd.corrente-nova .xpbar > b{animation:chPuxa 1.5s ease-in-out infinite alternate}
+  :root[data-fx~="corrente-nova"] :is(.xpbar > b,.l-bar i):not(.fxd *)::after,.fxd.corrente-nova .xpbar > b::after{animation:chPuxaL 1.5s ease-in-out infinite alternate}
+}
+@keyframes chDows{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+@keyframes chDowsBusca{from{transform:rotate(-26deg)}to{transform:rotate(26deg)}}
+/* ida e volta: a corrente e a lâmina andam juntas (o encaixe não muda) e nunca passam do XP de verdade */
+@keyframes chPuxa{from{background-position:right 0 center,0 0}to{background-position:right var(--ida) center,0 0}}
+@keyframes chPuxaL{from{transform:none}to{transform:translateX(calc(var(--ida) * -1))}}` : ''}
 :root[data-cursor$="-nova"] body,:root[data-cursor$="-nova"] body *{cursor:none!important}
 .pvc .cur7 canvas{width:72px;height:72px}
 .pvc .hmn{position:absolute;inset:12px 18px;display:grid;place-items:center} .pvc .hmn .l-hg{--n:9;grid-template-rows:repeat(4,auto);grid-template-columns:repeat(9,15px)}`;
@@ -171,7 +200,12 @@ window.GB_ARTE = {
     return `<div class="pv dev7"><b>em desenvolvimento</b><span>${esc(it.quem)}</span></div>`;
   },
   /* provando com a nova: o valor do atributo ganha "-nova" (vista() no index.html) */
-  vista(v, it){ if(nova(it.id) && it.eq && v[it.cat] === it.eq[it.cat] && ['borda','cursor','hp','heat','hover'].includes(it.cat)) v[it.cat] += '-nova'; },
+  vista(v, it){
+    if(nova(it.id) && it.eq && v[it.cat] === it.eq[it.cat] && ['borda','cursor','hp','heat','hover'].includes(it.cat)) v[it.cat] += '-nova';
+    if(FX_NOVA.includes(it.id) && nova(it.id)) v.fx = v.fx.map(f => f === it.fx ? f + '-nova' : f);
+  },
+  /* a classe de efeito da prévia do card (a nova, se for a escolhida) */
+  fx: it => FX_NOVA.includes(it.id) && nova(it.id) ? it.fx + '-nova' : it.fx,
   /* a classe da prévia do card (pvNovo): a nova, se for a escolhida */
   k(it){ const k = it.eq[it.cat]; return nova(it.id) && ['borda','hp','heat'].includes(it.cat) ? k + '-nova' : k; },
   /* a prévia do cursor e do heatmap novos no card */
