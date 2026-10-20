@@ -6,12 +6,12 @@
 // campo alcança "sentem" o En: cada canto que fica dentro trava com uma cantoneira de aura que pisca forte e fica acesa
 // fraca, o contorno do card dá um sinal e ele estremece de leve, como quem percebeu. Com o mouse dentro, o campo pende
 // para o lado do cursor e solta pulsos de tempos em tempos, como um sonar: a onda corre do card até a borda e reacende os
-// cantos que passa. Ao sair, o En recolhe para dentro do card e o Ten dá um último lampejo. Variação da Pitou: o campo
-// fica irregular e solta tentáculos que vão até os cards por perto e os tocam.
+// cantos que passa. Ao sair, o En recolhe para dentro do card e o Ten dá um último lampejo. O padrão é o En da Pitou
+// (escolha do Caio): o campo fica irregular e solta tentáculos que vão até os cards por perto e os tocam; pitou: 0 = redondo.
 // O alcance cai com o tamanho do card: num painel enorme o En mal sai dele. O campo não pinta por cima do próprio card.
 // Física de verdade a 240 Hz: cada ponto da borda do campo é uma mola (abre passando do ponto, recolhe sem passar); o
 // tremor dos cards sentidos é uma mola curta, só pelas propriedades translate do estilo, que somam com o transform do jogo.
-//   const h = CURSORES.en.cola(raiz, {seletor: '.card', alcance: 200, lento: 1, pitou: 0, cor: '#B4A0FF'})   h.ajusta({pitou: 1})   h.desliga()
+//   const h = CURSORES.en.cola(raiz, {seletor: '.card', alcance: 200, lento: 1, pitou: 1, cor: '#B4A0FF'})   h.ajusta({pitou: 1})   h.desliga()
 //   (raiz = document.documentElement no jogo, com o desenho numa camada fixa da tela inteira; ou um elemento, como a tela
 //   preta da bancada, com a camada dentro dele; alcance = até quantos px o campo passa do card pequeno; cor = a da aura,
 //   sem ela vem do --aura da página; lento = câmera lenta; um elemento com data-sem-en, e o que estiver dentro dele, fica de fora)
@@ -56,7 +56,7 @@ function sdf(x, y, hw, hh, r){
 }
 
 function cola(raiz, cfg){
-  cfg = Object.assign({seletor: '.card', alcance: 200, lento: 1, pitou: 0}, cfg);
+  cfg = Object.assign({seletor: '.card', alcance: 200, lento: 1, pitou: 1}, cfg);
   const tela = raiz === document.documentElement || raiz === document.body;
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.style.cssText = `position:${tela ? 'fixed' : 'absolute'};left:0;top:0;pointer-events:none;z-index:${tela ? 2147482000 : 5}`;
@@ -491,7 +491,7 @@ function liga(palco, cfg){
   titulo: 'passe o mouse pelos cards · fique parado num card pequeno e veja os vizinhos',
   dica: 'ao entrar, o card acende o Ten (a aura sobe pelo contorno) e o En se abre do ponto tocado, passando dos limites do card · os cards que o campo alcança sentem: os cantos travam e acendem, o contorno dá um sinal e o card estremece<br>com o mouse dentro, o campo pende para o cursor e solta pulsos de sonar · ao sair, o En recolhe e o Ten dá um lampejo · Pitou: campo irregular, com tentáculos que tocam os cards perto · o painel grande da constância quase não abre',
   controles: [{k: 'alcance', rot: 'alcance', min: 100, max: 360, un: ' px', padrao: 200},
-    {k: 'pitou', rot: 'Pitou', min: 0, max: 1, un: '', padrao: 0},
+    {k: 'pitou', rot: 'Pitou', min: 0, max: 1, un: '', padrao: 1},
     {k: 'lento', rot: 'câmera lenta', min: 1, max: 6, un: '×', padrao: 1},
     {k: 'claro', rot: 'fundo claro', min: 0, max: 1, un: '', padrao: 0}]};
 })();
