@@ -153,7 +153,7 @@ const COS = [
   {id:'bd-corte', cat:'borda', prova:1, n:'Canto cortado', d:'Borda fina com dois cantos cortados em diagonal.', p:0, eq:{borda:'corte'}},
   {id:'bd-cantos', cat:'borda', prova:1, n:'Cantos', d:'Os quatro cantos marcados, como um visor, e o resto da borda bem fraco.', p:0, eq:{borda:'cantos'}},
   {id:'bd-corrente', cat:'borda', prova:1, n:'Corrente do Kurapika', d:'A borda vira uma corrente de elos dourados.', p:0, eq:{borda:'corrente'}},
-  {id:'bd-teia', cat:'borda', prova:1, n:'Teia', d:'Uma teia no canto de cada card.', p:0, eq:{borda:'teia'}},
+  {id:'bd-teia', cat:'borda', prova:1, n:'Teia da Ryodan', d:'Uma teia no canto de baixo de cada card, com a aranha de 12 patas.', p:0, eq:{borda:'teia'}},
   {id:'bd-aura', cat:'borda', prova:1, n:'Borda de aura viva', d:'A borda respira na cor do seu tipo de Nen.', p:0, eq:{borda:'aura'}},
   {id:'hv-contorno', cat:'hover', prova:1, n:'Contorno', d:'O card ganha contorno quando o mouse passa.', p:0, eq:{hover:'contorno'}},
   {id:'hv-shu', cat:'hover', prova:1, n:'Shu', d:'O card se cobre de aura, como um objeto reforçado com Shu.', p:0, eq:{hover:'shu'}},
