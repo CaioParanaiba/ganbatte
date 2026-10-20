@@ -1,15 +1,15 @@
 // Cursor com física do ioiô do Killua (cr-ioio), desenhado em código, sem imagem.
-// São dois, como no anime, um em cada dedo, enrolados logo abaixo do cursor (dá para ligar com um só). Clicar joga os
-// dois para baixo, um logo depois do outro (desenrolam girando); segurar deixa eles "dormindo" na ponta do fio esticado;
-// soltar dá o tranco e eles sobem enrolando, mais rápido quanto mais giro sobrou. Os dois são de aço: batem um no outro
-// (tac) e trocam um pouco do giro. Dormindo por mais de meio segundo, o Killua carrega os fios de eletricidade: o fio
-// pisca em raio e o ioiô solta faíscas, cada vez mais; soltando carregado, eles voltam como raio e a mão estala.
+// Um só, enrolado logo abaixo do cursor (dois atrapalhavam os truques). Clicar joga o ioiô para baixo (desenrola
+// girando); segurar deixa ele "dormindo" na ponta do fio esticado; soltar dá o tranco e ele sobe enrolando, mais rápido
+// quanto mais giro sobrou. O raio é concentração: dormindo com a mão parada, o Killua carrega o fio de eletricidade (o
+// fio pisca em raio e o ioiô solta faíscas, cada vez mais); mexer a mão para fazer um truque deixa a carga escoar. Soltando
+// carregado, ele volta como raio e a mão estala.
 // O fio é uma corda de verdade (Verlet, 16 nós, passo fixo de 1/240 s) presa no cursor, e o ioiô é o peso da ponta:
 // balança com o mouse, afrouxa se o mouse desce mais rápido que ele, dá a volta ao mundo se girar forte e, encostado no
 // chão enquanto dorme, anda (walk the dog) gastando o giro. O borrão do giro é a média de cópias do ioiô girado no quadro.
 // É de aço e pesado: batendo forte numa borda, solta faíscas e marca a borda; voltando rápido, estala na mão. Com o mouse
 // parado uns segundos, um choque desce do dedo até o ioiô, que estala em raios e dá um giro.
-//   const io = CURSORES.ioio.liga(elemento, {raio: 15, fio: 170, ioios: 2})   io.ajusta({fio: 220})   io.estado()   io.desliga()
+//   const io = CURSORES.ioio.liga(elemento, {raio: 15, fio: 170})   io.ajusta({fio: 220})   io.estado()   io.desliga()
 //   CURSORES.ioio.desenha(ctx, x, y, raio, angulo, varredura)       só o ioiô, para as prévias paradas
 //   titulo, dica, controles, previas(el, cfg) e io.legenda(): o que a bancada mostra
 (() => {
@@ -23,7 +23,7 @@ const SONO = 8;                  // segundos para o giro cair a 1/e dormindo
 const EIXO = .2;                 // raio do eixo, em raios do ioiô: o fio que desenrola a v px/s gira o ioiô a v/eixo
 const ATRITO = .5, INERCIA = 1.5;// chão: atrito, e quanto o giro sente o empurrão (m·R²/I de um ioiô com peso no aro)
 const ARGOLA = 4.5;              // a argola do fio no dedo, que é o ponteiro
-const DEDO = 6;                  // com dois ioiôs, cada argola fica a 6 px do ponteiro, uma em cada dedo
+const QUIETA = 90;               // a mão mais lenta que isso (px/s) está parada: só assim o Killua carrega o fio
 const BATE = 650;                // mais rápido que isso contra a borda (px/s), o aço solta faíscas e marca a borda
 const RAIOS = '#BFE6FF';         // a eletricidade do Killua
 
@@ -69,54 +69,48 @@ function desenha(ctx, x, y, R, ang = 0, varre = 0){
 
 function liga(alvo, op = {}){
   const tela = alvo === document.body || alvo === document.documentElement;
-  const cfg = {raio: 15, fio: 170, ioios: 2, ...op};
+  const cfg = {raio: 15, fio: 170, ...op};
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.setAttribute('aria-hidden', 'true');
   cv.style.cssText = `position:${tela ? 'fixed' : 'absolute'};left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2147483000;opacity:0;transition:opacity .15s`;
   (tela ? document.body : alvo).append(cv);
   const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // cada ioiô tem a sua corda: nós 0 (o dedo, segue o mouse) a N (o ioiô); o (ox, oy) é a posição do passo anterior (Verlet)
+  // a corda: nós 0 (o dedo, segue o mouse) a N (o ioiô); o (ox, oy) é a posição do passo anterior (Verlet)
   const w = new Float64Array(N + 1).fill(1); w[0] = 0; w[N] = .012;   // o fio é leve; o ioiô de aço pesa como 80 nós
-  const novo = () => ({px: new Float64Array(N + 1), py: new Float64Array(N + 1), ox: new Float64Array(N + 1), oy: new Float64Array(N + 1),
-    L: 0, vL: 0, fase: 'mao', giro: 0, giroFundo: 1, ang: Math.random() * 6, pulso: 0, espera: 0, eletrico: false,
-    mundo: 0, rodou: 0, angAnt: 0, noChao: false, recarga: 0});   // mundo e noChao: os truques desde o último arremesso
-  let ios = [], R, Lmin, Lmax, preso = false, carga = 0, tSono = 0, tac = 0;
+  const io = {px: new Float64Array(N + 1), py: new Float64Array(N + 1), ox: new Float64Array(N + 1), oy: new Float64Array(N + 1),
+    L: 0, vL: 0, fase: 'mao', giro: 0, giroFundo: 1, ang: Math.random() * 6, pulso: 0, eletrico: false,
+    mundo: 0, rodou: 0, angAnt: 0, noChao: false, recarga: 0};   // mundo e noChao: os truques desde o último arremesso
+  let R, Lmin, Lmax, preso = false, carga = 0, tQuieto = 0, vMao = 0;
   let mx = 0, my = 0, dentro = false, larg = 0, alt = 0, dpr = 1, antes = 0, sobra = 0, pedido = 0, parado = 0;
   let ocioso = 0, fezTruque = false, choque = 0;
-  const marcas = [];   // faíscas, marcas na borda, a batida entre os dois e os estalos na mão
+  const marcas = [];   // faíscas, marcas na borda e os estalos na mão
 
-  // com dois, um em cada dedo, um pouco para cada lado do ponteiro
-  const dedo = i => ios.length < 2 ? 0 : (i ? DEDO : -DEDO);
-  function medidas(){
-    R = cfg.raio; Lmin = R + ARGOLA + 7; Lmax = Math.max(Lmin + 30, cfg.fio);
-    const n = Math.max(1, Math.min(2, Math.round(cfg.ioios)));
-    if(ios.length !== n){ ios = Array.from({length: n}, novo); ios.forEach((io, i) => poe(io, (dentro ? mx : larg / 2) + dedo(i), dentro ? my : alt / 3)); }
-  }
+  function medidas(){ R = cfg.raio; Lmin = R + ARGOLA + 7; Lmax = Math.max(Lmin + 30, cfg.fio); }
   function mede(){
     const r = tela ? {width: innerWidth, height: innerHeight} : alvo.getBoundingClientRect();
     larg = r.width; alt = r.height; dpr = devicePixelRatio || 1;
     cv.width = Math.round(larg * dpr); cv.height = Math.round(alt * dpr); acorda();
   }
   // recomeça enrolado, parado, pendurado reto embaixo do dedo
-  function poe(io, x, y){
-    Object.assign(io, {fase: 'mao', vL: 0, L: Lmin, giro: 0, espera: 0, eletrico: false});
+  function poe(x, y){
+    Object.assign(io, {fase: 'mao', vL: 0, L: Lmin, giro: 0, eletrico: false});
     for(let i = 0; i <= N; i++){ io.px[i] = io.ox[i] = x; io.py[i] = io.oy[i] = y + Lmin * i / N; }
   }
-  function joga(io){ io.fase = 'desce'; io.vL = Math.max(io.vL, JOGA); io.mundo = io.rodou = 0; }
+  function joga(){ io.fase = 'desce'; io.vL = Math.max(io.vL, JOGA); io.mundo = io.rodou = 0; }
   // o tranco: o fio prende no eixo e o giro que sobrou vira subida. Com o giro de quando chegou no fim do fio, ele volta
   // estalando na mão; dormiu muito ou gastou andando no chão, volta devagar (mas sempre volta: o puxão completa).
   // Carregado de eletricidade, volta como um raio
-  function sobe(io){
+  function sobe(){
     const g = Math.min(1, Math.abs(io.giro) / io.giroFundo), chega = io.eletrico ? CHEGA[1] * 1.4 : CHEGA[0] + (CHEGA[1] - CHEGA[0]) * g * g;
     io.vL = -Math.sqrt(2 * SOBE * Math.max(0, io.L - Lmin) + chega * chega); io.fase = 'sobe';
   }
 
   // o comprimento do fio solto muda pelas fases (a corda só sabe que cada segmento mede L/N)
-  function fio(io, h){
+  function fio(h){
     if(io.fase === 'desce'){
       io.vL += DESCE * h; io.L += io.vL * h; io.giro = io.vL / (R * EIXO);
-      if(io.L >= Lmax){ io.giroFundo = Math.max(1, io.giro); if(preso) io.fase = 'sono'; else { io.L = Lmax; sobe(io); } }
+      if(io.L >= Lmax){ io.giroFundo = Math.max(1, io.giro); if(preso) io.fase = 'sono'; else { io.L = Lmax; sobe(); } }
     } else if(io.fase === 'sono'){
       io.vL += (-12000 * (io.L - Lmax) - 55 * io.vL) * h; io.L += io.vL * h;   // fim do fio: estica uns px com o tranco e assenta
       io.giro *= Math.exp(-h / SONO * (1 - carga));                            // carregado, a eletricidade mantém o giro
@@ -130,7 +124,7 @@ function liga(alvo, op = {}){
         }
         else if(-io.vL > 300 && !calmo) marcas.push({tipo: 'estalo', x: io.px[0], y: io.py[0], t: 0});
         io.L = Lmin; io.fase = 'mao'; io.vL = -.2 * io.vL; io.pulso = 1; io.eletrico = false;
-        if(preso) joga(io);
+        if(preso) joga();
       }
       else if(io.vL > -CHEGA[0] / 2) io.vL = -CHEGA[0] / 2;
     } else {
@@ -141,71 +135,49 @@ function liga(alvo, op = {}){
   }
 
   function passo(h, ax, ay){
-    // os dois dormindo com o clique preso: o Killua carrega os fios de eletricidade
-    const dormindo = preso && ios.every(io => io.fase === 'sono');
-    tSono = dormindo ? tSono + h : 0;
-    carga = dormindo ? (tSono > .5 && !calmo ? Math.min(1, carga + h / .9) : carga) : 0;
+    const {px, py, ox, oy} = io;
+    // a velocidade da mão, suavizada (~0,1 s): o puxão de um truque conta, o tremor do dedo não
+    vMao += (Math.hypot(ax - px[0], ay - py[0]) / h - vMao) * (1 - Math.exp(-h / .1));
+    // dormindo com a mão parada, o Killua carrega o fio de eletricidade (depois de meio segundo quieto); mexendo, escoa
+    const quieto = preso && io.fase === 'sono' && vMao < QUIETA && !calmo;
+    tQuieto = quieto ? tQuieto + h : 0;
+    if(!preso || io.fase !== 'sono') carga = 0;
+    else if(tQuieto > .5) carga = Math.min(1, carga + h / .9);
+    else if(!quieto) carga = Math.max(0, carga - h / .35);
     const g = G * h * h, chao = alt - R;
-    ios.forEach((io, k) => {
-      if(io.espera > 0 && (io.espera -= h) <= 0){ io.espera = 0; if(io.fase === 'mao') joga(io); }
-      fio(io, h);
-      const {px, py, ox, oy} = io;
-      const amIo = Math.exp(-h * (calmo ? 8 : io.fase === 'mao' ? 5 : .5)), amFio = Math.exp(-h * 4);
-      for(let i = 1; i <= N; i++){
-        const am = i === N ? amIo : amFio, vx = (px[i] - ox[i]) * am, vy = (py[i] - oy[i]) * am;
-        ox[i] = px[i]; oy[i] = py[i]; px[i] += vx; py[i] += vy + g;
-      }
-      ox[0] = px[0]; oy[0] = py[0]; px[0] = ax + dedo(k); py[0] = ay;
-    });
-    // quanto os dois se aproximam antes de se tocar (para o tac da batida)
-    let chega = 0;
-    if(ios.length === 2){
-      const [a, b] = ios, dx = b.px[N] - a.px[N], dy = b.py[N] - a.py[N], d = Math.hypot(dx, dy) || 1e-6;
-      chega = -(((b.px[N] - b.ox[N]) - (a.px[N] - a.ox[N])) * dx + ((b.py[N] - b.oy[N]) - (a.py[N] - a.oy[N])) * dy) / d / h;
+    fio(h);
+    const amIo = Math.exp(-h * (calmo ? 8 : io.fase === 'mao' ? 5 : .5)), amFio = Math.exp(-h * 4);
+    for(let i = 1; i <= N; i++){
+      const am = i === N ? amIo : amFio, vx = (px[i] - ox[i]) * am, vy = (py[i] - oy[i]) * am;
+      ox[i] = px[i]; oy[i] = py[i]; px[i] += vx; py[i] += vy + g;
     }
+    ox[0] = px[0]; oy[0] = py[0]; px[0] = ax; py[0] = ay;
+    const seg = io.L / N;
     for(let k = 0; k < VOLTAS; k++){
-      for(const {px, py, L} of ios){
-        const seg = L / N;
-        // cada segmento mede L/N
-        for(let i = 0; i < N; i++){
-          const dx = px[i + 1] - px[i], dy = py[i + 1] - py[i], d = Math.hypot(dx, dy) || 1e-6, ws = w[i] + w[i + 1];
-          const c = (d - seg) / (d * ws);
-          px[i] += dx * c * w[i]; py[i] += dy * c * w[i]; px[i + 1] -= dx * c * w[i + 1]; py[i + 1] -= dy * c * w[i + 1];
-        }
-        // e nenhum nó fica mais longe do dedo do que o fio até ele deixa: o fio não estica, nem com o ioiô pesado
-        for(let i = 2; i <= N; i++){
-          const dx = px[i] - px[0], dy = py[i] - py[0], d = Math.hypot(dx, dy), lim = seg * i;
-          if(d > lim){ const c = (d - lim) / d; px[i] -= dx * c; py[i] -= dy * c; }
-        }
-        // as bordas: o fio fica dentro, e o ioiô com o corpo todo dentro
-        for(let i = 1; i < N; i++){ px[i] = Math.min(larg - 1, Math.max(1, px[i])); py[i] = Math.min(alt - 1, Math.max(1, py[i])); }
-        px[N] = Math.min(larg - R, Math.max(R, px[N])); py[N] = Math.min(chao, Math.max(R, py[N]));
+      // cada segmento mede L/N
+      for(let i = 0; i < N; i++){
+        const dx = px[i + 1] - px[i], dy = py[i + 1] - py[i], d = Math.hypot(dx, dy) || 1e-6, ws = w[i] + w[i + 1];
+        const c = (d - seg) / (d * ws);
+        px[i] += dx * c * w[i]; py[i] += dy * c * w[i]; px[i + 1] -= dx * c * w[i + 1]; py[i + 1] -= dy * c * w[i + 1];
       }
-      // os dois são de aço: um não entra no outro (cada um cede metade)
-      if(ios.length === 2){
-        const [a, b] = ios, dx = b.px[N] - a.px[N], dy = b.py[N] - a.py[N], d = Math.hypot(dx, dy) || 1e-6;
-        if(d < 2 * R){ const c = (2 * R - d) / d / 2; a.px[N] -= dx * c; a.py[N] -= dy * c; b.px[N] += dx * c; b.py[N] += dy * c; }
+      // e nenhum nó fica mais longe do dedo do que o fio até ele deixa: o fio não estica, nem com o ioiô pesado
+      for(let i = 2; i <= N; i++){
+        const dx = px[i] - px[0], dy = py[i] - py[0], d = Math.hypot(dx, dy), lim = seg * i;
+        if(d > lim){ const c = (d - lim) / d; px[i] -= dx * c; py[i] -= dy * c; }
       }
+      // as bordas: o fio fica dentro, e o ioiô com o corpo todo dentro
+      for(let i = 1; i < N; i++){ px[i] = Math.min(larg - 1, Math.max(1, px[i])); py[i] = Math.min(alt - 1, Math.max(1, py[i])); }
+      px[N] = Math.min(larg - R, Math.max(R, px[N])); py[N] = Math.min(chao, Math.max(R, py[N]));
     }
-    // bateram um no outro com força: tac, e o giro de um passa um pouco para o outro
-    tac = Math.max(0, tac - h);
-    if(ios.length === 2 && chega > 420 && !tac){
-      const [a, b] = ios;
-      if(Math.hypot(b.px[N] - a.px[N], b.py[N] - a.py[N]) < 2 * R + .5){
-        tac = .1;
-        if(!calmo) marcas.push({tipo: 'tac', x: (a.px[N] + b.px[N]) / 2, y: (a.py[N] + b.py[N]) / 2, t: 0, f: Math.min(1, chega / 1500), el: carga > .3});
-        const m = (a.giro - b.giro) * .15; a.giro -= m; b.giro += m;
-      }
-    }
-    ios.forEach(io => depois(io, h, chao));
+    depois(h, chao);
   }
-  function depois(io, h, chao){
+  function depois(h, chao){
     const {px, py, ox, oy} = io;
     // batida nas bordas: o ioiô volta com 30% da velocidade (devagar, só encosta)
     const dx = px[N] - ox[N], dy = py[N] - oy[N];
     io.recarga = Math.max(0, io.recarga - h);
-    if((py[N] >= chao - .01 && dy > 0) || (py[N] <= R + .01 && dy < 0)){ oy[N] = py[N] + (Math.abs(dy) > .5 ? dy * .3 : 0); bateu(io, Math.abs(dy) / h, 0, dy > 0 ? -1 : 1); }
-    if((px[N] >= larg - R - .01 && dx > 0) || (px[N] <= R + .01 && dx < 0)){ ox[N] = px[N] + (Math.abs(dx) > .5 ? dx * .3 : 0); bateu(io, Math.abs(dx) / h, dx > 0 ? -1 : 1, 0); }
+    if((py[N] >= chao - .01 && dy > 0) || (py[N] <= R + .01 && dy < 0)){ oy[N] = py[N] + (Math.abs(dy) > .5 ? dy * .3 : 0); bateu(Math.abs(dy) / h, 0, dy > 0 ? -1 : 1); }
+    if((px[N] >= larg - R - .01 && dx > 0) || (px[N] <= R + .01 && dx < 0)){ ox[N] = px[N] + (Math.abs(dx) > .5 ? dx * .3 : 0); bateu(Math.abs(dx) / h, dx > 0 ? -1 : 1, 0); }
     // volta ao mundo: o ioiô dá a volta inteira em torno do dedo com o fio esticado
     const a = Math.atan2(py[N] - py[0], px[N] - px[0]);
     if(io.fase === 'sono' && Math.hypot(px[N] - px[0], py[N] - py[0]) > .8 * io.L){
@@ -224,7 +196,7 @@ function liga(alvo, op = {}){
   }
 
   // o aço bate na borda: faíscas que caem e uma marca curta na borda, que some (carregado, solta raios também)
-  function bateu(io, v, nx, ny){
+  function bateu(v, nx, ny){
     if(v < BATE || io.recarga || calmo) return;
     io.recarga = .12;
     const f = Math.min(1, (v - BATE) / 1800 + .35), x = io.px[N] - nx * R, y = io.py[N] - ny * R;
@@ -241,7 +213,7 @@ function liga(alvo, op = {}){
     marcas.push({tipo: 'bate', x, y, nx, ny, t: 0, f, p, tr, el: carga > .3 || io.eletrico});
   }
   // um ponto no fio: u vai de 0 (dedo) a 1 (ioiô)
-  function noFio(io, u){
+  function noFio(u){
     const q = Math.min(N, Math.max(0, u * N)), i = Math.min(N - 1, Math.floor(q)), k = q - i;
     return [io.px[i] + (io.px[i + 1] - io.px[i]) * k, io.py[i] + (io.py[i + 1] - io.py[i]) * k];
   }
@@ -261,7 +233,7 @@ function liga(alvo, op = {}){
     }
   }
   // o fio carregado vira raio: passa pelos nós tremendo para os lados
-  function fioRaio(io, amp, lw){
+  function fioRaio(amp, lw){
     const {px, py} = io;
     ctx.beginPath(); ctx.moveTo(px[0], py[0]);
     for(let i = 1; i < N; i++){
@@ -292,13 +264,6 @@ function liga(alvo, op = {}){
           ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - vx * .018, y - vy * .018);
           ctx.strokeStyle = m.el ? `rgba(191,230,255,${1 - m.t / .45})` : `rgba(255,214,122,${1 - m.t / .45})`; ctx.lineWidth = 1.4; ctx.stroke();
         }
-      } else if(m.tipo === 'tac'){
-        // os dois batem: um clarão curto em cruz no ponto de contato
-        const k = m.t / .14, d0 = 2 + 6 * k, d1 = d0 + 7 * m.f * (1 - k);
-        ctx.beginPath();
-        for(let i = 0; i < 6; i++){ const a = i * Math.PI / 3 + .3; ctx.moveTo(m.x + Math.cos(a) * d0, m.y + Math.sin(a) * d0); ctx.lineTo(m.x + Math.cos(a) * d1, m.y + Math.sin(a) * d1); }
-        ctx.lineCap = 'round'; ctx.strokeStyle = `rgba(255,255,255,${1 - k})`; ctx.lineWidth = 1.3; ctx.stroke();
-        if(m.el && k < .7) estala(m.x, m.y, 2, 20, 3, 3);
       } else if(m.tipo === 'estalo'){
         // voltou rápido para a mão: quatro tracinhos em volta da argola
         const k = m.t / .16, d0 = ARGOLA + 3 + 6 * k, d1 = d0 + 4 * (1 - k);
@@ -311,25 +276,25 @@ function liga(alvo, op = {}){
       }
     }
   }
-  const DURA = {bate: .7, tac: .14, estalo: .16, raios: .35};
+  const DURA = {bate: .7, estalo: .16, raios: .35};
   // o choque do ócio: a faísca desce pelo fio (curto: ele está enrolado) e o ioiô estala em raios em volta
-  function pintaChoque(io){
+  function pintaChoque(){
     const {px, py} = io;
     if(choque < .14){
-      const u = choque / .14, [x0, y0] = noFio(io, Math.max(0, u - .14)), [x1, y1] = noFio(io, u);
+      const u = choque / .14, [x0, y0] = noFio(Math.max(0, u - .14)), [x1, y1] = noFio(u);
       raio(x0, y0, x1, y1, 4, 2.6); tracoRaio(1.4);
       ctx.beginPath(); ctx.arc(x1, y1, 1.8, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill();
     } else if(choque < .9){
       const k = (choque - .14) / .76;
       if(k < .6){
-        const [x0, y0] = noFio(io, 0), dx = x0 - px[N], dy = y0 - py[N], d = Math.hypot(dx, dy) || 1;
+        const [x0, y0] = noFio(0), dx = x0 - px[N], dy = y0 - py[N], d = Math.hypot(dx, dy) || 1;
         raio(x0, y0, px[N] + dx / d * R, py[N] + dy / d * R, 4, 2.4); tracoRaio(1.2);
       }
       estala(px[N], py[N], R * 1.02, R * 1.9 * (1 - .3 * k), Math.round(7 * (1 - k * k)) + 1, R * .16, 1.3);
     }
   }
 
-  function pintaFio(io){
+  function pintaFio(){
     const {px, py} = io;
     // o fio sai da borda da argola e passa liso pelos nós (curvas pelos pontos médios); contorno escuro para o tema claro
     let j = 1; while(j < N && Math.hypot(px[j] - px[0], py[j] - py[0]) < ARGOLA) j++;
@@ -343,23 +308,19 @@ function liga(alvo, op = {}){
   }
   function pinta(dt){
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, larg, alt);
-    for(const io of ios){
-      pintaFio(io);
-      // carregando, o fio pisca em raio (cada vez mais) e o ioiô solta faíscas; voltando como raio, o fio é o raio
-      if(carga && io.fase === 'sono' && Math.random() < .35 + .65 * carga) fioRaio(io, 1.5 + 3 * carga, .8 + .7 * carga);
-      if(io.eletrico && io.fase === 'sobe') fioRaio(io, 3.5, 1.6);
-      desenha(ctx, io.px[N], io.py[N], R, io.ang, calmo ? 0 : io.giro * dt * .7);
-      if(carga > .15 && io.fase === 'sono') estala(io.px[N], io.py[N], R * 1.02, R * (1.3 + .7 * carga), Math.ceil(4 * carga), R * .15);
-      if(choque) pintaChoque(io);
-    }
+    pintaFio();
+    // carregando, o fio pisca em raio (cada vez mais) e o ioiô solta faíscas; voltando como raio, o fio é o raio
+    if(carga && io.fase === 'sono' && Math.random() < .35 + .65 * carga) fioRaio(1.5 + 3 * carga, .8 + .7 * carga);
+    if(io.eletrico && io.fase === 'sobe') fioRaio(3.5, 1.6);
+    desenha(ctx, io.px[N], io.py[N], R, io.ang, calmo ? 0 : io.giro * dt * .7);
+    if(carga > .15 && io.fase === 'sono') estala(io.px[N], io.py[N], R * 1.02, R * (1.3 + .7 * carga), Math.ceil(4 * carga), R * .15);
+    if(choque) pintaChoque();
     pintaMarcas();
-    // a argola no dedo é o ponteiro (com dois, o clique cai entre elas); pulsa quando o ioiô volta para a mão
-    for(const io of ios){
-      const ra = ARGOLA * (1 + .35 * io.pulso * io.pulso);
-      ctx.beginPath(); ctx.arc(io.px[0], io.py[0], ra, 0, 2 * Math.PI);
-      ctx.strokeStyle = 'rgba(8,10,16,.6)'; ctx.lineWidth = 3.4; ctx.stroke();
-      ctx.strokeStyle = carga > .5 ? RAIOS : FIO; ctx.lineWidth = 1.6; ctx.stroke();
-    }
+    // a argola no dedo é o ponteiro; pulsa quando o ioiô volta para a mão
+    const ra = ARGOLA * (1 + .35 * io.pulso * io.pulso);
+    ctx.beginPath(); ctx.arc(io.px[0], io.py[0], ra, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(8,10,16,.6)'; ctx.lineWidth = 3.4; ctx.stroke();
+    ctx.strokeStyle = carga > .5 ? RAIOS : FIO; ctx.lineWidth = 1.6; ctx.stroke();
   }
 
   function quadro(agora){
@@ -368,9 +329,9 @@ function liga(alvo, op = {}){
     sobra += dt; let n = Math.floor(sobra / PASSO); sobra -= n * PASSO;
     if(n > 12){ n = 12; sobra = 0; }
     // o dedo anda em linha reta entre os quadros, dividido pelos passos: puxão rápido não atravessa nada
-    const bx = ios[0].px[0] - dedo(0), by = ios[0].py[0];
+    const bx = io.px[0], by = io.py[0];
     for(let i = 1; i <= n; i++) passo(PASSO, i < n ? bx + (mx - bx) * i / n : mx, i < n ? by + (my - by) * i / n : my);
-    for(const io of ios) io.pulso = Math.max(0, io.pulso - dt / .18);
+    io.pulso = Math.max(0, io.pulso - dt / .18);
     for(let i = marcas.length - 1; i >= 0; i--){
       const m = marcas[i]; m.t += dt;
       if(m.p) for(const q of m.p){ q[0] += q[2] * dt; q[1] += q[3] * dt; q[3] += G * .5 * dt; q[2] *= Math.exp(-dt * 3); }
@@ -378,14 +339,14 @@ function liga(alvo, op = {}){
     }
     if(choque){
       const c0 = choque; choque += dt;
-      if(c0 < .14 && choque >= .14) for(const io of ios) if(io.fase === 'mao') io.giro = 38;   // o tranco do choque faz o ioiô girar no lugar
+      if(c0 < .14 && choque >= .14) if(io.fase === 'mao') io.giro = 38;   // o tranco do choque faz o ioiô girar no lugar
       if(choque > .9) choque = 0;
     }
     pinta(dt);
     // enrolados, sem balançar e sem mexer o mouse: o laço para até o próximo evento
-    const quietos = ios.every(io => io.fase === 'mao' && Math.hypot(io.px[N] - io.ox[N], io.py[N] - io.oy[N]) / PASSO < 1 && Math.abs(io.vL) < 1
-      && !io.pulso && !io.espera && Math.abs(io.giro) < .3);
-    parado = quietos && !choque && !marcas.length && Math.abs(mx - bx) + Math.abs(my - by) < .01 ? parado + 1 : 0;
+    const quieto = io.fase === 'mao' && Math.hypot(io.px[N] - io.ox[N], io.py[N] - io.oy[N]) / PASSO < 1 && Math.abs(io.vL) < 1
+      && !io.pulso && Math.abs(io.giro) < .3;
+    parado = quieto && !choque && !marcas.length && Math.abs(mx - bx) + Math.abs(my - by) < .01 ? parado + 1 : 0;
     if(parado < 30) pedido = requestAnimationFrame(quadro);
     else {
       // parado uns segundos: o Killua carrega o fio
@@ -399,10 +360,10 @@ function liga(alvo, op = {}){
   function move(e){
     if(e.pointerType === 'touch') return;
     [mx, my] = pos(e); clearTimeout(ocioso); fezTruque = false;
-    if(!dentro){ dentro = true; ios.forEach((io, i) => poe(io, mx + dedo(i), my)); cv.style.opacity = 1; }
+    if(!dentro){ dentro = true; poe(mx, my); cv.style.opacity = 1; }
     acorda();
   }
-  // clique: os dois descem, o segundo logo depois do primeiro, como o Killua joga
+  // clique: o ioiô desce
   // segurar não pode marcar texto: apertando, a página não começa seleção (user-select e selectstart); e num campo de texto o
   // clique é do campo, o cursor não segura nem atira ali
   const campo = e => !!(e.target.closest && e.target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])'));
@@ -414,14 +375,14 @@ function liga(alvo, op = {}){
   function aperta(e){
     if(e.pointerType === 'touch' || e.button !== 0 || campo(e)) return;
     move(e); preso = true; trava(true);
-    ios.forEach((io, i) => { if(io.fase === 'mao'){ if(i) io.espera = .07; else joga(io); } });
+    if(io.fase === 'mao') joga();
     if(!tela) try { alvo.setPointerCapture(e.pointerId); } catch {}
     acorda();
   }
-  // soltar: os que dormem voltam; carregados, voltam como raio
+  // soltar: se dorme, volta; carregado, volta como raio
   function solta(){
     if(!preso) return; preso = false; trava(false);
-    for(const io of ios) if(io.fase === 'sono'){ io.eletrico = carga > .4; sobe(io); }
+    if(io.fase === 'sono'){ io.eletrico = carga > .4; sobe(); }
     carga = 0; acorda();
   }
   function sai(){ if(preso) return; dentro = false; clearTimeout(ocioso); choque = 0; cv.style.opacity = 0; acorda(); }
@@ -430,18 +391,17 @@ function liga(alvo, op = {}){
   ouvintes.forEach(([n, f]) => ev.addEventListener(n, f));
   const obs = tela ? null : new ResizeObserver(mede);
   if(obs) obs.observe(alvo); else addEventListener('resize', mede);
-  mede(); medidas();
+  mede(); medidas(); poe(larg / 2, alt / 3);
 
   return {
     ajusta(o){ Object.assign(cfg, o); medidas(); acorda(); },
-    estado: () => ({fase: ios[0].fase, fases: ios.map(io => io.fase), voltas: ios[0].giro / (2 * Math.PI), fio: ios[0].L, preso, carga,
-      x: ios[0].px[N], y: ios[0].py[N], ioios: ios.map(io => ({x: io.px[N], y: io.py[N], giro: io.giro})), mundo: ios[0].mundo, noChao: ios[0].noChao}),
+    estado: () => ({fase: io.fase, voltas: io.giro / (2 * Math.PI), fio: io.L, preso, carga, mao: vMao,
+      x: io.px[N], y: io.py[N], mundo: io.mundo, noChao: io.noChao}),
     legenda(){
-      const fases = [...new Set(ios.map(io => FASES[io.fase]))].join(' / ');
-      const v = Math.max(...ios.map(io => Math.abs(io.giro / (2 * Math.PI)))), mundo = Math.max(...ios.map(io => io.fase !== 'mao' ? io.mundo : 0));
-      return fases + (v >= .5 ? ` · ${v.toFixed(v < 10 ? 1 : 0)} voltas/s` : '')
-        + (ios.some(io => io.noChao && Math.abs(io.giro) > 2 * Math.PI) ? ' · passeando com o cachorro' : '') + (mundo ? ` · volta ao mundo ×${mundo}` : '')
-        + (carga ? ` · carregando ${Math.round(carga * 100)}%` : '') + (ios.some(io => io.eletrico) ? ' · voltando como raio' : '')
+      const v = Math.abs(io.giro / (2 * Math.PI)), mundo = io.fase !== 'mao' ? io.mundo : 0;
+      return FASES[io.fase] + (v >= .5 ? ` · ${v.toFixed(v < 10 ? 1 : 0)} voltas/s` : '')
+        + (io.noChao && Math.abs(io.giro) > 2 * Math.PI ? ' · passeando com o cachorro' : '') + (mundo ? ` · volta ao mundo ×${mundo}` : '')
+        + (carga ? ` · carregando ${Math.round(carga * 100)}%` : '') + (io.eletrico ? ' · voltando como raio' : '')
         + (choque ? ' · choque no fio' : '');
     },
     desliga(){
@@ -466,7 +426,6 @@ function previas(el, cfg){
 }
 (window.CURSORES = window.CURSORES || {}).ioio = {liga, desenha, previas,
   titulo: 'mexa o mouse na tela preta · clique · segure · solte',
-  dica: 'clique: os dois descem · segurando: ficam esticados, dormindo, e o fio vai carregando de eletricidade · soltando: voltam (carregados, voltam como raio)<br>segurando, gire o mouse em círculos (volta ao mundo), encoste no chão (anda com o giro) ou bata um no outro e nas bordas · parado uns segundos: choque no fio',
-  controles: [{k: 'raio', rot: 'raio do ioiô', min: 9, max: 26, un: 'px', padrao: 15}, {k: 'fio', rot: 'fio', min: 90, max: 320, un: 'px', padrao: 170},
-    {k: 'ioios', rot: 'ioiôs', min: 1, max: 2, un: '', padrao: 2}]};
+  dica: 'clique: desce · segurando: fica esticado, dormindo · segurando com a mão parada: o fio carrega de eletricidade · soltando: volta (carregado, volta como raio)<br>segurando, gire o mouse em círculos (volta ao mundo), encoste no chão (anda com o giro) ou bata nas bordas; mexer a mão escoa a carga · parado uns segundos: choque no fio',
+  controles: [{k: 'raio', rot: 'raio do ioiô', min: 9, max: 26, un: 'px', padrao: 15}, {k: 'fio', rot: 'fio', min: 90, max: 320, un: 'px', padrao: 170}]};
 })();
