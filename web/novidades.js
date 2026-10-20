@@ -28,6 +28,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta3", "nome": "atualização da Torre Trick", "data": "2026-10-20",
+   "resumo": "A Masadora mostra tudo de novo: o que você já comprou continua na vitrine com o selo \"já comprado\" (e segue em Comprados), e dá para ver a loja por categoria ou por raridade. Os hovers ganharam arte nova para provar, o Godspeed foi refeito, a agulha, o ioiô, o Jajanken e as chamas fecharam, e as ideias que ainda não têm arte aparecem como \"em desenvolvimento\".",
+   "itens": [
+     {"ic": "coin", "t": "Vitrine inteira, por categoria ou raridade", "d": "O que é seu não some mais da Masadora: fica no lugar, com o selo \"já comprado\", e continua em Comprados. Em \"ver\", escolha por categoria (as prateleiras de sempre) ou por raridade (comum, raro, épico, lendário e o que não tem faixa, cada card com a prateleira dele). Os filtros de faixa, tema e arte nova valem nas duas."},
+     {"ic": "card", "t": "Hovers novos para provar", "d": "Bungee Gum, En da Pitou, Carta que vira, Shu e Contorno foram refeitos: o card é o protagonista e nada se desenha no cursor. Prove em Hover nos cards com a troca na nova; painéis grandes ganham a versão leve (#134)."},
+     {"ic": "tower", "t": "Godspeed refeito e mais itens fechados", "d": "O Godspeed ganhou o Kanmuru, o quadro negativo e a marca do raio no card. A agulha (com o fio de nen), os dois ioiôs do Killua, as três mãos do Jajanken e as chamas fecharam (#134)."},
+     {"ic": "antenna", "t": "Em desenvolvimento", "d": "Ideias aprovadas que ainda não têm arte entram na vitrine com o aviso \"em desenvolvimento\": a vara do Gon, as borboletas do Pouf, a costura da Machi, o Dragon Dive do Zeno, o Gungi, a fumaça do Morel e outras. A Marca de prazo é uma categoria nova em teste, com a bomba do Countdown do Genthru para ver (#134)."}
+   ]},
   {"versao": "0.9.2-beta2", "nome": "atualização da Torre Trick", "data": "2026-10-17",
    "resumo": "A arte nova das lojas chegou para provar: cursores com física, efeitos refeitos, heatmaps em cartas e chamas, carimbos desenhados e a licença hunter redesenhada. Cada item mostra se a arte já está fechada ou o que ainda falta, e dá para comparar a versão de hoje com a nova. Nada da arte nova se compra ainda, e o que você já tem continua igual.",
    "itens": [

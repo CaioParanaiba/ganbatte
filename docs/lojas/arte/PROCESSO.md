@@ -77,10 +77,14 @@ desenho original, sem traçar nem copiar. Salve-a em `refs/ID/` com `local-` no 
 
 Desde a 0.9.2-beta2 a arte da fila aparece no jogo para os devs provarem, sem venda. O que vai:
 
-- `python3 docs/lojas/arte/leva.py` copia os módulos em código (cursores, efeitos, heatmaps) e as imagens aprovadas
+- `python3 docs/lojas/arte/leva.py` copia os módulos em código (cursores, efeitos, heatmaps, hovers, marca de prazo) e as imagens aprovadas
   (reduzidas, com o `magick`) para `web/arte/`. Rode de novo quando um módulo ou uma imagem aprovada mudar.
 - `web/arte.js` (à mão): a tabela `ARTE` com o status de cada item da loja (`fechado`, `finalizar`, `aberto`) e a frase
   do que falta. **Ao mudar o status de um item na `FILA.md`, mude também aqui.** `CARTAO` é o status da licença inteira.
+- `IDEIAS` (no mesmo arquivo, desde a 0.9.2-beta3): cada linha `ideia` da `FILA.md` vira um card "em desenvolvimento"
+  na vitrine, com a prateleira, a faixa decidida e de quem é; não se compra nem se prova. Ideia nova na fila = linha nova
+  aqui; quando a arte sai, a linha passa para a `ARTE` e o item para o catálogo. Os hovers em código (`hover/`) colam nos
+  cards do jogo quando o `data-hover` ganha `-nova`.
 - `web/arte/licenca.js`: o cartão novo e os estojos do `licenca/prototipo.html`, com os dados reais do jogador. Mudou o
   protótipo? Leve a mudança para lá.
 - A versão nova só aparece no provar, no ▶ e no provador da Associação; ninguém compra nem equipa a arte nova.
