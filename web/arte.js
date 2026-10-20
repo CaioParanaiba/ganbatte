@@ -24,7 +24,6 @@ const ARTE = {
   'fx-jajanken':   {st:'fechado', tx:'Aprovado (20/10): as três mãos, com o grito em japonês. O ▶ da nova passa por pedra, papel e tesoura, nessa ordem.'},
   'hv-bungee':     {st:'finalizar', tx:'Quase fechado: espera a resposta final. A goma cobre o contorno do card; ao sair, a borda vira membrana, estica e rasga como elástico.'},
   'hv-en':         {st:'finalizar', tx:'Quase fechado: espera a resposta final. O card acende o Ten e o En da Pitou se abre do ponto tocado; os cards alcançados acendem os cantos.'},
-  'hv-vira':       {st:'fechado', tx:'Aprovado (20/10). A volta dispara ao entrar e sempre termina, passando pelo verso de Greed Island; os cards baixos viram deitados e o painel grande só inclina.'},
   'hv-shu':        {st:'fechado', tx:'Aprovado (20/10). A aura corre o contorno a partir do ponto tocado, duas faíscas correm a borda e ela escorre ao sair.'},
   'hv-contorno':   {st:'fechado', tx:'Aprovado (20/10). O contorno acende em 120 ms e apaga em 350 ms, sem piscar ao passar por vários cards.'},
   'hm-cartas':     {st:'fechado', tx:'Aprovada (17/10): carta de frente por nível, carta de figura no dia mais forte, verso no dia vazio e Coringa no dia salvo.'},
@@ -135,10 +134,13 @@ function cursor(){
   curK = k;
   if(k && window.CURSORES && CURSORES[k]){ cur = CURSORES[k].liga(document.body, {}); if(k === 'agulha') fonte(); }
 }
-/* ---------- hovers em código: colam nos cards quando o <html> pede um "-nova" (o tamanho do card já muda o efeito) ---------- */
+/* ---------- hovers em código: colam nos cards quando o <html> pede um "-nova" (o tamanho do card já muda o efeito) ----------
+   TROCADO: os que a versão de hoje tinha defeito e o código já a substituiu: ligam com ou sem "-nova" (vira: o giro em CSS
+   reiniciava a cada ~130 ms e girava painéis inteiros, #142) */
+const TROCADO = ['vira'];
 let hov = null, hovK = '';
 function hover(){
-  const v = document.documentElement.getAttribute('data-hover') || '', k = v.endsWith('-nova') ? v.slice(0, -5) : '';
+  const v = document.documentElement.getAttribute('data-hover') || '', k = v.endsWith('-nova') ? v.slice(0, -5) : TROCADO.includes(v) ? v : '';
   if(k === hovK) return;
   if(hov){ hov.desliga(); hov = null; }
   hovK = k;
