@@ -403,16 +403,24 @@ function liga(alvo, op = {}){
     acorda();
   }
   // clique: os dois descem, o segundo logo depois do primeiro, como o Killua joga
+  // segurar não pode marcar texto: apertando, a página não começa seleção (user-select e selectstart); e num campo de texto o
+  // clique é do campo, o cursor não segura nem atira ali
+  const campo = e => !!(e.target.closest && e.target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])'));
+  const semSel = e => e.preventDefault();
+  const trava = on => {
+    document.documentElement.style.userSelect = on ? 'none' : '';
+    document.removeEventListener('selectstart', semSel); if(on) document.addEventListener('selectstart', semSel);
+  };
   function aperta(e){
-    if(e.pointerType === 'touch' || e.button !== 0) return;
-    move(e); preso = true;
+    if(e.pointerType === 'touch' || e.button !== 0 || campo(e)) return;
+    move(e); preso = true; trava(true);
     ios.forEach((io, i) => { if(io.fase === 'mao'){ if(i) io.espera = .07; else joga(io); } });
     if(!tela) try { alvo.setPointerCapture(e.pointerId); } catch {}
     acorda();
   }
   // soltar: os que dormem voltam; carregados, voltam como raio
   function solta(){
-    if(!preso) return; preso = false;
+    if(!preso) return; preso = false; trava(false);
     for(const io of ios) if(io.fase === 'sono'){ io.eletrico = carga > .4; sobe(io); }
     carga = 0; acorda();
   }
@@ -439,7 +447,7 @@ function liga(alvo, op = {}){
     desliga(){
       ouvintes.forEach(([n, f]) => ev.removeEventListener(n, f));
       if(obs) obs.disconnect(); else removeEventListener('resize', mede);
-      cancelAnimationFrame(pedido); clearTimeout(ocioso); cv.remove();
+      trava(false); cancelAnimationFrame(pedido); clearTimeout(ocioso); cv.remove();
     },
   };
 }
