@@ -68,6 +68,20 @@ ASSET SHEET:
 A liberdade só é baixa onde o código precisa repetir ou esticar o desenho. Em peças de tamanho fixo (avatar, licença,
 retrato), a arte entra por cima como camada, então pode ser tão livre quanto quiser.
 
+## Faixa: o gatilho decide (20/10, com o Caio)
+
+O que separa raro de épico é **quando o efeito aparece**, não o quanto ele é bonito (a regra da #17 vista do desenho):
+
+- **Comum**: muda uma coisa só, parado (paleta, título, moldura fina).
+- **Raro**: desenho, não movimento. Parado, ou um disparo curto (menos de meio segundo) num momento que não é toda hora:
+  trocar de aba, tarefa atrasada, andar novo. CSS ou SVG, sem física; cabe numa sessão.
+- **Épico**: o personagem em ação. Em código, com física, a cada tarefa ou o tempo todo (cursores, efeitos de concluir,
+  fundos animados).
+- **Lendário**: uma cena, exclusiva de pacote ou conquista.
+
+Para não diluir os épicos: ideia nova entra como raro na versão simples, e só vira épico quando a ação é o item. Quando
+der, cada personagem ganha um par raro + épico (a Machi: borda costurada + costura ao concluir).
+
 ## Cores
 
 - **Tingível** (`tintable`): desenho em branco puro com sombras em cinza-claro. O jogo aplica a cor do tema ou da aura
