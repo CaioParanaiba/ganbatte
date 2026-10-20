@@ -15,6 +15,10 @@ for pasta, nome in [("cursores", "carta"), ("cursores", "agulha"), ("cursores", 
                     ("hover", "en"), ("hover", "vira"), ("hover", "shu"), ("hover", "contorno"), ("prazo", "countdown"),
                     ("correntes", "corrente")]:
     shutil.copyfile(ARTE / pasta / f"{nome}.js", WEB / f"{nome}.js")
+# transições de aba: a base vai como tr-base.js (o palco.js é o jogo de mentira da bancada, não vai)
+shutil.copyfile(ARTE / "transicoes" / "base.js", WEB / "tr-base.js")
+for nome in ["fumaca", "aspira", "deslizar", "glitch"]:
+    shutil.copyfile(ARTE / "transicoes" / f"{nome}.js", WEB / f"{nome}.js")
 
 # [id da fila, largura no jogo]: os carimbos e o emblema aparecem a ~100 px na licença grande (as correntes são desenhadas no correntes/corrente.js)
 for id_, larg in [("lic-exame", 200), ("lic-chefao", 200), ("lg-exame", 200),
