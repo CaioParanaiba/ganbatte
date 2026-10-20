@@ -809,6 +809,6 @@ class ArteNova(Base):
                 return e.code, None
         self.assertEqual(get("/arte.js"), (200, "text/javascript; charset=utf-8"))
         self.assertEqual(get("/arte/carta.js"), (200, "text/javascript; charset=utf-8"))
-        self.assertEqual(get("/arte/bd-corrente.png"), (200, "image/png"))
+        self.assertEqual(get("/arte/lic-exame.png"), (200, "image/png"))
         for c in ("/arte/nada.js", "/arte/..%2Fservidor.py", "/arte/carta.css", "/arte/Carta.js"):
             self.assertEqual(get(c)[0], 404, c)
