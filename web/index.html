@@ -1007,6 +1007,15 @@ a.btn{display:inline-block;text-decoration:none}
 .shopc .fil7 input[type=search],.shopc .fil7 select{border:1px solid var(--hair);background:var(--panel);color:var(--ink);border-radius:99px;padding:4px 12px;font:500 13px var(--f-ui)}
 .shopc .fil7 input[type=search]{flex:1 1 180px;min-width:0}
 .shopc .fil7 label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--soft);cursor:pointer}
+.shopc .fam7{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:12px}
+.shopc .fam7 button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;border:1px solid var(--hair);background:var(--panel)}
+.shopc .fam7 b{display:flex;justify-content:space-between;gap:8px;font:700 15px var(--f-hud)} .shopc .fam7 small,.shopc .chips7 small{font:600 11.5px var(--f-mono);color:var(--soft)}
+.shopc .fam7 span{font-size:12.5px;color:var(--soft)}
+.shopc .fam7 button[aria-pressed="true"]{border-color:var(--volt);background:color-mix(in srgb,var(--volt) 8%,var(--panel))}
+.shopc .fam7 button:focus-visible{outline:2px solid var(--prompt)}
+.shopc .chips7{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.shopc .chips7 button{border:1px solid var(--hair);background:transparent;border-radius:99px;padding:4px 12px;cursor:pointer;font:600 12.5px var(--f-ui);color:var(--soft)}
+.shopc .chips7 button[aria-pressed="true"]{color:var(--ink);border-color:var(--volt)}
 .it7 .info{padding:10px 12px;display:flex;flex-direction:column;gap:6px;flex:1} .it7 .info > .buy7{margin-top:auto}
 .it7 .info b{font-size:14px} .it7 .info p{margin:0;font-size:12.5px;color:var(--soft)}
 .it7 .buy7{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto}
@@ -1408,7 +1417,7 @@ let TESTE = null;   // modo teste da Masadora (só nos canais beta e grupo): {ow
 const R = {dif:'normal'};
 /* itens novos da #135: um por vez em cada um destes lugares, cada um com o seu atributo no <html> (efeitos.js) */
 const SLOTS = ['borda','hover','cursor','hp','heat','trans'];
-const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', ffa:'', fte:'', vis7:'cat', q7:'', ten7:true, dev7:false, isel:'', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
+const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', ffa:'', fte:'', vis7:'cat', q7:'', ten7:true, dev7:false, isel:'', fam7:'perfil', sec7:'', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
   borda:'', hover:'', cursor:'', hp:'', heat:'', trans:'', avatar:'logo', lic:'l2', hud:'logo', chefes:{}, anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
 try { UI.fxOff = localStorage.getItem('gb-fxoff') === '1'; } catch(e){}
 try { UI.cfold = JSON.parse(localStorage.getItem('gb-cfold') || '{}') || {}; } catch(e){ UI.cfold = {}; }   // caçadas recolhidas na Lista, por navegador
@@ -1905,6 +1914,11 @@ const SECS = {
   aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['prazo','Marca de prazo','Em teste: a marca na tarefa com prazo ou atrasada. Se os estilos não agradarem, a categoria sai inteira.'],['chefe','Ícones dos chefões','Retratos para os cards dos chefões, no lugar do ícone. São grátis: todos estão em Comprados, onde você escolhe o chefão de cada um. Derrote o chefão que está com ele e o retrato vira foto de perfil.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez.'],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações.'],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
   pixel:[['px','Mundo pixel','Primeiro desbloqueie o mundo; depois as peles.']],
 };
+/* as famílias da Aparência: [chave, nome, descrição, prateleiras na ordem em que aparecem] */
+const FAM7 = [['perfil','Perfil','Foto, moldura, título e fonte: como você aparece.',['avatar','frame','title','font','chefe']],
+  ['cores','Cores e fundo','Paleta, textura de fundo e os pacotes que juntam tudo.',['pal','tex','full']],
+  ['cards','Cards e telas','Borda, hover, cursor, troca de aba, HP, constância e prazo.',['borda','hover','cursor','trans','hp','heat','prazo']],
+  ['efeitos','Efeitos e sons','Animações na tela, na hora da conquista e sons.',['fx','fxev','som']]];
 /* itens de uma prateleira (c = categoria; fxev = os efeitos da hora da conquista) */
 const daSec = (l, c) => l.filter(i => c === 'fxev' ? i.cat === 'fx' && i.ev && !i.sec : (i.sec || i.cat) === c && !(c === 'fx' && i.ev));
 /* o nome da prateleira de um item da Aparência (na vista por faixa, vira um selo do card) */
@@ -1950,20 +1964,28 @@ function rMS(S){
     const todos = arte && UI.dev7 ? COS.concat(arte.ideias) : COS;
     const nTenho = COS.filter(i => !i.fora && !i.chefao && !i.grupo && meu(i) && SECS[UI.cat].some(([c]) => daSec([i], c).length)).length;
     const opt = (l, v) => l.map(([k,n]) => `<option value="${k}"${v === k ? ' selected' : ''}>${n}</option>`).join('');
-    const fil = `<div class="fil7">${UI.cat === 'aparencia' ? `<input type="search" data-q7 placeholder="buscar: nome, categoria…" value="${esc(UI.q7)}" aria-label="buscar na vitrine">`
+    const fil = `<div class="fil7">${UI.cat === 'aparencia' ? `<input type="search" data-q7 placeholder="buscar em todas as famílias" value="${esc(UI.q7)}" aria-label="buscar na vitrine">`
       + `<select data-f7="ffa" aria-label="raridade">${opt([['','toda raridade'], ...GBx.FAIXAS_LOJA], UI.ffa)}</select>`
       + `<select data-f7="fte" aria-label="tema">${opt([['','todo tema'],['hxh','念 HxH'],['basico','básicos']], UI.fte)}</select>`
       + `<select data-f7="vis7" aria-label="ordem">${opt([['cat','por categoria'],['faixa','por raridade']], UI.vis7)}</select>` : ''}
       <label><input type="checkbox" data-ten7${UI.ten7 ? ' checked' : ''}> esconder o que já tenho${nTenho ? ` (${nTenho})` : ''}</label></div>`;
     const sec = (t, d, vit) => `<div class="sec7"><h3>${t}</h3>${d?`<p>${d}</p>`:''}<div class="items">${vit.map(i => itemHTML(S,i)).join('')}</div></div>`;
-    const ordem = SECS[UI.cat].flatMap(([c]) => daSec(todos, c)).filter(i => naVitrine(i) && filtro(i));
+    /* Aparência em famílias: uma por vez, com um chip por prateleira; a busca e os filtros contam em todas (o número na aba) */
+    const vit = c => daSec(todos, c).filter(i => naVitrine(i) && filtro(i));
+    const fam = FAM7.find(f => f[0] === UI.fam7) || FAM7[0];
+    const tit = c => SECS.aparencia.find(x => x[0] === c);
+    const cs = UI.cat !== 'aparencia' ? SECS[UI.cat].map(([c]) => c) : fam[3].includes(UI.sec7) ? [UI.sec7] : fam[3];
+    const fams = UI.cat === 'aparencia' ? `<div class="fam7">${FAM7.map(([k, n, d, l]) => `<button type="button" data-fam7="${k}" aria-pressed="${k === fam[0]}"><b>${n}<small>${l.reduce((t, c) => t + vit(c).length, 0)}</small></b><span>${d}</span></button>`).join('')}</div>`
+      + `<div class="chips7">${[['', 'Todas', fam[3].reduce((t, c) => t + vit(c).length, 0)], ...fam[3].map(c => [c, tit(c)[1], vit(c).length]).filter(([c, , n]) => n || c === UI.sec7)]
+        .map(([c, n, k]) => `<button type="button" data-sec7="${c}" aria-pressed="${c === (fam[3].includes(UI.sec7) ? UI.sec7 : '')}">${n} <small>${k}</small></button>`).join('')}</div>` : '';
+    const ordem = cs.flatMap(vit);
     const secs = UI.cat === 'aparencia' && UI.vis7 === 'faixa'
-      ? [...GBx.FAIXAS_LOJA, ['', 'Sem faixa', 'Pacotes, peças que só vêm num pacote e ideias com a faixa a decidir.']].map(([k, n, d]) => { const vit = ordem.filter(i => (i.fa || '') === k);
-          return vit.length ? sec(n, d, vit) : ''; }).join('')
-      : SECS[UI.cat].map(([c,t,d]) => { const vit = daSec(todos, c).filter(i => naVitrine(i) && filtro(i)); return vit.length ? sec(t, d, vit) : ''; }).join('');
+      ? [...GBx.FAIXAS_LOJA, ['', 'Sem faixa', 'Pacotes, peças que só vêm num pacote e ideias com a faixa a decidir.']].map(([k, n, d]) => { const v = ordem.filter(i => (i.fa || '') === k);
+          return v.length ? sec(n, d, v) : ''; }).join('')
+      : cs.map(c => { const [, t, d] = UI.cat === 'aparencia' ? tit(c) : SECS[UI.cat].find(x => x[0] === c), v = vit(c); return v.length ? sec(t, d, v) : ''; }).join('');
     const quadroArte = arte ? `<details class="sec7 ar-det"${arte.so || UI.dev7 ? ' open' : ''}><summary>arte nova em teste (#134)</summary>${arte.resumo(COS.concat(arte.ideias).filter(naVitrine).map(i => i.id))}
       <button type="button" class="btn${UI.dev7 ? ' v' : ''}" data-dev7>${UI.dev7 ? 'esconder as ideias em desenvolvimento' : 'mostrar as ideias em desenvolvimento'}</button></details>` : '';
-    main = fil + quadroArte + (secs || `<p class="sub">Nenhum item com esses filtros.${UI.ten7 && nTenho ? ' O que já é seu está em Comprados.' : ''}</p>`)
+    main = fil + fams + quadroArte + (secs || `<p class="sub">Nenhum item ${UI.cat === 'aparencia' ? 'nesta família ' : ''}com esses filtros.${UI.cat === 'aparencia' ? ' O número em cada família mostra onde há.' : ''}${UI.ten7 && nTenho ? ' O que já é seu está em Comprados.' : ''}</p>`)
       + (UI.cat==='aparencia' ? '<p class="sub nx7">Na próxima temporada (2027-1): os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p>' : '');
   }
   else if(UI.cat === 'premios') main = UI.pedit ? premiosEditor(S) : premiosHTML(S);
@@ -2694,7 +2716,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('input', e => {
   if(e.target.id === 'l-txt'){ limpaAdicionada(); prevL(); }
   /* busca da loja: redesenha e devolve o foco ao campo, com o cursor no fim */
-  if(e.target.matches('[data-q7]')){ UI.q7 = e.target.value; render(); const b = document.querySelector('[data-q7]'); if(b){ b.focus(); b.setSelectionRange(b.value.length, b.value.length); } }
+  if(e.target.matches('[data-q7]')){ UI.q7 = e.target.value; UI.sec7 = ''; render(); const b = document.querySelector('[data-q7]'); if(b){ b.focus(); b.setSelectionRange(b.value.length, b.value.length); } }
   /* campos de data: dd/mm/aaaa, com as barras entrando sozinhas */
   if(e.target.classList.contains('dt') && e.inputType && !e.inputType.startsWith('delete')){
     const n = e.target.value.replace(/\D/g, '').slice(0, 8); e.target.value = n.length > 4 ? `${n.slice(0,2)}/${n.slice(2,4)}/${n.slice(4)}` : n.length > 2 ? `${n.slice(0,2)}/${n.slice(2)}` : n; }
@@ -2765,7 +2787,7 @@ function confete(forcado){
 }
 /* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
-const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-arte],[data-arteso],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],summary';
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-arte],[data-arteso],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
 let avisoProvaAtual = null;
 function avisoProva(){
@@ -2808,6 +2830,8 @@ document.addEventListener('click', async e => {
   const pr = q('[data-prova]'); if(pr){ UI.prova = pr.dataset.prova; render(); return; }
   const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; UI.isel = ''; render(); return; }
   if(q('[data-dev7]')){ UI.dev7 = !UI.dev7; render(); return; }
+  const fm = q('[data-fam7]'); if(fm){ UI.fam7 = fm.dataset.fam7; UI.sec7 = ''; render(); return; }
+  const sc = q('[data-sec7]'); if(sc){ UI.sec7 = sc.dataset.sec7; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(), pk = it && it.parts ? GBx.pacote(it, OWN) : null, p = pk ? pk.p : it && it.p;
     if(!it || it.prova || it.grupo || it.excl || (it.lock && it.lock(S)) || (pk && pk.completo) || S.jenny < p) return;
     SPENT += p; compra('cos', it.id, p, pk ? {pacote:1} : null); OWN.add(it.id); GBx.expandeOwn(OWN, EST.compras); [it.id, ...(it.parts || [])].forEach(k => { COMO[k] = 'compra'; }); UI.prova = ''; equipa(it); salvaUI(); guardaColecao();
@@ -2921,7 +2945,7 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 
 /* caixas: o canto de chama só em cima à esquerda, sem sombra */
 :where(.vis-nen) :is(.card,.tower,.col,.l-list,.k,.gnav,.note,.hud,.season,.pano-top,.boss-mini,.b2top,.mission,.cofre,.mock,.x-kcol,.wz,.nv-big > div,.nv-pon > div,.tr-pop,#fb-pop){border-radius:14px 3px 3px 3px;box-shadow:none}
-:where(.vis-nen) :is(.gc,.it7,.lk,.opt,.qq,.nota,.flow > div:first-child,.rg-conta,.nv-it,.nv-seu,.cq-prop,.cq-rec button,.cq-regra,.cq-ok,.ce-obs,.x-kc,.ia-ags label,.wz-card,.wz-tag,.wz-x,.l-ajuda,.toast){border-radius:3px}
+:where(.vis-nen) :is(.gc,.it7,.fam7 button,.lk,.opt,.qq,.nota,.flow > div:first-child,.rg-conta,.nv-it,.nv-seu,.cq-prop,.cq-rec button,.cq-regra,.cq-ok,.ce-obs,.x-kc,.ia-ags label,.wz-card,.wz-tag,.wz-x,.l-ajuda,.toast){border-radius:3px}
 :where(.vis-nen) .col .ch{background:none;border-bottom:1px solid var(--hair)}
 :where(.vis-nen) .nv-ver{background:var(--panel)}
 :where(.vis-nen) .tr-hole{border-radius:14px 3px 3px 3px}
