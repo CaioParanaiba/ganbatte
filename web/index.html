@@ -1000,12 +1000,8 @@ a.btn{display:inline-block;text-decoration:none}
 .it7 .info b{font-size:14px} .it7 .info p{margin:0;font-size:12.5px;color:var(--soft)}
 .it7 .buy7{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto}
 .it7 .pr{font:700 13px var(--f-mono);color:var(--amb)} .it7 .pr.free{color:var(--grn)}
-.ch7s{display:grid;gap:8px}
-.ch7{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:12px;align-items:center;background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:10px 12px}
-.ch7-nm{display:flex;gap:10px;align-items:center;min-width:0} .ch7-nm b{display:block;font-size:14px} .ch7-nm small{font:600 11.5px var(--f-mono);color:var(--soft)}
-.ch7-op{display:flex;gap:6px;flex-wrap:wrap}
+.ch7-op{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .ret7{all:unset;cursor:pointer;border-radius:50%;padding:3px;border:2px solid transparent} .ret7:disabled{opacity:.35;cursor:not-allowed} .ret7.on{border-color:var(--volt)} .ret7:focus-visible{outline:2px solid var(--prompt)}
-@media (max-width:620px){ .ch7{grid-template-columns:1fr} }
 .it7 .tagc{font:600 10px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
 /* preview: um pedaço do painel no tema do item */
 .pv{position:relative;height:96px;background:var(--bg);color:var(--ink);display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--hair);overflow:hidden}
@@ -1688,7 +1684,8 @@ function rB(S){
 function rB2(S){
   document.getElementById('b2-cols').innerHTML = S.bs.map(b => `
     <div class="col${b.dead?' dead':''}"><div class="ch">${avB(b,60)}<div class="nm">${b.n}</div><div class="ds">${b.d} · ${nf(b.pts)}/100 pts</div><div style="width:100%;margin-top:14px">${hpBar(b)}</div><div class="need" style="margin:2px 0 0">${needTxt(b)}</div>${b.fury?'<span class="fury">🔥 fúria: tarefas ×1,5</span>':''}</div>
-      <div class="bd"><h4>avaliações (plano de ensino)</h4>${avList(b,'b2',true)}
+      <div class="bd"><h4>ícone do chefão</h4>${iconeHTML(b)}
+        <h4>avaliações (plano de ensino)</h4>${avList(b,'b2',true)}
         <h4>tarefas pendentes (${b.open.length})</h4>${b.open.length ? b.open.map(t => `<button class="tk" data-hit="${t.n}">${avTask(t,22)}<span class="t">${esc(t.txt)}${ligTxt(b,t)}</span><span class="v" style="color:var(--volt)">+${xpDe({...t,done:HOJE})}</span></button>`).join('') : '<p class="sub">nada pendente</p>'}
         <div class="drop">${ic('card')} preparação completa antes da data: 1 feitiço à escolha</div></div></div>`).join('');
   document.getElementById('b2-inbox').innerHTML = `<h2><span class="c">~/</span>caixa de entrada · plano de ensino</h2>
@@ -1801,7 +1798,6 @@ function equipado(it){
   if(it.cat === 'font') return UI.font === it.eq.font;
   if(it.cat === 'som') return UI.som === it.eq.som;
   if(SLOTS.includes(it.cat)) return UI[it.cat] === it.eq[it.cat];
-  if(it.cat === 'chefe') return BOSSES.some(b => (retratoDe(b) || {}).id === it.id);
   if(it.cat === 'full') return !it.lend && Object.keys(it.eq).every(k => UI[k] === it.eq[k]) && it.fxs.every(f => UI.fx.includes(f));
   if(it.skin) return UI.skin[it.skin[0]] === it.skin[1];
   return false;
@@ -1817,7 +1813,6 @@ function equipa(it){
   else if(it.cat === 'font') UI.font = on ? '' : it.eq.font;
   else if(it.cat === 'som') UI.som = on ? '' : it.eq.som;
   else if(SLOTS.includes(it.cat)) UI[it.cat] = on ? '' : it.eq[it.cat];
-  else if(it.cat === 'chefe'){ const b = BOSSES.find(b => it.alvo && GBx.norm(b.n).includes(GBx.norm(it.alvo)) && travaDe(b.d) === undefined); if(b) poeRetrato(b.d, it.id); }   // vai para o chefão de mesmo nome, se houver e estiver vivo
   else if(it.cat === 'full'){ Object.assign(UI, it.eq); UI.fx = [...new Set(UI.fx.concat(it.fxs))]; }
   else if(it.skin) UI.skin[it.skin[0]] = on ? PXSKINS[it.skin[0]][0][0] : it.skin[1];
   UI.anim = 'calma';
@@ -1839,7 +1834,6 @@ function pvNovo(it){
 function pvHTML(it){
   if(it.dev) return GB_ARTE.pvDev(it);   // ideia da fila de arte ainda sem arte (#134): card em desenvolvimento
   if(SLOTS.includes(it.cat)) return pvNovo(it);
-  if(it.cat === 'chefe') return `<div class="pv av8" style="${palStyle(UI.theme)}"><span class="av bs ret" style="--s:76px"><img src="${retSrc(it)}" alt=""></span></div>`;
   if(it.cat === 'avatar') return `<div class="pv av8" style="${palStyle(UI.theme)}"><span class="plate" style="width:76px;height:76px;background:${it.eq.avatar === 'logo' ? '#F6F3EC' : 'transparent'};box-shadow:none"><img src="${it.eq.avatar === 'logo' ? LOGO : avSrc(it.eq.avatar)}" alt="" style="width:100%"></span></div>`;
   if(it.sw) return `<div class="pv sw">${it.sw.map(c => `<i style="background:${c}"></i>`).join('')}</div>`;
   if(it.lend) return `<div class="pv leg">?</div>`;
@@ -1860,7 +1854,6 @@ function itemHTML(S, it){
   let btn;
   if(it.dev) btn = '';   // ideia da fila de arte (#134): nem compra nem provar
   else if(it.lend) btn = `<button class="btn" disabled>${S.jenny >= it.p ? 'sob encomenda' : `faltam ${fmt(it.p - S.jenny)} J`}</button>`;
-  else if(own && it.cat === 'chefe') btn = `<span class="sub">${eq ? 'em uso' : 'escolha o chefão em Comprados'}</span>`;
   else if(!own && it.chefao) btn = '<span class="sub">derrote um chefão com este retrato</span>';
   else if(own && pk) btn = `<button class="btn v" data-equip="${it.id}">${eq ? 'equipado' : 'equipar tudo'}</button>`;
   else if(own) btn = it.cat === 'px' && !it.skin ? '<span class="sub">desbloqueado</span>' : `<button class="btn v" data-equip="${it.id}">${eq ? (['pal','full','avatar'].includes(it.cat) ? 'equipado' : 'tirar') : 'equipar'}</button>`;
@@ -1874,12 +1867,12 @@ function itemHTML(S, it){
   const ver = it.dev ? '' : !own && provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
     : it.ev || it.cat === 'som' ? `<button class="btn gb-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
   const pr = it.dev ? 'em desenvolvimento' : it.chefao ? 'chefão derrotado' : it.fora ? 'da sua coleção' : pk ? (pk.completo ? 'pacote completo' : `${pk.p < it.p ? `<s>${fmt(it.p)}</s> ` : ''}${fmt(pk.p)} J`)
-    : GBx.padrao(it) ? (it.cat === 'chefe' ? 'grátis' : 'vem com o jogo') : it.prova ? 'só para provar' : it.grupo ? 'Trick Coin' : it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis';
+    : GBx.padrao(it) ? 'vem com o jogo' : it.prova ? 'só para provar' : it.grupo ? 'Trick Coin' : it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis';
   const sl = selos(it), tem = pk && pk.tem && !pk.completo ? `<p>Você já tem ${pk.tem} de ${pk.n} peças: paga só o que falta.</p>` : '';
   return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need||(it.grupo&&!own)?' lock':''}">${pvHTML(it)}<div class="info">${sl ? `<div class="sl7">${sl}</div>` : ''}<b>${esc(it.n)}</b><p>${esc(it.d)}</p>${tem}${window.GB_ARTE ? GB_ARTE.aviso(it.id) : ''}<div class="buy7"><span class="pr${preco || it.prova || it.dev ? '' : ' free'}">${pr}${own && !GBx.padrao(it) && !it.fora && !it.chefao && !pk ?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
 }
 const SECS = {
-  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['prazo','Marca de prazo','Em teste: a marca na tarefa com prazo ou atrasada. Se os estilos não agradarem, a categoria sai inteira.'],['chefe','Ícones dos chefões','Retratos para os cards dos chefões, no lugar do ícone. São grátis: todos estão em Comprados, onde você escolhe o chefão de cada um. Derrote o chefão que está com ele e o retrato vira foto de perfil.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez.'],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações.'],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
+  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['prazo','Marca de prazo','Em teste: a marca na tarefa com prazo ou atrasada. Se os estilos não agradarem, a categoria sai inteira.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez.'],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações.'],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
   pixel:[['px','Mundo pixel','Primeiro desbloqueie o mundo; depois as peles.']],
 };
 /* itens de uma prateleira (c = categoria; fxev = os efeitos da hora da conquista) */
@@ -1889,24 +1882,19 @@ const prateleira = it => (SECS.aparencia.find(([c]) => daSec([it], c).length) ||
 /* o que é do jogador (#33): comprado (estado.json ou a coleção permanente) ou que vem com o jogo. Fica em Comprados e continua na
    vitrine com o selo "já comprado" */
 const meu = it => OWN.has(it.id) || GBx.padrao(it);
-/* Comprados: escolher o ícone de cada chefão (o padrão ou um retrato da coleção) */
-function chefesHTML(S){
-  const rets = COS.filter(i => i.cat === 'chefe' && meu(i));
-  const img = r => r ? `<span class="av bs ret" style="--s:38px"><img src="${retSrc(r)}" alt=""></span>` : '';
-  const op = (b, id, dentro, nome) => { const on = (retratoDe(b) || {id:''}).id === id, preso = id && presoEm(id), dono = !on && id && BOSSES.find(x => x.d !== b.d && (retratoDe(x) || {}).id === id);
+/* aba Chefões: escolher o ícone de cada chefão (o padrão ou um retrato; os retratos são grátis e não aparecem na loja) */
+function iconeHTML(b){
+  const t = travaDe(b.d), aberto = UI.icone === b.d;
+  if(t !== undefined) return `<p class="sub">Derrotado: a imagem fica assim${t ? ', e o retrato virou foto de perfil' : ''}.</p>`;
+  const op = (id, dentro, nome) => { const on = (retratoDe(b) || {id:''}).id === id, preso = id && presoEm(id), dono = !on && id && BOSSES.find(x => x.d !== b.d && (retratoDe(x) || {}).id === id);
     return `<button type="button" class="ret7${on ? ' on' : ''}" data-chefe="${b.d}:${id}" aria-pressed="${on}"${preso ? ' disabled' : ''} title="${esc(nome)}${preso ? ` · preso no ${esc(preso.n)}, derrotado` : dono ? ` · sai do ${esc(dono.n)}` : ''}">${dentro}</button>`; };
-  const linhas = S.bs.map(b => { const t = travaDe(b.d);
-    return `<div class="ch7"><span class="ch7-nm">${avB(b,44)}<span><b>${esc(b.n)}</b><small>${esc(b.d)}</small></span></span><div class="ch7-op">${t !== undefined
-      ? `<span class="sub">Derrotado: a imagem fica assim${t ? ', e o retrato virou foto de perfil' : ''}.</span>`
-      : op(b, '', `<span class="av bs" style="--s:38px">${ic(b.ic)}</span>`, 'ícone padrão') + rets.map(r => op(b, r.id, img(r), r.n)).join('')}</div></div>`; }).join('');
-  return `<div class="sec7"><h3>Ícones dos chefões</h3><p>O ícone padrão de cada chefão vem com o jogo. ${rets.length ? 'Cada retrato fica em um chefão por vez. Derrote o chefão que está com ele e o retrato vira foto de perfil; depois disso a imagem desse chefão não muda mais.' : 'Os retratos estão na vitrine, em Aparência.'}</p>
-    ${linhas ? `<div class="ch7s">${linhas}</div>` : '<p class="sub">Nenhum chefão cadastrado ainda. Os retratos ficam guardados para quando houver.</p>'}</div>`;
+  return `<button type="button" class="go" data-icone="${b.d}" aria-expanded="${aberto}">${aberto ? 'fechar' : 'trocar o ícone'}</button>`
+    + (aberto ? `<div class="ch7-op">${op('', `<span class="av bs" style="--s:34px">${ic(b.ic)}</span>`, 'ícone padrão')
+      + COS.filter(i => i.cat === 'chefe' && meu(i)).map(r => op(r.id, `<span class="av bs ret" style="--s:34px"><img src="${retSrc(r)}" alt=""></span>`, r.n)).join('')}</div>` : '');
 }
 function compradosHTML(S){
-  const meus = COS.filter(meu), secs = SECS.aparencia.filter(([c]) => c !== 'chefe').concat(SECS.pixel);
-  const rets = daSec(meus, 'chefe');
+  const meus = COS.filter(meu), secs = SECS.aparencia.concat(SECS.pixel);
   return `<div class="sec7"><p>Tudo o que é seu: o que você comprou e o que vem com o jogo. Fica guardado na pasta <span class="mono">colecao/</span> dos seus dados, separado da loja: trocar de temporada ou atualizar o jogo não tira nada daqui.</p></div>`
-    + chefesHTML(S) + (rets.length ? `<div class="sec7"><h3>Retratos</h3><div class="items">${rets.map(i => itemHTML(S,i)).join('')}</div></div>` : '')
     + secs.map(([c,t]) => { const l = daSec(meus, c); return l.length ? `<div class="sec7"><h3>${t}</h3><div class="items">${l.map(i => itemHTML(S,i)).join('')}</div></div>` : ''; }).join('');
 }
 function rMS(S){
@@ -2727,7 +2715,7 @@ function confete(forcado){
 }
 /* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
-const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-arte],[data-arteso],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-teste],summary';
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-arte],[data-arteso],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-teste],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
 let avisoProvaAtual = null;
 function avisoProva(){
@@ -2774,8 +2762,8 @@ document.addEventListener('click', async e => {
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(), pk = it && it.parts ? GBx.pacote(it, OWN) : null, p = pk ? pk.p : it && it.p;
     if(!it || it.prova || it.grupo || it.excl || (it.lock && it.lock(S)) || (pk && pk.completo) || S.jenny < p) return;
     SPENT += p; compra('cos', it.id, p, pk ? {pacote:1} : null); OWN.add(it.id); GBx.expandeOwn(OWN, EST.compras); [it.id, ...(it.parts || [])].forEach(k => { COMO[k] = 'compra'; }); UI.prova = ''; equipa(it); salvaUI(); guardaColecao();
-    const ch = it.cat === 'chefe' && BOSSES.find(b => UI.chefes[b.d] === it.id);
-    toast(`${esc(it.n)} é seu <small>${p ? `−${fmt(p)} J` : 'grátis'} · ${it.cat === 'chefe' ? (ch ? 'já no ' + esc(ch.n) : 'escolha o chefão em Comprados') : 'já equipado'}${it.parts ? ' · as peças ficam separadas também' : ''} · guardado em Comprados</small>`); render(); return; }
+    toast(`${esc(it.n)} é seu <small>${p ? `−${fmt(p)} J` : 'grátis'} · já equipado${it.parts ? ' · as peças ficam separadas também' : ''} · guardado em Comprados</small>`); render(); return; }
+  const ic7 = q('[data-icone]'); if(ic7){ UI.icone = UI.icone === ic7.dataset.icone ? '' : ic7.dataset.icone; render(); return; }
   const chf = q('[data-chefe]'); if(chf){ const [d, id] = chf.dataset.chefe.split(':'); if(poeRetrato(d, id)){ salvaUI(); render(); } return; }
   const eq = q('[data-equip]'); if(eq){ const it = COS.find(i => i.id === eq.dataset.equip); if(it){ equipa(it); salvaUI(); render(); } return; }
   const rl = q('[data-real]'); if(rl){ const x = meusPremios()[+rl.dataset.real], S = estado(); if(!x || !podeResgatar(S, x)) return;
