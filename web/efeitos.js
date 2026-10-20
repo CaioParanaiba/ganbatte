@@ -112,7 +112,6 @@ const CSS = `
 :root[data-heat="chamas"] .l-hg i:is(.h3,.h4),.hm-chamas .hm7 i.h3{background:#FF6A1F}
 @media (prefers-reduced-motion:no-preference){
   :root[data-borda="aura"] .card,.bd-aura .mc{animation:hjBordaAura 2.4s ease-in-out infinite}
-  :root[data-hover="vira"] .card:hover{animation:hjVira .7s ease-in-out}
   :root[data-hover="bungee"] .card:hover{transform-origin:0 50%;animation:hjBungee .6s ease-in-out}
   .hv-contorno .mc{animation:hjContorno 2.4s ease-in-out infinite} .hv-shu .mc{animation:hjShu 2.4s ease-in-out infinite}
   .hv-vira .mc{animation:hjVira 2.4s ease-in-out infinite} .hv-bungee .mc{transform-origin:0 50%;animation:hjBungee 2.4s ease-in-out infinite}
