@@ -979,15 +979,23 @@ a.btn{display:inline-block;text-decoration:none}
 .shopc .lay7{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
 .shopc .sec7{margin-bottom:18px}
 .shopc .sec7 > h3{margin:0 0 4px;font:700 15px var(--f-hud)} .shopc .sec7 > p{margin:0 0 10px;font-size:13px;color:var(--soft)}
-.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
 .it7{background:var(--panel);border:1px solid var(--hair);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
 .it7.own{border-color:color-mix(in srgb,var(--grn) 45%,var(--hair))}
 .it7.eq{border-color:var(--volt);box-shadow:0 0 0 1px var(--volt)}
 .it7.lock{opacity:.6}
+/* card enxuto: a faixa vira a cor do topo do card; o resto (selos, descrição, provar) fica no detalhe ao lado */
+.it7[data-isel]{cursor:pointer} .it7.sel{outline:2px solid var(--ink);outline-offset:2px}
+.it7.fa-comum,.it7.fa-raro,.it7.fa-epico,.it7.fa-lenda{border-top-width:3px} .it7.fa-raro{border-top-color:var(--volt)} .it7.fa-epico{border-top-color:var(--aura)} .it7.fa-lenda{border-top-color:var(--amb)}
+.it7 .nm7{all:unset;cursor:pointer;font:700 14px var(--f-ui);color:var(--ink);overflow-wrap:anywhere} .it7 .nm7:focus-visible{outline:2px solid var(--prompt)}
+.det7{position:relative} .det7 .pv{height:120px} .det7 .info p{font-size:13px}
+.det7 .x7{all:unset;cursor:pointer;position:absolute;top:6px;right:8px;z-index:2;width:26px;height:26px;display:grid;place-items:center;border-radius:99px;background:var(--panel);border:1px solid var(--hair);font:700 15px var(--f-ui);color:var(--soft)}
+.shopc .nx7{margin:4px 0 18px;font-size:12.5px}
+.ar-det > summary{cursor:pointer;font:700 13px var(--f-mono);color:var(--soft)} .ar-det[open] > summary{margin-bottom:8px}
+.flow7 > summary{cursor:pointer;font:600 12px var(--f-mono);color:var(--soft);margin-top:8px}
 .it7 .sl7{display:flex;gap:5px;flex-wrap:wrap}
 .it7 .sl7 span{font:600 10px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--hair);border-radius:4px;padding:1px 6px;color:var(--soft)}
 .it7 .sl7 .fa-raro{color:var(--volt);border-color:color-mix(in srgb,var(--volt) 50%,var(--hair))} .it7 .sl7 .fa-epico{color:var(--aura);border-color:color-mix(in srgb,var(--aura) 50%,var(--hair))}
-.it7 .sl7 .ja7{color:var(--grn);border-color:color-mix(in srgb,var(--grn) 50%,var(--hair))}
 .it7 .sl7 .fa-lenda{color:var(--amb);border-color:color-mix(in srgb,var(--amb) 50%,var(--hair))} .it7 .sl7 .hx7{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,var(--hair));text-transform:none}
 .it7 .pr s{color:var(--faint);font-weight:400}
 .nen7{font:700 1.1em/1 "Noto Serif JP",serif;font-style:normal}
@@ -996,6 +1004,18 @@ a.btn{display:inline-block;text-decoration:none}
 .shopc .fil7 span:first-child{margin-left:0}
 .shopc .fil7 button{border:1px solid var(--hair);background:var(--panel);border-radius:99px;padding:3px 11px;cursor:pointer;font:600 12px var(--f-ui);color:var(--soft)}
 .shopc .fil7 button[aria-pressed="true"]{color:var(--ink);border-color:var(--volt)}
+.shopc .fil7 input[type=search],.shopc .fil7 select{border:1px solid var(--hair);background:var(--panel);color:var(--ink);border-radius:99px;padding:4px 12px;font:500 13px var(--f-ui)}
+.shopc .fil7 input[type=search]{flex:1 1 180px;min-width:0}
+.shopc .fil7 label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--soft);cursor:pointer}
+.shopc .fam7{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:12px}
+.shopc .fam7 button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;border:1px solid var(--hair);background:var(--panel)}
+.shopc .fam7 b{display:flex;justify-content:space-between;gap:8px;font:700 15px var(--f-hud)} .shopc .fam7 small,.shopc .chips7 small{font:600 11.5px var(--f-mono);color:var(--soft)}
+.shopc .fam7 span{font-size:12.5px;color:var(--soft)}
+.shopc .fam7 button[aria-pressed="true"]{border-color:var(--volt);background:color-mix(in srgb,var(--volt) 8%,var(--panel))}
+.shopc .fam7 button:focus-visible{outline:2px solid var(--prompt)}
+.shopc .chips7{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.shopc .chips7 button{border:1px solid var(--hair);background:transparent;border-radius:99px;padding:4px 12px;cursor:pointer;font:600 12.5px var(--f-ui);color:var(--soft)}
+.shopc .chips7 button[aria-pressed="true"]{color:var(--ink);border-color:var(--volt)}
 .it7 .info{padding:10px 12px;display:flex;flex-direction:column;gap:6px;flex:1} .it7 .info > .buy7{margin-top:auto}
 .it7 .info b{font-size:14px} .it7 .info p{margin:0;font-size:12.5px;color:var(--soft)}
 .it7 .buy7{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto}
@@ -1015,11 +1035,11 @@ a.btn{display:inline-block;text-decoration:none}
 .pv.leg{display:grid;place-items:center;grid-template-columns:1fr;font:700 40px var(--f-hud);color:var(--amb);background:radial-gradient(circle,color-mix(in srgb,var(--amb) 20%,transparent),transparent 70%),var(--bg)}
 .pv.real{grid-template-columns:auto 1fr;font-size:13px}
 .pv.real .av{--s:40px}
-.side7{display:grid;gap:12px;position:sticky;top:76px}
+.side7{display:grid;gap:12px;position:sticky;top:76px;max-height:calc(100vh - 90px);overflow:auto}
 .wal7{font:700 28px var(--f-hud)} .wal7 small{display:block;font:500 12px var(--f-mono);color:var(--soft)}
 .cofre{height:8px;border-radius:99px;background:var(--track);overflow:hidden;margin:6px 0 4px} .cofre b{display:block;height:100%;background:var(--grn)}
 .eqlist{display:grid;gap:4px;font-size:13px} .eqlist div{display:flex;justify-content:space-between;gap:8px} .eqlist span:last-child{color:var(--soft)}
-@media (max-width:1100px){ .shopc .lay7{grid-template-columns:minmax(0,1fr)} .side7{position:static} }
+@media (max-width:1100px){ .shopc .lay7{grid-template-columns:minmax(0,1fr)} .side7{position:static;max-height:none;overflow:visible} .det7{position:fixed;left:8px;right:8px;bottom:8px;z-index:60;max-height:70vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.35)} }
 
 /* ---------- v8: emblema da Associação Hunter no lugar do Killua ---------- */
 .av.me.logo{background:#F6F3EC;border-color:color-mix(in srgb,var(--volt) 70%,#F6F3EC);display:inline-grid;place-items:center;overflow:hidden}
@@ -1393,7 +1413,7 @@ let TESTE = null;   // modo teste da Masadora (só nos canais beta e grupo): {ow
 const R = {dif:'normal'};
 /* itens novos da #135: um por vez em cada um destes lugares, cada um com o seu atributo no <html> (efeitos.js) */
 const SLOTS = ['borda','hover','cursor','hp','heat','trans'];
-const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', ffa:'', fte:'', vis7:'cat', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
+const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'map', cat:'aparencia', ffa:'', fte:'', vis7:'cat', q7:'', ten7:true, dev7:false, isel:'', fam7:'perfil', sec7:'', theme:'simples', fx:[], bg:'', frame:'', title:'', font:'', som:'',
   borda:'', hover:'', cursor:'', hp:'', heat:'', trans:'', avatar:'logo', lic:'l2', hud:'logo', chefes:{}, anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
 try { UI.fxOff = localStorage.getItem('gb-fxoff') === '1'; } catch(e){}
 try { UI.cfold = JSON.parse(localStorage.getItem('gb-cfold') || '{}') || {}; } catch(e){ UI.cfold = {}; }   // caçadas recolhidas na Lista, por navegador
@@ -1842,13 +1862,13 @@ function pvHTML(it){
   const cls = ['pv', it.eq?.bg ? 'tex-'+it.eq.bg : '', fx.length ? 'fxd '+fx.join(' ') : '', it.eq?.frame ? 'fr-'+it.eq.frame : '', it.eq?.font ? 'ft-'+it.eq.font : ''].join(' ');
   return `<div class="${cls}" style="${palStyle(pal)}">${avMe(40)}<div class="mini"><b>Andar 97</b>${it.eq?.title?`<span class="titulo">${esc(it.eq.title)}</span>`:''}<div class="xpbar"><b style="width:62%"></b></div></div><span class="ring fury" style="--p:70"><span>${ic('antenna')}</span></span>${fx.includes('zap')?'<span class="flash"></span>':''}${it.ev ? `<span class="gb-tag">${['confete','fogos'].includes(it.fx) ? 'no andar novo' : 'ao concluir'} · ▶</span>` : ''}</div>`;
 }
-/* selos do card (#135): a faixa (o pacote não tem) e o 念 HxH dos itens do tema */
+/* selos do detalhe (#135): a faixa (o pacote não tem), o 念 HxH dos itens do tema e a prateleira */
 const FA_NOME = Object.fromEntries(GBx.FAIXAS_LOJA);
 const selos = it => (it.fa ? `<span class="fa7 fa-${it.fa}">${FA_NOME[it.fa]}</span>` : it.cat === 'full' && it.parts ? '<span class="fa7">pacote</span>' : it.dev ? '<span class="fa7">faixa a decidir</span>' : '')
   + (it.hxh ? '<span class="hx7" title="Item do tema HxH"><i class="nen7">念</i> HxH</span>' : '')
-  + (UI.vis7 === 'faixa' && UI.cat === 'aparencia' && prateleira(it) ? `<span>${esc(prateleira(it))}</span>` : '')
-  + (UI.cat !== 'comprados' && meu(it) && !GBx.padrao(it) && !it.fora && !it.chefao && !(it.parts && !GBx.pacote(it, OWN).completo) ? '<span class="ja7">já comprado</span>' : '');
-function itemHTML(S, it){
+  + (prateleira(it) ? `<span>${esc(prateleira(it))}</span>` : '');
+/* o que o card e o detalhe mostram de um item: estado, preço e botões */
+function partes(S, it){
   const pk = it.cat === 'full' && it.parts ? GBx.pacote(it, OWN) : null, preco = pk ? pk.p : it.p;
   const own = pk ? pk.completo : OWN.has(it.id) || GBx.padrao(it), eq = own && equipado(it), lk = it.lock && it.lock(S), need = it.need && !OWN.has(it.need);
   let btn;
@@ -1868,13 +1888,30 @@ function itemHTML(S, it){
     : it.ev || it.cat === 'som' ? `<button class="btn gb-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
   const pr = it.dev ? 'em desenvolvimento' : it.chefao ? 'chefão derrotado' : it.fora ? 'da sua coleção' : pk ? (pk.completo ? 'pacote completo' : `${pk.p < it.p ? `<s>${fmt(it.p)}</s> ` : ''}${fmt(pk.p)} J`)
     : GBx.padrao(it) ? 'vem com o jogo' : it.prova ? 'só para provar' : it.grupo ? 'Trick Coin' : it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis';
-  const sl = selos(it), tem = pk && pk.tem && !pk.completo ? `<p>Você já tem ${pk.tem} de ${pk.n} peças: paga só o que falta.</p>` : '';
-  return `<div class="it7${own?' own':''}${eq?' eq':''}${lk||need||(it.grupo&&!own)?' lock':''}">${pvHTML(it)}<div class="info">${sl ? `<div class="sl7">${sl}</div>` : ''}<b>${esc(it.n)}</b><p>${esc(it.d)}</p>${tem}${window.GB_ARTE ? GB_ARTE.aviso(it.id) : ''}<div class="buy7"><span class="pr${preco || it.prova || it.dev ? '' : ' free'}">${pr}${own && !GBx.padrao(it) && !it.fora && !it.chefao && !pk ?' · seu':''}</span><span style="display:flex;gap:6px">${ver}${btn}</span></div></div></div>`;
+  const tem = pk && pk.tem && !pk.completo ? `<p>Você já tem ${pk.tem} de ${pk.n} peças: paga só o que falta.</p>` : '';
+  const cls = `${own?' own':''}${eq?' eq':''}${lk||need||(it.grupo&&!own)?' lock':''}`;
+  const preso = `<span class="pr${preco || it.prova || it.dev ? '' : ' free'}">${pr}${own && !GBx.padrao(it) && !it.fora && !it.chefao && !pk ?' · seu':''}</span>`;
+  return {cls, btn, ver, tem, pr:preso};
+}
+/* card da vitrine (enxuto): prévia, nome, preço e o botão principal; o clique abre o detalhe ao lado */
+function itemHTML(S, it){
+  const p = partes(S, it);
+  return `<div class="it7${p.cls}${it.fa ? ' fa-' + it.fa : ''}${UI.isel === it.id ? ' sel' : ''}" data-isel="${it.id}"${it.fa ? ` title="${FA_NOME[it.fa]}"` : ''}>${pvHTML(it)}<div class="info"><button type="button" class="nm7" data-isel="${it.id}">${esc(it.n)}${it.hxh ? ' <i class="nen7" title="tema HxH">念</i>' : ''}</button><div class="buy7">${p.pr}${p.btn}</div></div></div>`;
+}
+/* detalhe do item escolhido: selos, descrição, o aviso da arte nova, provar ou ▶ e comprar */
+function detHTML(S, it){
+  const p = partes(S, it), sl = selos(it);
+  return `<div class="it7 det7${p.cls}"><button type="button" class="x7" data-isel="" aria-label="fechar">×</button>${pvHTML(it)}<div class="info">${sl ? `<div class="sl7">${sl}</div>` : ''}<b>${esc(it.n)}</b><p>${esc(it.d)}</p>${p.tem}${window.GB_ARTE ? GB_ARTE.aviso(it.id) : ''}<div class="buy7">${p.pr}<span style="display:flex;gap:6px">${p.ver}${p.btn}</span></div></div></div>`;
 }
 const SECS = {
   aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['prazo','Marca de prazo','Em teste: a marca na tarefa com prazo ou atrasada. Se os estilos não agradarem, a categoria sai inteira.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez.'],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações.'],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
   pixel:[['px','Mundo pixel','Primeiro desbloqueie o mundo; depois as peles.']],
 };
+/* as famílias da Aparência: [chave, nome, descrição, prateleiras na ordem em que aparecem] */
+const FAM7 = [['perfil','Perfil','Foto, moldura, título e fonte: como você aparece.',['avatar','frame','title','font']],
+  ['cores','Cores e fundo','Paleta, textura de fundo e os pacotes que juntam tudo.',['pal','tex','full']],
+  ['cards','Cards e telas','Borda, hover, cursor, troca de aba, HP, constância e prazo.',['borda','hover','cursor','trans','hp','heat','prazo']],
+  ['efeitos','Efeitos e sons','Animações na tela, na hora da conquista e sons.',['fx','fxev','som']]];
 /* itens de uma prateleira (c = categoria; fxev = os efeitos da hora da conquista) */
 const daSec = (l, c) => l.filter(i => c === 'fxev' ? i.cat === 'fx' && i.ev && !i.sec : (i.sec || i.cat) === c && !(c === 'fx' && i.ev));
 /* o nome da prateleira de um item da Aparência (na vista por faixa, vira um selo do card) */
@@ -1894,7 +1931,7 @@ function iconeHTML(b){
 }
 function compradosHTML(S){
   const meus = COS.filter(meu), secs = SECS.aparencia.concat(SECS.pixel);
-  return `<div class="sec7"><p>Tudo o que é seu: o que você comprou e o que vem com o jogo. Fica guardado na pasta <span class="mono">colecao/</span> dos seus dados, separado da loja: trocar de temporada ou atualizar o jogo não tira nada daqui.</p></div>`
+  return `<div class="sec7"><p>Tudo o que é seu: o que você comprou e o que vem com o jogo. Fica guardado na pasta <span class="mono">colecao/</span> dos seus dados, separado da loja: trocar de temporada ou atualizar o jogo não tira nada daqui.${COS.some(i => i.grupo) ? ' Molduras especiais e efeitos em volta do perfil saíram da Masadora e vão para a Loja da Associação; quem já tem continua com eles aqui.' : ''}</p></div>`
     + secs.map(([c,t]) => { const l = daSec(meus, c); return l.length ? `<div class="sec7"><h3>${t}</h3><div class="items">${l.map(i => itemHTML(S,i)).join('')}</div></div>` : ''; }).join('');
 }
 function rMS(S){
@@ -1903,35 +1940,54 @@ function rMS(S){
   let main = '';
   if(UI.cat === 'comprados') main = compradosHTML(S);
   else if(SECS[UI.cat]){
-    /* vitrine: tudo, o que é seu com o selo "já comprado" (também está em Comprados), pelos filtros de faixa e de tema (#135).
-       Duas vistas na Aparência: por categoria (as prateleiras) ou por faixa (comum → lendário, e no fim o que não tem faixa;
-       dentro de cada faixa, na ordem das prateleiras). As ideias da fila de arte entram como card em desenvolvimento (#134) */
+    /* vitrine: o que dá para ter, pelos filtros de uma linha só (busca, faixa, tema, ordem e "esconder o que já tenho", ligado
+       de início: o que é seu fica em Comprados). Duas ordens na Aparência: por categoria (as prateleiras) ou por faixa (comum →
+       lendário, e no fim o que não tem faixa; dentro de cada faixa, na ordem das prateleiras). As ideias da fila de arte (#134)
+       só entram como card em desenvolvimento quando pedidas, no quadro da arte nova */
     const arte = window.GB_ARTE && UI.cat === 'aparencia' ? GB_ARTE : null;   // arte nova em teste (#134): o resumo e o filtro
-    const filtro = i => (!UI.ffa || i.fa === UI.ffa) && (!UI.fte || (UI.fte === 'hxh') === !!i.hxh) && (!arte || !arte.so || arte.tem(i.id));
-    const naVitrine = i => !i.fora && !i.chefao && !i.grupo;
-    const todos = arte ? COS.concat(arte.ideias) : COS;
-    const fil = UI.cat === 'aparencia' ? `<div class="fil7"><span>ver</span>${[['cat','por categoria'],['faixa','por raridade']].map(([k,n]) => `<button data-fvis="${k}" aria-pressed="${UI.vis7 === k}">${n}</button>`).join('')}<span>faixa</span>${[['','todas'], ...GBx.FAIXAS_LOJA].map(([k,n]) => `<button data-ffa="${k}" aria-pressed="${UI.ffa === k}">${n.toLowerCase()}</button>`).join('')}<span>tema</span>${[['','tudo'],['hxh','<i class="nen7">念</i> HxH'],['basico','básicos']].map(([k,n]) => `<button data-fte="${k}" aria-pressed="${UI.fte === k}">${n}</button>`).join('')}</div>` : '';
+    const busca = GBx.norm(UI.q7.trim());
+    const filtro = i => (!UI.ffa || i.fa === UI.ffa) && (!UI.fte || (UI.fte === 'hxh') === !!i.hxh) && (!arte || !arte.so || arte.tem(i.id))
+      && (!busca || GBx.norm(`${i.n} ${i.d || ''} ${prateleira(i) || ''}`).includes(busca));
+    const naVitrine = i => !i.fora && !i.chefao && !i.grupo && !(UI.ten7 && meu(i));
+    const todos = arte && UI.dev7 ? COS.concat(arte.ideias) : COS;
+    const nTenho = COS.filter(i => !i.fora && !i.chefao && !i.grupo && meu(i) && SECS[UI.cat].some(([c]) => daSec([i], c).length)).length;
+    const opt = (l, v) => l.map(([k,n]) => `<option value="${k}"${v === k ? ' selected' : ''}>${n}</option>`).join('');
+    const fil = `<div class="fil7">${UI.cat === 'aparencia' ? `<input type="search" data-q7 placeholder="buscar em todas as famílias" value="${esc(UI.q7)}" aria-label="buscar na vitrine">`
+      + `<select data-f7="ffa" aria-label="raridade">${opt([['','toda raridade'], ...GBx.FAIXAS_LOJA], UI.ffa)}</select>`
+      + `<select data-f7="fte" aria-label="tema">${opt([['','todo tema'],['hxh','念 HxH'],['basico','básicos']], UI.fte)}</select>`
+      + `<select data-f7="vis7" aria-label="ordem">${opt([['cat','por categoria'],['faixa','por raridade']], UI.vis7)}</select>` : ''}
+      <label><input type="checkbox" data-ten7${UI.ten7 ? ' checked' : ''}> esconder o que já tenho${nTenho ? ` (${nTenho})` : ''}</label></div>`;
     const sec = (t, d, vit) => `<div class="sec7"><h3>${t}</h3>${d?`<p>${d}</p>`:''}<div class="items">${vit.map(i => itemHTML(S,i)).join('')}</div></div>`;
-    const ordem = SECS[UI.cat].flatMap(([c]) => daSec(todos, c)).filter(i => naVitrine(i) && filtro(i));
+    /* Aparência em famílias: uma por vez, com um chip por prateleira; a busca e os filtros contam em todas (o número na aba) */
+    const vit = c => daSec(todos, c).filter(i => naVitrine(i) && filtro(i));
+    const fam = FAM7.find(f => f[0] === UI.fam7) || FAM7[0];
+    const tit = c => SECS.aparencia.find(x => x[0] === c);
+    const cs = UI.cat !== 'aparencia' ? SECS[UI.cat].map(([c]) => c) : fam[3].includes(UI.sec7) ? [UI.sec7] : fam[3];
+    const fams = UI.cat === 'aparencia' ? `<div class="fam7">${FAM7.map(([k, n, d, l]) => `<button type="button" data-fam7="${k}" aria-pressed="${k === fam[0]}"><b>${n}<small>${l.reduce((t, c) => t + vit(c).length, 0)}</small></b><span>${d}</span></button>`).join('')}</div>`
+      + `<div class="chips7">${[['', 'Todas', fam[3].reduce((t, c) => t + vit(c).length, 0)], ...fam[3].map(c => [c, tit(c)[1], vit(c).length]).filter(([c, , n]) => n || c === UI.sec7)]
+        .map(([c, n, k]) => `<button type="button" data-sec7="${c}" aria-pressed="${c === (fam[3].includes(UI.sec7) ? UI.sec7 : '')}">${n} <small>${k}</small></button>`).join('')}</div>` : '';
+    const ordem = cs.flatMap(vit);
     const secs = UI.cat === 'aparencia' && UI.vis7 === 'faixa'
-      ? [...GBx.FAIXAS_LOJA, ['', 'Sem faixa', 'Pacotes, peças que só vêm num pacote e ideias com a faixa a decidir.']].map(([k, n, d]) => { const vit = ordem.filter(i => (i.fa || '') === k);
-          return vit.length ? sec(n, d, vit) : ''; }).join('')
-      : SECS[UI.cat].map(([c,t,d]) => { const vit = daSec(todos, c).filter(i => naVitrine(i) && filtro(i)); return vit.length ? sec(t, d, vit) : ''; }).join('');
-    const vao = UI.cat === 'aparencia' && !UI.ffa && !UI.fte ? COS.filter(i => i.grupo && !OWN.has(i.id)) : [];
-    main = fil + (arte ? arte.resumo(todos.filter(naVitrine).map(i => i.id)) : '') + (secs || '<p class="sub">Nenhum item com esses filtros.</p>')
-      + (vao.length && !(arte && arte.so) ? `<div class="sec7"><h3>Vão para a Loja da Associação</h3><p>Molduras especiais e efeitos em volta do perfil passam para a loja do grupo, a Trick Coin. Não se compram mais aqui; quem já tem continua com eles.</p><div class="items">${vao.map(i => itemHTML(S,i)).join('')}</div></div>` : '')
-      + (UI.cat==='aparencia' ? '<div class="sec7"><h3>Na próxima temporada</h3><p>Em 2027-1 chegam os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p></div>' : '');
+      ? [...GBx.FAIXAS_LOJA, ['', 'Sem faixa', 'Pacotes, peças que só vêm num pacote e ideias com a faixa a decidir.']].map(([k, n, d]) => { const v = ordem.filter(i => (i.fa || '') === k);
+          return v.length ? sec(n, d, v) : ''; }).join('')
+      : cs.map(c => { const [, t, d] = UI.cat === 'aparencia' ? tit(c) : SECS[UI.cat].find(x => x[0] === c), v = vit(c); return v.length ? sec(t, d, v) : ''; }).join('');
+    const quadroArte = arte ? `<details class="sec7 ar-det"${arte.so || UI.dev7 ? ' open' : ''}><summary>arte nova em teste (#134)</summary>${arte.resumo(COS.concat(arte.ideias).filter(naVitrine).map(i => i.id))}
+      <button type="button" class="btn${UI.dev7 ? ' v' : ''}" data-dev7>${UI.dev7 ? 'esconder as ideias em desenvolvimento' : 'mostrar as ideias em desenvolvimento'}</button></details>` : '';
+    main = fil + fams + quadroArte + (secs || `<p class="sub">Nenhum item ${UI.cat === 'aparencia' ? 'nesta família ' : ''}com esses filtros.${UI.cat === 'aparencia' ? ' O número em cada família mostra onde há.' : ''}${UI.ten7 && nTenho ? ' O que já é seu está em Comprados.' : ''}</p>`)
+      + (UI.cat==='aparencia' ? '<p class="sub nx7">Na próxima temporada (2027-1): os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p>' : '');
   }
   else if(UI.cat === 'premios') main = UI.pedit ? premiosEditor(S) : premiosHTML(S);
   else main = `<div class="sec7"><h3>Feitiços</h3><p>Também vêm da preparação completa e da missão da semana. Limite de 1 de cada por semana na loja. Expiram em ${ddmm(TEMP.volta)}.</p><div class="items">${SPELLS.filter(s => !s.noshop).map(s => { const [ok,why] = buyable(S,'s',s.k);
       return `<div class="it7"><div class="pv real" style="${palStyle(UI.theme)}"><span class="av" style="--c:var(--aura)">${ic(s.ic)}</span><span>na bolsa: ${S.inv[s.k]||0}</span></div><div class="info"><b>${s.n}</b><p>${s.e}</p><div class="buy7"><span class="pr">${fmt(s.p)} J</span><button class="btn" data-buy="s:${s.k}" ${ok?'':'disabled'}>${ok?'comprar':why}</button></div></div></div>`; }).join('')}</div></div>`;
-  const eqs = [['Paleta', (THEMES.find(t => t[0]===UI.theme)||[0,UI.theme])[1]], ['Foto', (COS.find(i => i.id === 'av-' + UI.avatar) || GBx.catalogo([UI.avatar]).slice(-1)[0]).n], ['Fundo', UI.bg || '—'], ['Efeitos', UI.fxOff ? 'desligados' : (UI.fx.join(', ') || 'nenhum')], ['Moldura', UI.frame || '—'], ['Título', UI.title || '—'], ['Fonte', UI.font || 'padrão'], ['Som', !UI.som ? 'nenhum' : somOff() ? UI.som + ' (desligado)' : UI.som], ['Chefões', (n => n ? `${n} com retrato` : 'ícones padrão')(S.bs.filter(retratoDe).length)], ...SLOTS.filter(k => UI[k]).map(k => [{borda:'Borda', hover:'Hover', cursor:'Cursor', hp:'HP', heat:'Constância', trans:'Troca de aba'}[k], UI[k]])];
+  const selIt = UI.isel && (window.GB_ARTE ? COS.concat(GB_ARTE.ideias) : COS).find(i => i.id === UI.isel);
+  const eqs = [['Paleta', (THEMES.find(t => t[0]===UI.theme)||[0,UI.theme])[1]], ['Foto', (COS.find(i => i.id === 'av-' + UI.avatar) || GBx.catalogo([UI.avatar]).slice(-1)[0]).n], ['Fundo', UI.bg || '—'], ['Efeitos', UI.fxOff ? 'desligados' : (UI.fx.join(', ') || 'nenhum')], ['Moldura', UI.frame || '—'], ['Título', UI.title || '—'], ['Fonte', UI.font || 'padrão'], ['Som', !UI.som ? 'nenhum' : somOff() ? UI.som + ' (desligado)' : UI.som], ['Chefões', (n => n ? `${n} com retrato` : 'ícones padrão')(S.bs.filter(retratoDe).length)], ...SLOTS.filter(k => UI[k]).map(k => [{borda:'Borda', hover:'Hover', cursor:'Cursor', hp:'HP', heat:'Constância', trans:'Troca de aba'}[k], UI[k]])]
+    .filter(([, v]) => !['—', 'nenhum', 'padrão', 'ícones padrão'].includes(v));
   document.getElementById('ms-root').innerHTML = `
     <div class="cats">${cats.map(([k,n]) => `<button data-cat="${k}" aria-pressed="${UI.cat===k}">${n}</button>`).join('')}</div>
     <div class="lay7"><div>${main}</div>
-      <div class="side7">
+      <div class="side7">${selIt ? detHTML(S, selIt) : ''}
         <div class="card"><h2><span class="c">~/</span>carteira</h2><div class="wal7">${fmt(S.jenny)} J<small>${TESTE ? 'modo teste: nada fica guardado' : 'disponível'}</small></div>${podeTeste() ? `<button type="button" class="btn${TESTE ? '' : ' v'}" data-teste="${TESTE ? 0 : 1}" style="margin:8px 0 2px">${TESTE ? 'sair do modo teste' : 'modo teste: Jenny infinita'}</button><p class="sub" style="margin:4px 0 0">${TESTE ? 'Feitiços e prêmios reais ficam fora do teste.' : 'Só nas versões de teste (beta e grupo). Experimente os itens sem gastar; ao sair, tudo volta como estava.'}</p>` : ''}
-          <div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.contribJ ? `<div style="display:flex;justify-content:space-between" title="bugs corrigidos e ideias feitas que você abriu no GitHub (o XP delas já está no XP × 10)"><span>contribuições (${S.contrib.length})</span><b style="color:var(--ink)">+${fmt(S.contribJ)}</b></div>` : ''}${S.retJ ? `<div style="display:flex;justify-content:space-between" title="os retratos de chefão ficaram grátis: a Jenny que você pagou por eles voltou, e os retratos continuam seus"><span>retratos devolvidos</span><b style="color:var(--ink)">+${fmt(S.retJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></div>
+          <details class="flow7"><summary>de onde veio a Jenny</summary><div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.contribJ ? `<div style="display:flex;justify-content:space-between" title="bugs corrigidos e ideias feitas que você abriu no GitHub (o XP delas já está no XP × 10)"><span>contribuições (${S.contrib.length})</span><b style="color:var(--ink)">+${fmt(S.contribJ)}</b></div>` : ''}${S.retJ ? `<div style="display:flex;justify-content:space-between" title="os retratos de chefão ficaram grátis: a Jenny que você pagou por eles voltou, e os retratos continuam seus"><span>retratos devolvidos</span><b style="color:var(--ink)">+${fmt(S.retJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></details></div>
         ${cofreOn() ? `<div class="card"><h2><span class="c">~/</span>cofre do mês</h2><div class="wal7" style="font-size:22px">R$ ${fmt(cofreTotal() - COFRE_USADO)}<small>R$ ${fmt(GBx.cofreMes(EST))} por mês, acumula · usado R$ ${fmt(COFRE_USADO)}</small></div><div class="cofre"><b style="width:${pct(cofreTotal()-COFRE_USADO, cofreTotal())}%"></b></div></div>` : ''}
         <div class="card"><h2><span class="c">~/</span>usando agora</h2><div class="eqlist">${eqs.map(([a,b]) => `<div><span>${a}</span><span>${esc(b)}</span></div>`).join('')}</div></div>
         ${RESG.length ? `<div class="card"><h2><span class="c">~/</span>resgatados</h2><ul class="got">${RESG.map(r => `<li style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:13px"><span>${esc(r)}</span><span class="sub">${ddmm(HOJE)}</span></li>`).join('')}</ul></div>` : ''}
@@ -2647,12 +2703,16 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('input', e => {
   if(e.target.id === 'l-txt'){ limpaAdicionada(); prevL(); }
+  /* busca da loja: redesenha e devolve o foco ao campo, com o cursor no fim */
+  if(e.target.matches('[data-q7]')){ UI.q7 = e.target.value; UI.sec7 = ''; render(); const b = document.querySelector('[data-q7]'); if(b){ b.focus(); b.setSelectionRange(b.value.length, b.value.length); } }
   /* campos de data: dd/mm/aaaa, com as barras entrando sozinhas */
   if(e.target.classList.contains('dt') && e.inputType && !e.inputType.startsWith('delete')){
     const n = e.target.value.replace(/\D/g, '').slice(0, 8); e.target.value = n.length > 4 ? `${n.slice(0,2)}/${n.slice(2,4)}/${n.slice(4)}` : n.length > 2 ? `${n.slice(0,2)}/${n.slice(2)}` : n; }
 });
 document.addEventListener('change', e => {
   if(e.target.id === 'l-disc') prevL();
+  if(e.target.matches('[data-f7]')){ UI[e.target.dataset.f7] = e.target.value; render(); }
+  if(e.target.matches('[data-ten7]')){ UI.ten7 = e.target.checked; render(); }
   if(e.target.matches('[data-cofrev]')){ const v = numIn(e.target.value); if(isNaN(v) || v < 0){ toast('Valor do cofre inválido'); return; } EST.cofreMes = Math.round(v*100)/100; salvaUI(); render(); toast(v > 0 ? `Cofre do mês: R$ ${fmt(EST.cofreMes)} por mês` : 'Cofre do mês desligado'); }
   if(e.target.id === 'l-edcac'){ LE.cac = e.target.value; redesenhaEd(); }
   if(e.target.id === 'l-edrep'){ LE.rep = e.target.value; redesenhaEd(); }
@@ -2716,7 +2776,7 @@ function confete(forcado){
 }
 /* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
-const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-arte],[data-arteso],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-teste],summary';
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-arte],[data-arteso],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
 let avisoProvaAtual = null;
 function avisoProva(){
@@ -2726,6 +2786,7 @@ function avisoProva(){
 }
 function travaProva(e){
   if(!UI.prova || !e.target.closest) return;
+  if(e.target.closest('[data-q7]')) return;   // a busca da loja segue valendo enquanto prova
   if(e.type === 'submit' || (e.type === 'beforeinput' && e.target.closest('input,textarea,[contenteditable]'))){ e.preventDefault(); e.stopImmediatePropagation(); avisoProva(); return; }
   if(e.type === 'keydown'){
     const campo = e.target.closest('input,select,textarea,[contenteditable]');
@@ -2756,10 +2817,10 @@ document.addEventListener('click', async e => {
     try { await post('/api/jogo/ajuste', {quando:m.d, texto:m.t, aplicado: m.st !== 'ok'}); await recarrega(); toast(m.st === 'ok' ? 'Lembrete pendente de novo' : 'Lembrete aplicado'); render(); } catch(err){ toast('Não marcou: ' + esc(err.message)); } return; }
   const te = q('[data-teste]'); if(te){ te.dataset.teste === '1' ? entraTeste() : saiTeste(); return; }
   const pr = q('[data-prova]'); if(pr){ UI.prova = pr.dataset.prova; render(); return; }
-  const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; render(); return; }
-  const ff = q('[data-ffa]'); if(ff){ UI.ffa = ff.dataset.ffa; render(); return; }
-  const fv = q('[data-fvis]'); if(fv){ UI.vis7 = fv.dataset.fvis; render(); return; }
-  const ft = q('[data-fte]'); if(ft){ UI.fte = ft.dataset.fte; render(); return; }
+  const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; UI.isel = ''; render(); return; }
+  if(q('[data-dev7]')){ UI.dev7 = !UI.dev7; render(); return; }
+  const fm = q('[data-fam7]'); if(fm){ UI.fam7 = fm.dataset.fam7; UI.sec7 = ''; render(); return; }
+  const sc = q('[data-sec7]'); if(sc){ UI.sec7 = sc.dataset.sec7; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(), pk = it && it.parts ? GBx.pacote(it, OWN) : null, p = pk ? pk.p : it && it.p;
     if(!it || it.prova || it.grupo || it.excl || (it.lock && it.lock(S)) || (pk && pk.completo) || S.jenny < p) return;
     SPENT += p; compra('cos', it.id, p, pk ? {pacote:1} : null); OWN.add(it.id); GBx.expandeOwn(OWN, EST.compras); [it.id, ...(it.parts || [])].forEach(k => { COMO[k] = 'compra'; }); UI.prova = ''; equipa(it); salvaUI(); guardaColecao();
@@ -2783,6 +2844,7 @@ document.addEventListener('click', async e => {
   const by = q('[data-buy]'); if(by){ const S = estado(), [kind,k] = by.dataset.buy.split(':'), [ok,why] = buyable(S,kind,k);
     if(!ok){ toast(`Não dá: ${esc(why)}`); return; }
     const s = spell(k); SPENT += s.p; compra('feitico', k, s.p); BOUGHT[k] = 1; salvaUI(); toast(`${s.n} na bolsa <small>−${fmt(s.p)} J</small>`); render(); return; }
+  const is = q('[data-isel]'); if(is){ UI.isel = is.dataset.isel; render(); return; }   // abre (ou fecha, com o ×) o detalhe do item na loja
   const cm = q('[data-como]'); if(cm){ UI.como = cm.dataset.como; render(); return; }
   const uz = q('[data-usar]'); if(uz){ const p = uz.dataset.usar.split(':'), k = p[0], como = k === 'escolha' ? p[1] : '', ef = k === 'escolha' ? como : k, [alvo, dia] = p.slice(k === 'escolha' ? 2 : 1);
     const u = {k, d:HOJE, ja: D.feitas.filter(t => t.done === HOJE && t.raw).map(t => GBx.marca(t.raw)).join(',').slice(0,190)};
@@ -2873,7 +2935,7 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 
 /* caixas: o canto de chama só em cima à esquerda, sem sombra */
 :where(.vis-nen) :is(.card,.tower,.col,.l-list,.k,.gnav,.note,.hud,.season,.pano-top,.boss-mini,.b2top,.mission,.cofre,.mock,.x-kcol,.wz,.nv-big > div,.nv-pon > div,.tr-pop,#fb-pop){border-radius:14px 3px 3px 3px;box-shadow:none}
-:where(.vis-nen) :is(.gc,.it7,.lk,.opt,.qq,.nota,.flow > div:first-child,.rg-conta,.nv-it,.nv-seu,.cq-prop,.cq-rec button,.cq-regra,.cq-ok,.ce-obs,.x-kc,.ia-ags label,.wz-card,.wz-tag,.wz-x,.l-ajuda,.toast){border-radius:3px}
+:where(.vis-nen) :is(.gc,.it7,.fam7 button,.lk,.opt,.qq,.nota,.flow > div:first-child,.rg-conta,.nv-it,.nv-seu,.cq-prop,.cq-rec button,.cq-regra,.cq-ok,.ce-obs,.x-kc,.ia-ags label,.wz-card,.wz-tag,.wz-x,.l-ajuda,.toast){border-radius:3px}
 :where(.vis-nen) .col .ch{background:none;border-bottom:1px solid var(--hair)}
 :where(.vis-nen) .nv-ver{background:var(--panel)}
 :where(.vis-nen) .tr-hole{border-radius:14px 3px 3px 3px}
