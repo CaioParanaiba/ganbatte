@@ -6,7 +6,8 @@
 //   const h = TRANSICOES.fumaca.cola(raiz, {secao, lento, claro})   h.troca(fn, origem)   h.ajusta({lento, claro})   h.desliga()
 //   TRANSICOES.fumaca.liga(palco, cfg) → {ajusta, legenda, estado, desliga}: a bancada, com o jogo de mentira
 (() => {
-const B = window.TR_BASE, lim = B.lim;
+// a base (tr-base.js no jogo) é procurada só na hora de usar: na demonstração os scripts entram em ordem alfabética
+const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 const DUR = .84, T_TROCA = .3;   // s: a transição inteira e o instante em que a tela já está coberta
 const SP = 160, NS = 6, ESC = .5; // lado do sprite, quantos sprites e a escala do canvas (meia resolução)
 const PAL = {escuro: {s: [24, 20, 38], m: [70, 62, 102], l: [150, 140, 190]}, claro: {s: [92, 86, 122], m: [146, 140, 176], l: [222, 218, 238]}};
@@ -111,10 +112,10 @@ function def(){
   };
 }
 
-function cola(raiz, cfg){ return B.cria(raiz, cfg, def()); }
+function cola(raiz, cfg){ return TR_BASE.cria(raiz, cfg, def()); }
 
 // ---- bancada: o jogo de mentira com as quatro abas; clique nas abas (a fumaça sai do ponto onde você clicou)
-function liga(palco, cfg){ return B.liga(palco, cfg, cola); }
+function liga(palco, cfg){ return TR_BASE.liga(palco, cfg, cola); }
 
 // ---- prévias: a tira de quadros da transição (sobre um jogo desenhado à mão) e as seis baforadas
 function mock(g, W, H, claro){

@@ -36,6 +36,10 @@ const ARTE = {
   'lic-ouro':      {st:'finalizar', tx:'Três dourados chapados para escolher: filete, chanfro e losangos. O provador da nova mostra os três.'},
   'lic-estojo':    {st:'finalizar', tx:'Couro preto com costura, em volta do cartão novo. Aprovado, mas ainda provisório.'},
   'lic-corrente':  {st:'finalizar', tx:'A corrente do Kurapika dando a volta no estojo. Aprovada, mas ainda provisória.'},
+  'tr-deslizar':   {st:'finalizar', tx:'Lapidada (20/10): desliza no sentido da barra de abas, e a velha sai enquanto a nova entra. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tr-glitch':     {st:'finalizar', tx:'Lapidada (20/10): a velha separa as cores, rasga em faixas com a nova pelos rasgos, e a nova se firma com um tranco. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tr-fumaca':     {st:'finalizar', tx:'Nova (20/10): a fumaça roxa sai de onde você clicou, cobre a tela e se desfaz já na aba nova. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tr-aspira':     {st:'finalizar', tx:'Nova (20/10): os cards da aba velha são sugados para o canto mais perto do clique, com um redemoinho. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
@@ -49,8 +53,6 @@ const IDEIAS = [
   ['fx-soco', 'ev', 'raro', 'Leorio', 'Soco remoto do Leorio', 'No andar novo, um portal de nen abre perto do card e o punho do Leorio sai dele.', 'dev', 'A decidir: anotada como raro, só no andar novo; o Caio quer ver na prática antes de decidir se fica.'],
   ['bd-costura', 'borda', 'raro', 'Machi', 'Costura de nen', 'A borda dos cards vira uma costura de fio de nen, em zigue-zague.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS ou SVG.'],
   ['hm-gungi', 'heat', 'raro', 'Meruem e Komugi', 'Constância no Gungi', 'O heatmap vira um tabuleiro de Gungi: cada dia jogado é uma peça, mais alta quanto mais forte o dia; o dia salvo é o Rei.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS.'],
-  ['tr-fumaca', 'trans', 'raro', 'Morel', 'Fumaça do Morel', 'Ao trocar de aba, a fumaça do Deep Purple cobre a tela por meio segundo e se desfaz na aba nova.', 'dev', 'Ideia aprovada, ainda sem arte. Curta, em CSS.'],
-  ['tr-aspira', 'trans', '', 'Shizuku', 'Deme-chan', 'Ao trocar de aba, a Deme-chan suga a tela antiga pelo bocal e a aba nova aparece atrás.', 'dev', 'A decidir: falta uma prévia para ver antes de decidir (faixa sugerida: raro).'],
   ['tt-medico', 'title', 'comum', 'Leorio', 'Futuro Médico', 'Título para quem estuda.', 'dev', 'Ideia aprovada, ainda não entrou no catálogo.'],
   ['at-countdown', 'prazo', 'raro', 'Genthru', 'Countdown do Genthru', 'A bomba do Countdown na tarefa com prazo, com os dias que faltam; amanhã e hoje o número fica vermelho, e atrasada ela estoura.', 'aberto', 'Primeira versão feita, em aberto: a prévia mostra 5 dias, amanhã, hoje e 2 dias de atraso.' + PRAZO],
   ['at-carimbo', 'prazo', 'comum', 'Exame Hunter', 'Carimbo de atrasada', 'Um carimbo vermelho torto na tarefa atrasada, no estilo dos carimbos da licença.', 'dev', 'Ideia, ainda sem arte.' + PRAZO],
@@ -101,6 +103,13 @@ const CSS = `
 :root[data-hp="corrente-nova"] :is(.hp4 > b,.l-boss .hp i),.hp-corrente-nova .hp7 > i > b{background:url(${IMG('corrente-tira')}) 0 50%/auto 100% repeat-x}
 :root[data-cursor$="-nova"] body,:root[data-cursor$="-nova"] body *{cursor:none!important}
 .pvc .cur7 canvas{width:72px;height:72px}
+/* prévia das transições que só existem em código: a fumaça cobre e abre; a aba encolhe girando para o canto */
+@media (prefers-reduced-motion:no-preference){
+  .tr-fumaca .tr7::after{content:"";position:absolute;inset:-30%;background:radial-gradient(circle at 30% 0,#5A4E86 0 35%,#3A3355 55%,transparent 72%);animation:arFumPv 2.8s ease-in-out infinite}
+  .tr-aspira .tr7 .mc{transform-origin:100% 0;animation:arAspPv 2.8s ease-in infinite}
+}
+@keyframes arFumPv{0%,15%{transform:scale(0);opacity:1}40%,55%{transform:scale(1.4);opacity:1}85%,100%{transform:translate(-25%,-35%) scale(1.8);opacity:0}}
+@keyframes arAspPv{0%,20%{transform:none;opacity:1}55%{transform:translate(40%,-40%) rotate(-40deg) scale(.05);opacity:.4}60%,75%{transform:scale(0);opacity:0}100%{transform:none;opacity:1}}
 .pvc .hmn{position:absolute;inset:12px 18px;display:grid;place-items:center} .pvc .hmn .l-hg{--n:9;grid-template-rows:repeat(4,auto);grid-template-columns:repeat(9,15px)}`;
 const st = document.createElement('style'); st.id = 'gb-arte'; st.textContent = CSS; document.head.appendChild(st);
 /* heatmaps em CSS: o mesmo CSS dos módulos, com o seletor do jogo e o da prévia */
@@ -146,6 +155,18 @@ function hover(){
   hovK = k;
   if(k && window.CURSORES && CURSORES[k] && CURSORES[k].cola) hov = CURSORES[k].cola(document.documentElement, {seletor: '.card'});
 }
+/* ---------- transições em código: a troca de aba passa pelo módulo quando o <html> pede um "-nova" (deslizar, glitch) ou
+   uma transição que só existe em código (fumaca, aspira). fn é a troca de verdade (esconde a velha, mostra a nova) ---------- */
+const SO_CODIGO = ['fumaca', 'aspira'], trs = {};
+const claro = () => { const c = (getComputedStyle(document.body).backgroundColor.match(/\d+/g) || [0, 0, 0]).map(Number); return c[0] * .3 + c[1] * .59 + c[2] * .11 > 140; };
+function aba(fn){
+  const v = document.documentElement.getAttribute('data-trans') || '', k = v.endsWith('-nova') ? v.slice(0, -5) : SO_CODIGO.includes(v) ? v : '';
+  const M = k && window.TRANSICOES && window.TR_BASE && TRANSICOES[k];
+  if(!M) return fn();
+  const h = trs[k] || (trs[k] = M.cola(document.documentElement, {}));
+  h.ajusta({claro: claro()});
+  h.troca(fn);
+}
 if(window.GB_FX){
   const aplica = GB_FX.aplica, ver = GB_FX.ver;
   GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); };
@@ -164,7 +185,7 @@ if(window.GB_FX){
 /* ---------- o que o index.html e o grupo.js chamam ---------- */
 const troca = id => `<span class="ar-tg" role="group" aria-label="versão">${['antiga', 'nova'].map(v => `<button type="button" data-arte="${id}:${v}" aria-pressed="${(nova(id) ? 'nova' : 'antiga') === v}">${v}</button>`).join('')}</span>`;
 window.GB_ARTE = {
-  ARTE, CARTAO, ST, tem, nova, naipe, fonte, troca,
+  ARTE, CARTAO, ST, tem, nova, naipe, fonte, troca, aba,
   so: false,   // o filtro "arte nova" da Masadora
   /* os cards em desenvolvimento da vitrine (não se compram nem se provam) e a prévia deles */
   ideias: ITENS_DEV,
@@ -173,7 +194,7 @@ window.GB_ARTE = {
     return `<div class="pv dev7"><b>em desenvolvimento</b><span>${esc(it.quem)}</span></div>`;
   },
   /* provando com a nova: o valor do atributo ganha "-nova" (vista() no index.html) */
-  vista(v, it){ if(nova(it.id) && it.eq && v[it.cat] === it.eq[it.cat] && ['borda','cursor','hp','heat','hover'].includes(it.cat)) v[it.cat] += '-nova'; },
+  vista(v, it){ if(nova(it.id) && it.eq && v[it.cat] === it.eq[it.cat] && ['borda','cursor','hp','heat','hover','trans'].includes(it.cat)) v[it.cat] += '-nova'; },
   /* a classe da prévia do card (pvNovo): a nova, se for a escolhida */
   k(it){ const k = it.eq[it.cat]; return nova(it.id) && ['borda','hp','heat'].includes(it.cat) ? k + '-nova' : k; },
   /* a prévia do cursor e do heatmap novos no card */

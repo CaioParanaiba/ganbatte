@@ -5,7 +5,8 @@
 // Só transform e opacity nas duas seções, nada desenhado por cima; quadro em função do tempo.
 //   const h = TRANSICOES.deslizar.cola(raiz, {secao, lento})   h.troca(fn, origem)   h.ajusta({lento})   h.desliga()
 (() => {
-const B = window.TR_BASE, lim = B.lim;
+// a base (tr-base.js no jogo) é procurada só na hora de usar: na demonstração os scripts entram em ordem alfabética
+const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 const DUR = .26;
 const sai = x => 1 - Math.pow(1 - x, 3), entra = x => x * x * x;
 
@@ -26,8 +27,8 @@ function def(){
     fim(est, ctx){ Object.assign(ctx.nova.style, {transform: est.tn, opacity: est.on}); },
   };
 }
-function cola(raiz, cfg){ return B.cria(raiz, cfg, def()); }
-function liga(palco, cfg){ return B.liga(palco, cfg, cola); }
+function cola(raiz, cfg){ return TR_BASE.cria(raiz, cfg, def()); }
+function liga(palco, cfg){ return TR_BASE.liga(palco, cfg, cola); }
 
 (window.TRANSICOES = window.TRANSICOES || {}).deslizar = {cola, liga,
   titulo: 'clique nas abas: para a direita e para a esquerda (ou ligue "trocar sozinho")',

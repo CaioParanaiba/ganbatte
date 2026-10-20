@@ -6,7 +6,8 @@
 // (blocos e varredura) é um canvas por cima. Quadro em função do tempo; o sorteio de cada quadro é fixo pela semente.
 //   const h = TRANSICOES.glitch.cola(raiz, {secao, lento, claro})   h.troca(fn, origem)   h.ajusta({lento, claro})   h.desliga()
 (() => {
-const B = window.TR_BASE, lim = B.lim;
+// a base (tr-base.js no jogo) é procurada só na hora de usar: na demonstração os scripts entram em ordem alfabética
+const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 const DUR = .42, PASSO = .045;   // s: a falha inteira e a duração de cada quadro
 const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const rgb = (d, k) => d ? `drop-shadow(${d}px 0 0 rgba(255,40,90,${k})) drop-shadow(${-d}px 0 0 rgba(0,220,255,${k}))` : '';
@@ -77,8 +78,8 @@ function def(){
     },
   };
 }
-function cola(raiz, cfg){ return B.cria(raiz, cfg, def()); }
-function liga(palco, cfg){ return B.liga(palco, cfg, cola); }
+function cola(raiz, cfg){ return TR_BASE.cria(raiz, cfg, def()); }
+function liga(palco, cfg){ return TR_BASE.liga(palco, cfg, cola); }
 
 (window.TRANSICOES = window.TRANSICOES || {}).glitch = {cola, liga,
   titulo: 'clique nas abas (ou ligue "trocar sozinho"); a câmera lenta ajuda a ver quadro a quadro',

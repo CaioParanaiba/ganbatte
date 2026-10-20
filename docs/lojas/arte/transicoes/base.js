@@ -39,7 +39,7 @@ function cria(raiz, cfg, def){
     if(!nova || !velha.hidden) return null;   // a aba não mudou
     velha.hidden = false;
     Object.assign(velha.style, {
-      position: tela ? 'fixed' : 'absolute', margin: '0', boxSizing: 'border-box', pointerEvents: 'none', zIndex: def.zVelha || 57,
+      position: tela ? 'fixed' : 'absolute', margin: '0', boxSizing: 'border-box', pointerEvents: 'none', zIndex: def.zVelha || 4,   // abaixo da barra de abas do jogo (z-index 5)
       left: (op ? r.left - pr.left - op.clientLeft + op.scrollLeft : r.left) + 'px',
       top: (op ? r.top - pr.top - op.clientTop + op.scrollTop : r.top) + 'px', width: r.width + 'px'});
     const loc = p => ({x: p.x - c.l, y: p.y - c.t});
@@ -93,5 +93,5 @@ function liga(palco, cfg, cola){
   };
 }
 
-window.TR_BASE = {cria, liga, lim};
+window.TR_BASE = {cria, liga, lim};   // no jogo: web/arte/tr-base.js
 })();

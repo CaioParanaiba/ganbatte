@@ -6,7 +6,8 @@
 //   const h = TRANSICOES.aspira.cola(raiz, {secao, lento, claro})   h.troca(fn, origem)   h.ajusta({lento, claro})   h.desliga()
 //   TRANSICOES.aspira.liga(palco, cfg) → {ajusta, legenda, estado, desliga}: a bancada, com o jogo de mentira
 (() => {
-const B = window.TR_BASE, lim = B.lim;
+// a base (tr-base.js no jogo) é procurada só na hora de usar: na demonstração os scripts entram em ordem alfabética
+const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 const DUR = .72;
 const MAXU = 36;                   // no máximo tantas peças voando (acima disso, agrupa pelos pais)
 const ss = (a, b, x) => { const u = lim((x - a) / (b - a), 0, 1); return u * u * (3 - 2 * u); };
@@ -38,7 +39,7 @@ function pecas(sec, cx, W, H){
 
 function def(){
   return {
-    dur: DUR, zVelha: 57,
+    dur: DUR,
     inicio(ctx){
       const {W, H} = ctx, rnd = mulberry(ctx.cfg.semente || Math.floor(Math.random() * 1e9));
       // o canto mais perto do clique, um pouco para fora da tela (as peças somem antes de chegar)
@@ -114,9 +115,9 @@ function def(){
   };
 }
 
-function cola(raiz, cfg){ return B.cria(raiz, cfg, def()); }
+function cola(raiz, cfg){ return TR_BASE.cria(raiz, cfg, def()); }
 
-function liga(palco, cfg){ return B.liga(palco, cfg, cola); }
+function liga(palco, cfg){ return TR_BASE.liga(palco, cfg, cola); }
 
 (window.TRANSICOES = window.TRANSICOES || {}).aspira = {cola, liga,
   titulo: 'clique nas abas (ou ligue "trocar sozinho") e veja a aba velha ser sugada para o canto',

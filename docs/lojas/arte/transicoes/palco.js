@@ -14,7 +14,7 @@ const hm = Array.from({length: 105}, (_, i) => `<i style="opacity:${[.12, .35, .
 
 const CSS = `
 .tg{position:absolute;inset:0;overflow:hidden;isolation:isolate;background:var(--b-bg);color:var(--b-tinta);font:14px var(--f-ui);cursor:default;user-select:none;-webkit-user-select:none}
-.tg-nav{display:flex;gap:4px;align-items:center;padding:0 18px;height:46px;border-bottom:1px solid var(--b-borda);background:var(--b-card);position:relative}
+.tg-nav{display:flex;gap:4px;align-items:center;padding:0 18px;height:46px;border-bottom:1px solid var(--b-borda);background:var(--b-card);position:relative;z-index:5}   /* como a .tabs do jogo */
 .tg-nav button{font:600 13px var(--f-ui);color:var(--b-suave);background:none;border:0;border-bottom:2px solid transparent;height:46px;padding:0 14px;cursor:pointer}
 .tg-nav button[aria-pressed="true"]{color:var(--b-tinta);border-bottom-color:#E0AF68}
 .tg-nav .tg-fim{margin-left:auto;display:flex;gap:14px;align-items:center;font:12px var(--f-ui);color:var(--b-suave)}
