@@ -114,17 +114,7 @@ function def(){
 function cola(raiz, cfg){ return B.cria(raiz, cfg, def()); }
 
 // ---- bancada: o jogo de mentira com as quatro abas; clique nas abas (a fumaça sai do ponto onde você clicou)
-function liga(palco, cfg){
-  let h = null;
-  const p = window.TR_PALCO.monta(palco, cfg, () => h);
-  h = cola(p.app, cfg);
-  return {
-    ajusta(o){ Object.assign(cfg, o); p.pinta(); h.ajusta(cfg); },
-    legenda: h.legenda, estado: () => Object.assign(h.estado(), {aba: p.atual()}),
-    abre: p.abre, proxima: p.proxima, vai: h.vai, encerra: h.encerra, app: p.app,
-    desliga(){ h.desliga(); p.desliga(); },
-  };
-}
+function liga(palco, cfg){ return B.liga(palco, cfg, cola); }
 
 // ---- prévias: a tira de quadros da transição (sobre um jogo desenhado à mão) e as seis baforadas
 function mock(g, W, H, claro){

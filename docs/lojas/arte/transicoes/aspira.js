@@ -116,17 +116,7 @@ function def(){
 
 function cola(raiz, cfg){ return B.cria(raiz, cfg, def()); }
 
-function liga(palco, cfg){
-  let h = null;
-  const p = window.TR_PALCO.monta(palco, cfg, () => h);
-  h = cola(p.app, cfg);
-  return {
-    ajusta(o){ Object.assign(cfg, o); p.pinta(); h.ajusta(cfg); },
-    legenda: h.legenda, estado: () => Object.assign(h.estado(), {aba: p.atual()}),
-    abre: p.abre, proxima: p.proxima, vai: h.vai, encerra: h.encerra, app: p.app,
-    desliga(){ h.desliga(); p.desliga(); },
-  };
-}
+function liga(palco, cfg){ return B.liga(palco, cfg, cola); }
 
 (window.TRANSICOES = window.TRANSICOES || {}).aspira = {cola, liga,
   titulo: 'clique nas abas (ou ligue "trocar sozinho") e veja a aba velha ser sugada para o canto',

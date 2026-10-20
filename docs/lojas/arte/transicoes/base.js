@@ -7,7 +7,9 @@
 //   contém as seções e recorta o que sair dele
 //   cfg: {secao: seletor das abas, lento: câmera lenta, claro: tema claro, manual: 1 = não anda sozinho (testes: h.vai(t))}
 //   def: {dur (s), inicio(ctx) → est, quadro(est, t, ctx), fim(est, ctx)}; t em segundos já dividido pelo "lento"
-//   ctx: {tela, pai, W, H, velha, nova, caixa {l,t,w,h} da aba velha, origem {x,y} do clique, loc(p), claro, escondeVelha()}
+//   ctx: {tela, pai, W, H, velha, nova, dir (1 = a nova vem depois da velha na ordem das abas, -1 = antes), caixa {l,t,w,h}
+//   da aba velha, origem {x,y} do clique, loc(p), claro, escondeVelha()}
+//   TR_BASE.liga(palco, cfg, cola): a bancada de qualquer transição, com o jogo de mentira (palco.js)
 //   origem: onde o jogador clicou (coordenadas do navegador); sem ela, o último clique recente ou o meio do topo
 (() => {
 const quieto = matchMedia('(prefers-reduced-motion: reduce)');
@@ -33,7 +35,7 @@ function cria(raiz, cfg, def){
     const c = caixa(), r = velha.getBoundingClientRect(), op = tela ? null : velha.offsetParent, pr = op && op.getBoundingClientRect();
     const css = velha.style.cssText;
     fn();
-    const nova = secoes().find(s => s !== velha && !s.hidden);
+    const todas = secoes(), nova = todas.find(s => s !== velha && !s.hidden);
     if(!nova || !velha.hidden) return null;   // a aba não mudou
     velha.hidden = false;
     Object.assign(velha.style, {
@@ -41,7 +43,7 @@ function cria(raiz, cfg, def){
       left: (op ? r.left - pr.left - op.clientLeft + op.scrollLeft : r.left) + 'px',
       top: (op ? r.top - pr.top - op.clientTop + op.scrollTop : r.top) + 'px', width: r.width + 'px'});
     const loc = p => ({x: p.x - c.l, y: p.y - c.t});
-    const ctx = {raiz, tela, pai: tela ? document.body : raiz, W: c.W, H: c.H, velha, nova, loc, claro: !!cfg.claro, cfg,
+    const ctx = {raiz, tela, dir: todas.indexOf(nova) > todas.indexOf(velha) ? 1 : -1, pai: tela ? document.body : raiz, W: c.W, H: c.H, velha, nova, loc, claro: !!cfg.claro, cfg,
       caixa: {l: r.left - c.l, t: r.top - c.t, w: r.width, h: r.height},
       origem: origem ? loc(origem) : ult && performance.now() - ult.t < 800 ? loc(ult) : {x: c.W / 2, y: 0},
       escondeVelha(){ velha.hidden = true; }};
@@ -78,5 +80,18 @@ function cria(raiz, cfg, def){
   };
 }
 
-window.TR_BASE = {cria, lim};
+// a bancada: o jogo de mentira com as quatro abas, e a transição colada nele
+function liga(palco, cfg, cola){
+  let h = null;
+  const p = window.TR_PALCO.monta(palco, cfg, () => h);
+  h = cola(p.app, cfg);
+  return {
+    ajusta(o){ Object.assign(cfg, o); p.pinta(); h.ajusta(cfg); },
+    legenda: h.legenda, estado: () => Object.assign(h.estado(), {aba: p.atual()}),
+    abre: p.abre, proxima: p.proxima, vai: h.vai, encerra: h.encerra, app: p.app,
+    desliga(){ h.desliga(); p.desliga(); },
+  };
+}
+
+window.TR_BASE = {cria, liga, lim};
 })();
