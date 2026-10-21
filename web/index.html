@@ -1860,7 +1860,7 @@ function pvHTML(it){
   if(it.cat === 'som') return `<div class="pv som" style="${palStyle(UI.theme)}">${[18,34,26,44,30,20,38,24].map((h, i) => `<i style="--h:${h}px;--d:${i*.12}s"></i>`).join('')}<span class="gb-tag">▶ ouvir</span></div>`;
   const pal = it.eq?.theme || UI.theme, fx = it.fx ? [window.GB_ARTE ? GB_ARTE.fx(it) : it.fx] : (it.fxs || []);   // arte nova (#134): a classe da prévia ganha "-nova"
   const cls = ['pv', it.eq?.bg ? 'tex-'+it.eq.bg : '', fx.length ? 'fxd '+fx.join(' ') : '', it.eq?.frame ? 'fr-'+it.eq.frame : '', it.eq?.font ? 'ft-'+it.eq.font : ''].join(' ');
-  return `<div class="${cls}" style="${palStyle(pal)}">${avMe(40)}<div class="mini"><b>Andar 97</b>${it.eq?.title?`<span class="titulo">${esc(it.eq.title)}</span>`:''}<div class="xpbar"><b style="width:62%"></b></div></div><span class="ring fury" style="--p:70"><span>${ic('antenna')}</span></span>${fx.includes('zap')?'<span class="flash"></span>':''}${it.ev ? `<span class="gb-tag">${['confete','fogos'].includes(it.fx) ? 'no andar novo' : 'ao concluir'} · ▶</span>` : ''}</div>`;
+  return `<div class="${cls}" style="${palStyle(pal)}">${avMe(40)}<div class="mini"><b>Andar 97</b>${it.eq?.title?`<span class="titulo">${esc(it.eq.title)}</span>`:''}<div class="xpbar"><b style="width:62%"></b></div></div><span class="ring fury" style="--p:70"><span>${ic('antenna')}</span></span>${fx.includes('zap')?'<span class="flash"></span>':''}${it.ev ? `<span class="gb-tag">${['confete','fogos','soco','dragao'].includes(it.fx) ? 'no andar novo' : 'ao concluir'} · ▶</span>` : ''}</div>`;
 }
 /* selos do detalhe (#135): a faixa (o pacote não tem), o 念 HxH dos itens do tema e a prateleira */
 const FA_NOME = Object.fromEntries(GBx.FAIXAS_LOJA);
@@ -2913,12 +2913,15 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 <script src="arte/godspeed.js"></script>
 <script src="arte/jajanken.js"></script>
 <script src="arte/costura.js"></script>
+<script src="arte/soco.js"></script>
+<script src="arte/dragao.js"></script>
 <script src="arte/cartas.js"></script>
 <script src="arte/chamas.js"></script>
 <script src="arte/bungee.js"></script>
 <script src="arte/en.js"></script>
 <script src="arte/vira.js"></script>
 <script src="arte/shu.js"></script>
+<script src="arte/gyo.js"></script>
 <script src="arte/contorno.js"></script>
 <script src="arte/countdown.js"></script>
 <script src="arte/tr-base.js"></script>
