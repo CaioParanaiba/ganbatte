@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Barra elétrica do Killua</title>
+<!-- Vitrine de avaliação (#134): o fx-shim novo (eletrica.js) nas alturas de barra do jogo, ao lado do de hoje.
+     Abre direto do disco (file://). Não é do jogo: ao aprovar, o eletrica.js vai para web/arte/ e o CSS para o web/arte.js. -->
+<style>
+:root{
+  --bg:#13141B;--panel:#1B1D28;--panel2:#222536;--ink:#E6E8F0;--soft:#9197AD;--faint:#5A6078;--hair:#2A2D3C;--track:#252838;
+  --red:#F7768E;--amb:#E0AF68;--grn:#73C991;--volt:#9FD3FF;--aura:#B4A0FF;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;--f-hud:"Chakra Petch","JetBrains Mono",ui-monospace,monospace;
+  --estalo:.36s;--descarga:3.4s}
+:root[data-tema="claro"]{color-scheme:light;--bg:#F4F5F9;--panel:#FFFFFF;--panel2:#F3F4FA;--ink:#1B1E2E;--soft:#5B6180;--faint:#989EB6;--hair:#E1E4EE;--track:#E8EAF2;--volt:#1F78C8;--aura:#6B4FD8}
+:root[data-tema="killua"]{--bg:#0C1120;--panel:#121A2E;--panel2:#18223A;--ink:#EAF2FF;--soft:#93A3C4;--faint:#56648A;--hair:#22304F;--track:#1C2742;--volt:#8CC8FF;--aura:#7FA8FF}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:22px 16px 80px}
+h1{font:700 22px var(--f-hud);margin:0 0 4px}
+h2{font:700 16px var(--f-hud);margin:0}
+.sub{color:var(--soft);margin:0 0 16px;max-width:760px}
+.cap{font:600 11px var(--f-mono);color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin:0 0 8px}
+.ctl{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 12px;margin:0 0 22px;
+  background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--hair);border-radius:10px;backdrop-filter:blur(6px);font-size:13px}
+.ctl label{display:flex;gap:6px;align-items:center;color:var(--soft)}
+section{margin:0 0 34px;padding:0 0 26px;border-bottom:1px solid var(--hair)}
+.hd{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:0 0 6px}
+.tag{font:500 10px var(--f-mono);border:1px solid var(--hair);border-radius:99px;padding:1px 8px;color:var(--soft)}
+.tag.nova{color:var(--grn);border-color:color-mix(in srgb,var(--grn) 50%,transparent)}
+.nota{color:var(--soft);font-size:13px;margin:0 0 14px;max-width:820px}
+
+/* ---------- o topo do jogo de mentira ---------- */
+.topo{display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:16px 18px;max-width:560px}
+.topo .av{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#DDE6F5,#8796B5);flex:none}
+.topo b{font:700 20px var(--f-hud)} .topo small{display:block;color:var(--soft);font:500 11px var(--f-mono)}
+.topo .xpbar{width:260px;margin-top:8px}
+
+/* ---------- barras (como no jogo) ---------- */
+.xpbar{height:10px;border-radius:99px;background:var(--track);overflow:hidden;position:relative}
+.xpbar > b{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:linear-gradient(90deg,var(--aura),var(--volt));box-shadow:0 0 12px -2px var(--volt)}
+.xpbar.h7{height:7px} .xpbar.h6{height:6px} .xpbar.h14{height:14px}
+.l-bar{height:9px;border-radius:99px;background:var(--track);overflow:hidden} .l-bar i{display:block;height:100%;border-radius:inherit;background:var(--volt)}
+.barras{display:grid;gap:18px;max-width:560px}
+.barras .rot{display:flex;justify-content:space-between;font:500 11px var(--f-mono);color:var(--faint);margin:0 0 6px}
+
+/* fx-shim novo: o raio estala dentro do trecho cheio (quadros do sprite aos saltos) e a ponta solta faíscas */
+.el{overflow:visible} .el > i{position:relative}
+.el > :is(b,i){background:var(--el-raio) 0 0/auto 300% repeat-x,linear-gradient(90deg,var(--el-f1),var(--el-f2));box-shadow:0 0 10px -2px var(--el-brilho)}
+.el > :is(b,i)::after{content:"";position:absolute;left:100%;top:50%;height:320%;aspect-ratio:var(--fw)/var(--fh);
+  translate:calc(var(--fx) / var(--fw) * -100%) -50%;background:var(--el-faisca) 0 0/100% 300% no-repeat;pointer-events:none}
+:root[data-ponta="0"] .el > :is(b,i)::after{content:none}
+@media (prefers-reduced-motion:no-preference){
+  :root:not([data-mov="0"]) .el > :is(b,i){animation:elEstala var(--estalo) steps(1,end) infinite,elDescarga var(--descarga) linear infinite}
+  :root:not([data-mov="0"])[data-descarga="0"] .el > :is(b,i){animation:elEstala var(--estalo) steps(1,end) infinite}
+  :root:not([data-mov="0"]) .el > :is(b,i)::after{animation:elFaisca calc(var(--estalo) * .8) steps(1,end) infinite}
+}
+/* a tira anda um pouco para a ponta a cada quadro: a carga corre para onde a barra cresce */
+@keyframes elEstala{0%{background-position:0 0,0 0}33.333%{background-position:31px 50%,0 0}66.667%{background-position:67px 100%,0 0}}
+@keyframes elFaisca{0%{background-position:0 0}33.333%{background-position:0 50%}66.667%{background-position:0 100%}}
+/* a descarga: de tempos em tempos a barra acende inteira por um instante */
+@keyframes elDescarga{0%,86%,100%{filter:none}89%{filter:brightness(1.7) drop-shadow(0 0 5px var(--el-meio))}92%{filter:brightness(1.05)}94%{filter:brightness(1.45)}97%{filter:none}}
+
+/* o de hoje */
+.hoje > b{background:linear-gradient(90deg,var(--aura),var(--volt),var(--aura));background-size:200% 100%}
+@media (prefers-reduced-motion:no-preference){ :root:not([data-mov="0"]) .hoje > b{animation:shim 2.4s linear infinite} }
+@keyframes shim{to{background-position:-200% 0}}
+
+.pecas{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end}
+.pecas figure{margin:0} .pecas figcaption{font:500 11px var(--f-mono);color:var(--faint);margin-top:8px}
+.pecas div{background:#0B0E18;border:1px solid var(--hair);border-radius:10px;padding:14px;display:grid;place-items:center}
+.pecas img{display:block}
+</style>
+</head>
+<body>
+<main>
+<h1>Barra elétrica do Killua</h1>
+<p class="sub">O <b>fx-shim</b> refeito como o raio do Killua: o trecho cheio da barra de XP estala com um raio branco-azulado,
+a ponta solta faíscas com um arco que pula para o vazio e, de tempos em tempos, a barra inteira dá uma descarga.
+Raro: só a barra mexe, nada sai dela pela tela (os raios que cortam a tela continuam sendo do Godspeed, épico).</p>
+
+<div class="ctl">
+  <label>tema <select id="tema"><option value="">escuro</option><option value="claro">claro</option><option value="killua" selected>Killua</option></select></label>
+  <label>ritmo <select id="ritmo"><option value=".5s">calmo</option><option value=".36s" selected>padrão</option><option value=".24s">agitado</option></select></label>
+  <label><input id="ponta" type="checkbox" checked> faísca na ponta</label>
+  <label><input id="descarga" type="checkbox" checked> descarga</label>
+  <label><input id="mov" type="checkbox" checked> movimento</label>
+</div>
+
+<section>
+  <div class="hd"><h2>No topo do jogo</h2><span class="tag nova">nova</span><span class="tag">fx-shim · raro · Killua</span></div>
+  <p class="nota">Como fica no lugar onde ela mais aparece.</p>
+  <div class="topo"><span class="av"></span><div><small>NÍVEL 12 · 1.840 / 2.900 XP</small><b>Andar 97</b><div class="xpbar el"><b style="width:63%"></b></div></div></div>
+</section>
+
+<section>
+  <div class="hd"><h2>Alturas da barra</h2><span class="tag nova">nova</span></div>
+  <p class="nota">As alturas que o jogo usa, do topo à prévia mini da loja. Nas baixas o raio vira um fio que treme; a faísca da ponta segura o efeito.</p>
+  <div class="barras">
+    <div><div class="rot"><span>topo (10 px)</span><span>12%</span></div><div class="xpbar el"><b style="width:12%"></b></div></div>
+    <div><div class="rot"><span>topo (10 px)</span><span>58%</span></div><div class="xpbar el"><b style="width:58%"></b></div></div>
+    <div><div class="rot"><span>topo (10 px)</span><span>94%</span></div><div class="xpbar el"><b style="width:94%"></b></div></div>
+    <div><div class="rot"><span>barra grande (14 px)</span><span>66%</span></div><div class="xpbar h14 el"><b style="width:66%"></b></div></div>
+    <div><div class="rot"><span>visão geral, .l-bar (9 px)</span><span>40%</span></div><div class="l-bar el"><i style="width:40%"></i></div></div>
+    <div><div class="rot"><span>hub (7 px)</span><span>70%</span></div><div class="xpbar h7 el"><b style="width:70%"></b></div></div>
+    <div><div class="rot"><span>prévia mini (6 px)</span><span>50%</span></div><div class="xpbar h6 el"><b style="width:50%"></b></div></div>
+  </div>
+  <p class="cap" style="margin-top:26px">a de hoje</p>
+  <div class="barras">
+    <div><div class="rot"><span>fx-shim hoje (degradê que corre)</span><span>58%</span></div><div class="xpbar hoje"><b style="width:58%"></b></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="hd"><h2>As peças</h2><span class="tag">os quadros do sprite</span></div>
+  <p class="nota">Três quadros de raio e três de faísca, sorteados com semente fixa (sempre o mesmo desenho). O CSS troca de quadro aos saltos.</p>
+  <div class="pecas" id="pecas"></div>
+</section>
+</main>
+
+<script src="eletrica.js"></script>
+<script>
+const E = GB_ELETRICA, R = document.documentElement, K = E.AZUL, F = E.faisca();
+R.dataset.tema = 'killua';
+R.style.setProperty('--el-raio', E.uri(E.raios()));
+R.style.setProperty('--el-faisca', E.uri(F.svg));
+R.style.setProperty('--fw', F.W); R.style.setProperty('--fh', F.H); R.style.setProperty('--fx', F.fx);
+for(const [v, c] of [['--el-f1', K.fundo], ['--el-f2', K.fundo2], ['--el-brilho', K.brilho], ['--el-meio', K.meio]]) R.style.setProperty(v, c);
+document.getElementById('pecas').innerHTML = [[E.raios(), 'raio (3 quadros)', 1.5], [F.svg, 'faísca (3 quadros)', 1.5]]
+  .map(([s, n, z]) => `<figure><div><img src="data:image/svg+xml,${encodeURIComponent(s)}" width="${+s.match(/width="([\d.]+)"/)[1] * z}" alt=""></div><figcaption>${n}</figcaption></figure>`).join('');
+document.getElementById('tema').onchange = e => e.target.value ? R.dataset.tema = e.target.value : delete R.dataset.tema;
+document.getElementById('ritmo').onchange = e => R.style.setProperty('--estalo', e.target.value);
+document.getElementById('ponta').onchange = e => R.dataset.ponta = e.target.checked ? '1' : '0';
+document.getElementById('descarga').onchange = e => R.dataset.descarga = e.target.checked ? '1' : '0';
+document.getElementById('mov').onchange = e => R.dataset.mov = e.target.checked ? '1' : '0';
+</script>
+</body>
+</html>

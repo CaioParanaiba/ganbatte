@@ -13,7 +13,7 @@ WEB.mkdir(exist_ok=True)
 for pasta, nome in [("cursores", "carta"), ("cursores", "agulha"), ("cursores", "ioio"), ("efeitos", "godspeed"),
                     ("efeitos", "jajanken"), ("heatmap", "cartas"), ("heatmap", "chamas"), ("hover", "bungee"),
                     ("hover", "en"), ("hover", "vira"), ("hover", "shu"), ("hover", "contorno"), ("prazo", "countdown"),
-                    ("correntes", "corrente")]:
+                    ("correntes", "corrente"), ("eletrica", "eletrica")]:
     shutil.copyfile(ARTE / pasta / f"{nome}.js", WEB / f"{nome}.js")
 # transições de aba: a base vai como tr-base.js (o palco.js é o jogo de mentira da bancada, não vai)
 shutil.copyfile(ARTE / "transicoes" / "base.js", WEB / "tr-base.js")
