@@ -40,8 +40,8 @@ const ARTE = {
   'bd-corte':      {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): borda fina com dois cantos cortados, no lugar da tracejada. Falta o outro dev ver.'},
   'bd-cantos':     {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): os quatro cantos marcados, como um visor. Falta o outro dev ver.'},
   'bd-aura':       {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): a borda respira na cor forte do seu tipo de Nen. Falta o outro dev ver; a aura que sobe e ondula fica para depois.'},
-  'fx-estrelas':   {st:'aberto', sem:true, tx:'Refeita em código (21/10), para ver na vitrine da fila: poeira de aura colorida no fundo, em três profundidades, com correnteza, rajadas e o mouse abrindo caminho. Ainda não está no jogo.'},
-  'fx-drift':      {st:'aberto', sem:true, tx:'Refeita em código (21/10), para ver na vitrine da fila: a mesma nuvem do canto, agora viva (deforma e respira), com uma 2ª nuvem no canto oposto. Ainda não está no jogo.'},
+  'fx-estrelas':   {st:'fechado', tx:'Aprovada (21/10). Feita em código: poeira de aura colorida no fundo, atrás das telas, em três profundidades; a correnteza muda devagar, uma rajada de aura atravessa a tela de tempos em tempos, o mouse abre caminho e o clique solta uma onda.'},
+  'fx-drift':      {st:'fechado', tx:'Aprovada (21/10). Feita em código: a nuvem de aura do canto, agora viva (deforma e respira, sem fim de caminho), com uma 2ª nuvem na cor volt no canto oposto; deixe o mouse num lado e ela se inclina para lá.'},
   'sm-moeda':      {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (20/10): fica como está. Dos sons, é o único que não vai ser refeito.'},
   'hv-contorno':   {st:'fechado', tx:'Aprovado (20/10). O contorno acende em 120 ms e apaga em 350 ms, sem piscar ao passar por vários cards.'},
   'hm-cartas':     {st:'fechado', tx:'Aprovada (17/10): carta de frente por nível, carta de figura no dia mais forte, verso no dia vazio e Coringa no dia salvo.'},
@@ -87,7 +87,7 @@ const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
 const CARTAO = {st:'finalizar', tx:'O cartão novo, fiel ao do anime, com lugar para as estrelas, o carimbo e o emblema, foi aprovado como provisório. Falta decidir como a versão em pé entra no placar.'};
 /* efeitos (data-fx, uma lista) com versão nova: provando com a nova, o efeito vira "X-nova" no <html> e na prévia (a nova
    é só CSS, ou um módulo em código que liga por esse nome, como o Gyo) */
-const FX_NOVA = ['fx-corrente', 'fx-shim', 'fx-gyo', 'fx-rastro'];
+const FX_NOVA = ['fx-corrente', 'fx-shim', 'fx-gyo', 'fx-rastro', 'fx-estrelas', 'fx-drift'];
 /* a corrente do Kurapika (web/arte/corrente.js): as imagens saem do gerador, a borda com a Dowsing Chain, a barra de XP
    com a Judgment Chain e a vida do chefão escarlate */
 const CH = window.GB_CORRENTE, CHP = CH && CH.pendulo(2), CHL = CH && CH.lamina(), CHU = s => CH ? CH.uri(s) : 'none';
@@ -176,6 +176,10 @@ ${EL ? `
 .fxd.gyo-nova .mini{background-image:radial-gradient(70px circle at 45% 55%,color-mix(in srgb,var(--aura) 26%,transparent),transparent 70%);border-color:color-mix(in srgb,var(--aura) 55%,var(--hair))}
 /* rastro em código (web/arte/rastro.js): na prévia do card, os pontinhos do rastro de hoje */
 .fxd:is(.rastro-nova,.rastro-fio,.rastro-eco){background-image:radial-gradient(2px 2px at 20% 70%,var(--aura),transparent),radial-gradient(2px 2px at 60% 40%,var(--volt),transparent),radial-gradient(1.5px 1.5px at 85% 80%,var(--aura),transparent),radial-gradient(1.5px 1.5px at 40% 20%,var(--volt),transparent);animation:hjSobe 3s linear infinite}
+/* fundo em código (web/arte/poeira.js e aura-ambiente.js): o canvas fica atrás das telas; na prévia do card, grãos de várias cores e as duas nuvens */
+:root:is([data-fx~="estrelas-nova"],[data-fx~="drift-nova"]) .wrap{position:relative;z-index:1}
+.fxd.estrelas-nova{background-image:radial-gradient(2.5px 2.5px at 18% 72%,var(--aura),transparent),radial-gradient(2px 2px at 62% 38%,var(--volt),transparent),radial-gradient(2px 2px at 84% 78%,var(--amb),transparent),radial-gradient(1.5px 1.5px at 40% 22%,var(--grn),transparent),radial-gradient(5px 5px at 30% 45%,color-mix(in srgb,var(--acc) 45%,transparent),transparent),radial-gradient(1.5px 1.5px at 72% 12%,var(--red),transparent);animation:hjSobe 5s linear infinite}
+.fxd.drift-nova{background-image:radial-gradient(circle at 78% 22%,color-mix(in srgb,var(--aura) 32%,transparent),transparent 45%),radial-gradient(circle at 18% 85%,color-mix(in srgb,var(--volt) 20%,transparent),transparent 40%);background-size:160% 160%;animation:drift2 6s ease-in-out infinite alternate}
 :root[data-cursor$="-nova"] body,:root[data-cursor$="-nova"] body *{cursor:none!important}
 .pvc .cur7 canvas{width:72px;height:72px}
 /* prévia das transições que só existem em código: a fumaça cobre e abre; a aba encolhe girando para o canto */
@@ -253,6 +257,17 @@ function rastro(){
   rasK = k;
   if(m && window.CURSORES && CURSORES.rastro) ras = CURSORES.rastro.liga(document.body, {modelo: m});
 }
+/* ---------- fundo em código: a Poeira de Nen nova ("estrelas-nova") e a Aura ambiente nova ("drift-nova"); o tema muda as
+   cores, e os dois módulos leem a paleta sozinhos a cada segundo ---------- */
+const FUNDO = {'estrelas-nova': () => window.GB_POEIRA, 'drift-nova': () => window.GB_AURA_AMB}, fundos = {};
+function fundo(){
+  const fx = (document.documentElement.getAttribute('data-fx') || '').split(' ');
+  for(const k in FUNDO){
+    const on = fx.includes(k), M = FUNDO[k]();
+    if(on && !fundos[k] && M) fundos[k] = M.liga({});
+    else if(!on && fundos[k]){ fundos[k].para(); delete fundos[k]; }
+  }
+}
 /* ---------- transições em código: a troca de aba passa pelo módulo quando o <html> pede um "-nova" (deslizar, glitch) ou
    uma transição que só existe em código (fumaca, aspira). fn é a troca de verdade (esconde a velha, mostra a nova) ---------- */
 const SO_CODIGO = ['fumaca', 'aspira'], trs = {};
@@ -267,7 +282,7 @@ function aba(fn){
 }
 if(window.GB_FX){
   const aplica = GB_FX.aplica, ver = GB_FX.ver;
-  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); gyoNovo(); rastro(); };
+  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); gyoNovo(); rastro(); fundo(); };
   /* ▶ na loja: com a nova escolhida, o efeito novo cai no card do item */
   let mao = 0;
   GB_FX.ver = function(id, r){

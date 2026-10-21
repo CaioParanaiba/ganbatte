@@ -11,7 +11,7 @@ WEB = ARTE.parent.parent.parent / "web" / "arte"
 WEB.mkdir(exist_ok=True)
 
 for pasta, nome in [("cursores", "carta"), ("cursores", "agulha"), ("cursores", "ioio"), ("cursores", "vara"), ("efeitos", "godspeed"),
-                    ("efeitos", "jajanken"), ("efeitos", "costura"), ("efeitos", "rastro"), ("efeitos", "soco"), ("efeitos", "dragao"), ("heatmap", "cartas"), ("heatmap", "chamas"), ("hover", "bungee"),
+                    ("efeitos", "jajanken"), ("efeitos", "costura"), ("efeitos", "rastro"), ("efeitos", "soco"), ("efeitos", "dragao"), ("efeitos", "poeira"), ("efeitos", "aura-ambiente"), ("heatmap", "cartas"), ("heatmap", "chamas"), ("hover", "bungee"),
                     ("hover", "en"), ("hover", "vira"), ("hover", "shu"), ("hover", "contorno"), ("hover", "gyo"), ("prazo", "countdown"),
                     ("correntes", "corrente"), ("eletrica", "eletrica"), ("heatmap", "pegadas"), ("hp", "cristal"), ("heatmap", "gungi")]:
     shutil.copyfile(ARTE / pasta / f"{nome}.js", WEB / f"{nome}.js")
