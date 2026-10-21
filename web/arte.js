@@ -44,6 +44,7 @@ const ARTE = {
   'hm-cartas':     {st:'fechado', tx:'Aprovada (17/10): carta de frente por nível, carta de figura no dia mais forte, verso no dia vazio e Coringa no dia salvo.'},
   'hp-cristal':    {st:'aberto', tx:'Refeito em código (21/10): cristais lapidados chapados, ponta quebrada e engastes vazios na vida perdida; o reflexo passa com o mouse. O Caio achou melhor que o de antes, mas não sabe se gostou: em aberto, esperando o outro dev.'},
   'hm-pegadas':    {st:'aberto', tx:'Refeita em código (21/10): um rastro de pés descalços, esquerdo e direito alternando pela semana; dia fraco só a sola, dia forte com terra. Provando, "pisar hoje" mostra o passo. O Caio achou melhor que a de antes, mas não sabe se gostou: em aberto, esperando o outro dev.'},
+  'hm-gungi':      {st:'finalizar', tx:'Nova (21/10), só em código: o tabuleiro de madeira do Gungi, como no anime. Cada dia jogado é uma peça redonda e branca (兵), empilhada até três conforme a força do dia, com a cor do hábito na lateral; o dia salvo é a peça preta do rei (帥). Provando, "jogar hoje" mostra a peça caindo. Aprovada pelo Caio, falta o outro dev ver.'},
   'hm-chamas':     {st:'fechado', tx:'Aprovada (20/10): chama maior por nível, cinza no dia vazio, nen no dia salvo, fogo laranja. Provando, "acender hoje" mostra o acender.'},
   'lic-exame':     {st:'fechado', tx:'Carimbo 念 com anel duplo (16/10).'},
   'lic-chefao':    {st:'fechado', tx:'Selo da torre de tijolos com coroa e folhas (16/10).'},
@@ -69,7 +70,6 @@ const IDEIAS = [
   ['cr-vara', 'cursor', 'epico', 'Gon', 'Vara de pescar do Gon', 'O cursor vira a vara de pescar: o clique lança a linha e fisga o card.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, com física como a carta e o ioiô: linha com anzol e boia, segurar recolhe.'],
   ['fx-borboletas', 'fx', 'epico', 'Pouf', 'Borboletas do Pouf', 'Borboletas de aura voam devagar pelo fundo, juntam-se perto do mouse e se espalham no clique.', 'aberto', 'Prévia em código na bancada (20/10), em aberto: o Caio ainda não decidiu se gostou, nem a camada (por cima ou atrás dos cards) e se os pacotes que têm a Poeira de Nen ficam com ela.'],
   ['bd-costura', 'borda', 'raro', 'Machi', 'Costura de nen', 'A borda dos cards vira uma costura de fio de nen, em zigue-zague.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS ou SVG.'],
-  ['hm-gungi', 'heat', 'raro', 'Meruem e Komugi', 'Constância no Gungi', 'O heatmap vira um tabuleiro de Gungi: cada dia jogado é uma peça, mais alta quanto mais forte o dia; o dia salvo é o Rei.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS.'],
   ['tt-medico', 'title', 'comum', 'Leorio', 'Futuro Médico', 'Título para quem estuda.', 'dev', 'Ideia aprovada, ainda não entrou no catálogo.'],
   ['at-countdown', 'prazo', 'raro', 'Genthru', 'Countdown do Genthru', 'A bomba do Countdown na tarefa com prazo, com os dias que faltam; amanhã e hoje o número fica vermelho, e atrasada ela estoura.', 'aberto', 'Primeira versão feita, em aberto: a prévia mostra 5 dias, amanhã, hoje e 2 dias de atraso.' + PRAZO],
   ['at-carimbo', 'prazo', 'comum', 'Exame Hunter', 'Carimbo de atrasada', 'Um carimbo vermelho torto na tarefa atrasada, no estilo dos carimbos da licença.', 'dev', 'Ideia, ainda sem arte.' + PRAZO],
@@ -193,6 +193,7 @@ if(window.CURSORES){
   h.textContent = C.cartas.css(':root[data-heat="cartas-nova"]') + C.cartas.css('.hm-cartas-nova')
     + `\n:root[data-heat="cartas-nova"],.hm-cartas-nova{--naipe:${es}}\n` + C.chamas.css(':root[data-heat="chamas-nova"]') + C.chamas.css('.hm-chamas-nova')
     + C.pegadas.css(':root[data-heat="pegadas-nova"]') + C.pegadas.css('.hm-pegadas-nova')
+    + C.gungi.css(':root:is([data-heat="gungi"],[data-heat="gungi-nova"])') + C.gungi.css('.hm-gungi-nova')
     + C.cristal.css(':root[data-hp="cristal-nova"]') + C.cristal.css('.hp-cristal-nova');
   document.head.appendChild(h);
 }
@@ -325,9 +326,9 @@ window.GB_ARTE = {
       <div class="ar-res"><span class="ar-st fechado">fechado ${n('fechado')}</span><span class="ar-st finalizar">falta outro dev ${n('finalizar')}</span><span class="ar-st aberto">em aberto ${n('aberto')}</span><span class="ar-st dev">em desenvolvimento ${n('dev')}</span>
       <button type="button" class="btn${this.so ? ' v' : ''}" data-arteso>${this.so ? 'mostrar todos os itens' : 'só os itens da fila de arte'}</button></div></div>`;
   },
-  /* na faixa do provar: a troca e, nas chamas e nas pegadas, o momento de hoje */
+  /* na faixa do provar: a troca e, nas chamas, nas pegadas e no Gungi, o momento de hoje */
   faixa(id){ if(!tem(id) || ARTE[id].sem) return '';
-    const hoje = nova(id) && {'hm-chamas': ['chamas', 'acender hoje'], 'hm-pegadas': ['pegadas', 'pisar hoje']}[id];
+    const hoje = nova(id) && {'hm-chamas': ['chamas', 'acender hoje'], 'hm-pegadas': ['pegadas', 'pisar hoje'], 'hm-gungi': ['gungi', 'jogar hoje']}[id];
     return `<span style="display:flex;gap:8px;align-items:center">versão ${troca(id)}${hoje ? `<button type="button" class="btn" data-artehoje="${hoje[0]}" style="background:#0b0d12;color:#fff;border-color:#0b0d12">${hoje[1]}</button>` : ''}</span>`; },
 };
 
@@ -347,7 +348,7 @@ document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('[data-arte],[data-arteso],[data-artehoje]'); if(!t) return;
   if(t.dataset.arte){ const [id, v] = t.dataset.arte.split(':'); VER[id] = v; }
   else if(t.hasAttribute('data-arteso')) GB_ARTE.so = !GB_ARTE.so;
-  else { const hj = document.querySelector('.l-hg i.hj'); if(hj) t.dataset.artehoje === 'pegadas' ? CURSORES.pegadas.pisa(hj) : CURSORES.chamas.acende(hj); else toast('O dia de hoje fica na Lista, no heatmap da constância: abra a aba e tente de novo.'); return; }
+  else { const hj = document.querySelector('.l-hg i.hj'); if(hj) ({pegadas: () => CURSORES.pegadas.pisa(hj), gungi: () => CURSORES.gungi.joga(hj)}[t.dataset.artehoje] || (() => CURSORES.chamas.acende(hj)))(); else toast('O dia de hoje fica na Lista, no heatmap da constância: abra a aba e tente de novo.'); return; }
   render();
 });
 })();
