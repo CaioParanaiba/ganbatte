@@ -24,6 +24,7 @@ const ARTE = {
   'fx-corrente':   {st:'fechado', tx:'Aprovada (20/10): a corrente vai e volta presa à lâmina da Judgment Chain, na ponta da barra de XP.'},
   'cr-carta':      {st:'fechado', tx:'Aprovada (17/10). Feita em código: clique atira a carta, segurar prende na Bungee Gum, parado ele vira a carta.'},
   'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
+  'cr-vara':       {st:'fechado', tx:'Aprovada (21/10). Feita em código: o clique lança a linha e o anzol fisga o card; clique de novo dá o tranco e segurar recolhe, até o anzol arrancar. Parado, um peixe vem morder.'},
   'cr-ioio':       {st:'aberto', tx:'Voltou a um ioiô só (20/10), para não atrapalhar os truques. Clique desce, segurar dorme; segurando com a mão parada o fio carrega de eletricidade e ele volta como raio. Falta o Caio aprovar.'},
   'fx-godspeed':   {st:'fechado', tx:'Aprovado (20/10). O Kanmuru acende no card, o raio cai com quadro negativo, o 神速 entra com rastros e a marca do raio fica no card.'},
   'fx-rastro':     {st:'finalizar', tx:'Refeito em código (21/10): vapor de aura que sobe ondulando; parado, o Ten ainda solta fiapos; o clique é o Ren. Aprovado pelo Caio, ainda provisório.'},
@@ -67,7 +68,6 @@ const ARTE = {
    nome, descrição, status, o que falta]. A Marca de prazo (prazo) é uma categoria inteira em teste: sai se não agradar */
 const PRAZO = ' Faz parte da Marca de prazo, categoria em teste: se os estilos não agradarem, ela sai inteira.';
 const IDEIAS = [
-  ['cr-vara', 'cursor', 'epico', 'Gon', 'Vara de pescar do Gon', 'O cursor vira a vara de pescar: o clique lança a linha e fisga o card.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, com física como a carta e o ioiô: linha com anzol e boia, segurar recolhe.'],
   ['fx-borboletas', 'fx', 'epico', 'Pouf', 'Borboletas do Pouf', 'Borboletas de aura voam devagar pelo fundo, juntam-se perto do mouse e se espalham no clique.', 'aberto', 'Prévia em código na bancada (20/10), em aberto: o Caio ainda não decidiu se gostou, nem a camada (por cima ou atrás dos cards) e se os pacotes que têm a Poeira de Nen ficam com ela.'],
   ['bd-costura', 'borda', 'raro', 'Machi', 'Costura de nen', 'A borda dos cards vira uma costura de fio de nen, em zigue-zague.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS ou SVG.'],
   ['tt-medico', 'title', 'comum', 'Leorio', 'Futuro Médico', 'Título para quem estuda.', 'dev', 'Ideia aprovada, ainda não entrou no catálogo.'],
@@ -340,6 +340,7 @@ function pinta(){
     if(k === 'carta') CURSORES.carta.desenha(g, {n:'K', s:'c'}, 36, 36, 40, -.22);
     if(k === 'ioio'){ g.strokeStyle = '#E8ECF4'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(36, 2); g.lineTo(36, 40); g.stroke(); CURSORES.ioio.desenha(g, 36, 48, 15, -.3); }
     if(k === 'agulha') CURSORES.agulha.desenha(g, 15, 57, 60, 3 * Math.PI / 4);
+    if(k === 'vara') CURSORES.vara.desenha(g, 22, 8, 46, {comprimento: 18});
   }
 }
 new MutationObserver(pinta).observe(document.documentElement, {childList:true, subtree:true});
