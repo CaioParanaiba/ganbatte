@@ -77,6 +77,7 @@ const ARTE = {
   'fx-confete':    {st:'fechado', tx:'Aprovado (21/10), agora comum. Feito em código: dois canhões estouram dos cantos de baixo e o papel desce flutuando, girando, virando de face e balançando. O ▶ da nova mostra.'},
   'fx-fogos':      {st:'fechado', tx:'Aprovados (21/10). Feitos em código: foguetes sobem com rastro e estouram com clarão em cinco tipos (peônia, anel, salgueiro, crisântemo, palmeira), com um trio no final. O ▶ da nova mostra.'},
   'fx-shake':      {st:'fechado', tx:'Aprovada (21/10), agora rara. Feita em código: o chefão em fúria solta o Ren, fogo em duas camadas preso ao retrato, línguas que se soltam e brasas; a cada ~2,8 s um acesso com a onda de choque, a veia 💢 e um tranco. Provando, "enfurecer" põe todos os chefões em fúria para ver na aba Chefões.'},
+  'fx-zap':        {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (21/10): fica como está. A ideia de virar o aviso de perigo (fúria, prazo, Ten apagando) foi arquivada junto com as marcas de prazo: volta quando o jogo passar de 8 jogadores ativos.'},
   'bd-dupla':      {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revista (21/10): fica como está.'},
   'tx-ceu':        {st:'aberto', sem:true, tx:'Fica para depois (21/10): vai ser refeito junto com os temas, no futuro.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
@@ -92,16 +93,11 @@ const FICA = {pal:'Revista (21/10): fica como está.', title:'Revisto (21/10): f
 for(const it of GB.COS) if(it.cat === 'frame' && !ARTE[it.id]) ARTE[it.id] = {st:'aberto', sem:true, tx:'Em aberto (21/10): decide junto com a loja do multiplayer, para onde as molduras podem ir.'};
 for(const it of GB.COS) if(FICA[it.cat] && !ARTE[it.id]) ARTE[it.id] = {st:'fechado', sem:true, fixo: it.arq ? 'arquivado' : it.cat === 'full' ? 'peças revistas' : 'fica a de hoje', tx: FICA[it.cat]};
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
-   nome, descrição, status, o que falta]. A Marca de prazo (prazo) é uma categoria inteira em teste: sai se não agradar */
-const PRAZO = ' Faz parte da Marca de prazo, categoria em teste: se os estilos não agradarem, ela sai inteira.';
+   nome, descrição, status, o que falta]. A Marca de prazo (at-*, fx-hakoware) foi arquivada em 21/10 com o aviso de perigo do
+   Raio: volta quando o jogo passar de 8 jogadores ativos (FILA.md, status pulado) */
 const IDEIAS = [
   ['bd-costura', 'borda', 'raro', 'Machi', 'Costura de nen', 'A borda dos cards vira uma costura de fio de nen, em zigue-zague.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS ou SVG.'],
   ['tt-medico', 'title', 'comum', 'Leorio', 'Futuro Médico', 'Título para quem estuda.', 'dev', 'Ideia aprovada, ainda não entrou no catálogo.'],
-  ['at-countdown', 'prazo', 'raro', 'Genthru', 'Countdown do Genthru', 'A bomba do Countdown na tarefa com prazo, com os dias que faltam; amanhã e hoje o número fica vermelho, e atrasada ela estoura.', 'aberto', 'Primeira versão feita, em aberto: a prévia mostra 5 dias, amanhã, hoje e 2 dias de atraso.' + PRAZO],
-  ['at-carimbo', 'prazo', 'comum', 'Exame Hunter', 'Carimbo de atrasada', 'Um carimbo vermelho torto na tarefa atrasada, no estilo dos carimbos da licença.', 'dev', 'Ideia, ainda sem arte.' + PRAZO],
-  ['fx-hakoware', 'prazo', 'raro', 'Knuckle', 'Hakoware', 'O selo do Hakoware com os dias de juros, parado na tarefa atrasada.', 'dev', 'Ideia, ainda sem arte (a versão simples, sem o Potclean animado).' + PRAZO],
-  ['at-agulha', 'prazo', 'raro', 'Illumi', 'Agulha na atrasada', 'Uma agulha do Illumi espetada no canto da tarefa atrasada, com uma trinca leve.', 'dev', 'Ideia, ainda sem arte (reaproveita o desenho do cursor da agulha).' + PRAZO],
-  ['at-ampulheta', 'prazo', 'raro', 'Exame Hunter', 'Ampulheta do Exame', 'Uma ampulheta na tarefa com prazo, que esvazia conforme o prazo chega.', 'dev', 'Ideia, ainda sem arte.' + PRAZO],
 ];
 const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
   ARTE[id] = {st, tx, sem: true, ideia: true};
