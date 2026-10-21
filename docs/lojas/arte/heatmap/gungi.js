@@ -51,6 +51,7 @@ function css(raiz){
   return `
 ${raiz} .l-hg{--gg-tab:color-mix(in srgb,#A87444 30%,var(--track));--gg-lin:color-mix(in srgb,#6B4423 45%,var(--track));--gg-peca:#CFC6B4;
   background:var(--gg-lin);border-radius:4px}
+${raiz} .l-hg{align-self:start} ${raiz} .l-hg.sem{min-height:0}   /* o tabuleiro não estica até a altura do resumo ao lado (o fundo de madeira apareceria) */
 ${i}{position:relative;border-radius:1px;background:var(--gg-tab);outline:none}
 ${jogado}::before{${camada};background:var(--p)} ${jogado}::after{${camada}}
 ${i}.h1{--p:color-mix(in srgb,var(--c) 35%,var(--gg-peca))} ${i}.h1::before{${masc(UM.cor)}} ${i}.h1::after{${img(UM.arte)}}
