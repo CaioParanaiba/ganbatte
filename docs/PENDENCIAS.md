@@ -194,10 +194,23 @@ nos comentários de 15/10 da #17 (Masadora), #43 (Associação) e #77 (preços).
 ## Contribuições com mais de um dev (#96, #97; decidido em 14/10/2026)
 
 Com um segundo dev, a recompensa de bug/ideia separa **quem relata** de **quem faz**:
-- **Recompensa de quem relatou** (`CONTRIB`, 15 XP + 150 J o bug, 10 XP + 50 J a ideia) sai quando a issue **entra no
+- **Recompensa de quem relatou** (`CONTRIB`, 300 J o bug, 150 J a ideia, só Jenny desde a #180) sai quando a issue **entra no
   beta**: label `no beta` ou fechada como resolvida, o que vier primeiro. A branch padrão é a `main`, então o `Fecha #N`
   de PR para a `beta` não fecha a issue; por isso o label. Antes pagava só na ida para a `main` e juntava um "canhão".
 - **Quem fez a própria issue** (autor também responsável) não ganha a recompensa: o trabalho é pago pela tarefa de dev.
+
+## Codeforces pela cor do problema (#180, decidido em 21/10/2026)
+
+Os relatórios de balanceamento mostraram que todo problema a 5 XP fazia o jogador esforçado ter o menor XP por dia ativo.
+- `cf_atualiza()` guarda no `cf.json`: `probs` (rating de cada problema aceito, por dia; 0 = gym), `rp` (o rating usado por
+  problema, que só sobe), `ratings` (histórico do `user.rating`), `contests` (dias de contest ao vivo, `CONTESTANT`) e
+  `divs` (divisão de cada contest, do `user.rating` ou do `contest.list`, no máximo a cada 6 h).
+- Sem rating ainda: estimativa pela letra e pela divisão (`CF_ESTIMA`); quando o oficial sai, fica o maior.
+- `cfDias()` (motor): faixa do dia = da menor à maior entre a cor do maior rating oficial **antes** do dia e a do nível
+  prático (mediana dos últimos 30 com rating, a partir de 5), no máximo duas cores. Na faixa 15, acima 25/35, abaixo 8/3,
+  sem rating 15, contest ao vivo +20, sem teto no dia. Sem `probs` no `cf.json`, a regra antiga (`cfExtra`).
+- Vale para a temporada inteira; os `xpDias` seguram os dias fechados que cairiam. No multiplayer o Codeforces terá outra
+  regra (#171).
   As issues do Caio continuam fora da recompensa por relatar (ele decide o que fecha como resolvido).
 - **Tarefa de dev** (`dev_tarefas()` no servidor): issue com o jogador como responsável vira `Issue #N: título +exp.SLUG
   gh:N esf:…` no todo.txt (na expedição aberta chamada Ganbatte, `projeto_dev()`; sem ela, `+ganbatte`), concluída sozinha quando entra no beta. Vale pelo label de esforço (`ESF_XP` no motor: rápido 10,

@@ -461,9 +461,12 @@ function carregar(api){
 
 /* ---------- regras ---------- */
 /* recompensa por contribuição (#23): só quando a issue do jogador entra no beta (bug corrigido, ideia feita; #96); repetida,
-   recusada ou dúvida não conta, nem a issue que o próprio autor fez (essa paga a tarefa de dev). Além da Jenny do próprio XP (×10) */
-const CONTRIB = {bug:{xp:15, j:150}, ideia:{xp:10, j:50}};
+   recusada ou dúvida não conta, nem a issue que o próprio autor fez (essa paga a tarefa de dev). Desde a #180 é só Jenny: o XP
+   é o esforço no estudo e na vida (torre, Ten, Ritmo do grupo), e a Jenny total ficou a mesma (15 XP + 150 J = 300 J) */
+const CONTRIB = {bug:{xp:0, j:300}, ideia:{xp:0, j:150}};
+const CONTRIB_064 = {bug:{xp:15, j:150}, ideia:{xp:10, j:50}};   // de 0.6.4 até a #180: o acerto contrib-xp tira esse XP dos dias fechados
 const CONTRIB_ANTES = {bug:{xp:50, j:1000}, ideia:{xp:30, j:600}};   // até a 0.6.4-beta1: o acerto da 0.6.4 tira a diferença dos dias fechados
+const CONTRIB_MIGRA = 'contrib-xp';   // estado.json → migra['contrib-xp']: {xp, em}
 /* tarefa de dev (#97): a issue do GitHub em que o jogador é o responsável (gh:N, criada e concluída pelo servidor) vale pelo
    label de esforço (esf:), nas mesmas faixas das tarefas (vida, estudo, entrega); sem esforço visto, médio */
 const ESF_XP = {rapido:10, medio:15, demorado:25};
@@ -741,6 +744,31 @@ const marca = raw => { let h = 5381; for(const c of String(raw)) h = ((h << 5) +
 const CF_XP = 5, CF_MAX = 6, CF_BONUS = 10, CF_DESDE = '2026-10-06';   // Codeforces: 5 XP por problema distinto no dia (até 6); bater os 3 (a recorrente rec:cf) dá o bônus
 // antes de CF_DESDE vale a regra antiga (só +1 do 4º ao 6º; recorrente 5), para não inflar a torre e a carteira de uma vez
 const cfExtra = (n, d) => d && d < CF_DESDE ? Math.min(Math.max((n||0) - 3, 0), 3) : Math.min(n||0, CF_MAX) * CF_XP;
+/* Codeforces pela cor (#180): cada problema vale pela cor oficial dele comparada à faixa do jogador naquele dia, sem teto
+   no dia. Faixa = da menor à maior entre a cor do maior rating oficial até o dia e a do nível prático (mediana dos últimos 30
+   problemas com rating, a partir de 5), com no máximo duas cores. Problema sem rating (gym, à mão) vale como na faixa.
+   Contest ao vivo: +20 pela participação. Vale para a temporada inteira; os dias fechados (xpDias) seguram o que cairia.
+   Sem probs no cf.json (servidor de antes), fica a regra antiga (cfExtra) */
+const CF_CORES = [1200, 1400, 1600, 1900, 2100, 2400], CF_COR_N = ['cinza', 'verde', 'ciano', 'azul', 'roxo', 'laranja', 'vermelho'];
+const CF_NA_FAIXA = 15, CF_ACIMA = [25, 35], CF_ABAIXO = [8, 3], CF_CONTEST = 20, CF_PRATICO = [30, 5];
+const corCF = r => CF_CORES.filter(x => r >= x).length;   // 0 = cinza … 6 = vermelho
+const xpCor = (r, f) => { if(!r) return CF_NA_FAIXA; const c = corCF(r); return c > f.teto ? CF_ACIMA[Math.min(c - f.teto, 2) - 1] : c < f.chao ? CF_ABAIXO[Math.min(f.chao - c, 2) - 1] : CF_NA_FAIXA; };
+function cfDias(cf, HOJE){
+  const probs = cf.probs || {}, cont = cf.contests || {}, por = cf.por_dia || {}, dias = {}, vistos = [];
+  const rats = (cf.ratings || []).filter(r => Array.isArray(r) && r[0] && r[1] > 0);
+  const faixa = d => {
+    const of = corCF(Math.max(0, ...rats.filter(r => r[0] < d).map(r => r[1]))), ult = vistos.slice(-CF_PRATICO[0]).sort((a, b) => a - b);
+    const pr = ult.length >= CF_PRATICO[1] ? corCF(ult[Math.floor((ult.length - 1)/2)]) : of, teto = Math.max(of, pr);
+    return {of, pr, teto, chao: Math.max(Math.min(of, pr), teto - 1)};
+  };
+  for(const d of [...new Set([...Object.keys(por), ...Object.keys(cont)])].sort()){
+    if(d > HOJE) continue;
+    const f = faixa(d), rs = probs[d] || [];
+    dias[d] = {...f, xp: rs.reduce((s, r) => s + xpCor(r, f), 0) + Math.max(0, (por[d] || 0) - rs.length)*CF_NA_FAIXA + (cont[d] || 0)*CF_CONTEST};
+    vistos.push(...rs.filter(r => r > 0));
+  }
+  return {dias, hoje: dias[HOJE] || faixa(HOJE)};
+}
 /* usos de feitiço guardados em estado.json (usos: [{k, d, n0, como?, alvo?}]); "escolha" vira o feitiço de "como" */
 function efeitos(C, feitas){
   const usos = (C.EST.usos || []).map(u => ({...u, ef: u.k === 'escolha' ? u.como : u.k}));
@@ -819,9 +847,10 @@ function estado(C){
     somaF(t.done, (t.rec||'').startsWith('cf') ? 'cf' : isRec(t) ? 'hab' : tipoDe(t), base); somaF(t.done, 'bonus', x - base);
     porDia[t.done] = (porDia[t.done]||0)+1; xpDia[t.done] = (xpDia[t.done]||0)+x; attr[nenDe(t)] += x; attrAntes[nenAntes(t)] += x;
   });
-  // Codeforces: 5 XP por problema do dia, até 6 (dados.json/codeforces.por_dia), a partir do início da temporada; missão da semana ×1,5
-  const cfDia = (D.cf && D.cf.por_dia) || {}; let cfXP = 0;
-  for(const d in cfDia){ if(d < TEMP.ini || d > HOJE) continue; const e = Math.round(cfExtra(cfDia[d], d) * (d >= CF_DESDE && !fer(d) && fracoSem(d) === 1 ? 1.5 : 1)); if(e){ cfXP += e; total += e; xpDia[d] = (xpDia[d]||0)+e; attr[1] += e; attrAntes[1] += e; somaF(d, 'cf', cfExtra(cfDia[d], d)); somaF(d, 'bonus', e - cfExtra(cfDia[d], d)); } }
+  // Codeforces pela cor de cada problema (#180, cfDias; sem probs, a regra antiga), a partir do início da temporada; missão da semana ×1,5
+  const cfDia = (D.cf && D.cf.por_dia) || {}, cfCor = D.cf && D.cf.probs ? cfDias(D.cf, HOJE) : null; let cfXP = 0;
+  const cfBase = d => cfCor ? (cfCor.dias[d] || {xp:0}).xp : cfExtra(cfDia[d], d);
+  for(const d of cfCor ? Object.keys(cfCor.dias) : Object.keys(cfDia)){ if(d < TEMP.ini || d > HOJE) continue; const b = cfBase(d), e = Math.round(b * (d >= CF_DESDE && !fer(d) && fracoSem(d) === 1 ? 1.5 : 1)); if(e){ cfXP += e; total += e; xpDia[d] = (xpDia[d]||0)+e; attr[1] += e; attrAntes[1] += e; somaF(d, 'cf', b); somaF(d, 'bonus', e - b); } }
   // caçadas e expedições (0.5.8): marco fechado e expedição concluída somam o bônus gravado no dia em que fecharam
   const G = grupos(C, D.feitas, abertas), xpDe2 = new Map(xs.map(o => [o.t, o.x]));
   let gXP = 0;
@@ -842,7 +871,7 @@ function estado(C){
   rec.migra = {...(EST.migra || {})}; rec.tenRec = +EST.tenRec || 0;
   if(!rec.migra[MIGRA]){
     const tira = {...duoAntesXP}; let dXP = Object.values(duoAntesXP).reduce((a, b) => a + b, 0), dJ = dXP*10;
-    for(const i of contrib){ const a = CONTRIB_ANTES[i.tipo], n = CONTRIB[i.tipo], x = a.xp - n.xp;
+    for(const i of contrib){ const a = CONTRIB_ANTES[i.tipo], n = CONTRIB_064[i.tipo], x = a.xp - n.xp;
       tira[i.dia] = (tira[i.dia]||0) + x; dXP += x; dJ += x*10 + a.j - n.j; }
     for(const d in tira) if(d < HOJE && rec.xpDias[d] != null) rec.xpDias[d] = Math.max(0, rec.xpDias[d] - tira[d]);
     const T0 = ten(new Set(Object.keys(porDia)), first, HOJE, F.zetsu, fer);
@@ -858,6 +887,14 @@ function estado(C){
     const soma = o => Object.entries(o).reduce((s, [d, x]) => s + (d < HOJE ? +x || 0 : 0), 0), antes = soma(rec.xpDias);
     rec.xpDias = Object.fromEntries(Object.entries(xpDia).filter(([d, x]) => d < HOJE && x > 0));
     rec.migra[RECALC] = {ini, em:HOJE, antes, depois:soma(rec.xpDias)}; rec.mudou = true;
+  }
+  /* contribuições só em Jenny (#180, uma vez): tira dos dias fechados o XP que elas davam (a Jenny subiu na mesma medida, então a
+     carteira fica igual). Quem chegou depois do recálculo do zero já tem os dias fechados sem esse XP */
+  if(!rec.migra[CONTRIB_MIGRA]){
+    let dXP = 0;
+    if((EST.migra || {})[RECALC]) for(const i of contrib){ const x = CONTRIB_064[i.tipo].xp;
+      if(i.dia < HOJE && rec.xpDias[i.dia] != null){ const t = Math.min(x, rec.xpDias[i.dia]); rec.xpDias[i.dia] -= t; dXP += t; } }
+    rec.migra[CONTRIB_MIGRA] = {xp:dXP, j:0, em:HOJE}; rec.mudou = true;
   }
   for(const d of new Set([...Object.keys(xpDia), ...Object.keys(rec.xpDias)])){
     if(!(d < HOJE)) continue;
@@ -922,7 +959,7 @@ function estado(C){
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
   return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:T, nv:NV.hoje, duoDe, hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
     proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto + retJ)), retJ, rec, jenny: ganho - (EST.spent||0),
-    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, usos: F.usos, valeTarefa, grupos: G, gXP, fonteDia, missaoDias, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
+    inv, prepBonus, espera, hab, sem, cfHoje, cfXP, cfCor: cfCor && {...cfCor.hoje, xp: cfBase(HOJE)}, usos: F.usos, valeTarefa, grupos: G, gXP, fonteDia, missaoDias, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
 }
 /* devolução (#51): quem teve a carteira zerada pelo acerto da 0.6.4 (acertos[MIGRA] > 0) gastou, no dia do rebalanceamento, a
@@ -1231,11 +1268,13 @@ const lojaTotal = () => COS.filter(it => it.p > 0 && !it.lend && !it.excl && !it
 function relatorio(C, S){
   const {HOJE, TEMP, EST} = C, E = esforco(S.xpDia, HOJE), r1 = x => Math.round(x*10)/10;
   const ini = [TEMP.ini, S.first].filter(d => d && d <= HOJE).sort()[0] || HOJE;
-  const ganhoDia = {}, gastoDia = {}, soma = (o, d, x) => { if(d && x) o[d] = (o[d]||0) + x; };
-  for(const d in S.xpDia) soma(ganhoDia, d, S.xpDia[d]*10);
-  for(const r of Object.values(S.rec.notasJ || {})) soma(ganhoDia, r.em, +r.j || 0);
-  for(const c of C.CONQ || []) if(c && c.resgate && !c.descartada && c.resgate.como === 'jenny') soma(ganhoDia, c.resgate.em || c.criada, +c.resgate.j || 0);
-  for(const i of S.contrib) soma(ganhoDia, i.dia, CONTRIB[i.tipo].j);
+  // a Jenny ganha por origem (#180): o XP do dia ×10, as notas, as conquistas e as contribuições; o acerto entra sem data
+  const ganhoDia = {}, gastoDia = {}, origemJ = {xp:0, notas:0, conquistas:0, contrib:0, acerto:S.acerto || 0};
+  const soma = (o, d, x, k) => { if(d && x){ o[d] = (o[d]||0) + x; if(k) origemJ[k] += x; } };
+  for(const d in S.xpDia) soma(ganhoDia, d, S.xpDia[d]*10, 'xp');
+  for(const r of Object.values(S.rec.notasJ || {})) soma(ganhoDia, r.em, +r.j || 0, 'notas');
+  for(const c of C.CONQ || []) if(c && c.resgate && !c.descartada && c.resgate.como === 'jenny') soma(ganhoDia, c.resgate.em || c.criada, +c.resgate.j || 0, 'conquistas');
+  for(const i of S.contrib) soma(ganhoDia, i.dia, CONTRIB[i.tipo].j, 'contrib');
   const compras = (EST.compras || []).filter(c => c && /^\d{4}-\d\d-\d\d$/.test(c.d) && c.j > 0);
   for(const c of compras) soma(gastoDia, c.d, c.j);
   const gastoReg = compras.reduce((s, c) => s + c.j, 0), gastoSemData = Math.max(0, (EST.spent||0) - gastoReg);
@@ -1263,7 +1302,7 @@ function relatorio(C, S){
     dias: linhas.length, diasAtivos: ativos.length, pctDiasAtivos: r1(ativos.length/Math.max(1, linhas.length)*100),
     xp: {total:S.total, porDiaAtivo: Math.round(S.total/Math.max(1, ativos.length)), porSemana: Math.round(S.total/nSem), melhorSemana: Math.max(0, ...semanas.map(s => s.xp))},
     origemXP: origem,
-    jenny: {ganha:S.ganho, gasta:EST.spent||0, saldo:S.jenny, saldoEmDiasProdutivos: r1(S.jenny/E.dia), semData:S.acerto, gastoSemData},
+    jenny: {ganha:S.ganho, origem:origemJ, gasta:EST.spent||0, saldo:S.jenny, saldoEmDiasProdutivos: r1(S.jenny/E.dia), semData:S.acerto, gastoSemData},
     regua: E,
     compras: {n:compras.length, porTipo, porFaixa: Object.fromEntries(FAIXAS.map((n, i) => [n, porFaixa[i]])), diasEntreCompras: gaps.length ? r1(gaps.reduce((a, b) => a + b, 0)/gaps.length) : null},
     torre: {andar:S.a.n, projecaoFimDasAulas:S.proj.n, andaresPorSemana: r1((S.a.n - 1)/nSem)},
@@ -1344,7 +1383,7 @@ function resumoGrupo(C, S, pessoais){
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 
-window.GB = {devolucao, FAIXAS_LOJA, pacote, retratosJ, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.GB = {devolucao, FAIXAS_LOJA, pacote, retratosJ, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, CONTRIB_MIGRA, CF_CORES, CF_COR_N, CF_NA_FAIXA, CF_ACIMA, CF_ABAIXO, CF_CONTEST, cfDias, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   repRegra, repPasso, repProxima, repSucessora, repAcum, repAntes, repVisivel, repEntra, repFrase, SEM_REP,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
