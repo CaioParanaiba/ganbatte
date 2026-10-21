@@ -176,6 +176,8 @@ const COS = [
   {id:'fx-rastro-fio', cat:'fx', prova:1, n:'Fio de aura', d:'Uma fita de aura presa ao cursor, que chicoteia nas viradas e se recolhe quando ele para.', p:0, fx:'rastro-fio'},
   {id:'fx-rastro-eco', cat:'fx', prova:1, n:'Eco do Killua', d:'Rápido, o cursor deixa ecos de si, como o Rhythm Echo; ao parar, eles o alcançam num lampejo.', p:0, fx:'rastro-eco'},
   {id:'tr-aspira', cat:'trans', prova:1, n:'Deme-chan', d:'Ao trocar de aba, a aba velha é sugada para o canto, como pelo bocal da Deme-chan.', p:0, eq:{trans:'aspira'}},
+  {id:'bd-costura', cat:'borda', prova:1, n:'Costura de nen', d:'O fio de nen da Machi costura o contorno dos cards em zigue-zague, com um nó em cada canto.', p:0, eq:{borda:'costura'}},
+  {id:'tt-medico', cat:'title', prova:1, n:'Título: Futuro Médico', d:'Para quem estuda como o Leorio, sem desistir até passar na prova.', p:0, eq:{title:'Futuro Médico'}},
   {id:'px-ms-papel', cat:'px', arq:1, n:'Masadora · Papel', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','papel'], sw:['#EFE6D2','#D8C7A3','#FFFBF1','#B4521E','#2B1D14']},
 ];
 /* fotos de perfil: cada PNG de web/a/ (o banco do repositório) vira um item da loja. Preço padrão 1.000 J; estas são grátis. */
@@ -203,13 +205,13 @@ COS.push(...RETRATOS.map(([s, n, alvo]) => ({id:'ch-'+s, cat:'chefe', n, d:'Retr
    Os pacotes (cat full) e as peças que só vêm num pacote (excl) ficam sem faixa. HxH = o visual remete ao anime; nome com
    Nen ou Arena não conta, porque esses nomes trocam com o tema. Os preços por faixa saem da #77 */
 const FAIXA = {
-  comum: 'pal-leorio pal-claro pal-gon pal-biscuit pal-kurapika pal-netero pal-pergaminho pal-killua pal-zoldyck pal-ryodan pal-greed pal-abismo pal-grafite pal-sepia pal-contraste pal-nevoa fx-zap fr-hunter fr-volt fr-nen fr-carta fr-fina fr-dupla tt-transm tt-cacador tt-silencio tt-zetsu tt-guarda fx-confete sm-moeda sm-golpe sm-sino sm-clique sm-gota px-map-tarde px-map-noite px-p1-gb px-p1-noite px-gi-joy px-gi-noite px-ms-neon px-ms-papel bd-dupla bd-corte bd-cantos hv-contorno tr-deslizar',
-  raro: 'hm-gungi tx-scan tx-manga tx-grao tx-arena tx-hex tx-ceu tx-nen fx-aura fx-shake fx-digita fx-corrente fx-shim fx-fogos fx-soco fx-drift fr-aranha fr-escarlate fr-giro tt-godspeed tt-floor tt-ten tt-estrela2 tt-mestre ft-maquina ft-manga ft-pixel ft-arcade sm-fanfarra bd-corrente hv-shu hv-vira cr-ioio cr-carta cr-agulha hp-corrente hp-cristal hm-cartas hm-pegadas tr-glitch tr-fumaca tr-aspira',
+  comum: 'pal-leorio pal-claro pal-gon pal-biscuit pal-kurapika pal-netero pal-pergaminho pal-killua pal-zoldyck pal-ryodan pal-greed pal-abismo pal-grafite pal-sepia pal-contraste pal-nevoa fx-zap fr-hunter fr-volt fr-nen fr-carta fr-fina fr-dupla tt-transm tt-cacador tt-silencio tt-zetsu tt-medico tt-guarda fx-confete sm-moeda sm-golpe sm-sino sm-clique sm-gota px-map-tarde px-map-noite px-p1-gb px-p1-noite px-gi-joy px-gi-noite px-ms-neon px-ms-papel bd-dupla bd-corte bd-cantos hv-contorno tr-deslizar',
+  raro: 'hm-gungi tx-scan tx-manga tx-grao tx-arena tx-hex tx-ceu tx-nen fx-aura fx-shake fx-digita fx-corrente fx-shim fx-fogos fx-soco fx-drift fr-aranha fr-escarlate fr-giro bd-costura tt-godspeed tt-floor tt-ten tt-estrela2 tt-mestre ft-maquina ft-manga ft-pixel ft-arcade sm-fanfarra bd-corrente hv-shu hv-vira cr-ioio cr-carta cr-agulha hp-corrente hp-cristal hm-cartas hm-pegadas tr-glitch tr-fumaca tr-aspira',
   epico: 'fx-costura fx-dragao fx-gyo fx-jajanken fx-baralho fx-godspeed fx-estrelas fx-rastro fx-rastro-fio fx-rastro-eco px-unlock bd-aura hv-en hv-bungee hm-chamas cr-vara',
 };
 const HXH = new Set(('pal-leorio pal-gon pal-biscuit pal-kurapika pal-netero pal-killua pal-zoldyck pal-ryodan pal-greed pal-abismo pal-hisoka pal-meruem tx-hex tx-cartas ' +
-  'fx-corrente fx-shim fx-shake fx-costura fx-soco fx-dragao fx-gyo fx-jajanken fx-baralho fx-godspeed fx-rastro-eco fr-hunter fr-carta fr-aranha fr-escarlate tt-transm tt-cacador tt-silencio tt-zetsu tt-guarda tt-floor tt-ten tt-estrela2 tt-mestre ' +
-  'px-gi-joy px-gi-noite th-killua th-hisoka th-meruem th-greed th-zoldyck bd-corrente hv-shu hv-vira hv-en hv-bungee cr-ioio cr-carta cr-agulha cr-vara hp-corrente hm-cartas hm-gungi tr-fumaca tr-aspira').split(' '));
+  'fx-corrente fx-shim fx-shake fx-costura fx-soco fx-dragao fx-gyo fx-jajanken fx-baralho fx-godspeed fx-rastro-eco fr-hunter fr-carta fr-aranha fr-escarlate tt-transm tt-cacador tt-silencio tt-zetsu tt-guarda tt-floor tt-ten tt-estrela2 tt-mestre tt-medico ' +
+  'px-gi-joy px-gi-noite th-killua th-hisoka th-meruem th-greed th-zoldyck bd-corrente bd-costura hv-shu hv-vira hv-en hv-bungee cr-ioio cr-carta cr-agulha cr-vara hp-corrente hm-cartas hm-gungi tr-fumaca tr-aspira').split(' '));
 for(const [fa, ids] of Object.entries(FAIXA)) for(const id of ids.split(' ')){ const it = COS.find(i => i.id === id); if(it) it.fa = fa; }
 for(const it of COS){ if(it.cat === 'chefe'){ it.fa = 'raro'; it.hxh = 1; } else if(HXH.has(it.id)) it.hxh = 1; }
 const FAIXAS_LOJA = [['comum','Comum'],['raro','Raro'],['epico','Épico'],['lenda','Lendário']];

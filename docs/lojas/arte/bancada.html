@@ -145,7 +145,7 @@ function controle(k, rot, min, max, un, muda = desenha){
   l.querySelector('input').oninput = e => { st[k] = +e.target.value; l.querySelector('output').textContent = st[k] + un; muda(); };
   document.getElementById('extra').append(l);
 }
-if(TIPO === 'borda'){
+if(TIPO === 'borda' && !FISICA){   // a borda feita em código traz os próprios controles
   controle('esp', 'espessura', 4, 28, 'px'); controle('fatia', 'fatia', 4, 40, '%'); controle('rec', 'campo recuado', 0, 24, 'px');
   const l = document.createElement('label'); l.innerHTML = '<input type="checkbox" id="por-cima"> corrente sobre o campo';
   l.querySelector('input').onchange = e => { st.por = e.target.checked; desenha(); }; document.getElementById('extra').append(l);

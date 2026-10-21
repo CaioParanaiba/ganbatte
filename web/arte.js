@@ -80,6 +80,8 @@ const ARTE = {
   'fx-zap':        {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (21/10): fica como está. A ideia de virar o aviso de perigo (fúria, prazo, Ten apagando) foi arquivada junto com as marcas de prazo: volta quando o jogo passar de 8 jogadores ativos.'},
   'bd-dupla':      {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revista (21/10): fica como está.'},
   'tx-ceu':        {st:'aberto', sem:true, tx:'Fica para depois (21/10): vai ser refeito junto com os temas, no futuro.'},
+  'bd-costura':    {st:'finalizar', tx:'Nova (21/10), só em código: o fio de nen da Machi dá a volta no card em zigue-zague, faz a curva nos cantos e dá um nó em cada um. Parada; o card não muda de tamanho. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tt-medico':     {st:'aberto', sem:true, fixo:'já no jogo', tx:'Novo (21/10): o título Futuro Médico, do Leorio, para quem estuda. É só o texto embaixo do seu andar, como os outros títulos. Falta o Caio aprovar.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
 /* revisão de 21/10: paletas, fontes, títulos e sons ficam como estão (fontes e sons novos só quando o jogo passar de 8 jogadores
@@ -96,8 +98,6 @@ for(const it of GB.COS) if(FICA[it.cat] && !ARTE[it.id]) ARTE[it.id] = {st:'fech
    nome, descrição, status, o que falta]. A Marca de prazo (at-*, fx-hakoware) foi arquivada em 21/10 com o aviso de perigo do
    Raio: volta quando o jogo passar de 8 jogadores ativos (FILA.md, status pulado) */
 const IDEIAS = [
-  ['bd-costura', 'borda', 'raro', 'Machi', 'Costura de nen', 'A borda dos cards vira uma costura de fio de nen, em zigue-zague.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS ou SVG.'],
-  ['tt-medico', 'title', 'comum', 'Leorio', 'Futuro Médico', 'Título para quem estuda.', 'dev', 'Ideia aprovada, ainda não entrou no catálogo.'],
 ];
 const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
   ARTE[id] = {st, tx, sem: true, ideia: true};
@@ -216,7 +216,7 @@ ${EL ? `
 @keyframes arAspPv{0%,20%{transform:none;opacity:1}55%{transform:translate(40%,-40%) rotate(-40deg) scale(.05);opacity:.4}60%,75%{transform:scale(0);opacity:0}100%{transform:none;opacity:1}}
 .pvc .hmn{position:absolute;inset:12px 18px;display:grid;place-items:center} .pvc .hmn .l-hg{--n:9;grid-template-rows:repeat(4,auto);grid-template-columns:repeat(9,15px)}`;
 const st = document.createElement('style'); st.id = 'gb-arte'; st.textContent = CSS; document.head.appendChild(st);
-/* heatmaps e a vida de cristal em CSS: o mesmo CSS dos módulos, com o seletor do jogo e o da prévia */
+/* heatmaps, a vida de cristal e a costura de nen em CSS: o mesmo CSS dos módulos, com o seletor do jogo e o da prévia */
 if(window.CURSORES){
   const C = CURSORES, h = document.createElement('style'); h.id = 'gb-arte-heat';
   const es = C.cartas.naipe('espadas');
@@ -224,7 +224,8 @@ if(window.CURSORES){
     + `\n:root[data-heat="cartas-nova"],.hm-cartas-nova{--naipe:${es}}\n` + C.chamas.css(':root[data-heat="chamas-nova"]') + C.chamas.css('.hm-chamas-nova')
     + C.pegadas.css(':root[data-heat="pegadas-nova"]') + C.pegadas.css('.hm-pegadas-nova')
     + C.gungi.css(':root:is([data-heat="gungi"],[data-heat="gungi-nova"])') + C.gungi.css('.hm-gungi-nova')
-    + C.cristal.css(':root[data-hp="cristal-nova"]') + C.cristal.css('.hp-cristal-nova');
+    + C.cristal.css(':root[data-hp="cristal-nova"]') + C.cristal.css('.hp-cristal-nova')
+    + C['costura-borda'].css(':root:is([data-borda="costura"],[data-borda="costura-nova"]) .card') + C['costura-borda'].css('.bd-costura-nova .mc');
   document.head.appendChild(h);
 }
 
