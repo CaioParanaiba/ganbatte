@@ -11,8 +11,8 @@ WEB = ARTE.parent.parent.parent / "web" / "arte"
 WEB.mkdir(exist_ok=True)
 
 for pasta, nome in [("cursores", "carta"), ("cursores", "agulha"), ("cursores", "ioio"), ("efeitos", "godspeed"),
-                    ("efeitos", "jajanken"), ("efeitos", "costura"), ("heatmap", "cartas"), ("heatmap", "chamas"), ("hover", "bungee"),
-                    ("hover", "en"), ("hover", "vira"), ("hover", "shu"), ("hover", "contorno"), ("prazo", "countdown"),
+                    ("efeitos", "jajanken"), ("efeitos", "costura"), ("efeitos", "rastro"), ("efeitos", "soco"), ("efeitos", "dragao"), ("heatmap", "cartas"), ("heatmap", "chamas"), ("hover", "bungee"),
+                    ("hover", "en"), ("hover", "vira"), ("hover", "shu"), ("hover", "contorno"), ("hover", "gyo"), ("prazo", "countdown"),
                     ("correntes", "corrente"), ("eletrica", "eletrica")]:
     shutil.copyfile(ARTE / pasta / f"{nome}.js", WEB / f"{nome}.js")
 # transições de aba: a base vai como tr-base.js (o palco.js é o jogo de mentira da bancada, não vai)

@@ -26,12 +26,15 @@ const ARTE = {
   'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
   'cr-ioio':       {st:'aberto', tx:'Voltou a um ioiô só (20/10), para não atrapalhar os truques. Clique desce, segurar dorme; segurando com a mão parada o fio carrega de eletricidade e ele volta como raio. Falta o Caio aprovar.'},
   'fx-godspeed':   {st:'fechado', tx:'Aprovado (20/10). O Kanmuru acende no card, o raio cai com quadro negativo, o 神速 entra com rastros e a marca do raio fica no card.'},
+  'fx-rastro':     {st:'finalizar', tx:'Refeito em código (21/10): vapor de aura que sobe ondulando; parado, o Ten ainda solta fiapos; o clique é o Ren. Aprovado pelo Caio, ainda provisório.'},
+  'fx-rastro-fio': {st:'finalizar', tx:'Novo (21/10), 2º modelo do rastro: uma fita de aura com física de corda que chicoteia, estala em faíscas e se recolhe; o clique manda um pulso. Aprovado pelo Caio, ainda provisório.'},
+  'fx-rastro-eco': {st:'finalizar', tx:'Novo (21/10), 3º modelo do rastro: ecos atrasados do cursor com a cor partida, que o alcançam num lampejo; o clique abre os quatro em roda. Aprovado pelo Caio, ainda provisório.'},
   'fx-jajanken':   {st:'fechado', tx:'Aprovado (20/10): as três mãos, com o grito em japonês. O ▶ da nova passa por pedra, papel e tesoura, nessa ordem.'},
   'hv-bungee':     {st:'fechado', tx:'Aprovado (20/10). A goma cobre o contorno do card; ao sair, a borda vira membrana, estica e rasga como elástico.'},
   'hv-en':         {st:'fechado', tx:'Aprovado (20/10). O card acende o Ten e o En da Pitou se abre do ponto tocado, só até os vizinhos; os cards alcançados acendem os cantos.'},
   'hv-shu':        {st:'fechado', tx:'Aprovado (20/10). A aura corre o contorno a partir do ponto tocado, duas faíscas correm a borda e ela escorre ao sair.'},
   'hv-vira':       {st:'fechado', sem:true, fixo:'já no jogo', tx:'Aprovado (20/10). Feito em código, o card vira e mostra o verso; já substituiu o giro antigo, que reiniciava com o mouse mexendo.'},
-  'fx-gyo':        {st:'aberto', sem:true, tx:'Refeito em código (20/10): uma lente que revela fios, poeira e selos escondidos no card. O Caio gostou, mas ainda não aprovou; ainda não está no jogo.'},
+  'fx-gyo':        {st:'finalizar', tx:'Refeito em código (20/10): cada card guarda um nen escondido (fios, poeira e selos) que só aparece na lente de aura, onde o mouse está; ao entrar, os olhos focam. Aprovado pelo Caio (21/10); falta o outro dev ver.'},
   'fx-baralho':    {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (20/10): o castelo de cartas e as cartas em órbita foram recusados; fica o leque de naipes de hoje.'},
   'bd-corte':      {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): borda fina com dois cantos cortados, no lugar da tracejada. Falta o outro dev ver.'},
   'bd-cantos':     {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): os quatro cantos marcados, como um visor. Falta o outro dev ver.'},
@@ -50,6 +53,8 @@ const ARTE = {
   'lic-corrente':  {st:'finalizar', tx:'A corrente do Kurapika dando a volta no estojo. Aprovada, mas ainda provisória.'},
   'tr-deslizar':   {st:'finalizar', tx:'Lapidada (20/10): desliza no sentido da barra de abas, e a velha sai enquanto a nova entra. Aprovada pelo Caio; falta o outro dev ver.'},
   'tr-glitch':     {st:'finalizar', tx:'Lapidada (20/10): a velha separa as cores, rasga em faixas com a nova pelos rasgos, e a nova se firma com um tranco. Aprovada pelo Caio; falta o outro dev ver.'},
+  'fx-soco':       {st:'finalizar', tx:'Novo (20/10), só em código: no andar novo, um portal de nen abre ao lado do card, o punho do Leorio sai dele, acerta a borda e volta, em meio segundo. Aprovado pelo Caio; falta o outro dev ver.'},
+  'fx-dragao':     {st:'finalizar', tx:'Novo (21/10), só em código: no andar novo, o dragão de aura do Zeno sai do card, dá a volta no alto com 龍星群 e se desfaz em dragõezinhos que mergulham na tela. Aprovado pelo Caio; falta o outro dev ver.'},
   'fx-costura':    {st:'fechado', tx:'Aprovada (20/10). Nova, só em código: o card racha de verdade, a agulha da Machi costura em zigue-zague e o fio é puxado; o card fecha com um estalo e 念糸縫合 entra letra por letra.'},
   'tr-fumaca':     {st:'finalizar', tx:'Nova (20/10): a fumaça roxa sai de onde você clicou, cobre a tela e se desfaz já na aba nova. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
   'tr-aspira':     {st:'finalizar', tx:'Nova (20/10): os cards da aba velha são sugados para o canto mais perto do clique, com um redemoinho. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
@@ -61,8 +66,6 @@ const PRAZO = ' Faz parte da Marca de prazo, categoria em teste: se os estilos n
 const IDEIAS = [
   ['cr-vara', 'cursor', 'epico', 'Gon', 'Vara de pescar do Gon', 'O cursor vira a vara de pescar: o clique lança a linha e fisga o card.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, com física como a carta e o ioiô: linha com anzol e boia, segurar recolhe.'],
   ['fx-borboletas', 'fx', 'epico', 'Pouf', 'Borboletas do Pouf', 'Borboletas de aura voam devagar pelo fundo, juntam-se perto do mouse e se espalham no clique.', 'aberto', 'Prévia em código na bancada (20/10), em aberto: o Caio ainda não decidiu se gostou, nem a camada (por cima ou atrás dos cards) e se os pacotes que têm a Poeira de Nen ficam com ela.'],
-  ['fx-dragao', 'ev', 'epico', 'Zeno', 'Dragon Dive', 'No andar novo, o dragão de aura sobe, curva no alto e desce em chuva de dragõezinhos.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, como alternativa aos fogos.'],
-  ['fx-soco', 'ev', 'raro', 'Leorio', 'Soco remoto do Leorio', 'No andar novo, um portal de nen abre perto do card e o punho do Leorio sai dele.', 'finalizar', 'Prévia em código (20/10): o punho de terno sai do portal, acerta a borda do card e volta, em meio segundo. O Caio gostou; em aberto para os outros devs verem. Ainda não está no jogo.'],
   ['bd-costura', 'borda', 'raro', 'Machi', 'Costura de nen', 'A borda dos cards vira uma costura de fio de nen, em zigue-zague.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS ou SVG.'],
   ['hm-gungi', 'heat', 'raro', 'Meruem e Komugi', 'Constância no Gungi', 'O heatmap vira um tabuleiro de Gungi: cada dia jogado é uma peça, mais alta quanto mais forte o dia; o dia salvo é o Rei.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS.'],
   ['tt-medico', 'title', 'comum', 'Leorio', 'Futuro Médico', 'Título para quem estuda.', 'dev', 'Ideia aprovada, ainda não entrou no catálogo.'],
@@ -79,8 +82,9 @@ const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
 
 /* a licença inteira (o cartão novo), que não é item da loja: aparece no provador da Associação */
 const CARTAO = {st:'finalizar', tx:'O cartão novo, fiel ao do anime, com lugar para as estrelas, o carimbo e o emblema, foi aprovado como provisório. Falta decidir como a versão em pé entra no placar.'};
-/* efeitos (data-fx, uma lista) cuja nova é só CSS: provando com a nova, o efeito vira "X-nova" no <html> e na prévia */
-const FX_NOVA = ['fx-corrente', 'fx-shim'];
+/* efeitos (data-fx, uma lista) com versão nova: provando com a nova, o efeito vira "X-nova" no <html> e na prévia (a nova
+   é só CSS, ou um módulo em código que liga por esse nome, como o Gyo) */
+const FX_NOVA = ['fx-corrente', 'fx-shim', 'fx-gyo', 'fx-rastro'];
 /* a corrente do Kurapika (web/arte/corrente.js): as imagens saem do gerador, a borda com a Dowsing Chain, a barra de XP
    com a Judgment Chain e a vida do chefão escarlate */
 const CH = window.GB_CORRENTE, CHP = CH && CH.pendulo(2), CHL = CH && CH.lamina(), CHU = s => CH ? CH.uri(s) : 'none';
@@ -105,15 +109,14 @@ const CSS = `
 .ar7{display:grid;gap:5px;margin:6px 0 2px;padding:7px 9px;border-radius:8px;border:1px dashed var(--hair);font-size:12.5px;line-height:1.4;color:var(--soft)}
 .ar7 .ar-l{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between}
 .ar-st{font:700 10.5px var(--f-mono);letter-spacing:.04em;text-transform:uppercase;padding:1px 8px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
-.ar-st.fechado{color:var(--grn)} .ar-st.finalizar{color:var(--ouro7)} .ar-st.aberto{color:var(--red)} .ar-st.dev{color:var(--soft);border-style:dashed}
-/* a borda do card da vitrine pelo status (só na beta); o alto continua com a cor da faixa no raro, no épico e no lendário */
-:root{--ouro7:#C9A227}
+.ar-st.fechado{color:var(--ok7)} .ar-st.finalizar{color:var(--ouro7)} .ar-st.aberto{color:var(--nao7)} .ar-st.dev{color:var(--soft);border-style:dashed}
+/* a borda do card da vitrine pelo status (só na beta): uma cor só em volta do card inteiro, também no alto (a cor da faixa
+   no alto fazia um card vermelho de topo azul), e cores fixas, iguais em toda paleta (o --grn da Killua é quase o --volt) */
+:root{--ok7:#2EA043;--ouro7:#E3B341;--nao7:#E5534B}
 .it7.ab-ok,.it7.ab-ouro,.it7.ab-nao{border-width:2px}
-.it7.ab-ok{border-color:var(--grn)} .it7.ab-ouro{border-color:var(--ouro7)} .it7.ab-nao{border-color:color-mix(in srgb,var(--red) 75%,var(--hair))}
-.it7:is(.fa-comum,.fa-raro,.fa-epico,.fa-lenda):is(.ab-ok,.ab-ouro,.ab-nao){border-top-width:3px}
-.it7.fa-raro:is(.ab-ok,.ab-ouro,.ab-nao){border-top-color:var(--volt)} .it7.fa-epico:is(.ab-ok,.ab-ouro,.ab-nao){border-top-color:var(--aura)} .it7.fa-lenda:is(.ab-ok,.ab-ouro,.ab-nao){border-top-color:var(--amb)}
+.it7.ab-ok{border-color:var(--ok7)} .it7.ab-ouro{border-color:var(--ouro7)} .it7.ab-nao{border-color:var(--nao7)}
 .ar-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;margin:6px 0}
-.ar-leg span{padding-left:8px;border-left:4px solid} .ar-leg .ab-ok{border-color:var(--grn)} .ar-leg .ab-ouro{border-color:var(--ouro7)} .ar-leg .ab-nao{border-color:var(--red)}
+.ar-leg span{padding-left:8px;border-left:4px solid} .ar-leg .ab-ok{border-color:var(--ok7)} .ar-leg .ab-ouro{border-color:var(--ouro7)} .ar-leg .ab-nao{border-color:var(--nao7)}
 /* card em desenvolvimento: a prévia vazia, com de quem é; e a bomba do Countdown */
 .it7 .pv.dev7{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;border:1px dashed var(--hair);background:var(--panel)}
 .pv.dev7 b{font:700 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)} .pv.dev7 span{font-size:13px;color:var(--faint)}
@@ -166,6 +169,10 @@ ${EL ? `
 @keyframes elEstala{0%{background-position:0 0,0 0}33.333%{background-position:31px 50%,0 0}66.667%{background-position:67px 100%,0 0}}
 @keyframes elFaisca{0%{background-position:0 0}33.333%{background-position:0 50%}66.667%{background-position:0 100%}}
 @keyframes elDescarga{0%,86%,100%{filter:none}89%{filter:brightness(1.7) drop-shadow(0 0 5px ${EL.AZUL.meio})}92%{filter:brightness(1.05)}94%{filter:brightness(1.45)}97%{filter:none}}` : ''}
+/* prévia do Gyo novo no card: a lente acesa no meio, com a borda acendendo perto dela */
+.fxd.gyo-nova .mini{background-image:radial-gradient(70px circle at 45% 55%,color-mix(in srgb,var(--aura) 26%,transparent),transparent 70%);border-color:color-mix(in srgb,var(--aura) 55%,var(--hair))}
+/* rastro em código (web/arte/rastro.js): na prévia do card, os pontinhos do rastro de hoje */
+.fxd:is(.rastro-nova,.rastro-fio,.rastro-eco){background-image:radial-gradient(2px 2px at 20% 70%,var(--aura),transparent),radial-gradient(2px 2px at 60% 40%,var(--volt),transparent),radial-gradient(1.5px 1.5px at 85% 80%,var(--aura),transparent),radial-gradient(1.5px 1.5px at 40% 20%,var(--volt),transparent);animation:hjSobe 3s linear infinite}
 :root[data-cursor$="-nova"] body,:root[data-cursor$="-nova"] body *{cursor:none!important}
 .pvc .cur7 canvas{width:72px;height:72px}
 /* prévia das transições que só existem em código: a fumaça cobre e abre; a aba encolhe girando para o canto */
@@ -186,11 +193,11 @@ if(window.CURSORES){
   document.head.appendChild(h);
 }
 
-/* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ, 神速 カンムル, 念糸縫合): Dela Gothic One, só com essas letras */
+/* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ, 神速 カンムル, 念糸縫合, 龍星群 ドラゴンダイヴ): Dela Gothic One, só com essas letras */
 let fonteOk = null;
 function fonte(){
   if(fonteOk) return fonteOk;
-  const txt = 'グーパーチー！ボッカタ神速ンムル念糸縫合PEDRAPAPELTESOURA';
+  const txt = 'グーパーチー！ボッカタ神速ンムル念糸縫合龍星群ドラゴンダイヴPEDRAPAPELTESOURA';
   if(!document.querySelector('link[href*="Dela+Gothic+One"]')){
     const l = document.createElement('link'); l.rel = 'stylesheet';
     l.href = 'https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap&text=' + encodeURIComponent(txt); document.head.append(l);
@@ -220,6 +227,26 @@ function hover(){
   hovK = k;
   if(k && window.CURSORES && CURSORES[k] && CURSORES[k].cola) hov = CURSORES[k].cola(document.documentElement, {seletor: '.card'});
 }
+/* ---------- Gyo em código: cola nos cards quando o data-fx do <html> pede o "gyo-nova" (o Gyo de hoje é o "gyo", em CSS) ---------- */
+let gyo = null;
+function gyoNovo(){
+  const on = (document.documentElement.getAttribute('data-fx') || '').split(' ').includes('gyo-nova');
+  if(!on === !gyo) return;
+  if(gyo){ gyo.desliga(); gyo = null; }
+  else if(window.CURSORES && CURSORES.gyo) gyo = CURSORES.gyo.cola(document.documentElement, {seletor: '.card'});
+}
+/* ---------- rastro em código: um modelo por item (a Aura é a nova do fx-rastro; o Fio e o Eco só existem em código).
+   Liga com o primeiro que o data-fx do <html> pedir; o tema muda as cores, então troca de tema refaz o rastro ---------- */
+const RASTRO = {'rastro-nova': 1, 'rastro-fio': 2, 'rastro-eco': 3};
+let ras = null, rasK = '';
+function rastro(){
+  const fx = (document.documentElement.getAttribute('data-fx') || '').split(' '), m = fx.map(f => RASTRO[f]).find(Boolean) || 0;
+  const k = m ? m + '|' + getComputedStyle(document.body).backgroundColor + '|' + getComputedStyle(document.documentElement).getPropertyValue('--aura') : '';
+  if(k === rasK) return;
+  if(ras){ ras.desliga(); ras = null; }
+  rasK = k;
+  if(m && window.CURSORES && CURSORES.rastro) ras = CURSORES.rastro.liga(document.body, {modelo: m});
+}
 /* ---------- transições em código: a troca de aba passa pelo módulo quando o <html> pede um "-nova" (deslizar, glitch) ou
    uma transição que só existe em código (fumaca, aspira). fn é a troca de verdade (esconde a velha, mostra a nova) ---------- */
 const SO_CODIGO = ['fumaca', 'aspira'], trs = {};
@@ -234,14 +261,15 @@ function aba(fn){
 }
 if(window.GB_FX){
   const aplica = GB_FX.aplica, ver = GB_FX.ver;
-  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); };
+  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); gyoNovo(); rastro(); };
   /* ▶ na loja: com a nova escolhida, o efeito novo cai no card do item */
   let mao = 0;
   GB_FX.ver = function(id, r){
-    const k = {'fx-godspeed':'godspeed', 'fx-jajanken':'jajanken', 'fx-costura':'costura'}[id];
+    const k = {'fx-godspeed':'godspeed', 'fx-jajanken':'jajanken', 'fx-costura':'costura', 'fx-soco':'soco', 'fx-dragao':'dragao'}[id];
     if(!k || !nova(id) || !window.CURSORES) return ver.apply(this, arguments);
     const b = document.querySelector(`[data-fxver="${id}"]`), card = b && b.closest('.it7'), rr = card ? card.getBoundingClientRect() : r;
-    if(k === 'godspeed' || k === 'costura') return fonte().then(() => CURSORES[k].dispara(rr, {el: card}));
+    if(k === 'soco') return CURSORES.soco.dispara(rr, {el: card});
+    if(k !== 'jajanken') return fonte().then(() => CURSORES[k].dispara(rr, {el: card}));
     const m = ['pedra', 'papel', 'tesoura'][mao++ % 3];
     fonte().then(() => CURSORES.jajanken.dispara(rr, {el: card, mao: m}));
   };
@@ -278,7 +306,7 @@ window.GB_ARTE = {
   /* o aviso do card: status, a frase e a troca (na Associação, sem troca: ela fica no provador, para a licença inteira) */
   aviso(id, semTroca){ const a = ARTE[id]; if(!a) return '';
     return `<div class="ar7"><span class="ar-l"><span class="ar-st ${a.st}" title="arte nova (#134)">arte: ${ST[a.st]}</span>${a.ideia ? '' : a.fixo ? `<span class="sub">${a.fixo}</span>` : a.sem ? '<span class="sub">ainda sem versão nova</span>' : semTroca ? '<span class="sub">antiga | nova no provador</span>' : troca(id)}</span><span>${esc(a.tx)}</span></div>`; },
-  /* a borda do card da vitrine pelo status, só na beta: ok (fechado), ouro (falta outro dev), nao (em aberto, em
+  /* a borda do card da vitrine pelo status, só na beta: ok (fechado), ouro (amarela: falta outro dev), nao (em aberto, em
      desenvolvimento ou ainda não revisto) */
   borda(id){
     if(typeof podeTeste !== 'function' || !podeTeste()) return '';
@@ -289,7 +317,7 @@ window.GB_ARTE = {
   resumo(ids){
     const l = ids.filter(tem), n = s => l.filter(id => ARTE[id].st === s).length, nao = ids.length - n('fechado') - n('finalizar');
     return `<div class="sec7"><h3>Arte nova em teste</h3><p>Os itens com o aviso "arte" ganharam um desenho novo na fila de arte (#134) ou já tiveram o veredito do Caio. Use a troca <b>antiga | nova</b> e o provar (ou o ▶) para comparar. A versão nova ainda não se compra: quem compra ou já tem fica com a de hoje. Os cards "em desenvolvimento" são ideias aprovadas que ainda não têm arte: mostram o que vem e a faixa.</p>
-      ${this.borda('') ? `<p class="ar-leg"><span class="ab-ok">verde: fechado (${n('fechado')})</span><span class="ab-ouro">dourada: o Caio aprovou, falta o outro dev ver (${n('finalizar')})</span><span class="ab-nao">vermelha: em aberto ou ainda não revisto (${nao})</span></p>` : ''}
+      ${this.borda('') ? `<p class="ar-leg"><span class="ab-ok">verde: fechado (${n('fechado')})</span><span class="ab-ouro">amarela: o Caio aprovou, falta o outro dev ver (${n('finalizar')})</span><span class="ab-nao">vermelha: em aberto ou ainda não revisto (${nao})</span></p>` : ''}
       <div class="ar-res"><span class="ar-st fechado">fechado ${n('fechado')}</span><span class="ar-st finalizar">falta outro dev ${n('finalizar')}</span><span class="ar-st aberto">em aberto ${n('aberto')}</span><span class="ar-st dev">em desenvolvimento ${n('dev')}</span>
       <button type="button" class="btn${this.so ? ' v' : ''}" data-arteso>${this.so ? 'mostrar todos os itens' : 'só os itens da fila de arte'}</button></div></div>`;
   },

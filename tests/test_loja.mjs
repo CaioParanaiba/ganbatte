@@ -26,7 +26,7 @@ ok('itens que saem da Masadora');
 
 const novos = COS.filter(i => i.prova);
 assert.ok(novos.length >= 28, 'itens novos para provar');
-for(const it of novos) assert.ok(!GB.padrao(it) && it.p === 0 && it.eq, it.id + ': só para provar, não vem com o jogo');
+for(const it of novos) assert.ok(!GB.padrao(it) && it.p === 0 && (it.eq || it.fx), it.id + ': só para provar, não vem com o jogo');   // efeito (fx) não tem eq
 ok('itens novos só para provar');
 
 for(const it of COS.filter(i => i.cat === 'chefe')) assert.ok(GB.padrao(it), it.id + ': retrato grátis');
