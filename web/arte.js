@@ -62,6 +62,14 @@ const ARTE = {
   'fx-costura':    {st:'fechado', tx:'Aprovada (20/10). Nova, só em código: o card racha de verdade, a agulha da Machi costura em zigue-zague e o fio é puxado; o card fecha com um estalo e 念糸縫合 entra letra por letra.'},
   'tr-fumaca':     {st:'finalizar', tx:'Nova (20/10): a fumaça roxa sai de onde você clicou, cobre a tela e se desfaz já na aba nova. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
   'tr-aspira':     {st:'finalizar', tx:'Nova (20/10): os cards da aba velha são sugados para o canto mais perto do clique, com um redemoinho. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-manga':      {st:'finalizar', tx:'Refeita em código (21/10): retícula de verdade, com os pontos crescendo até o canto de baixo, e linhas de foco saindo da moldura. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-grao':       {st:'finalizar', tx:'Refeita em código (21/10): grão, fibras, manchas de umidade e a borda da tela queimada; fica melhor no Pergaminho. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-scan':       {st:'finalizar', tx:'Refeita em código (21/10): a tela do Joystation, com cantos curvos, moldura, linhas, RGB e uma faixa de luz que rola. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-hex':        {st:'finalizar', tx:'Refeita em código (21/10): o ninho das Quimeras, favos irregulares saindo do canto com ovos que pulsam. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-cartas':     {st:'finalizar', tx:'Refeita em código (21/10): a tela vira o verso de uma carta, com a treliça de naipes, os cantos e o filete duplo. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-arena':      {st:'finalizar', tx:'Refeita em código (21/10): o piso do ringue em perspectiva no pé da tela, com a borda dourada. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-nen':        {st:'aberto', tx:'Refeita em código (21/10), vira a Aura do dia (épico): a aura do seu tipo contorna a tela conforme o XP de hoje chega na meta e as pontas se encontram no alto quando ela fecha; cada XP novo dá um pulso. Provando, "passar o dia" mostra o dia inteiro. Em aberto, esperando o veredito do Caio.'},
+  'tx-teia':       {st:'aberto', sem:true, tx:'Revista (21/10): a teia refeita não agradou e o Caio quer tirar a textura. Falta decidir o que o pacote Genei Ryodan recebe no lugar.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
@@ -198,6 +206,27 @@ if(window.CURSORES){
   document.head.appendChild(h);
 }
 
+/* texturas de fundo em código (web/arte/texturas.js): pintam o ::before e o ::after do <html> (os do body já são da Aura
+   ambiente e da Ascensão) e da prévia do card */
+const TEX_NOVA = ['manga', 'grao', 'scan', 'hex', 'cartas', 'arena', 'nen'];
+if(window.GB_TEXTURAS){
+  const t = document.createElement('style'); t.id = 'gb-arte-tex';
+  t.textContent = TEX_NOVA.map(k => GB_TEXTURAS.css('tx-' + k, `:root[data-bg="${k}-nova"]`, 'fixed') + GB_TEXTURAS.css('tx-' + k, `.pv.tex-${k}-nova`, 'absolute')).join('\n')
+    + `\n.pv:is(${TEX_NOVA.map(k => '.tex-' + k + '-nova').join(',')}){isolation:isolate;--alto:96px;--larg:300px}\n.pv.tex-nen-nova{--dia:.6}`;
+  document.head.appendChild(t);
+}
+let auraXP = null, auraSim = null;
+const pulso = () => { const r = document.documentElement; r.classList.remove('tx-pulso'); void r.offsetWidth; r.classList.add('tx-pulso'); };
+/* "passar o dia" no provar: a aura sai do zero e avança um oitavo a cada 1,6 s até fechar; depois volta ao XP de verdade */
+function passaDia(){
+  const r = document.documentElement; clearInterval(auraSim); let n = 0;
+  r.style.setProperty('--dia', 0); r.style.setProperty('--cheio', 0);
+  auraSim = setInterval(() => {
+    n++; r.style.setProperty('--dia', n / 8); r.style.setProperty('--cheio', n >= 8 ? 1 : 0); pulso();
+    if(n >= 8){ clearInterval(auraSim); setTimeout(() => { auraSim = null; auraXP = null; render(); }, 4000); }
+  }, 1600);
+}
+
 /* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ, 神速 カンムル, 念糸縫合, 龍星群 ドラゴンダイヴ): Dela Gothic One, só com essas letras */
 let fonteOk = null;
 function fonte(){
@@ -295,6 +324,17 @@ window.GB_ARTE = {
   vista(v, it){
     if(nova(it.id) && it.eq && v[it.cat] === it.eq[it.cat] && ['borda','cursor','hp','heat','hover','trans'].includes(it.cat)) v[it.cat] += '-nova';
     if(FX_NOVA.includes(it.id) && nova(it.id)) v.fx = v.fx.map(f => f === it.fx ? f + '-nova' : f);
+    if(it.cat === 'tex' && nova(it.id) && v.bg === it.eq.bg) v.bg += '-nova';
+  },
+  /* a Aura do dia nova: --dia é o XP de hoje sobre a meta do dia; XP novo dá um pulso (render() no index.html) */
+  aura(S){
+    const r = document.documentElement;
+    if(r.getAttribute('data-bg') !== 'nen-nova'){ auraXP = null; return; }
+    if(auraSim) return;
+    const d = Math.min(1, S.hojeXP / Math.max(1, S.metaDia));
+    r.style.setProperty('--dia', d.toFixed(3)); r.style.setProperty('--cheio', d >= 1 ? 1 : 0);
+    if(auraXP !== null && S.hojeXP > auraXP) pulso();
+    auraXP = S.hojeXP;
   },
   /* a classe de efeito da prévia do card (a nova, se for a escolhida) */
   fx: it => FX_NOVA.includes(it.id) && nova(it.id) ? it.fx + '-nova' : it.fx,
@@ -326,9 +366,9 @@ window.GB_ARTE = {
       <div class="ar-res"><span class="ar-st fechado">fechado ${n('fechado')}</span><span class="ar-st finalizar">falta outro dev ${n('finalizar')}</span><span class="ar-st aberto">em aberto ${n('aberto')}</span><span class="ar-st dev">em desenvolvimento ${n('dev')}</span>
       <button type="button" class="btn${this.so ? ' v' : ''}" data-arteso>${this.so ? 'mostrar todos os itens' : 'só os itens da fila de arte'}</button></div></div>`;
   },
-  /* na faixa do provar: a troca e, nas chamas, nas pegadas e no Gungi, o momento de hoje */
+  /* na faixa do provar: a troca e, nas chamas, nas pegadas, no Gungi e na Aura do dia, o momento de hoje */
   faixa(id){ if(!tem(id) || ARTE[id].sem) return '';
-    const hoje = nova(id) && {'hm-chamas': ['chamas', 'acender hoje'], 'hm-pegadas': ['pegadas', 'pisar hoje'], 'hm-gungi': ['gungi', 'jogar hoje']}[id];
+    const hoje = nova(id) && {'hm-chamas': ['chamas', 'acender hoje'], 'hm-pegadas': ['pegadas', 'pisar hoje'], 'hm-gungi': ['gungi', 'jogar hoje'], 'tx-nen': ['aura', 'passar o dia']}[id];
     return `<span style="display:flex;gap:8px;align-items:center">versão ${troca(id)}${hoje ? `<button type="button" class="btn" data-artehoje="${hoje[0]}" style="background:#0b0d12;color:#fff;border-color:#0b0d12">${hoje[1]}</button>` : ''}</span>`; },
 };
 
@@ -349,6 +389,7 @@ document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('[data-arte],[data-arteso],[data-artehoje]'); if(!t) return;
   if(t.dataset.arte){ const [id, v] = t.dataset.arte.split(':'); VER[id] = v; }
   else if(t.hasAttribute('data-arteso')) GB_ARTE.so = !GB_ARTE.so;
+  else if(t.dataset.artehoje === 'aura'){ passaDia(); return; }
   else { const hj = document.querySelector('.l-hg i.hj'); if(hj) ({pegadas: () => CURSORES.pegadas.pisa(hj), gungi: () => CURSORES.gungi.joga(hj)}[t.dataset.artehoje] || (() => CURSORES.chamas.acende(hj)))(); else toast('O dia de hoje fica na Lista, no heatmap da constância: abra a aba e tente de novo.'); return; }
   render();
 });

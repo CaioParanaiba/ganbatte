@@ -1,12 +1,12 @@
-/* Ganbatte · texturas de fundo refeitas (#134): um gerador para as oito (o Céu da Arena fica para depois).
+/* Ganbatte · texturas de fundo refeitas (#134): um gerador para as sete (o Céu da Arena fica para depois; a teia saiu).
  * Regra das novas: a textura mora nas bordas e nos cantos da tela, onde os cards não cobrem, com uma composição de verdade
  * (um canto, um horizonte, uma moldura) em vez de um padrão repetido e apagado.
  * Cada textura pinta o ::before e o ::after da tela (z-index -1, atrás de tudo): desenho em SVG usado como máscara de uma
  * cor do tema (var(--ink), var(--aura)...), então troca de paleta sem gerar nada de novo.
  * GB_TEXTURAS.css(id, S, P) → o CSS da textura id no seletor S, com position P ('fixed' no jogo, no body; 'absolute' na
  * vitrine, numa .tela de 1280×800). GB_TEXTURAS.LISTA = as fichas (nome, faixa, de quem, a ideia).
- * Aura do dia (tx-nen): a altura sai de --dia (0 a 1, tarefas feitas / meta do dia) e --cheio (0 ou 1); a cor é
- * var(--nen-forte), a mesma da Borda de aura viva; --alto é a altura da tela (100vh no jogo). Pulso: classe tx-pulso.
+ * Aura do dia (tx-nen): o quanto ela contorna a tela sai de --dia (0 a 1, tarefas feitas / meta do dia) e --cheio (0 ou 1); a cor é
+ * var(--nen-forte), a mesma da Borda de aura viva; --alto e --larg são o tamanho da tela (100vh e 100vw no jogo). Pulso: classe tx-pulso.
  * Sem dependências.
  */
 (() => {
@@ -105,42 +105,6 @@ ${mexe(`${S}::after{animation:txOvo 4.8s ease-in-out infinite}`)}
 @keyframes txOvo{0%,100%{opacity:1}50%{opacity:.55}}`;
 }
 
-/* ---------- Teia com orvalho: um quarto de teia no canto de cima à direita, gotas nos fios, sem aranha ---------- */
-function teia(){
-  const r = rnd(31), W = 820, H = 640, C = [W, 0], fios = [], gotas = [];
-  const raios = [];
-  for(let i = 0; i < 12; i++){ const an = (94 + i * (84 / 11) + (r() - .5) * 4) * Math.PI / 180; raios.push({an, L: 560 + r() * 230}); }
-  const ponto = (i, rho) => [C[0] + Math.cos(raios[i].an) * rho, C[1] + Math.sin(raios[i].an) * rho];
-  for(const {an, L} of raios) fios.push(`M${C[0]} ${C[1]}L${f(C[0] + Math.cos(an) * L)} ${f(C[1] + Math.sin(an) * L)}`);
-  let rho = 40, g = 20;
-  const espiral = [];
-  while(rho < 760){
-    for(let i = 0; i < raios.length - 1; i++){
-      const r1 = rho * (1 + (r() - .5) * .05), r2 = (rho + g * .5) * (1 + (r() - .5) * .05);
-      if(r1 > raios[i].L * .97 || r2 > raios[i + 1].L * .97) continue;
-      if(r() < .04 + Math.pow(rho / 760, 3) * .55) continue;   // fios rompidos, mais na beirada
-      const [x1, y1] = ponto(i, r1), [x2, y2] = ponto(i + 1, r2), mx = (x1 + x2) / 2, my = (y1 + y2) / 2 + Math.hypot(x2 - x1, y2 - y1) * .06;
-      espiral.push(`M${f(x1)} ${f(y1)}Q${f(mx)} ${f(my)} ${f(x2)} ${f(y2)}`);
-      const n = r() < .42 ? 1 + Math.floor(r() * 3) : 0;
-      for(let k = 0; k < n; k++){   // gotas de orvalho no fio da espiral, maiores para fora
-        const t = .15 + r() * .7, gx = (1 - t) * (1 - t) * x1 + 2 * t * (1 - t) * mx + t * t * x2, gy = (1 - t) * (1 - t) * y1 + 2 * t * (1 - t) * my + t * t * y2;
-        gotas.push(`<circle cx="${f(gx)}" cy="${f(gy + .6)}" r="${f(.8 + r() * (1 + rho / 380))}"/>`);
-      }
-    }
-    rho += g; g += 1.7;
-  }
-  /* um fio solto pendurado, com a gota grande na ponta */
-  const [hx, hy] = ponto(7, 420), cai = 90 + r() * 50;
-  fios.push(`M${f(hx)} ${f(hy)}Q${f(hx - 6)} ${f(hy + cai * .6)} ${f(hx - 3)} ${f(hy + cai)}`);
-  gotas.push(`<ellipse cx="${f(hx - 3)}" cy="${f(hy + cai + 3)}" rx="2.6" ry="3.4"/>`);
-  const linhas = svg(W, H, `<path d="${fios.join('')}" fill="none" stroke="#000" stroke-width="1.1"/><path d="${espiral.join('')}" fill="none" stroke="#000" stroke-width=".8" stroke-opacity=".9"/>`);
-  const orvalho = svg(W, H, `<g fill="#000">${gotas.join('')}</g>`);
-  return S => `${S}::before{background:${mix('var(--ink)', 17)};${mascara([[uri(linhas), 'right top', `${W}px ${H}px`, 'no-repeat']])}}
-${S}::after{background:radial-gradient(circle at 70% 30%,${mix('var(--ink)', 70)},${mix('var(--ink)', 38)} 60%);${mascara([[uri(orvalho), 'right top', `${W}px ${H}px`, 'no-repeat']])}}
-${mexe(`${S}::after{animation:txOrvalho 7s ease-in-out infinite}`)}
-@keyframes txOrvalho{0%,100%{opacity:.8}50%{opacity:1}}`;
-}
-
 /* ---------- Verso de carta: a tela é o verso de uma carta do Hisoka (treliça com naipes, cantos e filete duplo) ---------- */
 const NAIPE = {   // os traços do cursor da carta (web/arte.js), em -.5..+.5
   espadas: 'M0 -.48 C.1 -.33 .5 -.12 .5 .1 C.5 .32 .2 .38 .05 .22 Q.07 .42 .2 .5 L-.2 .5 Q-.07 .42 -.05 .22 C-.2 .38 -.5 .32 -.5 .1 C-.5 -.12 -.1 -.33 0 -.48 Z',
@@ -187,41 +151,56 @@ function arena(){
 ${S}::after{background:${mix('var(--amb)', 34)};${mascara([[uri(ring), 'center bottom', '100% 48%', 'no-repeat', 'intersect'], [some, '0 0', '100% 100%', 'no-repeat']])}}`;
 }
 
-/* ---------- Aura do dia (épico): a aura do seu tipo sobe do pé da tela conforme as tarefas do dia ---------- */
+/* ---------- Aura do dia (épico): a aura do seu tipo contorna a tela e avança a cada tarefa do dia ----------
+   Começa como brasa nos dois cantos de baixo, sobe pelas laterais e corre pelo alto até as duas pontas se encontrarem no
+   meio quando a meta fecha. O caminho de cada lado tem altura + meia largura; --dia (0 a 1) diz quanto dele está aceso.
+   Cada ponta tem um foco mais forte, que é onde o olho acha o progresso; a faixa é fina e só pega a beirada. */
 function nen(){
-  const lingua = (seed, n) => {
-    const r = rnd(seed), W = 600, base = 250, picos = [];
-    let d = `M-20 420L-20 ${base}L0 ${base}`, x = 0;
-    for(let k = 0; k < n; k++){   // labaredas largas e moles, com a ponta levada de lado; o desfoque tira o serrilhado
-      const w = W / n, xp = x + w * (.3 + r() * .4), yp = 30 + r() * 170, x1 = x + w, y1 = k === n - 1 ? base : base - r() * 50, lado = (r() - .5) * w * .5;
-      d += `C${f(x + w * .25)} ${f(base - 30)} ${f(xp - w * .3 + lado)} ${f(yp + 90)} ${f(xp + lado * .6)} ${f(yp)}C${f(xp + w * .25)} ${f(yp + 110)} ${f(x1 - w * .2)} ${f(y1 - 20)} ${f(x1)} ${f(y1)}`;
-      x = x1; picos.push(yp);
-    }
-    return svg(600, 400, `<defs><linearGradient id="l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-opacity=".25"/><stop offset=".55" stop-opacity=".8"/><stop offset="1"/></linearGradient><filter id="d" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="9 14"/></filter></defs><path d="${d}L620 ${base}L620 420Z" fill="url(#l)" filter="url(#d)"/>`, 'preserveAspectRatio="none"');
-  };
-  const A = lingua(41, 6), B = lingua(42, 5), N = 'var(--nen-forte,var(--aura))';
-  return S => `${S}::before{inset:auto 0 0 0;height:calc(54px + var(--dia,0) * var(--alto,100vh) * .4);transition:height 1.6s cubic-bezier(.2,.8,.2,1);
-  background:linear-gradient(to top,${mix(N, 40)},${mix(N, 20)} 45%,${mix(N, 6)});${mascara([[uri(A), '0 0', '560px 100%', 'repeat-x'], [uri(B), '0 0', '430px 100%', 'repeat-x']])}}
+  /* fiapos: manchas desfocadas num ladrilho (com as cópias nas bordas, para emendar), que sobem devagar dentro da faixa */
+  const r = rnd(41), TW = 120, TH = 260;
+  let b = '';
+  for(let k = 0; k < 14; k++){
+    const x = r() * TW, y = r() * TH, rx = 8 + r() * 16, ry = 24 + r() * 40;
+    for(const ox of [-TW, 0, TW]) for(const oy of [-TH, 0, TH]) b += `<ellipse cx="${f(x + ox)}" cy="${f(y + oy)}" rx="${f(rx)}" ry="${f(ry)}"/>`;
+  }
+  const fiapos = svg(TW, TH, `<filter id="d" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter><rect width="${TW}" height="${TH}" fill-opacity=".45"/><g filter="url(#d)">${b}</g>`);
+  const N = 'var(--nen-forte,var(--aura))', A = 'var(--alto,100vh)', L = 'var(--larg,100vw)', s = 'var(--tx-s)';
+  const lado = `min(${s},${A})`, topo = `clamp(0px,${s} - ${A},${L} / 2)`;
+  const pLado = `clamp(0px,(${A} - ${s}) * 100,130px)`, pTopo = `clamp(0px,(${s} - ${A}) * 100,130px)`;   // o foco da ponta: um ou outro
+  const faixa = d => `linear-gradient(${d},${mix(N, 28)},${mix(N, 9)} 45%,transparent)`;
+  const ponta = `radial-gradient(closest-side,${mix(N, 42)},${mix(N, 12)} 55%,transparent)`;
+  const vai = 'background-size 1.8s cubic-bezier(.2,.8,.2,1),background-position 1.8s cubic-bezier(.2,.8,.2,1)';
+  return S => `${S}{--tx-s:calc(var(--dia,0) * (${A} + ${L} / 2))}
+${S}::before{background:
+  ${faixa('to right')} left bottom/40px ${lado} no-repeat,
+  ${faixa('to left')} right bottom/40px ${lado} no-repeat,
+  ${faixa('to bottom')} left top/${topo} 40px no-repeat,
+  ${faixa('to bottom')} right top/${topo} 40px no-repeat,
+  linear-gradient(to top,${mix(N, 10)},transparent) left bottom/100% 22px no-repeat;
+  transition:${vai};${mascara([[uri(fiapos), '0 0', `${TW}px ${TH}px`, 'repeat']])}}
 ${S}::after{background:
-  radial-gradient(farthest-side at 0 100%,${mix(N, 26)},transparent) left bottom/calc(110px + var(--dia,0) * 24%) calc(150px + var(--dia,0) * 62%) no-repeat,
-  radial-gradient(farthest-side at 100% 100%,${mix(N, 26)},transparent) right bottom/calc(110px + var(--dia,0) * 24%) calc(150px + var(--dia,0) * 62%) no-repeat,
-  radial-gradient(farthest-side at 50% 0,${mix(N, 22)},transparent) center top/100% calc(var(--cheio,0) * 150px) no-repeat;
-  transition:background-size 1.6s cubic-bezier(.2,.8,.2,1)}
-${mexe(`${S}::before{animation:txLinguas 16s linear infinite}${S}.tx-pulso::after{animation:txPulso .9s ease-out}`)}
-@keyframes txLinguas{to{mask-position:560px 0,-430px 0}}
-@keyframes txPulso{0%{filter:none}18%{filter:brightness(2.1) saturate(1.3)}100%{filter:none}}`;
+  ${ponta} left -65px bottom calc(${lado} - 65px)/${pLado} ${pLado} no-repeat,
+  ${ponta} right -65px bottom calc(${lado} - 65px)/${pLado} ${pLado} no-repeat,
+  ${ponta} left calc(${topo} - 65px) top -65px/${pTopo} ${pTopo} no-repeat,
+  ${ponta} right calc(${topo} - 65px) top -65px/${pTopo} ${pTopo} no-repeat,
+  radial-gradient(closest-side,${mix(N, 30)},transparent) center top -70px/calc(var(--cheio,0) * 560px) 170px no-repeat;
+  transition:${vai}}
+${mexe(`${S}::before{animation:txFiapos 14s linear infinite}${S}::after{animation:txRespira 5s ease-in-out infinite}
+${S}.tx-pulso::before{animation:txFiapos 14s linear infinite,txPulso 1.4s ease-out}${S}.tx-pulso::after{animation:txRespira 5s ease-in-out infinite,txPulso 1.4s ease-out}`)}
+@keyframes txFiapos{to{mask-position:0 -${TH}px}}
+@keyframes txRespira{0%,100%{opacity:.75}50%{opacity:1}}
+@keyframes txPulso{0%{filter:none}15%{filter:brightness(2.4) saturate(1.3)}100%{filter:none}}`;
 }
 
-const GERA = {manga, grao, scan, hex, teia, cartas, arena, nen}, FEITO = {};
+const GERA = {manga, grao, scan, hex, cartas, arena, nen}, FEITO = {};
 const LISTA = [
   {id:'tx-manga', bg:'manga', n:'Retícula de mangá', fa:'raro', quem:'', pacote:'', d:'Retícula de verdade: os pontos crescem num degradê até o canto de baixo, como screentone colado à mão, e as linhas de foco saem da moldura e apontam para o meio da tela.'},
   {id:'tx-grao', bg:'grao', n:'Papel antigo', fa:'comum', quem:'', pacote:'pergaminho', d:'Papel com fibras e grão, manchas de umidade perto das bordas e a beirada da tela queimada. Feita para o Pergaminho.'},
   {id:'tx-scan', bg:'scan', n:'Tela do Joystation', fa:'raro', quem:'Greed Island', pacote:'greed', d:'A tela vira o tubo do console: cantos curvos com a moldura em volta, linhas, o RGB separado e uma faixa de luz que rola devagar.'},
   {id:'tx-hex', bg:'hex', n:'Ninho das Quimeras', fa:'raro', quem:'Formigas Quimera', pacote:'meruem', d:'Favos irregulares saindo do canto de baixo, cheios de resina perto do canto e sumindo pela tela, com ovos que pulsam devagar.'},
-  {id:'tx-teia', bg:'teia', n:'Teia com orvalho', fa:'raro', quem:'Genei Ryodan', pacote:'ryodan', d:'Um quarto de teia no canto de cima, com gotas de orvalho nos fios e um fio solto pendurado. Sem aranha.'},
   {id:'tx-cartas', bg:'cartas', n:'Verso de carta', fa:'raro', quem:'Hisoka', pacote:'hisoka', d:'A tela é o verso de uma carta: treliça com os naipes do cursor da carta, sumindo para o meio, naipes nos cantos e o filete duplo. Só no pacote Hisoka.'},
   {id:'tx-arena', bg:'arena', n:'Ringue da Arena', fa:'raro', quem:'Arena Celestial', pacote:'', d:'O piso do ringue em perspectiva no pé da tela, com a borda do ringue em dourado e as linhas sumindo no horizonte.'},
-  {id:'tx-nen', bg:'nen', n:'Aura do dia', fa:'epico', quem:'Nen', pacote:'meruem', d:'A aura do seu tipo de Nen sobe do pé da tela conforme você conclui as tarefas do dia: fraca de manhã, sobe pelas laterais e fecha no alto quando a meta do dia fecha. Cada tarefa dá um pulso.'},
+  {id:'tx-nen', bg:'nen', n:'Aura do dia', fa:'epico', quem:'Nen', pacote:'meruem', d:'A aura do seu tipo de Nen contorna a tela e avança a cada tarefa: de manhã é brasa nos cantos de baixo, sobe pelas laterais e corre pelo alto até as duas pontas se encontrarem quando a meta do dia fecha. Cada tarefa dá um pulso.'},
 ];
 window.GB_TEXTURAS = {
   LISTA,

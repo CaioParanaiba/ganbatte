@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Texturas de fundo</title>
-<!-- Vitrine de avaliação (#134): as oito texturas refeitas (texturas.js) lado a lado, cada uma numa tela de 1280×800 do jogo
+<!-- Vitrine de avaliação (#134): as texturas refeitas (texturas.js) lado a lado, cada uma numa tela de 1280×800 do jogo
      de mentira, reduzida; clicar abre grande. Abre direto do disco (file://). Não é do jogo: ao aprovar, o texturas.js vai
      para web/arte/ e o CSS sai de GB_TEXTURAS.css(id, ':root[data-bg="X-nova"] body', 'fixed'). -->
 <style>
@@ -34,7 +34,7 @@ figcaption{color:#9197AD;font-size:12.5px;margin:8px 0 0}
 .moldura .tela{position:absolute;left:0;top:0;transform-origin:0 0}
 
 /* ---------- a tela do jogo de mentira (1280×800) ---------- */
-.tela{width:1280px;height:800px;position:relative;isolation:isolate;overflow:hidden;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;--alto:800px}
+.tela{width:1280px;height:800px;position:relative;isolation:isolate;overflow:hidden;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;--alto:800px;--larg:1280px}
 .tela *{pointer-events:none}
 .jg{padding:18px 24px}
 .jg-topo{display:flex;align-items:center;gap:18px;margin:0 0 18px}
@@ -80,14 +80,13 @@ figcaption{color:#9197AD;font-size:12.5px;margin:8px 0 0}
 .tex-scan{background-image:repeating-linear-gradient(0deg,color-mix(in srgb,#000 22%,transparent) 0 1px,transparent 1px 3px),radial-gradient(130% 100% at 50% 50%,transparent 55%,color-mix(in srgb,#000 38%,transparent))}
 .tex-grao{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .tex-hex{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17.32' height='30' viewBox='0 0 17.32 30'%3E%3Cpath d='M8.66 0L17.32 5V15L8.66 20L0 15V5Z M8.66 20V30' fill='none' stroke='%23909090' stroke-opacity='.16' stroke-width='.7'/%3E%3C/svg%3E");background-size:31px 54px}
-.tex-teia{background-image:repeating-radial-gradient(circle at 100% 0,transparent 0 54px,color-mix(in srgb,var(--ink) 8%,transparent) 54px 55.5px),repeating-conic-gradient(from 180deg at 100% 0,color-mix(in srgb,var(--ink) 8%,transparent) 0 .12deg,transparent .12deg 7.5deg)}
 :root[data-mov="0"] .tela::before,:root[data-mov="0"] .tela::after{animation:none!important}
 </style>
 </head>
 <body>
 <main>
 <h1>Texturas de fundo</h1>
-<p class="sub">As oito texturas refeitas (o Céu da Arena fica para depois). A regra das novas: a textura mora nas bordas e nos cantos,
+<p class="sub">As texturas refeitas (o Céu da Arena fica para depois; a teia saiu). A regra das novas: a textura mora nas bordas e nos cantos,
 onde os cards não cobrem, com uma composição de verdade em vez de um padrão apagado. Cada quadro é uma tela inteira do jogo
 (1280×800) reduzida; clique para ver grande. "cards" mostra como fica com a lista cheia, com poucas tarefas ou sem nada por cima.</p>
 
@@ -101,6 +100,7 @@ onde os cards não cobrem, com uma composição de verdade em vez de um padrão 
   <label>tipo <select id="tipo"><option value="1">Reforço</option><option value="2">Transmutação</option><option value="3">Emissão</option><option value="4">Conjuração</option><option value="5" selected>Manipulação</option><option value="6">Especialização</option></select></label>
   <label>tarefas <input id="dia" type="range" min="0" max="8" value="2"> <span id="diaN">2/8</span></label>
   <button id="conclui">concluir uma</button>
+  <button id="simula">passar o dia</button>
 </div>
 
 <div class="grade" id="grade"></div>
@@ -206,6 +206,12 @@ $('dia').oninput = e => poeDia(+e.target.value);
 $('conclui').onclick = () => {
   poeDia(Math.min(8, cfg.dia + 1));
   for(const t of [...telas, gT].filter(t => t && t.dataset.tx === 'nen')){ t.classList.remove('tx-pulso'); void t.offsetWidth; t.classList.add('tx-pulso'); }
+};
+/* passar o dia: zera e conclui uma tarefa a cada 1,8 s até fechar a meta */
+let sim = null;
+$('simula').onclick = () => {
+  clearInterval(sim); poeDia(0);
+  sim = setInterval(() => { if(cfg.dia >= 8) return clearInterval(sim); $('conclui').click(); }, 1800);
 };
 window.VITRINE = {cfg, tudo, poeDia};
 tudo();
