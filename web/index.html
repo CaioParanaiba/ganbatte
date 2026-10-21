@@ -1265,6 +1265,54 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 @media (max-width:1080px){ .l-hud{grid-template-columns:repeat(3,minmax(0,1fr))} .l-hud .l-me{grid-column:1/-1} .l-main{grid-template-columns:minmax(0,1fr)} .l-side{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))} }
 @media (max-width:560px){ .l-hud{grid-template-columns:1fr 1fr} .l-acts{opacity:1} .l-task{grid-template-columns:auto minmax(0,1fr)} .l-task .l-right{grid-column:2;flex-wrap:wrap}
   .l-hint{flex-wrap:wrap;justify-content:flex-end;max-width:65%;white-space:normal} .l-hint .l-mult{white-space:normal;text-align:right} }
+/* ---------- Lista nova (#178), em teste: uma coluna, faixa única no topo, hábitos em cima, Hoje/Semana/Tudo.
+   Só vale com a classe lnova no <html> (botão no topo da Lista); sem ela, a Lista antiga fica igual ---------- */
+#nl-habc,#nl-tb{display:none} .lnova #nl-habc{display:block} .lnova #nl-tb{display:flex}
+.nl-troca{display:flex;justify-content:flex-end;margin:-8px 0 8px}
+/* o cabeçalho fica (logo e nome); a frase e os números saem, porque a faixa da Lista já mostra tudo */
+.lnova .wrap:has(#v-l:not([hidden])) > .head h1 + p, .lnova .wrap:has(#v-l:not([hidden])) #facts{display:none}
+.lnova #v-l .l-main{grid-template-columns:minmax(0,1fr)}
+.lnova #v-l .l-side{display:none}
+.lnova #v-l .l-hud{display:block;margin:0 0 16px}
+.lnova #v-l .l-hud .nl-hud{flex-direction:row;justify-content:flex-start;gap:10px 22px}
+.nl-hud{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:10px 16px;font:12.5px var(--f-mono);color:var(--soft)}
+.nl-hud .av{--s:34px}
+.nl-hud b{color:var(--ink);font-weight:600}
+.nl-and{display:flex;align-items:center;gap:10px;flex:1 1 260px;min-width:0}
+.nl-and .n{font:700 15px var(--f-hud);color:var(--ink);letter-spacing:.03em;white-space:nowrap}
+.nl-and .n small{font:600 10px var(--f-mono);color:var(--soft);letter-spacing:.1em;margin-right:6px}
+.nl-pb{flex:1;min-width:80px;height:6px;border-radius:99px;background:var(--track);overflow:hidden} .nl-pb i{display:block;height:100%;background:var(--volt)}
+.nl-k{white-space:nowrap} .nl-k.ok b{color:var(--grn)}
+.nl-mis{display:inline-flex;align-items:center;gap:6px} .nl-mis b{color:var(--c)}
+.nl-mis i{width:8px;height:8px;border-radius:99px;background:var(--track);display:inline-block} .nl-mis i.on{background:var(--c)}
+.nl-j{border:0;background:none;padding:0;cursor:pointer;font:inherit;color:var(--soft)} .nl-j b{color:var(--amb)} .nl-j:hover b{text-decoration:underline}
+.nl-sem{color:var(--faint);margin-left:auto}
+.nl-habc{margin-top:16px} .nl-habc h2{display:flex;align-items:center;margin:0 0 10px} .nl-habc h2 .go{margin-left:auto}
+#nl-hab{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.nl-hc{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 7px;border-radius:99px;border:1px solid var(--hair);background:var(--panel2);font:500 13px var(--f-ui);color:var(--ink);cursor:pointer;line-height:1.2}
+.nl-hc:hover{border-color:color-mix(in srgb,var(--c) 60%,var(--hair))}
+.nl-hc .ck{width:17px;height:17px;border-radius:99px;border:1.7px solid var(--c);display:grid;place-items:center;font-size:10.5px;font-weight:800;color:var(--bg);flex:none}
+.nl-hc small{font:11px var(--f-mono);color:var(--soft)}
+.nl-hc.ok{border-color:color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 12%,transparent);color:var(--c)}
+.nl-hc.ok .ck{background:var(--c)}
+.nl-hc.auto{cursor:default}
+.nl-hc .sl{display:inline-flex;gap:3px;align-items:center} .nl-hc .sl i{width:9px;height:9px;border-radius:3px;border:1.4px solid var(--c);display:inline-block}
+.nl-hc .sl i.on{background:var(--c)} .nl-hc .sl i.bn{border-style:dashed;opacity:.7} .nl-hc .sl i.bn.on{opacity:1;border-style:solid}
+.nl-hc .l-cfm{opacity:.8}
+.nl-ont{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:8px;border-top:1px dashed var(--hair);margin-top:2px;font-size:13px}
+.nl-ontb{margin-left:auto}
+.nl-tb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}
+.nl-seg{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--hair);border-radius:10px;background:var(--panel)}
+.nl-seg button{border:0;background:none;border-radius:7px;padding:5px 14px;cursor:pointer;font:600 12.5px var(--f-ui);color:var(--soft)}
+.nl-seg button small{font:11px var(--f-mono);color:var(--faint);margin-left:5px}
+.nl-seg button[aria-pressed="true"]{background:var(--track);color:var(--ink)}
+.nl-tb .sp{flex:1}
+.nl-mais{align-self:flex-start;margin:-4px 0 0 4px}
+.lnova #v-l .l-grp h3 .sum, .lnova #v-l .l-money, .lnova #v-l .l-mult, .lnova #v-l .l-tag.nen{display:none}
+.lnova #v-l .l-tags{gap:4px 12px} .lnova #v-l .l-tag:not(.x-texp):not(.x-tcac){background:none;padding:0}
+.lnova #v-l .l-xp{background:none;border:0;color:var(--soft);font-weight:600;min-width:0;padding:2px 0}
+.lnova #v-l .l-groups{margin-top:10px}
+.lnova #v-l .l-const{margin-top:18px}
 </style>
 </head>
 <body>
@@ -1308,6 +1356,7 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
   <div style="height:18px"></div>
   <section id="v-l" hidden>
     <div id="gnav-l"></div>
+    <div class="nl-troca"><button type="button" class="go" data-lnova></button></div>
     <div class="l-hud" id="l-hud"></div>
     <div class="l-main">
       <div class="l-col">
@@ -1333,6 +1382,8 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
           <p class="l-erro" id="l-erro" role="alert" hidden></p>
         </form>
         </div>
+        <div class="card nl-habc" id="nl-habc"><h2><span class="c">~/</span>hábitos de hoje<button class="go" data-go="cfg">editar →</button></h2><div id="nl-hab"></div></div>
+        <div class="nl-tb" id="nl-tb"></div>
         <div class="l-groups" id="l-groups"></div>
         <div class="card l-const" id="l-heatc"><h2><span class="c">~/</span>constância<span id="l-heatt"></span></h2><div id="l-heat"></div></div>
       </div>
@@ -1417,6 +1468,11 @@ const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'m
   borda:'', hover:'', cursor:'', hp:'', heat:'', trans:'', avatar:'logo', lic:'l2', hud:'logo', chefes:{}, anim:'calma', skin:{map:'dia', p1:'lilas', p3:'couro', p3b:'madeira'}};
 try { UI.fxOff = localStorage.getItem('gb-fxoff') === '1'; } catch(e){}
 try { UI.cfold = JSON.parse(localStorage.getItem('gb-cfold') || '{}') || {}; } catch(e){ UI.cfold = {}; }   // caçadas recolhidas na Lista, por navegador
+/* Lista nova (#178), em teste na beta: a escolha, o período (Hoje/Semana/Tudo) e as caçadas abertas ficam neste navegador */
+try { UI.lnova = localStorage.getItem('gb-lista') === 'nova'; } catch(e){ UI.lnova = false; }
+try { UI.lmodo = localStorage.getItem('gb-lmodo') || 'semana'; } catch(e){ UI.lmodo = 'semana'; }
+try { UI.cabre = JSON.parse(localStorage.getItem('gb-cabre') || '{}') || {}; } catch(e){ UI.cabre = {}; }
+document.documentElement.classList.toggle('lnova', UI.lnova);
 const PXSKINS = {map:[['dia','Dia'],['tarde','Tarde'],['noite','Noite']], p1:[['lilas','Lilás'],['gameboy','Game Boy'],['noite','Noite']], p3:[['couro','Couro'],['joy','Joystation'],['noite','Noite']], p3b:[['madeira','Madeira'],['neon','Neon'],['papel','Papel']]};
 const THEMES = [['simples','Simples'],['painel','Painel'],['leorio','Leorio'],['claro','Claro'],['gon','Gon'],['biscuit','Biscuit'],['kurapika','Kurapika'],['netero','Netero'],['killua','Killua'],['hisoka','Hisoka'],['meruem','Meruem'],['pergaminho','Pergaminho'],['zoldyck','Zoldyck'],['ryodan','Genei Ryodan'],['greed','Greed Island'],['abismo','Continente Negro'],['aurora','Aurora'],['grafite','Grafite'],['sepia','Sépia'],['contraste','Alto contraste'],['nevoa','Névoa']];
 /* imagem guardada na coleção permanente (colecao/arquivos/ dos dados, #33): continua aparecendo mesmo se sair do jogo */
@@ -2443,12 +2499,24 @@ function rowL(t, S, x, jan){   // jan: a linha está na janela ↻ recorrentes (
     <div class="l-body">${UI.ledit === edKey(t) && !!UI.rep === !!jan ? edHTML(S)
       : `<span class="l-txt">${t.pri && !feita ? `<span class="l-pri ${t.pri}">${t.pri}</span>` : ''}${esc(t.txt)}${!feita && GBx.repAcum(t, HOJE) > 1 ? `<b class="l-acum" title="a data dela já chegou ${GBx.repAcum(t, HOJE)} vezes; um concluir vale por todas">#${GBx.repAcum(t, HOJE)}</b>` : ''}</span>`}
       <span class="l-tags"><span class="l-tag nen">${esc(NEN[nen].n)}</span>${d ? `<span class="l-tag">${esc(d)}</span>` : ''}${t.due ? `<span class="l-tag${dc}">${dueTxt(t.due)}</span>` : ''}${isRec(t) ? '<span class="l-tag">rotina</span>' : ''}${GBx.repRegra(t.rep) ? `<span class="l-tag" title="tarefa recorrente: concluir cria a próxima">↻ ${esc(GBx.repFrase(t.rep))}</span>` : ''}${window.GB_EXP ? GB_EXP.etiquetas(t, S) : ''}</span></div>
-    <div class="l-right">${v.ms.length ? `<span class="l-mult" title="${v.base} XP · ${v.ms.map(multL).join(' · ')}">${v.ms.join(' + ')}</span>` : ''}<span class="l-rewards"><span class="l-xp" title="${v.base != null ? v.base + ' XP de base' : 'XP ganho'}">+${v.x}</span>${jennyL(v.x, feita)}</span>
+    <div class="l-right">${v.ms.length ? `<span class="l-mult" title="${v.base} XP · ${v.ms.map(multL).join(' · ')}">${v.ms.join(' + ')}</span>` : ''}<span class="l-rewards"><span class="l-xp" title="${v.ms.length ? `${v.base} XP · ${v.ms.map(multL).join(' · ')}` : v.base != null ? v.base + ' XP de base' : 'XP ganho'}">+${v.x}</span>${jennyL(v.x, feita)}</span>
       ${feita ? '' : `<span class="l-acts"><button class="l-ib" data-l="d1" title="adiar 1 dia" aria-label="adiar 1 dia">${ic('moon')}</button>${t.pri !== 'A' ? '<button class="l-ib" data-l="up" title="subir prioridade" aria-label="subir prioridade">▲</button>' : ''}${'ABC'.includes(t.pri || 'Z') ? '<button class="l-ib" data-l="down" title="descer prioridade" aria-label="descer prioridade">▼</button>' : ''}<button class="l-ib" data-l="edit" title="editar" aria-label="editar">✎</button><button class="l-ib del" data-l="delete" title="remover" aria-label="remover">✕</button></span>`}</div></li>`;
 }
 function rL(S){
   formL();
   const a = S.a, fr = NEN[S.fraco];
+  document.querySelector('[data-lnova]').textContent = UI.lnova ? '← voltar para a Lista antiga' : 'experimentar a Lista nova (beta) →';
+  if(UI.lnova){
+  const mis = S.pausa ? `<span class="nl-k" style="color:var(--grn)">férias até <b>${ddmm(addD(TEMP.volta, -1))}</b></span>`
+    : `<span class="nl-k nl-mis" style="--c:${NC(S.fraco)}" title="missão da semana: ${esc(fr.c)} ×1,5 · ${S.missDias}/3 dias → 1 feitiço">missão <b>${esc(fr.n)}</b>${[0,1,2].map(i => `<i class="${i < S.missDias ? 'on' : ''}"></i>`).join('')}</span>`;
+  document.getElementById('l-hud').innerHTML = `<div class="card nl-hud">${avMe(34)}
+    <span class="nl-and" title="${esc(CTX.JOG.nome)}${UI.title ? ' · ' + esc(UI.title) : ''} · faltam ${a.need - a.into} XP para o andar ${a.n + 1} · ${fmt(S.total)} XP na temporada"><span class="n"><small>ANDAR</small>${a.n}</span><span class="nl-pb"><i style="width:${pct(a.into, a.need)}%"></i></span><span>faltam ${a.need - a.into}</span></span>
+    <span class="nl-k${S.hojeXP >= S.metaDia ? ' ok' : ''}" title="XP de hoje e a meta do dia">hoje <b>+${S.hojeXP}</b>/${S.metaDia}</span>
+    <span class="nl-k" title="recorde ${S.ten.max} · ${S.ten.zet} Zetsu guardado${S.ten.zet === 1 ? '' : 's'}">Ten <b>${S.ten.cur}</b> ${S.ten.cur === 1 ? 'dia' : 'dias'}</span>
+    ${mis}
+    <button type="button" class="nl-j" data-go="ms" title="Masadora"><b>${fmt(S.jenny)}</b> J</button>
+    <span class="nl-sem">${esc(TEMP.nome)} · sem ${S.sem.n}/${S.sem.tot}</span></div>`;
+  } else
   document.getElementById('l-hud').innerHTML = `
     <div class="card l-me">${avMe(54)}<div class="l-fl"><div class="l-row"><b class="l-nm">${esc(CTX.JOG.nome)}</b>${UI.title ? `<span class="titulo">${esc(UI.title)}</span>` : ''}<span class="l-meta">${esc(TEMP.nome)} · ${S.pausa ? `férias até ${ddmm(addD(TEMP.volta, -1))}` : `${S.pausa ? `férias até ${ddmm(addD(TEMP.volta, -1))}` : `semana ${S.sem.n}/${S.sem.tot}`}`}</span></div>
       <div class="l-row"><span class="l-n"><small>ARENA CELESTIAL</small>andar ${a.n}</span><span class="l-meta">faltam ${a.need - a.into} XP para o ${a.n + 1}</span></div>
@@ -2466,11 +2534,19 @@ function rL(S){
     ['Próximos 7 dias', '', its.filter(t => t.prova !== HOJE && em(t, 7))],
     ['Sem prazo e depois', '', its.filter(t => t.prova !== HOJE && (!t.due || dias(HOJE, t.due) > 7))],
   ].filter(g => g[2].length);
+  const INC = {hoje:['Atrasadas','Hoje'], semana:['Atrasadas','Hoje','Próximos 7 dias'], tudo:null}, MODO = UI.lnova && INC[UI.lmodo] || null;   // a antiga mostra tudo
+  const NM = Object.fromEntries(Object.keys(INC).map(k => [k, G.filter(g => !INC[k] || INC[k].includes(g[0])).reduce((x, g) => x + g[2].length, 0)])), contaM = k => NM[k];
+  const fora = MODO ? G.filter(g => !MODO.includes(g[0])) : [], nFora = fora.reduce((x, g) => x + g[2].length, 0);
+  if(MODO) G.splice(0, G.length, ...G.filter(g => MODO.includes(g[0])));
   const xpDe2 = new Map(S.xs.map(o => [o.t.raw, o.x]));
   const feitas = D.feitas.filter(t => t.done === HOJE && t.n), xpF = feitas.reduce((s,t) => s + (xpDe2.get(t.raw) || 0), 0);
   const nRep = repTodas().length, nGu = (D.guardadas || []).length;
-  document.getElementById('l-groups').innerHTML = (nRep ? `<div class="l-repb"><button type="button" class="go" data-repabre>↻ recorrentes (${nRep})${nGu ? ` · ${nGu} guardada${nGu === 1 ? '' : 's'}` : ''}</button></div>` : '') + (G.length ? G.map(([n,c,l]) => `<section class="l-grp"><h3><span class="t ${c}">${n}</span><small>${l.length}</small><span class="sum">até +${l.reduce((s,t) => s + t.x, 0)} XP</span></h3><ul class="l-list">${l.map(t => t.h).join('')}</ul></section>`).join('')
-      : '<div class="card l-empty">Nenhuma tarefa aberta. Escreva a primeira ali em cima: o tipo e o prazo mudam quanto ela vale.</div>')
+  document.getElementById('nl-tb').innerHTML = `<div class="nl-seg" role="group" aria-label="O que mostrar">${[['hoje','Hoje'],['semana','Semana'],['tudo','Tudo']].map(([k,n]) => `<button type="button" data-lmodo="${k}" aria-pressed="${UI.lmodo === k}">${n}<small>${contaM(k)}</small></button>`).join('')}</div><span class="sp"></span>`
+    + (nRep ? `<button type="button" class="go" data-repabre>↻ recorrentes (${nRep})${nGu ? ` · ${nGu} guardada${nGu === 1 ? '' : 's'}` : ''}</button>` : '')
+    + `<button type="button" class="go" data-nlconst>constância ↓</button>`;
+  document.getElementById('l-groups').innerHTML = (nRep && !UI.lnova ? `<div class="l-repb"><button type="button" class="go" data-repabre>↻ recorrentes (${nRep})${nGu ? ` · ${nGu} guardada${nGu === 1 ? '' : 's'}` : ''}</button></div>` : '') + (G.length ? G.map(([n,c,l]) => `<section class="l-grp"><h3><span class="t ${c}">${n}</span><small>${l.length}</small><span class="sum">até +${l.reduce((s,t) => s + t.x, 0)} XP</span></h3><ul class="l-list">${l.map(t => t.h).join('')}</ul></section>`).join('')
+      : `<div class="card l-empty">${nFora ? 'Nada para este período.' : 'Nenhuma tarefa aberta. Escreva a primeira ali em cima: o tipo e o prazo mudam quanto ela vale.'}</div>`)
+    + (nFora ? `<button type="button" class="go nl-mais" data-lmodo="tudo">+ ${nFora} ${fora.map(g => g[0].toLowerCase()).join(' e ')} →</button>` : '')
     + (feitas.length ? `<details class="l-grp"${UI.ldone ? ' open' : ''} id="l-feitas"><summary><h3><span class="t ok">Concluídas hoje</span><small>${feitas.length}</small><span class="sum">+${xpF} XP</span></h3></summary><ul class="l-list">${feitas.map(t => rowL(t, S, xpDe2.get(t.raw) || 0)).join('')}</ul></details>` : '');
   repJanela(S);
   const ed = document.getElementById('l-ed'); if(ed && !document.querySelector('#xn,#xc')){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
@@ -2522,6 +2598,19 @@ function habitosL(S){
   if(faltam.length && D.feitas.some(t => t.done && t.done < HOJE)) h += UI.ontem   // quem começou hoje não tem ontem
     ? `<div class="l-ont"><span class="sub">Marcar como feito <b>ontem</b>:</span>${faltam.map(x => `<button class="btn" data-ontem="${esc(x.id)}">${esc(x.n)}</button>`).join('')}<button class="go" data-ontemabre="0">fechar</button></div>`
     : `<button class="go l-ontb" data-ontemabre="1">esqueci de marcar ontem</button>`;
+  /* Lista nova (#178): os mesmos hábitos como chips no topo; automáticos (Codeforces, Duolingo) em azul, os de marcar à mão em roxo */
+  let c = '';
+  if(cf || cfT){ const n = S.cfHoje, ok = n >= meta || (cfT && cfT.ok);
+    c += `<span class="nl-hc auto${ok ? ' ok' : ''}" style="--c:${NC(1)}" title="automático: conta os problemas aceitos no dia (+5 cada, até 6) · bater a meta dá +10"><span class="ck">${ok ? '✓' : ''}</span>Codeforces
+      <span class="sl">${Array.from({length:meta}, (_,i) => `<i class="${n > i ? 'on' : ''}"></i>`).join('')}${[0,1,2].map(i => `<i class="bn${n > meta + i ? ' on' : ''}"></i>`).join('')}</span><small>${n}/${meta}</small>${cfMaoBtn()}</span>`; }
+  if(J.duo && J.duo.usuario && duoT) c += `<span class="nl-hc auto${duoT.ok ? ' ok' : ''}" style="--c:${NC(1)}" title="automático: ${duoTxt()}"><span class="ck">${duoT.ok ? '✓' : ''}</span>Duolingo<small>+${habXPHoje(S, duoT)}</small></span>`;
+  c += habs.map(t => { const id = recId(t), sm = sem(id), na = sm ? naSemana(id, SEG) : 0, n = habNv(S, id), x = habXPHoje(S, t) * (sm && na > sm ? GBx.HAB_EXTRA : 1);
+    return `<span data-ln="${t.n}" style="display:contents"><button type="button" class="nl-hc${t.ok ? ' ok' : ''}" style="--c:${NC(4)}" data-l="${t.ok ? 'reopen' : 'done'}" title="nível ${n.nv} · ${habNvTxt(n)}" aria-label="${t.ok ? 'desmarcar' : 'marcar'}: ${esc(t.txt)}"><span class="ck">${t.ok ? '✓' : ''}</span>${esc(t.txt)}<small>${sm ? `${na}/${sm} na semana · ` : ''}+${x}</small></button></span>`; }).join('');
+  c += (J.habitos || []).filter(x => x.semana && !habs.some(t => recId(t) === x.id) && naSemana(x.id, SEG) >= x.semana).map(x => `<span class="nl-hc ok auto" style="--c:${NC(4)}"><span class="ck">✓</span>${esc(x.n)}<small>${naSemana(x.id, SEG)}/${x.semana} · semana completa</small>${CTX.SRV ? `<button type="button" class="go" data-denovo="${esc(x.id)}" title="acima da meta vale XP ×${GBx.HAB_EXTRA}">fiz de novo</button>` : ''}</span>`).join('');
+  if(faltam.length && D.feitas.some(t => t.done && t.done < HOJE)) c += UI.ontem
+    ? `<div class="nl-ont"><span class="sub">Marcar como feito <b>ontem</b>:</span>${faltam.map(x => `<button class="btn" data-ontem="${esc(x.id)}">${esc(x.n)}</button>`).join('')}<button class="go" data-ontemabre="0">fechar</button></div>`
+    : `<button class="go nl-ontb" data-ontemabre="1">esqueci de marcar ontem</button>`;
+  document.getElementById('nl-hab').innerHTML = c || `<p class="sub" style="margin:0">Nenhum hábito. Adicione em Configurações.</p>`;
   document.getElementById('l-hab').innerHTML = h || `<p class="sub" style="margin:0">Nenhum hábito. Adicione na aba Configurações (digitação, leitura, exercício…) ou ligue o Codeforces e o Duolingo.</p>`;
   /* heatmaps: a temporada inteira, uma coluna por semana (seg → dom); os dias fora dela na 1ª e na última semana ficam ocultos (#14) */
   /* as férias (do fim do semestre à véspera da volta às aulas) vêm no fim da grade, em verde tracejado como no Semestre:
@@ -2652,6 +2741,9 @@ document.addEventListener('click', async e => {
     prevL(); return; }
   const pr = q('[data-lpri]'); if(pr){ LA.pri = pr.dataset.lpri; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b === pr)); prevL(); return; }
   const du = q('[data-ldue]'); if(du){ LA.due = du.dataset.ldue; document.getElementById('l-date').value = ''; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === du)); prevL(); return; }
+  if(q('[data-lnova]')){ UI.lnova = !UI.lnova; try { localStorage.setItem('gb-lista', UI.lnova ? 'nova' : 'antiga'); } catch(e){} document.documentElement.classList.toggle('lnova', UI.lnova); render(); window.scrollTo(0, 0); return; }
+  const lm = q('[data-lmodo]'); if(lm){ UI.lmodo = lm.dataset.lmodo; try { localStorage.setItem('gb-lmodo', UI.lmodo); } catch(e){} render(); return; }
+  if(q('[data-nlconst]')){ document.getElementById('l-heatc').scrollIntoView({behavior:'smooth', block:'start'}); return; }
   const oa = q('[data-ontemabre]'); if(oa){ UI.ontem = oa.dataset.ontemabre === '1'; render(); return; }
   const on = q('[data-ontem]'); if(on){ UI.ontem = false; acaoL(() => post('/api/ontem', {id:on.dataset.ontem}), 'Marcado como feito ontem'); return; }
   if(q('[data-cfmao]')){ cfMaoPergunta(); return; }

@@ -209,15 +209,20 @@ async function addEtapa(alvo, txt, S){
 /* ---------- Lista ---------- */
 const naLista = c => c.abertas.length || (!c.fim && c.etapas.length);
 function blocoL(c, S){
-  const e = !c.pai && c.exp && g(S).exp[c.exp], tudo = falta(c), fold = UI.cfold && UI.cfold[c.slug];
+  const e = !c.pai && c.exp && g(S).exp[c.exp], tudo = falta(c), fold = UI.lnova ? !(UI.cabre && UI.cabre[c.slug]) : UI.cfold && UI.cfold[c.slug];   // na Lista nova (#178) a caçada começa recolhida
   const filhas = c.filhas.filter(naLista), tot = c.filhas.length ? c.tudo.length : c.etapas.length, ab = c.filhas.length ? c.tudo.length - c.tudoFeitas : c.abertas.length;
   return `<li class="l-cacb${tudo ? ' fim' : ''}"><div class="l-cach">
       <button type="button" class="l-cact" data-cfold="${esc(c.slug)}" aria-expanded="${!fold}"><span class="x-alvo">${tudo ? '✓' : ic('alvo')}</span>
         <span class="l-cacn"><small>caçada</small>${esc(c.n)}${e ? `<span class="l-tag x-texp">${ic(e.ic)}${esc(e.n)} · marco ${e.marcos.indexOf(c) + 1}</span>` : ''}${prazoTag(c)}</span></button>
       <span class="l-cacr">${vidaT(c)}${!ab ? 'todas feitas' : `faltam ${ab} de ${tot}`}</span>
       <span class="l-cacr"><button type="button" class="l-ib" data-cedit="${esc(c.slug)}" title="editar a caçada" aria-label="editar a caçada ${esc(c.n)}">✎</button><button type="button" class="l-ib" data-cfold="${esc(c.slug)}" aria-label="${fold ? 'abrir' : 'recolher'}">${fold ? '▸' : '▾'}</button></span></div>
-      ${fold ? '' : `<ul class="l-list l-cacl">${c.abertas.slice().sort(porDue).map(t => rowL(t, S)).join('')}${filhas.slice().sort(porDue).map(f => blocoL(f, S)).join('')}</ul>
+      ${fold ? (UI.lnova ? proximaL(c, S, ab) : '') : `<ul class="l-list l-cacl">${c.abertas.slice().sort(porDue).map(t => rowL(t, S)).join('')}${filhas.slice().sort(porDue).map(f => blocoL(f, S)).join('')}</ul>
       <div class="l-cacf">${depoisTag(c)}${c.feitas ? `<span>${c.feitas} feita${c.feitas > 1 ? 's' : ''}</span>` : ''}${filhasTag(c)}<button type="button" class="go" data-cetapa="${esc(c.slug)}">+ etapa</button>${c.pai ? '' : `<button type="button" class="go" data-xcnova="${esc(c.slug)}">+ caçada dentro</button>`}${!c.abertas.length && !c.fim ? fechaBtn(c, S) : ''}${c.fim && c.abertas.length ? '<span>reaberta: feche de novo quando terminar</span>' : ''}</div>`}</li>`;
+}
+/* caçada recolhida na Lista nova: a próxima etapa (dá para concluir ali) e quantas faltam */
+function proximaL(c, S, ab){
+  const ab1 = c.abertas.slice().sort(porDue), n = ab - (ab1.length ? 1 : 0);
+  return (ab1.length ? `<ul class="l-list l-cacl">${rowL(ab1[0], S)}</ul>` : '') + (n > 0 ? `<div class="l-cacf"><button type="button" class="go" data-cfold="${esc(c.slug)}">+ ${n} etapa${n === 1 ? '' : 's'} ▸</button></div>` : '');
 }
 function blocosLista(S){
   return Object.values(g(S).cac).filter(c => !c.pai && (naLista(c) || c.filhas.some(naLista))).map(c =>
@@ -556,7 +561,7 @@ function aba(S){
 document.addEventListener('click', async ev => {
   const q = s => ev.target.closest(s); let b;
   if(q('#l-more')){ UI.ldet = !UI.ldet; formCacadas(); if(UI.ldet) formL(); return; }
-  if((b = q('[data-cfold]'))){ UI.cfold = UI.cfold || {}; const k = b.dataset.cfold; UI.cfold[k] = !UI.cfold[k]; if(!UI.cfold[k]) delete UI.cfold[k]; try { localStorage.setItem('gb-cfold', JSON.stringify(UI.cfold)); } catch(e){} render(); return; }
+  if((b = q('[data-cfold]'))){ const ch = UI.lnova ? 'cabre' : 'cfold', o = UI[ch] = UI[ch] || {}, k = b.dataset.cfold; o[k] = !o[k]; if(!o[k]) delete o[k]; try { localStorage.setItem('gb-' + ch, JSON.stringify(o)); } catch(e){} render(); return; }
   if((b = q('[data-cetapa]'))){ UI.ldet = true; UI.lcac = b.dataset.cetapa; formL(); const t = document.getElementById('l-txt'); t.focus(); t.scrollIntoView({block:'center'}); return; }
   if((b = q('[data-cedit]'))){ abreEditC(b.dataset.cedit); return; }
   if((b = q('[data-cfecha]'))){ b.disabled = true; fechaCac(b.dataset.cfecha); return; }
