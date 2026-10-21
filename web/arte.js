@@ -73,6 +73,13 @@ const ARTE = {
   'tx-nen':        {st:'finalizar', tx:'Refeita em código (21/10), vira a Aura do dia (épico): a aura do seu tipo contorna a tela e engrossa para dentro conforme o XP de hoje chega na meta; as pontas se encontram no alto quando ela fecha, e cada XP novo dá um pulso. Provando, "passar o dia" mostra o dia inteiro. Aprovada pelo Caio; falta o outro dev ver.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
+/* revisão de 21/10: paletas, fontes, títulos e sons ficam como estão (fontes e sons novos só quando o jogo passar de 8 jogadores
+   ativos); o mundo pixel foi arquivado (arq no motor.js) */
+const FICA = {pal:'Revista (21/10): fica como está.', title:'Revisto (21/10): fica como está.',
+  font:'Revista (21/10): fica como está. Fontes novas chegam quando o jogo passar de 8 jogadores ativos.',
+  som:'Revisto (21/10): fica como está. Sons novos chegam quando o jogo passar de 8 jogadores ativos.',
+  px:'Arquivado (21/10): o mundo pixel saiu da loja. Quem tem continua com ele; ninguém mais compra.'};
+for(const it of GB.COS) if(FICA[it.cat] && !ARTE[it.id]) ARTE[it.id] = {st:'fechado', sem:true, fixo: it.arq ? 'arquivado' : 'fica a de hoje', tx: FICA[it.cat]};
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
    nome, descrição, status, o que falta]. A Marca de prazo (prazo) é uma categoria inteira em teste: sai se não agradar */
 const PRAZO = ' Faz parte da Marca de prazo, categoria em teste: se os estilos não agradarem, ela sai inteira.';

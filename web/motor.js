@@ -130,14 +130,14 @@ const COS = [
   {id:'th-greed', cat:'full', n:'Pacote Greed Island', d:'Verde de cartão, tela de fliperama, letra de arcade, terminal vivo e poeira de Nen.', p:8800, eq:{theme:'greed', bg:'scan', font:'arcade'}, fxs:['digita','estrelas'], parts:['pal-greed','tx-scan','ft-arcade','fx-digita','fx-estrelas']},
   {id:'th-zoldyck', cat:'full', n:'Pacote Zoldyck', d:'Roxo e prata, papel antigo, Godspeed a cada tarefa e o rastro de aura no cursor.', p:9000, eq:{theme:'zoldyck', bg:'grao'}, fxs:['godspeed','rastro'], parts:['pal-zoldyck','tx-grao','fx-godspeed','fx-rastro']},
   {id:'th-ascensao', cat:'full', n:'Pacote Ascensão', d:'Paleta Aurora e a aurora girando atrás de tudo (só aqui), poeira de Nen, fogos e o sino do templo.', p:25000, eq:{theme:'aurora', bg:'', som:'sino'}, fxs:['ascensao','estrelas','fogos'], parts:['pal-aurora','fx-ascensao','fx-estrelas','fx-fogos','sm-sino'], antes:['fr-giro']},
-  {id:'px-unlock', cat:'px', n:'Mundo pixel', d:'Abre o mapa, a ficha, o Greed Island e a Masadora pixel, com as peles padrão.', p:8000, sw:['#5FA35A','#3E7CC9','#F3E6C8','#EFEAF7','#2A2140']},
-  {id:'px-map-tarde', cat:'px', n:'Mapa · Tarde', d:'Pele do mapa.', p:1500, need:'px-unlock', skin:['map','tarde'], sw:['#E8A35A','#C9974A','#C7517A','#F3D9A0','#2A1830']},
-  {id:'px-map-noite', cat:'px', n:'Mapa · Noite', d:'Pele do mapa.', p:1500, need:'px-unlock', skin:['map','noite'], sw:['#1F3A3A','#14205A','#7C8BB8','#070A18','#FFD45E']},
-  {id:'px-p1-gb', cat:'px', n:'Ficha · Game Boy', d:'Pele da ficha.', p:1500, need:'px-unlock', skin:['p1','gameboy'], sw:['#9BBC0F','#8BAC0F','#306230','#0F380F','#C4DE6B']},
-  {id:'px-p1-noite', cat:'px', n:'Ficha · Noite', d:'Pele da ficha.', p:1500, need:'px-unlock', skin:['p1','noite'], sw:['#151229','#3B2E6E','#7FE0A0','#B49CFF','#E8E2FF']},
-  {id:'px-gi-joy', cat:'px', n:'Greed Island · Joystation', d:'Pele do Book pixel.', p:1500, need:'px-unlock', skin:['p3','joy'], sw:['#2B2346','#0F0E1A','#FF6FB5','#6FE3FF','#FFD166']},
-  {id:'px-gi-noite', cat:'px', n:'Greed Island · Noite', d:'Pele do Book pixel.', p:1500, need:'px-unlock', skin:['p3','noite'], sw:['#0B1026','#141B3A','#FFB547','#7FD1FF','#C9A2FF']},
-  {id:'px-ms-neon', cat:'px', n:'Masadora · Neon', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','neon'], sw:['#0E0B1F','#1D1840','#FF5FA2','#6FE3FF','#E9E6FF']},
+  {id:'px-unlock', cat:'px', arq:1, n:'Mundo pixel', d:'Abre o mapa, a ficha, o Greed Island e a Masadora pixel, com as peles padrão.', p:8000, sw:['#5FA35A','#3E7CC9','#F3E6C8','#EFEAF7','#2A2140']},
+  {id:'px-map-tarde', cat:'px', arq:1, n:'Mapa · Tarde', d:'Pele do mapa.', p:1500, need:'px-unlock', skin:['map','tarde'], sw:['#E8A35A','#C9974A','#C7517A','#F3D9A0','#2A1830']},
+  {id:'px-map-noite', cat:'px', arq:1, n:'Mapa · Noite', d:'Pele do mapa.', p:1500, need:'px-unlock', skin:['map','noite'], sw:['#1F3A3A','#14205A','#7C8BB8','#070A18','#FFD45E']},
+  {id:'px-p1-gb', cat:'px', arq:1, n:'Ficha · Game Boy', d:'Pele da ficha.', p:1500, need:'px-unlock', skin:['p1','gameboy'], sw:['#9BBC0F','#8BAC0F','#306230','#0F380F','#C4DE6B']},
+  {id:'px-p1-noite', cat:'px', arq:1, n:'Ficha · Noite', d:'Pele da ficha.', p:1500, need:'px-unlock', skin:['p1','noite'], sw:['#151229','#3B2E6E','#7FE0A0','#B49CFF','#E8E2FF']},
+  {id:'px-gi-joy', cat:'px', arq:1, n:'Greed Island · Joystation', d:'Pele do Book pixel.', p:1500, need:'px-unlock', skin:['p3','joy'], sw:['#2B2346','#0F0E1A','#FF6FB5','#6FE3FF','#FFD166']},
+  {id:'px-gi-noite', cat:'px', arq:1, n:'Greed Island · Noite', d:'Pele do Book pixel.', p:1500, need:'px-unlock', skin:['p3','noite'], sw:['#0B1026','#141B3A','#FFB547','#7FD1FF','#C9A2FF']},
+  {id:'px-ms-neon', cat:'px', arq:1, n:'Masadora · Neon', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','neon'], sw:['#0E0B1F','#1D1840','#FF5FA2','#6FE3FF','#E9E6FF']},
   /* itens novos (#135): só para provar até os preços da #77 */
   {id:'pal-grafite', cat:'pal', prova:1, n:'Grafite', d:'Cinza puro, sem matiz.', p:0, eq:{theme:'grafite'}},
   {id:'pal-sepia', cat:'pal', prova:1, n:'Sépia', d:'Marrom de fotografia antiga, escuro.', p:0, eq:{theme:'sepia'}},
@@ -176,7 +176,7 @@ const COS = [
   {id:'fx-rastro-fio', cat:'fx', prova:1, n:'Fio de aura', d:'Uma fita de aura presa ao cursor, que chicoteia nas viradas e se recolhe quando ele para.', p:0, fx:'rastro-fio'},
   {id:'fx-rastro-eco', cat:'fx', prova:1, n:'Eco do Killua', d:'Rápido, o cursor deixa ecos de si, como o Rhythm Echo; ao parar, eles o alcançam num lampejo.', p:0, fx:'rastro-eco'},
   {id:'tr-aspira', cat:'trans', prova:1, n:'Deme-chan', d:'Ao trocar de aba, a aba velha é sugada para o canto, como pelo bocal da Deme-chan.', p:0, eq:{trans:'aspira'}},
-  {id:'px-ms-papel', cat:'px', n:'Masadora · Papel', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','papel'], sw:['#EFE6D2','#D8C7A3','#FFFBF1','#B4521E','#2B1D14']},
+  {id:'px-ms-papel', cat:'px', arq:1, n:'Masadora · Papel', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','papel'], sw:['#EFE6D2','#D8C7A3','#FFFBF1','#B4521E','#2B1D14']},
 ];
 /* fotos de perfil: cada PNG de web/a/ (o banco do repositório) vira um item da loja. Preço padrão 1.000 J; estas são grátis. */
 const AV_GRATIS = ['logo','hunter-x-hunter','killua-2'];
@@ -240,6 +240,7 @@ function catalogo(avatares, colecao){
   for(const it of Object.values((colecao && colecao.itens) || {})) if(it && typeof it.id === 'string' && !ja.has(it.id)) cat.push({...it, fora:1});
   return cat;
 }
+/* arq: item arquivado, fora da loja (o mundo pixel, 21/10): quem tem continua com ele e equipa, ninguém mais compra */
 /* item que vem com o jogo: grátis e sem trava (a Simples, as fotos grátis). Fica sempre em Comprados, nunca na vitrine */
 const padrao = it => !it.p && !it.excl && !it.lend && !it.fora && !it.chefao && !it.lock && !it.prova && !it.grupo;
 /* a cópia do item que vai para a coleção permanente: só os campos que bastam para mostrar e equipar sem a loja, e de onde
@@ -1227,7 +1228,7 @@ function conqIA(C, S){
    (ferramentas/simulador.mjs) gera o mesmo relatório para jogadores inventados, para comparar um com o outro. */
 const FONTES = {hab:'hábitos', ent:'entregas', est:'estudo', tre:'treino', pro:'projetos', vid:'vida', cf:'Codeforces',
   exp:'caçadas e expedições', contrib:'contribuições', bonus:'multiplicadores', gravado:'dias fechados'};
-const lojaTotal = () => COS.filter(it => it.p > 0 && !it.lend && !it.excl && !it.grupo).reduce((s, it) => s + it.p, 0);
+const lojaTotal = () => COS.filter(it => it.p > 0 && !it.lend && !it.excl && !it.grupo && !it.arq).reduce((s, it) => s + it.p, 0);
 function relatorio(C, S){
   const {HOJE, TEMP, EST} = C, E = esforco(S.xpDia, HOJE), r1 = x => Math.round(x*10)/10;
   const ini = [TEMP.ini, S.first].filter(d => d && d <= HOJE).sort()[0] || HOJE;
