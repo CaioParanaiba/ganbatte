@@ -28,6 +28,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta5", "nome": "atualização da Torre Trick", "data": "2026-10-20",
+   "resumo": "Chegaram para provar a Costura da Machi e a Barra elétrica do Killua refeita. Na beta, a borda de cada item da Masadora mostra em que pé está a arte dele: verde fechado, dourada aprovado e esperando o outro dev, vermelha em aberto ou ainda não revisto.",
+   "itens": [
+     {"ic": "coin", "t": "Status da arte na borda", "d": "Na beta, cada card da vitrine ganha a borda do status da arte nova (#134): verde fechado, dourada o Caio aprovou e falta o outro dev ver, vermelha em aberto ou ainda não revisto. A legenda, com quantos há de cada, fica no quadro \"arte nova em teste\". O alto do card continua com a cor da raridade."},
+     {"ic": "spider", "t": "Costura da Machi", "d": "Efeito épico ao concluir uma tarefa: o card racha de verdade, a agulha da Machi o costura em zigue-zague e o fio é puxado, com 念糸縫合 no fim. Prove no ▶ da vitrine (#134)."},
+     {"ic": "card", "t": "Barra elétrica do Killua", "d": "A Barra elétrica passou a raro e virou a eletricidade do Killua: um raio estala dentro da barra de XP, a ponta solta faíscas e de vez em quando a barra dá uma descarga. A versão nova está no provar (#134)."},
+     {"ic": "tower", "t": "Na fila de arte", "d": "O Soco remoto do Leorio está aprovado e esperando o outro dev; as Borboletas do Pouf seguem em aberto; as Cartas do Hisoka ficam no formato de hoje. Nenhum dos três muda o jogo ainda (#134)."}
+   ]},
   {"versao": "0.9.2-beta4", "nome": "atualização da Torre Trick", "data": "2026-10-20",
    "resumo": "A Masadora ficou mais fácil de navegar: a Aparência agora vem em quatro famílias, o card é enxuto e o detalhe abre ao lado. Chegaram para provar as transições de aba novas (a fumaça do Morel e a aba sugada da Deme-chan) e as correntes do Kurapika refeitas, e várias bordas, hovers e cursores foram ajustados.",
    "itens": [
