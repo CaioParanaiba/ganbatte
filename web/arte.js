@@ -17,6 +17,7 @@ const ST = {fechado:'fechado', finalizar:'falta finalizar', aberto:'em aberto', 
 const ARTE = {
   'hp-corrente':   {st:'fechado', tx:'Aprovada (20/10): a vida do chefão vira a corrente escarlate, presa pela ponta; o trecho perdido fica com a corrente apagada.'},
   'bd-corrente':   {st:'fechado', tx:'Aprovada (20/10): a corrente da licença, fina, com uma argola em cada canto e a esfera da Dowsing Chain balançando no canto de baixo (acelera com o mouse).'},
+  'fx-shim':       {st:'fechado', tx:'Aprovada (20/10): a eletricidade do Killua. Um raio estala dentro da barra de XP, a ponta solta faíscas com um arco para o vazio e, de tempos em tempos, a barra dá uma descarga.'},
   'fx-corrente':   {st:'fechado', tx:'Aprovada (20/10): a corrente vai e volta presa à lâmina da Judgment Chain, na ponta da barra de XP.'},
   'cr-carta':      {st:'fechado', tx:'Aprovada (17/10). Feita em código: clique atira a carta, segurar prende na Bungee Gum, parado ele vira a carta.'},
   'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
@@ -69,10 +70,12 @@ const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
 /* a licença inteira (o cartão novo), que não é item da loja: aparece no provador da Associação */
 const CARTAO = {st:'finalizar', tx:'O cartão novo, fiel ao do anime, com lugar para as estrelas, o carimbo e o emblema, foi aprovado como provisório. Falta decidir como a versão em pé entra no placar.'};
 /* efeitos (data-fx, uma lista) cuja nova é só CSS: provando com a nova, o efeito vira "X-nova" no <html> e na prévia */
-const FX_NOVA = ['fx-corrente'];
+const FX_NOVA = ['fx-corrente', 'fx-shim'];
 /* a corrente do Kurapika (web/arte/corrente.js): as imagens saem do gerador, a borda com a Dowsing Chain, a barra de XP
    com a Judgment Chain e a vida do chefão escarlate */
 const CH = window.GB_CORRENTE, CHP = CH && CH.pendulo(2), CHL = CH && CH.lamina(), CHU = s => CH ? CH.uri(s) : 'none';
+/* a barra elétrica do Killua (web/arte/eletrica.js): os quadros do raio e da faísca, trocados aos saltos */
+const EL = window.GB_ELETRICA, ELF = EL && EL.faisca();
 const VER = {};   // id → 'antiga' ou 'nova', só nesta tela (o padrão é a nova)
 const tem = id => !!ARTE[id];
 const nova = id => tem(id) && !ARTE[id].sem && VER[id] !== 'antiga';
@@ -130,6 +133,21 @@ ${CH ? `
 /* ida e volta: a corrente e a lâmina andam juntas (o encaixe não muda) e nunca passam do XP de verdade */
 @keyframes chPuxa{from{background-position:right 0 center,0 0}to{background-position:right var(--ida) center,0 0}}
 @keyframes chPuxaL{from{transform:none}to{transform:translateX(calc(var(--ida) * -1))}}` : ''}
+${EL ? `
+:root[data-fx~="shim-nova"] :is(.xpbar,.l-bar):not(.fxd *),.fxd.shim-nova .xpbar{overflow:visible}
+:root[data-fx~="shim-nova"] .l-bar i:not(.fxd *){position:relative}
+:root[data-fx~="shim-nova"] :is(.xpbar > b,.l-bar i):not(.fxd *),.fxd.shim-nova .xpbar > b{
+  background:${EL.uri(EL.raios())} 0 0/auto 300% repeat-x,linear-gradient(90deg,${EL.AZUL.fundo},${EL.AZUL.fundo2});box-shadow:0 0 10px -2px ${EL.AZUL.brilho}}
+:root[data-fx~="shim-nova"] :is(.xpbar > b,.l-bar i):not(.fxd *)::after,.fxd.shim-nova .xpbar > b::after{content:"";position:absolute;left:100%;top:50%;height:320%;pointer-events:none;
+  aspect-ratio:${ELF.W}/${ELF.H};translate:${(-ELF.fx / ELF.W * 100).toFixed(2)}% -50%;background:${EL.uri(ELF.svg)} 0 0/100% 300% no-repeat}
+@media (prefers-reduced-motion:no-preference){
+  :root[data-fx~="shim-nova"] :is(.xpbar > b,.l-bar i):not(.fxd *),.fxd.shim-nova .xpbar > b{animation:elEstala .36s steps(1,end) infinite,elDescarga 3.4s linear infinite}
+  :root[data-fx~="shim-nova"] :is(.xpbar > b,.l-bar i):not(.fxd *)::after,.fxd.shim-nova .xpbar > b::after{animation:elFaisca .29s steps(1,end) infinite}
+}
+/* a tira anda um pouco para a ponta a cada quadro; de tempos em tempos a barra acende inteira (a descarga) */
+@keyframes elEstala{0%{background-position:0 0,0 0}33.333%{background-position:31px 50%,0 0}66.667%{background-position:67px 100%,0 0}}
+@keyframes elFaisca{0%{background-position:0 0}33.333%{background-position:0 50%}66.667%{background-position:0 100%}}
+@keyframes elDescarga{0%,86%,100%{filter:none}89%{filter:brightness(1.7) drop-shadow(0 0 5px ${EL.AZUL.meio})}92%{filter:brightness(1.05)}94%{filter:brightness(1.45)}97%{filter:none}}` : ''}
 :root[data-cursor$="-nova"] body,:root[data-cursor$="-nova"] body *{cursor:none!important}
 .pvc .cur7 canvas{width:72px;height:72px}
 /* prévia das transições que só existem em código: a fumaça cobre e abre; a aba encolhe girando para o canto */
