@@ -1,8 +1,8 @@
 // Dragon Dive do Zeno (fx-dragao, épico), feito em código, sem imagem: dispara no andar novo e no chefão derrotado (o
 // momento do confete e dos fogos), como alternativa aos fogos. Uma cena de tela inteira em ~2,9 s:
 //   a carga: a tela escurece um pouco e a aura do Zeno sobe do card em chamas.
-//   o Dragon Head: o dragão de aura sai do card e sobe serpenteando; o corpo é uma corda de verdade (Verlet, 34 nós,
-//     com a cabeça puxando e uma onda de lado), com espinhos no dorso, cabeça de boca aberta, chifres, juba de fogo e
+//   o Dragon Head: o dragão de aura sai do card e sobe serpenteando; o corpo segue a cabeça pelo mesmo caminho (34 nós,
+//     como uma cobra), com espinhos no dorso, cabeça de boca aberta, chifres, juba de fogo e
 //     dois bigodes compridos que também são cordas e ficam para trás com a inércia.
 //   a curva: no alto ele dá quase uma volta inteira, e o nome da técnica entra no meio da volta: 龍星群 (ryūseigun), com
 //     a leitura ドラゴンダイヴ que o Togashi usa, em Dela Gothic One.
@@ -44,14 +44,17 @@ const inercia = (p, amort) => { const vx = (p.x - p.ox) * amort, vy = (p.y - p.o
 function cria(g, w, h, R, op, rnd){
   const {cor, claro} = op, soma = claro ? 'source-over' : 'lighter', luz = claro ? '#FFF3CF' : '#FFFFFF';
   const s = op.escala || lim(Math.min(w, h) / 700, .55, 1.25), px = R.x + R.w / 2, py = R.y + R.h / 2;
-  // o caminho da cabeça: sobe serpenteando do card e, no alto, dá quase uma volta em torno de C
-  const raio = lim(Math.min(w, h) * .13, 46, 130), topo = lim(Math.min(Math.max(h * .2, 70 * s), py - 140 * s), raio * .7, h);
-  const A = 46 * s * (rnd() < .5 ? -1 : 1), xA = px + A * Math.sin(TAU * 1.1);
-  let sent = 1; const C = {x: xA + raio, y: topo};
-  if(C.x + raio > w - 16){ sent = -1; C.x = xA - raio; }
+  // o caminho da cabeça: sai do card para cima e chega numa curva suave (Bézier) à entrada da volta, já subindo; a volta
+  // fica sempre inteira na tela, no alto e para o lado do meio da tela. Se o card está lá em cima, o dragão sobe um pouco,
+  // passa por cima e entra na volta por baixo, sem nunca sair da tela
+  const raio = lim(Math.min(w, h) * .13, 46, 130), sent = px < w / 2 ? 1 : -1, DORSO = sent;   // DORSO 1: chifres e espinhos à esquerda de quem anda (o lado de fora da volta para a direita)
+  const C = {x: lim(px + sent * raio * .4, raio + 24, w - raio - 24), y: lim(Math.min(h * .3, py - 1.8 * raio), raio + 24, h - raio - 24)};
+  const E = [C.x - sent * raio, C.y], A = 40 * s * (rnd() < .5 ? -1 : 1);
+  const B = [[px, py], [px + A, py - 90 * s], [E[0], E[1] + Math.max(90 * s, (py - E[1]) * .5)], E];
+  const bez = e => { const u = 1 - e; return [0, 1].map(k => u * u * u * B[0][k] + 3 * u * u * e * B[1][k] + 3 * u * e * e * B[2][k] + e * e * e * B[3][k]); };
   function cabeca(t){
     if(t <= CARGA) return [px, py];
-    if(t < SOBE){ const q = (t - CARGA) / (SOBE - CARGA), e = q * q * (1.6 - .6 * q); return [px + A * Math.sin(TAU * 1.1 * e) * Math.min(1, e * 2), py + (topo - py) * e]; }
+    if(t < SOBE){ const q = (t - CARGA) / (SOBE - CARGA), [x, y] = bez(q * q * (1.6 - .6 * q)); return [x + Math.sin((t - CARGA) * .016) * 14 * s * Math.sin(Math.PI * q), y]; }
     const q = Math.min(1, (t - SOBE) / (ESTOURA - SOBE)), th = sent > 0 ? Math.PI + q * TAU * .9 : -q * TAU * .9;
     return [C.x + Math.cos(th) * raio, C.y + Math.sin(th) * raio];
   }
@@ -63,7 +66,7 @@ function cria(g, w, h, R, op, rnd){
   let tSim = 0, tremor = 0, angulo = -Math.PI / 2;
 
   // a cabeça no referencial dela (+x para a frente); os bigodes saem das pontas do focinho
-  const focinho = (lado) => { const c = Math.cos(angulo), sn = Math.sin(angulo), vira = Math.cos(angulo) < 0 ? -1 : 1, lx = 1.25 * HS, ly = (lado ? .02 : .16) * HS * vira;
+  const focinho = (lado) => { const c = Math.cos(angulo), sn = Math.sin(angulo), vira = DORSO, lx = 1.25 * HS, ly = (lado ? .02 : .16) * HS * vira;
     return [corpo[0].x + c * lx - sn * ly, corpo[0].y + sn * lx + c * ly]; };
 
   function nasce(t){
@@ -83,16 +86,11 @@ function cria(g, w, h, R, op, rnd){
     const dts = DT / 1000;
     if(t < ESTOURA){
       const [hx, hy] = cabeca(t);
-      for(let i = 1; i < N; i++){
-        const p = corpo[i], q = corpo[i - 1]; inercia(p, .94);
-        const dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1, onda = Math.sin(t * .018 - i * .55) * .35 * s;   // serpenteia de lado
-        p.x -= dy / l * onda; p.y += dx / l * onda;
-      }
-      const c0 = corpo[0]; c0.ox = c0.x; c0.oy = c0.y; c0.x = hx; c0.y = hy;
-      for(let k = 0; k < 4; k++) for(let i = 1; i < N; i++) prende(corpo[i - 1], corpo[i], D);
+      corpo[0].x = hx; corpo[0].y = hy;
+      for(let i = 1; i < N; i++) prende(corpo[i - 1], corpo[i], D);   // o corpo vai atrás da cabeça, pelo mesmo caminho
       const dx = corpo[0].x - corpo[2].x, dy = corpo[0].y - corpo[2].y; if(Math.hypot(dx, dy) > 1) angulo = Math.atan2(dy, dx);
       bigodes.forEach((b, lado) => { const [ax, ay] = focinho(lado); b[0].x = ax; b[0].y = ay;
-        for(let i = 1; i < b.length; i++){ inercia(b[i], .86); b[i].y -= .04 * s; }
+        for(let i = 1; i < b.length; i++){ inercia(b[i], .7); b[i].y -= .04 * s; }
         for(let k = 0; k < 3; k++) for(let i = 1; i < b.length; i++) prende(b[i - 1], b[i], 5.5 * s); });
     } else if(!mini.length) nasce(t);
     for(const m of mini){
@@ -113,7 +111,7 @@ function cria(g, w, h, R, op, rnd){
 
   // ---------- desenho ----------
   function corpoGrande(a){
-    const r = i => 7.5 * s * Math.pow(1 - i / N, .6) + 1.2, vira = Math.cos(angulo) < 0 ? 1 : -1;
+    const r = i => 7.5 * s * Math.pow(1 - i / N, .6) + 1.2, vira = -DORSO;
     const segs = []; for(let i = 0; i < N - 1; i++){ const p = corpo[i], q = corpo[i + 1], l = Math.hypot(p.x - q.x, p.y - q.y); if(l >= .5) segs.push([p, q, r(i), (p.x - q.x) / l, (p.y - q.y) / l, i]); }
     const traco = (lw, c, comp, al) => { g.globalCompositeOperation = comp; g.strokeStyle = c; g.globalAlpha = a * al;
       for(const [p, q, rr] of segs){ g.lineWidth = lw(rr); g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); g.stroke(); } };
@@ -143,7 +141,7 @@ function cria(g, w, h, R, op, rnd){
     g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   }
   function cabecaGrande(a, t){
-    const p = corpo[0], vira = Math.cos(angulo) < 0;
+    const p = corpo[0], vira = DORSO < 0;
     g.save(); g.translate(p.x, p.y); g.rotate(angulo); if(vira) g.scale(1, -1);
     g.globalAlpha = a; g.lineJoin = 'round'; g.lineCap = 'round';
     // a juba de fogo para trás, tremendo
@@ -263,7 +261,7 @@ function cria(g, w, h, R, op, rnd){
   }
   const fase = t => t < CARGA ? 'a aura do Zeno sobe do card' : t < SOBE ? 'o dragão sobe' : t < ESTOURA ? 'a curva no alto'
     : t < ESTOURA + 400 ? 'ryūseigun: o dragão se desfaz' : t < FIM - 300 ? 'a chuva de dragões' : t < FIM ? 'apagando' : '';
-  return {quadro, fase};
+  return {quadro, fase, corpo};   // corpo: para medir o caminho fora do navegador
 }
 
 function dispara(r, o = {}){
