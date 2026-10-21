@@ -157,6 +157,39 @@ A corrida deixou de ser um tipo separado: é o bônus do primeiro na tabela do d
 
 Decidido na ordem do Caio: o CF vem na fase 2, antes do chefão e do pacto.
 
+## Licença e prestígio (decidido em 21/10/2026, segunda conversa)
+
+- **A licença hunter fica, e na tela inicial da aba.** É a carteira que cada um monta com o que ganhou e comprou; o Caio
+  quer que ela fique à vista, não escondida no perfil. A frente passa a mostrar a posição na semana, as rodadas ganhas e
+  as medalhas; o verso, as medalhas por posição, os números por hábito (os antigos placares) e o registro.
+- **Liderança vira prestígio grátis, não item.** As estrelas da licença saem das rodadas ganhas (★ na primeira, ★★ na
+  quarta; ★★★ continua o lendário Hunter Três Estrelas) e os títulos de liderança ("Top 1 desde 1999", "Presidente da
+  Associação") são dados automaticamente. Saem da loja como itens de desafio: **Estrela ★**, **Estrelas ★★**, **Top 1
+  desde 1999**, **Ren no pódio** e **Entrada no pódio** (os dois últimos viram efeito de quem ganhou a semana, ou saem).
+- **Os desafios de item** passam a sair do que todos podem cumprir: marca da semana, chefão, tabela do dia e pacto.
+
+## A aba (protótipo na beta, atrás do botão antiga | nova)
+
+Sub-abas: **semana** · **desafios** · **temporada** · **hunters** · **loja** (· administrar). No máximo 3 coisas por tela.
+
+- **semana** (a inicial): a licença (vira com um clique) e um resumo (posição na semana, rodadas, marcas batidas); o
+  card da semana (modalidade, marca pessoal com barra, quem escolhe a próxima); o placar da semana com a troca
+  **Geral | Superação**, os 4 blocos de cada um (o da modalidade em dobro) e a frase do líder no rodapé.
+- **desafios**: tabela do dia do CF e convites (duelo, pacto), à esquerda; chefão do mês (barra de vida e a contribuição
+  de cada um contra a própria meta, com o mínimo e o teto) e as suas marcas semana a semana, à direita.
+- **temporada**: rodadas ganhas, medalhas, pódios de superação, marcas batidas e estrelas; a grade semana a semana com a
+  posição de cada um e a modalidade de cada semana.
+- **hunters**: a licença de cada um, frente e verso, os blocos da semana e os números por hábito (sem posição).
+
+O servidor do grupo já calcula de verdade (em `torre.py`, `semanal()` e `chefao()`): o Geral semanal com Ritmo, Hábitos
+e Superação, o pódio de superação, a marca pessoal (10% sobre a média das últimas 4 semanas, ou +5, com piso de 20), a
+temporada em rodadas e medalhas e o chefão do mês (meta = 80% do XP com teto de um mês normal de cada um, pelas últimas 4
+semanas; teto 150%; mínimo 50%). **Prévia** (marcado na tela): Prazos (falta no protocolo), a escolha da modalidade (o
+sistema rotaciona Ritmo, Hábitos e Superação), a tabela do dia, o duelo, o pacto e a Trick Coin.
+
+Primeira leitura com os dados reais (21/10): com 80%, o grupo derrotou o chefão de outubro já no dia 21; a vida precisa
+subir. A frase do líder ainda segue o líder dos andares, não o 1º do Geral semanal.
+
 ## O que muda no COLETIVO.md
 
 | Seção do COLETIVO.md | Situação |
@@ -185,10 +218,8 @@ Decidido na ordem do Caio: o CF vem na fase 2, antes do chefão e do pacto.
 
 - **Mexe em pontos:** a mudança de XP, Jenny ou pontos sai com janela grande na Novidades, como a 0.6 (regra do Caio). O
   Geral novo e o XP do pacto entram nisso.
-- **Desafios de item que dependem de liderar:** a lista da loja da Associação (`LIB_TT` em `web/grupo.js`) tem desafios
-  como "liderar o placar 3 semanas" e "subir 3 posições", que dão item a quem já lidera. ⏳ Revisar: manter só para
-  **título e prestígio** e trocar os desafios de item pelos que o novo desenho oferece (marca da semana, chefão, tabela
-  do dia, pacto).
+- **Desafios de item que dependem de liderar:** decidido em 21/10 (ver "Licença e prestígio"). Falta trocar, na lista
+  da loja (`LOJA_TT` em `web/grupo.js`), os desafios dos itens que sobram pelos do desenho novo.
 - **Andares** (a unidade "andar descido" da Torre Trick, acumulada): ⏳ não foi decidido o que acontece com ela. Hipótese:
   segue acumulando os pontos semanais do Geral como progressão individual, sem ser pódio.
 - **Trick Coin sem posição:** a fonte passa a ser completar desafios. ⏳ Valores, para não ficar sem moeda nem inflar.
@@ -202,6 +233,7 @@ Decidido na ordem do Caio: o CF vem na fase 2, antes do chefão e do pacto.
 5. X dias e XP do pacto.
 6. O que acontece com os andares.
 7. Primeira semana da escolha de modalidade; escolha de hábito dentro da modalidade Hábitos.
-8. Revisar os desafios de item da loja que dependem de liderança.
+8. ~~Revisar os desafios de item da loja que dependem de liderança~~: decidido em 21/10 (prestígio grátis); falta trocar
+   os desafios dos outros itens na `LOJA_TT`.
 9. Os 4 blocos do Geral foram aceitos sem avaliação completa (o Caio não conseguiu julgar tudo em 21/10): **rever com o
    uso real** quando a fase 1 estiver na beta; o Prazos é o único que pede dado novo.
