@@ -142,7 +142,8 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   para ontem (XP, nível do hábito e heatmap). Só vale para o dia anterior.
 - **Codeforces não conta:** confira o handle na aba Configurações. A contagem atualiza a cada 10 minutos e precisa de internet.
   Problema feito onde a API não enxerga (ITMO Academy, contest de grupo privado): clique no ✋ ao lado de "Codeforces" no
-  heatmap da Lista e confirme; cada confirmação soma 1 problema hoje.
+  heatmap da Lista e confirme; cada confirmação soma 1 problema hoje. Cada problema vale pela cor dele comparada à sua
+  faixa (Book → Regras); problema de contest recente vale por uma estimativa até o Codeforces dar o rating.
 - **Recompensa de bug ou ideia não veio:** confira o usuário do GitHub em Configurações. O jogo confere a cada 6 horas e só
   conta a issue que você abriu e que foi fechada como resolvida (bug corrigido, ideia feita); repetida ou recusada não conta.
 - **Duolingo não conta:** confira o usuário na aba Configurações (o nome do perfil, sem senha). O jogo lê a ofensiva do

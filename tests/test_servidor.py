@@ -236,10 +236,61 @@ class Codeforces(Base):
         self.cf = {"handle": "tourist", "meta": 2}
         self.jogador({"cf": self.cf})
         s.arruma_dia()
+        self.api = {"user.rating": [], "contest.list": []}   # o que a API do Codeforces responde (#180), sem sair para a internet
+        p = mock.patch.object(s, "cf_api", lambda metodo, **k: self.api[metodo])
+        p.start()
+        self.addCleanup(p.stop)
 
-    def envio(self, dia, prob, ok=True):
+    def envio(self, dia, prob, ok=True, contest=1, rating=None, tipo="PRACTICE"):
         t = time.mktime(date.fromisoformat(dia).timetuple()) + 12 * 3600
-        return {"creationTimeSeconds": int(t), "verdict": "OK" if ok else "WRONG_ANSWER", "problem": {"contestId": 1, "index": prob}}
+        p = {"contestId": contest, "index": prob, **({"rating": rating} if rating else {})}
+        return {"creationTimeSeconds": int(t), "verdict": "OK" if ok else "WRONG_ANSWER", "problem": p, "author": {"participantType": tipo}}
+
+    def atualiza(self, envios):
+        with mock.patch.object(s, "cf_envios", return_value=(list(reversed(envios)), True)):
+            s.cf_atualiza(self.cf)
+        return s.ler_json("cf.json", {})
+
+    def test_guarda_o_rating_de_cada_problema(self):
+        """#180: o rating oficial; sem rating, a estimativa pela letra e pela divisão; gym e problema sem contest valem 0."""
+        self.api["contest.list"] = [{"id": 2000, "name": "Codeforces Round 999 (Div. 3)"}]
+        c = self.atualiza([self.envio("2026-10-10", "A", rating=1300), self.envio("2026-10-10", "D", contest=2000),
+                           self.envio("2026-10-11", "A", contest=100500), self.envio("2026-10-11", "F", contest=2001)])
+        self.assertEqual(c["probs"], {"2026-10-10": [1300, 1500], "2026-10-11": [0, 2100]})
+
+    def test_estimativa_so_sobe(self):
+        """Quando o rating oficial sai menor que a estimativa, fica a estimativa (o XP nunca cai)."""
+        self.api["contest.list"] = [{"id": 2000, "name": "Codeforces Round 999 (Div. 2)"}]
+        self.atualiza([self.envio("2026-10-10", "C", contest=2000)])
+        c = self.atualiza([self.envio("2026-10-10", "C", contest=2000, rating=1200)])
+        self.assertEqual(c["probs"]["2026-10-10"], [1400])
+        c = self.atualiza([self.envio("2026-10-10", "C", contest=2000, rating=1600)])
+        self.assertEqual(c["probs"]["2026-10-10"], [1600])
+
+    def test_contest_ao_vivo_e_historico_de_rating(self):
+        """Contest ao vivo conta no dia do primeiro envio, mesmo sem AC; o histórico de rating vem do user.rating."""
+        self.api["user.rating"] = [{"contestId": 2000, "contestName": "Round (Div. 2)", "newRating": 1450,
+                                    "ratingUpdateTimeSeconds": int(time.mktime(date(2026, 10, 11).timetuple()))}]
+        c = self.atualiza([self.envio("2026-10-10", "A", ok=False, contest=2000, tipo="CONTESTANT"),
+                           self.envio("2026-10-10", "B", ok=False, contest=2000, tipo="CONTESTANT")])
+        self.assertEqual(c["contests"], {"2026-10-10": 1})
+        self.assertEqual(c["ratings"], [["2026-10-11", 1450]])
+        self.assertEqual(c["por_dia"], {})
+
+    def test_rating_fora_do_ar_nao_para_a_contagem(self):
+        def falha(metodo, **k):
+            raise OSError("fora do ar")
+        with mock.patch.object(s, "cf_api", falha):
+            c = self.atualiza([self.envio("2026-10-12", "A", rating=800)])
+        self.assertEqual(c["por_dia"], {"2026-10-12": 1})
+        self.assertNotIn("ratings", c)
+
+    def test_leitura_leva_os_dados_novos(self):
+        self.atualiza([self.envio("2026-10-12", "A", rating=800)])
+        r = s.cf_leitura(s.jogador())
+        self.assertEqual(r["probs"], {"2026-10-12": [800]})
+        s.gravar_json("cf.json", {"handle": "tourist", "por_dia": {"2026-10-12": 1}})
+        self.assertNotIn("probs", s.cf_leitura(s.jogador()))   # cf.json de antes: a página fica na regra antiga
 
     def test_conta_problemas_distintos_e_conclui_a_meta(self):
         envios = [self.envio("2026-10-12", "A"), self.envio("2026-10-12", "B"), self.envio("2026-10-12", "B"),

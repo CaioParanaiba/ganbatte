@@ -79,6 +79,13 @@ const ARTE = {
   'fx-shake':      {st:'aberto', sem:true, tx:'Refeita (21/10), ainda na bancada: o chefão em fúria solta o Ren, com labaredas que sobem e, de tempos em tempos, a veia de raiva e um tranco. Esperando o veredito do Caio.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
+/* revisão de 21/10: paletas, fontes, títulos e sons ficam como estão (fontes e sons novos só quando o jogo passar de 8 jogadores
+   ativos); o mundo pixel foi arquivado (arq no motor.js) */
+const FICA = {pal:'Revista (21/10): fica como está.', title:'Revisto (21/10): fica como está.',
+  font:'Revista (21/10): fica como está. Fontes novas chegam quando o jogo passar de 8 jogadores ativos.',
+  som:'Revisto (21/10): fica como está. Sons novos chegam quando o jogo passar de 8 jogadores ativos.',
+  px:'Arquivado (21/10): o mundo pixel saiu da loja. Quem tem continua com ele; ninguém mais compra.'};
+for(const it of GB.COS) if(FICA[it.cat] && !ARTE[it.id]) ARTE[it.id] = {st:'fechado', sem:true, fixo: it.arq ? 'arquivado' : 'fica a de hoje', tx: FICA[it.cat]};
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
    nome, descrição, status, o que falta]. A Marca de prazo (prazo) é uma categoria inteira em teste: sai se não agradar */
 const PRAZO = ' Faz parte da Marca de prazo, categoria em teste: se os estilos não agradarem, ela sai inteira.';
