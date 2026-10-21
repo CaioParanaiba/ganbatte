@@ -23,6 +23,9 @@ const ARTE = {
   'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
   'cr-ioio':       {st:'finalizar', tx:'Voltou a um ioiô só (20/10), para não atrapalhar os truques. Clique desce, segurar dorme; segurando com a mão parada o fio carrega de eletricidade e ele volta como raio. Falta o Caio aprovar.'},
   'fx-godspeed':   {st:'fechado', tx:'Aprovado (20/10). O Kanmuru acende no card, o raio cai com quadro negativo, o 神速 entra com rastros e a marca do raio fica no card.'},
+  'fx-rastro':     {st:'finalizar', tx:'Refeito em código (21/10): vapor de aura que sobe ondulando; parado, o Ten ainda solta fiapos; o clique é o Ren. Aprovado pelo Caio, ainda provisório.'},
+  'fx-rastro-fio': {st:'finalizar', tx:'Novo (21/10), 2º modelo do rastro: uma fita de aura com física de corda que chicoteia, estala em faíscas e se recolhe; o clique manda um pulso. Aprovado pelo Caio, ainda provisório.'},
+  'fx-rastro-eco': {st:'finalizar', tx:'Novo (21/10), 3º modelo do rastro: ecos atrasados do cursor com a cor partida, que o alcançam num lampejo; o clique abre os quatro em roda. Aprovado pelo Caio, ainda provisório.'},
   'fx-jajanken':   {st:'fechado', tx:'Aprovado (20/10): as três mãos, com o grito em japonês. O ▶ da nova passa por pedra, papel e tesoura, nessa ordem.'},
   'hv-bungee':     {st:'fechado', tx:'Aprovado (20/10). A goma cobre o contorno do card; ao sair, a borda vira membrana, estica e rasga como elástico.'},
   'hv-en':         {st:'fechado', tx:'Aprovado (20/10). O card acende o Ten e o En da Pitou se abre do ponto tocado, só até os vizinhos; os cards alcançados acendem os cantos.'},
@@ -70,7 +73,7 @@ const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
 /* a licença inteira (o cartão novo), que não é item da loja: aparece no provador da Associação */
 const CARTAO = {st:'finalizar', tx:'O cartão novo, fiel ao do anime, com lugar para as estrelas, o carimbo e o emblema, foi aprovado como provisório. Falta decidir como a versão em pé entra no placar.'};
 /* efeitos (data-fx, uma lista) cuja nova é só CSS: provando com a nova, o efeito vira "X-nova" no <html> e na prévia */
-const FX_NOVA = ['fx-corrente', 'fx-shim'];
+const FX_NOVA = ['fx-corrente', 'fx-shim', 'fx-rastro'];
 /* a corrente do Kurapika (web/arte/corrente.js): as imagens saem do gerador, a borda com a Dowsing Chain, a barra de XP
    com a Judgment Chain e a vida do chefão escarlate */
 const CH = window.GB_CORRENTE, CHP = CH && CH.pendulo(2), CHL = CH && CH.lamina(), CHU = s => CH ? CH.uri(s) : 'none';
@@ -148,6 +151,8 @@ ${EL ? `
 @keyframes elEstala{0%{background-position:0 0,0 0}33.333%{background-position:31px 50%,0 0}66.667%{background-position:67px 100%,0 0}}
 @keyframes elFaisca{0%{background-position:0 0}33.333%{background-position:0 50%}66.667%{background-position:0 100%}}
 @keyframes elDescarga{0%,86%,100%{filter:none}89%{filter:brightness(1.7) drop-shadow(0 0 5px ${EL.AZUL.meio})}92%{filter:brightness(1.05)}94%{filter:brightness(1.45)}97%{filter:none}}` : ''}
+/* rastro em código (web/arte/rastro.js): na prévia do card, os pontinhos do rastro de hoje */
+.fxd:is(.rastro-nova,.rastro-fio,.rastro-eco){background-image:radial-gradient(2px 2px at 20% 70%,var(--aura),transparent),radial-gradient(2px 2px at 60% 40%,var(--volt),transparent),radial-gradient(1.5px 1.5px at 85% 80%,var(--aura),transparent),radial-gradient(1.5px 1.5px at 40% 20%,var(--volt),transparent);animation:hjSobe 3s linear infinite}
 :root[data-cursor$="-nova"] body,:root[data-cursor$="-nova"] body *{cursor:none!important}
 .pvc .cur7 canvas{width:72px;height:72px}
 /* prévia das transições que só existem em código: a fumaça cobre e abre; a aba encolhe girando para o canto */
@@ -202,6 +207,18 @@ function hover(){
   hovK = k;
   if(k && window.CURSORES && CURSORES[k] && CURSORES[k].cola) hov = CURSORES[k].cola(document.documentElement, {seletor: '.card'});
 }
+/* ---------- rastro em código: um modelo por item (a Aura é a nova do fx-rastro; o Fio e o Eco só existem em código).
+   Liga com o primeiro que o data-fx do <html> pedir; o tema muda as cores, então troca de tema refaz o rastro ---------- */
+const RASTRO = {'rastro-nova': 1, 'rastro-fio': 2, 'rastro-eco': 3};
+let ras = null, rasK = '';
+function rastro(){
+  const fx = (document.documentElement.getAttribute('data-fx') || '').split(' '), m = fx.map(f => RASTRO[f]).find(Boolean) || 0;
+  const k = m ? m + '|' + getComputedStyle(document.body).backgroundColor + '|' + getComputedStyle(document.documentElement).getPropertyValue('--aura') : '';
+  if(k === rasK) return;
+  if(ras){ ras.desliga(); ras = null; }
+  rasK = k;
+  if(m && window.CURSORES && CURSORES.rastro) ras = CURSORES.rastro.liga(document.body, {modelo: m});
+}
 /* ---------- transições em código: a troca de aba passa pelo módulo quando o <html> pede um "-nova" (deslizar, glitch) ou
    uma transição que só existe em código (fumaca, aspira). fn é a troca de verdade (esconde a velha, mostra a nova) ---------- */
 const SO_CODIGO = ['fumaca', 'aspira'], trs = {};
@@ -216,7 +233,7 @@ function aba(fn){
 }
 if(window.GB_FX){
   const aplica = GB_FX.aplica, ver = GB_FX.ver;
-  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); };
+  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); rastro(); };
   /* ▶ na loja: com a nova escolhida, o efeito novo cai no card do item */
   let mao = 0;
   GB_FX.ver = function(id, r){
