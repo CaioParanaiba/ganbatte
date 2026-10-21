@@ -154,28 +154,30 @@ ${S}::after{background:${mix('var(--amb)', 34)};${mascara([[uri(ring), 'center b
 /* ---------- Aura do dia (épico): a aura do seu tipo contorna a tela e avança a cada tarefa do dia ----------
    Começa como brasa nos dois cantos de baixo, sobe pelas laterais e corre pelo alto até as duas pontas se encontrarem no
    meio quando a meta fecha. O caminho de cada lado tem altura + meia largura; --dia (0 a 1) diz quanto dele está aceso.
-   Cada ponta tem um foco mais forte, que é onde o olho acha o progresso; a faixa é fina e só pega a beirada. */
+   Cada ponta tem um foco mais forte, que é onde o olho acha o progresso; a faixa começa fina, na beirada, e engrossa para
+   dentro ao longo do dia (36 px de manhã, ~146 px com a meta cheia). */
 function nen(){
   /* fiapos: manchas desfocadas num ladrilho (com as cópias nas bordas, para emendar), que sobem devagar dentro da faixa */
-  const r = rnd(41), TW = 120, TH = 260;
+  const r = rnd(41), TW = 310, TH = 380;
   let b = '';
-  for(let k = 0; k < 14; k++){
-    const x = r() * TW, y = r() * TH, rx = 8 + r() * 16, ry = 24 + r() * 40;
+  for(let k = 0; k < 34; k++){
+    const x = r() * TW, y = r() * TH, rx = 10 + r() * 26, ry = 18 + r() * 46;
     for(const ox of [-TW, 0, TW]) for(const oy of [-TH, 0, TH]) b += `<ellipse cx="${f(x + ox)}" cy="${f(y + oy)}" rx="${f(rx)}" ry="${f(ry)}"/>`;
   }
-  const fiapos = svg(TW, TH, `<filter id="d" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter><rect width="${TW}" height="${TH}" fill-opacity=".45"/><g filter="url(#d)">${b}</g>`);
+  const fiapos = svg(TW, TH, `<filter id="d" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="13"/></filter><rect width="${TW}" height="${TH}" fill-opacity=".5"/><g filter="url(#d)">${b}</g>`);
   const N = 'var(--nen-forte,var(--aura))', A = 'var(--alto,100vh)', L = 'var(--larg,100vw)', s = 'var(--tx-s)';
   const lado = `min(${s},${A})`, topo = `clamp(0px,${s} - ${A},${L} / 2)`;
-  const pLado = `clamp(0px,(${A} - ${s}) * 100,130px)`, pTopo = `clamp(0px,(${s} - ${A}) * 100,130px)`;   // o foco da ponta: um ou outro
+  const larg = 'calc(36px + var(--dia,0) * 110px)', foco = 'calc(130px + var(--dia,0) * 90px)';   // a faixa e o foco engrossam para dentro ao longo do dia
+  const pLado = `clamp(0px,(${A} - ${s}) * 100,${foco})`, pTopo = `clamp(0px,(${s} - ${A}) * 100,${foco})`;   // o foco da ponta: um ou outro
   const faixa = d => `linear-gradient(${d},${mix(N, 28)},${mix(N, 9)} 45%,transparent)`;
   const ponta = `radial-gradient(closest-side,${mix(N, 42)},${mix(N, 12)} 55%,transparent)`;
   const vai = 'background-size 1.8s cubic-bezier(.2,.8,.2,1),background-position 1.8s cubic-bezier(.2,.8,.2,1)';
   return S => `${S}{--tx-s:calc(var(--dia,0) * (${A} + ${L} / 2))}
 ${S}::before{background:
-  ${faixa('to right')} left bottom/40px ${lado} no-repeat,
-  ${faixa('to left')} right bottom/40px ${lado} no-repeat,
-  ${faixa('to bottom')} left top/${topo} 40px no-repeat,
-  ${faixa('to bottom')} right top/${topo} 40px no-repeat,
+  ${faixa('to right')} left bottom/${larg} ${lado} no-repeat,
+  ${faixa('to left')} right bottom/${larg} ${lado} no-repeat,
+  ${faixa('to bottom')} left top/${topo} ${larg} no-repeat,
+  ${faixa('to bottom')} right top/${topo} ${larg} no-repeat,
   linear-gradient(to top,${mix(N, 10)},transparent) left bottom/100% 22px no-repeat;
   transition:${vai};${mascara([[uri(fiapos), '0 0', `${TW}px ${TH}px`, 'repeat']])}}
 ${S}::after{background:
