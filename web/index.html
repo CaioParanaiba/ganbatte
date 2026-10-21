@@ -1496,7 +1496,7 @@ function devolve(){
   EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.9.2-beta4';
+const VERSAO_PAGINA = '0.9.2-beta5';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1893,10 +1893,11 @@ function partes(S, it){
   const preso = `<span class="pr${preco || it.prova || it.dev ? '' : ' free'}">${pr}${own && !GBx.padrao(it) && !it.fora && !it.chefao && !pk ?' · seu':''}</span>`;
   return {cls, btn, ver, tem, pr:preso};
 }
-/* card da vitrine (enxuto): prévia, nome, preço e o botão principal; o clique abre o detalhe ao lado */
+/* card da vitrine (enxuto): prévia, nome, preço e o botão principal; o clique abre o detalhe ao lado. Na beta, a borda mostra
+   o status da arte (#134): verde fechado, dourada falta outro dev, vermelha em aberto ou ainda não revisto */
 function itemHTML(S, it){
   const p = partes(S, it);
-  return `<div class="it7${p.cls}${it.fa ? ' fa-' + it.fa : ''}${UI.isel === it.id ? ' sel' : ''}" data-isel="${it.id}"${it.fa ? ` title="${FA_NOME[it.fa]}"` : ''}>${pvHTML(it)}<div class="info"><button type="button" class="nm7" data-isel="${it.id}">${esc(it.n)}${it.hxh ? ' <i class="nen7" title="tema HxH">念</i>' : ''}</button><div class="buy7">${p.pr}${p.btn}</div></div></div>`;
+  return `<div class="it7${p.cls}${it.fa ? ' fa-' + it.fa : ''}${window.GB_ARTE ? GB_ARTE.borda(it.id) : ''}${UI.isel === it.id ? ' sel' : ''}" data-isel="${it.id}"${it.fa ? ` title="${FA_NOME[it.fa]}"` : ''}>${pvHTML(it)}<div class="info"><button type="button" class="nm7" data-isel="${it.id}">${esc(it.n)}${it.hxh ? ' <i class="nen7" title="tema HxH">念</i>' : ''}</button><div class="buy7">${p.pr}${p.btn}</div></div></div>`;
 }
 /* detalhe do item escolhido: selos, descrição, o aviso da arte nova, provar ou ▶ e comprar */
 function detHTML(S, it){
@@ -2911,6 +2912,7 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 <script src="arte/ioio.js"></script>
 <script src="arte/godspeed.js"></script>
 <script src="arte/jajanken.js"></script>
+<script src="arte/costura.js"></script>
 <script src="arte/cartas.js"></script>
 <script src="arte/chamas.js"></script>
 <script src="arte/bungee.js"></script>

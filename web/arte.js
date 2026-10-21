@@ -12,8 +12,11 @@
  */
 (() => {
 const IMG = n => (window.GB_ARTE_IMG || {})[n] || `arte/${n}.png`;   // no modo demonstração (standalone.py) as imagens vêm embutidas
-const ST = {fechado:'fechado', finalizar:'falta finalizar', aberto:'em aberto', dev:'em desenvolvimento'};
-/* id do item na loja → st: o status da arte; tx: o que é e o que falta; sem: true quando ainda não há versão nova para ver */
+const ST = {fechado:'fechado', finalizar:'falta outro dev', aberto:'em aberto', dev:'em desenvolvimento'};
+/* id do item na loja → st: o status da arte (fechado; finalizar = o Caio aprovou e falta o outro dev ver; aberto); tx: o que
+   é e o que falta; sem: true quando ainda não há versão nova para ver; fixo: a versão do jogo já é a final (ou fica a de hoje),
+   sem troca. Na beta, a borda do card da vitrine mostra o status: verde fechado, dourada falta outro dev, vermelha em aberto ou
+   ainda não revisto (todo item que não está aqui) */
 const ARTE = {
   'hp-corrente':   {st:'fechado', tx:'Aprovada (20/10): a vida do chefão vira a corrente escarlate, presa pela ponta; o trecho perdido fica com a corrente apagada.'},
   'bd-corrente':   {st:'fechado', tx:'Aprovada (20/10): a corrente da licença, fina, com uma argola em cada canto e a esfera da Dowsing Chain balançando no canto de baixo (acelera com o mouse).'},
@@ -21,7 +24,7 @@ const ARTE = {
   'fx-corrente':   {st:'fechado', tx:'Aprovada (20/10): a corrente vai e volta presa à lâmina da Judgment Chain, na ponta da barra de XP.'},
   'cr-carta':      {st:'fechado', tx:'Aprovada (17/10). Feita em código: clique atira a carta, segurar prende na Bungee Gum, parado ele vira a carta.'},
   'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
-  'cr-ioio':       {st:'finalizar', tx:'Voltou a um ioiô só (20/10), para não atrapalhar os truques. Clique desce, segurar dorme; segurando com a mão parada o fio carrega de eletricidade e ele volta como raio. Falta o Caio aprovar.'},
+  'cr-ioio':       {st:'aberto', tx:'Voltou a um ioiô só (20/10), para não atrapalhar os truques. Clique desce, segurar dorme; segurando com a mão parada o fio carrega de eletricidade e ele volta como raio. Falta o Caio aprovar.'},
   'fx-godspeed':   {st:'fechado', tx:'Aprovado (20/10). O Kanmuru acende no card, o raio cai com quadro negativo, o 神速 entra com rastros e a marca do raio fica no card.'},
   'fx-rastro':     {st:'finalizar', tx:'Refeito em código (21/10): vapor de aura que sobe ondulando; parado, o Ten ainda solta fiapos; o clique é o Ren. Aprovado pelo Caio, ainda provisório.'},
   'fx-rastro-fio': {st:'finalizar', tx:'Novo (21/10), 2º modelo do rastro: uma fita de aura com física de corda que chicoteia, estala em faíscas e se recolhe; o clique manda um pulso. Aprovado pelo Caio, ainda provisório.'},
@@ -30,6 +33,13 @@ const ARTE = {
   'hv-bungee':     {st:'fechado', tx:'Aprovado (20/10). A goma cobre o contorno do card; ao sair, a borda vira membrana, estica e rasga como elástico.'},
   'hv-en':         {st:'fechado', tx:'Aprovado (20/10). O card acende o Ten e o En da Pitou se abre do ponto tocado, só até os vizinhos; os cards alcançados acendem os cantos.'},
   'hv-shu':        {st:'fechado', tx:'Aprovado (20/10). A aura corre o contorno a partir do ponto tocado, duas faíscas correm a borda e ela escorre ao sair.'},
+  'hv-vira':       {st:'fechado', sem:true, fixo:'já no jogo', tx:'Aprovado (20/10). Feito em código, o card vira e mostra o verso; já substituiu o giro antigo, que reiniciava com o mouse mexendo.'},
+  'fx-gyo':        {st:'aberto', sem:true, tx:'Refeito em código (20/10): uma lente que revela fios, poeira e selos escondidos no card. O Caio gostou, mas ainda não aprovou; ainda não está no jogo.'},
+  'fx-baralho':    {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (20/10): o castelo de cartas e as cartas em órbita foram recusados; fica o leque de naipes de hoje.'},
+  'bd-corte':      {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): borda fina com dois cantos cortados, no lugar da tracejada. Falta o outro dev ver.'},
+  'bd-cantos':     {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): os quatro cantos marcados, como um visor. Falta o outro dev ver.'},
+  'bd-aura':       {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): a borda respira na cor forte do seu tipo de Nen. Falta o outro dev ver; a aura que sobe e ondula fica para depois.'},
+  'sm-moeda':      {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (20/10): fica como está. Dos sons, é o único que não vai ser refeito.'},
   'hv-contorno':   {st:'fechado', tx:'Aprovado (20/10). O contorno acende em 120 ms e apaga em 350 ms, sem piscar ao passar por vários cards.'},
   'hm-cartas':     {st:'fechado', tx:'Aprovada (17/10): carta de frente por nível, carta de figura no dia mais forte, verso no dia vazio e Coringa no dia salvo.'},
   'hm-chamas':     {st:'fechado', tx:'Aprovada (20/10): chama maior por nível, cinza no dia vazio, nen no dia salvo, fogo laranja. Provando, "acender hoje" mostra o acender.'},
@@ -43,6 +53,7 @@ const ARTE = {
   'lic-corrente':  {st:'finalizar', tx:'A corrente do Kurapika dando a volta no estojo. Aprovada, mas ainda provisória.'},
   'tr-deslizar':   {st:'finalizar', tx:'Lapidada (20/10): desliza no sentido da barra de abas, e a velha sai enquanto a nova entra. Aprovada pelo Caio; falta o outro dev ver.'},
   'tr-glitch':     {st:'finalizar', tx:'Lapidada (20/10): a velha separa as cores, rasga em faixas com a nova pelos rasgos, e a nova se firma com um tranco. Aprovada pelo Caio; falta o outro dev ver.'},
+  'fx-costura':    {st:'fechado', tx:'Aprovada (20/10). Nova, só em código: o card racha de verdade, a agulha da Machi costura em zigue-zague e o fio é puxado; o card fecha com um estalo e 念糸縫合 entra letra por letra.'},
   'tr-fumaca':     {st:'finalizar', tx:'Nova (20/10): a fumaça roxa sai de onde você clicou, cobre a tela e se desfaz já na aba nova. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
   'tr-aspira':     {st:'finalizar', tx:'Nova (20/10): os cards da aba velha são sugados para o canto mais perto do clique, com um redemoinho. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
@@ -52,10 +63,9 @@ const ARTE = {
 const PRAZO = ' Faz parte da Marca de prazo, categoria em teste: se os estilos não agradarem, ela sai inteira.';
 const IDEIAS = [
   ['cr-vara', 'cursor', 'epico', 'Gon', 'Vara de pescar do Gon', 'O cursor vira a vara de pescar: o clique lança a linha e fisga o card.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, com física como a carta e o ioiô: linha com anzol e boia, segurar recolhe.'],
-  ['fx-borboletas', 'fx', 'epico', 'Pouf', 'Borboletas do Pouf', 'Borboletas de aura voam devagar pelo fundo, juntam-se perto do mouse e se espalham no clique.', 'dev', 'Ideia aprovada, ainda sem arte. Entra no lugar da Poeira de Nen; falta decidir se os pacotes que têm a poeira ficam com ela.'],
-  ['fx-costura', 'ev', 'epico', 'Machi', 'Costura da Machi', 'Ao concluir, o card racha no meio e os fios de nen o costuram de volta, ponto a ponto.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, com o fio puxado no fim.'],
+  ['fx-borboletas', 'fx', 'epico', 'Pouf', 'Borboletas do Pouf', 'Borboletas de aura voam devagar pelo fundo, juntam-se perto do mouse e se espalham no clique.', 'aberto', 'Prévia em código na bancada (20/10), em aberto: o Caio ainda não decidiu se gostou, nem a camada (por cima ou atrás dos cards) e se os pacotes que têm a Poeira de Nen ficam com ela.'],
   ['fx-dragao', 'ev', 'epico', 'Zeno', 'Dragon Dive', 'No andar novo, o dragão de aura sobe, curva no alto e desce em chuva de dragõezinhos.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, como alternativa aos fogos.'],
-  ['fx-soco', 'ev', 'raro', 'Leorio', 'Soco remoto do Leorio', 'No andar novo, um portal de nen abre perto do card e o punho do Leorio sai dele.', 'dev', 'A decidir: anotada como raro, só no andar novo; o Caio quer ver na prática antes de decidir se fica.'],
+  ['fx-soco', 'ev', 'raro', 'Leorio', 'Soco remoto do Leorio', 'No andar novo, um portal de nen abre perto do card e o punho do Leorio sai dele.', 'finalizar', 'Prévia em código (20/10): o punho de terno sai do portal, acerta a borda do card e volta, em meio segundo. O Caio gostou; em aberto para os outros devs verem. Ainda não está no jogo.'],
   ['bd-costura', 'borda', 'raro', 'Machi', 'Costura de nen', 'A borda dos cards vira uma costura de fio de nen, em zigue-zague.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS ou SVG.'],
   ['hm-gungi', 'heat', 'raro', 'Meruem e Komugi', 'Constância no Gungi', 'O heatmap vira um tabuleiro de Gungi: cada dia jogado é uma peça, mais alta quanto mais forte o dia; o dia salvo é o Rei.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS.'],
   ['tt-medico', 'title', 'comum', 'Leorio', 'Futuro Médico', 'Título para quem estuda.', 'dev', 'Ideia aprovada, ainda não entrou no catálogo.'],
@@ -98,7 +108,15 @@ const CSS = `
 .ar7{display:grid;gap:5px;margin:6px 0 2px;padding:7px 9px;border-radius:8px;border:1px dashed var(--hair);font-size:12.5px;line-height:1.4;color:var(--soft)}
 .ar7 .ar-l{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between}
 .ar-st{font:700 10.5px var(--f-mono);letter-spacing:.04em;text-transform:uppercase;padding:1px 8px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
-.ar-st.fechado{color:var(--grn)} .ar-st.finalizar{color:var(--amb)} .ar-st.aberto{color:var(--red)} .ar-st.dev{color:var(--soft);border-style:dashed}
+.ar-st.fechado{color:var(--grn)} .ar-st.finalizar{color:var(--ouro7)} .ar-st.aberto{color:var(--red)} .ar-st.dev{color:var(--soft);border-style:dashed}
+/* a borda do card da vitrine pelo status (só na beta); o alto continua com a cor da faixa no raro, no épico e no lendário */
+:root{--ouro7:#C9A227}
+.it7.ab-ok,.it7.ab-ouro,.it7.ab-nao{border-width:2px}
+.it7.ab-ok{border-color:var(--grn)} .it7.ab-ouro{border-color:var(--ouro7)} .it7.ab-nao{border-color:color-mix(in srgb,var(--red) 75%,var(--hair))}
+.it7:is(.fa-comum,.fa-raro,.fa-epico,.fa-lenda):is(.ab-ok,.ab-ouro,.ab-nao){border-top-width:3px}
+.it7.fa-raro:is(.ab-ok,.ab-ouro,.ab-nao){border-top-color:var(--volt)} .it7.fa-epico:is(.ab-ok,.ab-ouro,.ab-nao){border-top-color:var(--aura)} .it7.fa-lenda:is(.ab-ok,.ab-ouro,.ab-nao){border-top-color:var(--amb)}
+.ar-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;margin:6px 0}
+.ar-leg span{padding-left:8px;border-left:4px solid} .ar-leg .ab-ok{border-color:var(--grn)} .ar-leg .ab-ouro{border-color:var(--ouro7)} .ar-leg .ab-nao{border-color:var(--red)}
 /* card em desenvolvimento: a prévia vazia, com de quem é; e a bomba do Countdown */
 .it7 .pv.dev7{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;border:1px dashed var(--hair);background:var(--panel)}
 .pv.dev7 b{font:700 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)} .pv.dev7 span{font-size:13px;color:var(--faint)}
@@ -173,11 +191,11 @@ if(window.CURSORES){
   document.head.appendChild(h);
 }
 
-/* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ, 神速 カンムル): Dela Gothic One, só com essas letras */
+/* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ, 神速 カンムル, 念糸縫合): Dela Gothic One, só com essas letras */
 let fonteOk = null;
 function fonte(){
   if(fonteOk) return fonteOk;
-  const txt = 'グーパーチー！ボッカタ神速ンムルPEDRAPAPELTESOURA';
+  const txt = 'グーパーチー！ボッカタ神速ンムル念糸縫合PEDRAPAPELTESOURA';
   if(!document.querySelector('link[href*="Dela+Gothic+One"]')){
     const l = document.createElement('link'); l.rel = 'stylesheet';
     l.href = 'https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap&text=' + encodeURIComponent(txt); document.head.append(l);
@@ -237,10 +255,10 @@ if(window.GB_FX){
   /* ▶ na loja: com a nova escolhida, o efeito novo cai no card do item */
   let mao = 0;
   GB_FX.ver = function(id, r){
-    const k = {'fx-godspeed':'godspeed', 'fx-jajanken':'jajanken'}[id];
+    const k = {'fx-godspeed':'godspeed', 'fx-jajanken':'jajanken', 'fx-costura':'costura'}[id];
     if(!k || !nova(id) || !window.CURSORES) return ver.apply(this, arguments);
     const b = document.querySelector(`[data-fxver="${id}"]`), card = b && b.closest('.it7'), rr = card ? card.getBoundingClientRect() : r;
-    if(k === 'godspeed') return fonte().then(() => CURSORES.godspeed.dispara(rr, {el: card}));
+    if(k === 'godspeed' || k === 'costura') return fonte().then(() => CURSORES[k].dispara(rr, {el: card}));
     const m = ['pedra', 'papel', 'tesoura'][mao++ % 3];
     fonte().then(() => CURSORES.jajanken.dispara(rr, {el: card, mao: m}));
   };
@@ -276,13 +294,21 @@ window.GB_ARTE = {
   },
   /* o aviso do card: status, a frase e a troca (na Associação, sem troca: ela fica no provador, para a licença inteira) */
   aviso(id, semTroca){ const a = ARTE[id]; if(!a) return '';
-    return `<div class="ar7"><span class="ar-l"><span class="ar-st ${a.st}" title="arte nova (#134)">arte: ${ST[a.st]}</span>${a.ideia ? '' : a.sem ? '<span class="sub">ainda sem versão nova</span>' : semTroca ? '<span class="sub">antiga | nova no provador</span>' : troca(id)}</span><span>${esc(a.tx)}</span></div>`; },
+    return `<div class="ar7"><span class="ar-l"><span class="ar-st ${a.st}" title="arte nova (#134)">arte: ${ST[a.st]}</span>${a.ideia ? '' : a.fixo ? `<span class="sub">${a.fixo}</span>` : a.sem ? '<span class="sub">ainda sem versão nova</span>' : semTroca ? '<span class="sub">antiga | nova no provador</span>' : troca(id)}</span><span>${esc(a.tx)}</span></div>`; },
+  /* a borda do card da vitrine pelo status, só na beta: ok (fechado), ouro (falta outro dev), nao (em aberto, em
+     desenvolvimento ou ainda não revisto) */
+  borda(id){
+    if(typeof podeTeste !== 'function' || !podeTeste()) return '';
+    const a = ARTE[id];
+    return ' ab-' + (a && a.st === 'fechado' ? 'ok' : a && a.st === 'finalizar' ? 'ouro' : 'nao');
+  },
   /* o resumo no alto da Masadora */
   resumo(ids){
-    const l = ids.filter(tem), n = s => l.filter(id => ARTE[id].st === s).length;
-    return `<div class="sec7"><h3>Arte nova em teste</h3><p>Os itens com o aviso "arte" ganharam um desenho novo na fila de arte (#134). Use a troca <b>antiga | nova</b> e o provar (ou o ▶) para comparar. A versão nova ainda não se compra: quem compra ou já tem fica com a de hoje. Os cards "em desenvolvimento" são ideias aprovadas que ainda não têm arte: mostram o que vem e a faixa.</p>
-      <div class="ar-res"><span class="ar-st fechado">fechado ${n('fechado')}</span><span class="ar-st finalizar">falta finalizar ${n('finalizar')}</span><span class="ar-st aberto">em aberto ${n('aberto')}</span><span class="ar-st dev">em desenvolvimento ${n('dev')}</span>
-      <button type="button" class="btn${this.so ? ' v' : ''}" data-arteso>${this.so ? 'mostrar todos os itens' : 'só os itens com arte nova'}</button></div></div>`;
+    const l = ids.filter(tem), n = s => l.filter(id => ARTE[id].st === s).length, nao = ids.length - n('fechado') - n('finalizar');
+    return `<div class="sec7"><h3>Arte nova em teste</h3><p>Os itens com o aviso "arte" ganharam um desenho novo na fila de arte (#134) ou já tiveram o veredito do Caio. Use a troca <b>antiga | nova</b> e o provar (ou o ▶) para comparar. A versão nova ainda não se compra: quem compra ou já tem fica com a de hoje. Os cards "em desenvolvimento" são ideias aprovadas que ainda não têm arte: mostram o que vem e a faixa.</p>
+      ${this.borda('') ? `<p class="ar-leg"><span class="ab-ok">verde: fechado (${n('fechado')})</span><span class="ab-ouro">dourada: o Caio aprovou, falta o outro dev ver (${n('finalizar')})</span><span class="ab-nao">vermelha: em aberto ou ainda não revisto (${nao})</span></p>` : ''}
+      <div class="ar-res"><span class="ar-st fechado">fechado ${n('fechado')}</span><span class="ar-st finalizar">falta outro dev ${n('finalizar')}</span><span class="ar-st aberto">em aberto ${n('aberto')}</span><span class="ar-st dev">em desenvolvimento ${n('dev')}</span>
+      <button type="button" class="btn${this.so ? ' v' : ''}" data-arteso>${this.so ? 'mostrar todos os itens' : 'só os itens da fila de arte'}</button></div></div>`;
   },
   /* na faixa do provar: a troca e, nas chamas, o acender */
   faixa(id){ if(!tem(id) || ARTE[id].sem) return '';
