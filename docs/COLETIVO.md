@@ -1,5 +1,9 @@
 # Ganbatte em grupo: desenho (v6, 14/10/2026)
 
+> **Redesenho de 21/10/2026:** os placares, as recompensas por posição e os desafios foram refeitos em
+> [`COLETIVO-REDESENHO.md`](COLETIVO-REDESENHO.md), que traz a tabela "O que muda no COLETIVO.md". Onde os dois
+> divergem, vale o redesenho. Nada dele está no código ainda.
+
 Modo em grupo do Ganbatte (0.9, branch `grupo`, índice na issue #16), ideia do Caio e de um amigo. Foco: deixar o placar
 **público e balanceado**. `⏳` = pendente; toda pontuação está **a calibrar** com 2–3 semanas de dados reais
 (os números que aparecem aqui só ilustram as contas).

@@ -815,30 +815,101 @@ def cf_envios(handle, desde):
     return envios, False
 
 
+def cf_api(metodo, **params):
+    """Uma chamada à API pública do Codeforces; devolve o result (ValueError se a API recusar)."""
+    url = f"https://codeforces.com/api/{metodo}?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        j = json.load(r)
+    if j.get("status") != "OK":
+        raise ValueError(j.get("comment") or "resposta inesperada")
+    return j["result"]
+
+
+# XP pela cor do problema (#180). Problema ainda sem rating (contest ao vivo ou recente) fica com uma estimativa pela letra
+# e pela divisão do contest, de A a E+; quando o rating oficial sai, o guardado só sobe (rp no cf.json). Gym = 0 (sem rating)
+CF_ESTIMA = {4: (800, 800, 1000, 1200, 1400), 3: (800, 1000, 1200, 1500, 1700), 2: (800, 1100, 1400, 1800, 2100),
+             1: (1600, 1900, 2200, 2500, 2800)}
+CF_GYM = 100000   # contestId de gym começa aqui
+
+
+def cf_divisao(nome):
+    """Divisão pelo nome do contest: "Div. 1", "Div. 3"...; Div. 1 + Div. 2, Educational, Global e sem divisão contam como 2."""
+    ds = {int(x) for x in re.findall(r"Div\.?\s*(\d)", nome or "")}
+    return ds.pop() if len(ds) == 1 and ds <= set(CF_ESTIMA) else 2
+
+
+def cf_estima(index, div):
+    letra = (index or "A")[:1].upper()
+    return CF_ESTIMA.get(div, CF_ESTIMA[2])[min(4, max(0, ord(letra) - 65))]
+
+
 def cf_atualiza(cf):
     """Conta os problemas distintos aceitos por dia (pela data do 1º AC, no fuso desta máquina), só desde o início da
-    temporada: o que veio antes não conta XP nem entra no heatmap. Roda numa thread."""
+    temporada: o que veio antes não conta XP nem entra no heatmap. Desde a #180 guarda também o rating de cada problema
+    aceito (probs), o histórico do rating do jogador (ratings) e os dias de contest ao vivo (contests). Roda numa thread."""
     try:
         ini = inicio_temporada()
         envios, completo = cf_envios(cf["handle"], ini)
-        primeiro = {}
+        dia_de = lambda sub: time.strftime("%Y-%m-%d", time.localtime(sub["creationTimeSeconds"]))
+        primeiro, contest = {}, {}
         for sub in reversed(envios):
+            p, cid = sub.get("problem") or {}, (sub.get("problem") or {}).get("contestId")
             if sub.get("verdict") == "OK":
-                k = (sub["problem"].get("contestId"), sub["problem"].get("index"))
-                primeiro.setdefault(k, time.strftime("%Y-%m-%d", time.localtime(sub["creationTimeSeconds"])))
+                primeiro.setdefault((cid, p.get("index")), (dia_de(sub), p.get("rating")))
+            if (sub.get("author") or {}).get("participantType") == "CONTESTANT" and cid and cid < CF_GYM:
+                contest.setdefault(cid, dia_de(sub))   # contest ao vivo: o dia do primeiro envio, com ou sem AC
         conta = {}
-        for dia in primeiro.values():
+        for dia, _ in primeiro.values():
             conta[dia] = conta.get(dia, 0) + 1
+        try:   # histórico de rating (só contests rated); sem ele, a cor oficial fica cinza
+            hist = cf_api("user.rating", handle=cf["handle"])
+        except Exception as e:
+            log("codeforces (rating):", e)
+            hist = None
         with lock:
             cache = ler_json("cf.json", {})
+        divs = dict(cache.get("divs") or {})
+        for h in hist or []:
+            divs.setdefault(str(h.get("contestId")), cf_divisao(h.get("contestName")))
+        falta = {str(cid) for (cid, _), (_, r) in primeiro.items() if not r and cid and cid < CF_GYM} - set(divs)
+        if falta and time.time() - (cache.get("divs_t") or 0) > 6 * 3600:   # a lista de contests é grande: no máximo a cada 6 h
+            try:
+                for c in cf_api("contest.list", gym="false"):
+                    if str(c.get("id")) in falta:
+                        divs[str(c["id"])] = cf_divisao(c.get("name"))
+            except Exception as e:
+                log("codeforces (contests):", e)
+            cache["divs_t"] = time.time()
+        with lock:
+            cache = {**ler_json("cf.json", {}), "divs": divs, "divs_t": cache.get("divs_t")}
             if cache.get("handle") != cf["handle"] or not cache.get("desde"):   # handle novo: o bônus atrasado conta só daqui para a frente
-                cache = {"desde": hoje().isoformat(), "creditados": []}
+                cache = {"desde": hoje().isoformat(), "creditados": [], "divs": divs}
+            rp, probs, dias_c = dict(cache.get("rp") or {}), {}, {}
+            for (cid, idx), (dia, r) in sorted(primeiro.items(), key=lambda x: x[1][0]):
+                k = f"{cid}/{idx}"
+                if not cid or cid >= CF_GYM:
+                    r = 0
+                elif not r:
+                    r = cf_estima(idx, divs.get(str(cid), 2))
+                rp[k] = max(r, rp.get(k) or 0) if r else 0
+                probs.setdefault(dia, []).append(rp[k])
+            for dia in contest.values():
+                dias_c[dia] = dias_c.get(dia, 0) + 1
             if not completo and envios:   # mais de 10 mil envios: os dias antes da janela lida ficam como estavam (#1)
-                corte = time.strftime("%Y-%m-%d", time.localtime(envios[-1]["creationTimeSeconds"]))
+                corte = dia_de(envios[-1])
                 for dia, n in (cache.get("por_dia") or {}).items():
                     if ini.isoformat() <= dia <= corte:   # o dia do corte foi lido pela metade
                         conta[dia] = max(conta.get(dia, 0), n)
-            cache.update(handle=cf["handle"], por_dia=conta)
+                        if len((cache.get("probs") or {}).get(dia) or []) > len(probs.get(dia) or []):
+                            probs[dia] = cache["probs"][dia]
+                for dia, n in (cache.get("contests") or {}).items():
+                    if ini.isoformat() <= dia <= corte:
+                        dias_c[dia] = max(dias_c.get(dia, 0), n)
+            cache.update(handle=cf["handle"], por_dia=conta, probs=probs, contests=dias_c, rp=rp)
+            if hist is not None:
+                cache["ratings"] = [[time.strftime("%Y-%m-%d", time.localtime(h["ratingUpdateTimeSeconds"])), h["newRating"]]
+                                    for h in hist if h.get("ratingUpdateTimeSeconds") and h.get("newRating")]
             gravar_json("cf.json", cache)
         conta = cf_soma(cache)
         cf_auto_conclui(cf, conta)
@@ -932,7 +1003,10 @@ def cf_leitura(j):
     cache = ler_json("cf.json", {})
     if cache.get("handle") != cf["handle"]:
         return {"handle": cf["handle"], "por_dia": {}, "manual": {}}
-    return {"handle": cf["handle"], "por_dia": cf_soma(cache), "manual": cache.get("manual") or {}}
+    r = {"handle": cf["handle"], "por_dia": cf_soma(cache), "manual": cache.get("manual") or {}}
+    if "probs" in cache:   # #180: sem probs (cf.json de antes), a página usa a regra antiga até a próxima leitura
+        r.update(probs=cache["probs"], ratings=cache.get("ratings") or [], contests=cache.get("contests") or {})
+    return r
 
 
 # ---------- Duolingo ----------

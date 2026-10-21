@@ -25,7 +25,7 @@ const ARTE = {
   'cr-carta':      {st:'fechado', tx:'Aprovada (17/10). Feita em código: clique atira a carta, segurar prende na Bungee Gum, parado ele vira a carta.'},
   'cr-agulha':     {st:'fechado', tx:'Aprovada (20/10). Feita em código: clique atira e crava (trinca a borda); segurar chama de volta pelo fio de nen e abre o leque.'},
   'cr-vara':       {st:'fechado', tx:'Aprovada (21/10). Feita em código: o clique lança a linha e o anzol fisga o card; clique de novo dá o tranco e segurar recolhe, até o anzol arrancar. Parado, um peixe vem morder.'},
-  'cr-ioio':       {st:'aberto', tx:'Voltou a um ioiô só (20/10), para não atrapalhar os truques. Clique desce, segurar dorme; segurando com a mão parada o fio carrega de eletricidade e ele volta como raio. Falta o Caio aprovar.'},
+  'cr-ioio':       {st:'fechado', tx:'Aprovado (21/10). Feito em código, um ioiô só: clique desce, segurar dorme; segurando com a mão parada o fio carrega de eletricidade e ele volta como raio.'},
   'fx-godspeed':   {st:'fechado', tx:'Aprovado (20/10). O Kanmuru acende no card, o raio cai com quadro negativo, o 神速 entra com rastros e a marca do raio fica no card.'},
   'fx-rastro':     {st:'finalizar', tx:'Refeito em código (21/10): vapor de aura que sobe ondulando; parado, o Ten ainda solta fiapos; o clique é o Ren. Aprovado pelo Caio, ainda provisório.'},
   'fx-rastro-fio': {st:'finalizar', tx:'Novo (21/10), 2º modelo do rastro: uma fita de aura com física de corda que chicoteia, estala em faíscas e se recolhe; o clique manda um pulso. Aprovado pelo Caio, ainda provisório.'},
@@ -40,6 +40,8 @@ const ARTE = {
   'bd-corte':      {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): borda fina com dois cantos cortados, no lugar da tracejada. Falta o outro dev ver.'},
   'bd-cantos':     {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): os quatro cantos marcados, como um visor. Falta o outro dev ver.'},
   'bd-aura':       {st:'finalizar', sem:true, fixo:'já no jogo', tx:'Aprovada pelo Caio (20/10): a borda respira na cor forte do seu tipo de Nen. Falta o outro dev ver; a aura que sobe e ondula fica para depois.'},
+  'fx-estrelas':   {st:'fechado', tx:'Aprovada (21/10). Feita em código: poeira de aura colorida no fundo, atrás das telas, em três profundidades; a correnteza muda devagar, uma rajada de aura atravessa a tela de tempos em tempos, o mouse abre caminho e o clique solta uma onda.'},
+  'fx-drift':      {st:'fechado', tx:'Aprovada (21/10). Feita em código: a nuvem de aura do canto, agora viva (deforma e respira, sem fim de caminho), com uma 2ª nuvem na cor volt no canto oposto; deixe o mouse num lado e ela se inclina para lá.'},
   'sm-moeda':      {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (20/10): fica como está. Dos sons, é o único que não vai ser refeito.'},
   'hv-contorno':   {st:'fechado', tx:'Aprovado (20/10). O contorno acende em 120 ms e apaga em 350 ms, sem piscar ao passar por vários cards.'},
   'hm-cartas':     {st:'fechado', tx:'Aprovada (17/10): carta de frente por nível, carta de figura no dia mais forte, verso no dia vazio e Coringa no dia salvo.'},
@@ -62,20 +64,40 @@ const ARTE = {
   'fx-costura':    {st:'fechado', tx:'Aprovada (20/10). Nova, só em código: o card racha de verdade, a agulha da Machi costura em zigue-zague e o fio é puxado; o card fecha com um estalo e 念糸縫合 entra letra por letra.'},
   'tr-fumaca':     {st:'finalizar', tx:'Nova (20/10): a fumaça roxa sai de onde você clicou, cobre a tela e se desfaz já na aba nova. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
   'tr-aspira':     {st:'finalizar', tx:'Nova (20/10): os cards da aba velha são sugados para o canto mais perto do clique, com um redemoinho. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-manga':      {st:'finalizar', tx:'Refeita em código (21/10): retícula de verdade, com os pontos crescendo até o canto de baixo, e linhas de foco saindo da moldura. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-grao':       {st:'finalizar', tx:'Refeita em código (21/10): grão, fibras, manchas de umidade e a borda da tela queimada; fica melhor no Pergaminho. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-scan':       {st:'finalizar', tx:'Refeita em código (21/10): a tela do Joystation, com cantos curvos, moldura, linhas, RGB e uma faixa de luz que rola. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-hex':        {st:'finalizar', tx:'Refeita em código (21/10): o ninho das Quimeras, favos irregulares saindo do canto com ovos que pulsam. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-cartas':     {st:'finalizar', tx:'Refeita em código (21/10): a tela vira o verso de uma carta, com a treliça de naipes, os cantos e o filete duplo. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-arena':      {st:'finalizar', tx:'Refeita em código (21/10): o piso do ringue em perspectiva no pé da tela, com a borda dourada. Aprovada pelo Caio; falta o outro dev ver.'},
+  'tx-nen':        {st:'finalizar', tx:'Refeita em código (21/10), vira a Aura do dia (épico): a aura do seu tipo contorna a tela e engrossa para dentro conforme o XP de hoje chega na meta; as pontas se encontram no alto quando ela fecha, e cada XP novo dá um pulso. Provando, "passar o dia" mostra o dia inteiro. Aprovada pelo Caio; falta o outro dev ver.'},
+  'fx-aura':       {st:'fechado', sem:true, fixo:'na loja do grupo', tx:'Revisto (21/10): foi para a Loja da Associação, onde é a Aura do avatar; quem tem continua com ela.'},
+  'fx-digita':     {st:'fechado', tx:'Aprovado (21/10). Feito em código: ao trocar de aba, os títulos são digitados letra por letra, mais devagar, com o cursor em bloco e o ritmo de quem digita (pausa no espaço, um tropeço de vez em quando).'},
+  'fx-ascensao':   {st:'fechado', tx:'Aprovada (21/10). Feita em código: cortinas de aurora boreal descendo até 80% da tela, com a barra de baixo acesa e os raios sumindo para cima; de tempos em tempos uma onda de luz corre uma cortina. Substitui o borrão que girava, que lia como a Aura ambiente.'},
+  'fx-confete':    {st:'fechado', tx:'Aprovado (21/10), agora comum. Feito em código: dois canhões estouram dos cantos de baixo e o papel desce flutuando, girando, virando de face e balançando. O ▶ da nova mostra.'},
+  'fx-fogos':      {st:'fechado', tx:'Aprovados (21/10). Feitos em código: foguetes sobem com rastro e estouram com clarão em cinco tipos (peônia, anel, salgueiro, crisântemo, palmeira), com um trio no final. O ▶ da nova mostra.'},
+  'fx-shake':      {st:'fechado', tx:'Aprovada (21/10), agora rara. Feita em código: o chefão em fúria solta o Ren, fogo em duas camadas preso ao retrato, línguas que se soltam e brasas; a cada ~2,8 s um acesso com a onda de choque, a veia 💢 e um tranco. Provando, "enfurecer" põe todos os chefões em fúria para ver na aba Chefões.'},
+  'fx-zap':        {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (21/10): fica como está. A ideia de virar o aviso de perigo (fúria, prazo, Ten apagando) foi arquivada junto com as marcas de prazo: volta quando o jogo passar de 8 jogadores ativos.'},
+  'bd-dupla':      {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revista (21/10): fica como está.'},
+  'tx-ceu':        {st:'aberto', sem:true, tx:'Fica para depois (21/10): vai ser refeito junto com os temas, no futuro.'},
   'bd-costura':    {st:'finalizar', tx:'Nova (21/10), só em código: o fio de nen da Machi dá a volta no card em zigue-zague, faz a curva nos cantos e dá um nó em cada um. Parada; o card não muda de tamanho. Aprovada pelo Caio; falta o outro dev ver.'},
   'tt-medico':     {st:'aberto', sem:true, fixo:'já no jogo', tx:'Novo (21/10): o título Futuro Médico, do Leorio, para quem estuda. É só o texto embaixo do seu andar, como os outros títulos. Falta o Caio aprovar.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
+/* revisão de 21/10: paletas, fontes, títulos e sons ficam como estão (fontes e sons novos só quando o jogo passar de 8 jogadores
+   ativos); o mundo pixel foi arquivado (arq no motor.js) */
+const FICA = {pal:'Revista (21/10): fica como está.', title:'Revisto (21/10): fica como está.',
+  font:'Revista (21/10): fica como está. Fontes novas chegam quando o jogo passar de 8 jogadores ativos.',
+  som:'Revisto (21/10): fica como está. Sons novos chegam quando o jogo passar de 8 jogadores ativos.',
+  px:'Arquivado (21/10): o mundo pixel saiu da loja. Quem tem continua com ele; ninguém mais compra.',
+  full:'Revisto (21/10): inteiro, todas as peças existem e estão à venda; a arte de cada peça é revista no próprio item.'};
+/* as molduras do avatar ficam em aberto até decidir a loja do multiplayer (podem ir para a Associação) */
+for(const it of GB.COS) if(it.cat === 'frame' && !ARTE[it.id]) ARTE[it.id] = {st:'aberto', sem:true, tx:'Em aberto (21/10): decide junto com a loja do multiplayer, para onde as molduras podem ir.'};
+for(const it of GB.COS) if(FICA[it.cat] && !ARTE[it.id]) ARTE[it.id] = {st:'fechado', sem:true, fixo: it.arq ? 'arquivado' : it.cat === 'full' ? 'peças revistas' : 'fica a de hoje', tx: FICA[it.cat]};
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
-   nome, descrição, status, o que falta]. A Marca de prazo (prazo) é uma categoria inteira em teste: sai se não agradar */
-const PRAZO = ' Faz parte da Marca de prazo, categoria em teste: se os estilos não agradarem, ela sai inteira.';
+   nome, descrição, status, o que falta]. A Marca de prazo (at-*, fx-hakoware) foi arquivada em 21/10 com o aviso de perigo do
+   Raio: volta quando o jogo passar de 8 jogadores ativos (FILA.md, status pulado) */
 const IDEIAS = [
-  ['fx-borboletas', 'fx', 'epico', 'Pouf', 'Borboletas do Pouf', 'Borboletas de aura voam devagar pelo fundo, juntam-se perto do mouse e se espalham no clique.', 'aberto', 'Prévia em código na bancada (20/10), em aberto: o Caio ainda não decidiu se gostou, nem a camada (por cima ou atrás dos cards) e se os pacotes que têm a Poeira de Nen ficam com ela.'],
-  ['at-countdown', 'prazo', 'raro', 'Genthru', 'Countdown do Genthru', 'A bomba do Countdown na tarefa com prazo, com os dias que faltam; amanhã e hoje o número fica vermelho, e atrasada ela estoura.', 'aberto', 'Primeira versão feita, em aberto: a prévia mostra 5 dias, amanhã, hoje e 2 dias de atraso.' + PRAZO],
-  ['at-carimbo', 'prazo', 'comum', 'Exame Hunter', 'Carimbo de atrasada', 'Um carimbo vermelho torto na tarefa atrasada, no estilo dos carimbos da licença.', 'dev', 'Ideia, ainda sem arte.' + PRAZO],
-  ['fx-hakoware', 'prazo', 'raro', 'Knuckle', 'Hakoware', 'O selo do Hakoware com os dias de juros, parado na tarefa atrasada.', 'dev', 'Ideia, ainda sem arte (a versão simples, sem o Potclean animado).' + PRAZO],
-  ['at-agulha', 'prazo', 'raro', 'Illumi', 'Agulha na atrasada', 'Uma agulha do Illumi espetada no canto da tarefa atrasada, com uma trinca leve.', 'dev', 'Ideia, ainda sem arte (reaproveita o desenho do cursor da agulha).' + PRAZO],
-  ['at-ampulheta', 'prazo', 'raro', 'Exame Hunter', 'Ampulheta do Exame', 'Uma ampulheta na tarefa com prazo, que esvazia conforme o prazo chega.', 'dev', 'Ideia, ainda sem arte.' + PRAZO],
 ];
 const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
   ARTE[id] = {st, tx, sem: true, ideia: true};
@@ -86,7 +108,7 @@ const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {
 const CARTAO = {st:'finalizar', tx:'O cartão novo, fiel ao do anime, com lugar para as estrelas, o carimbo e o emblema, foi aprovado como provisório. Falta decidir como a versão em pé entra no placar.'};
 /* efeitos (data-fx, uma lista) com versão nova: provando com a nova, o efeito vira "X-nova" no <html> e na prévia (a nova
    é só CSS, ou um módulo em código que liga por esse nome, como o Gyo) */
-const FX_NOVA = ['fx-corrente', 'fx-shim', 'fx-gyo', 'fx-rastro'];
+const FX_NOVA = ['fx-corrente', 'fx-shim', 'fx-gyo', 'fx-rastro', 'fx-estrelas', 'fx-drift', 'fx-digita', 'fx-ascensao', 'fx-shake'];
 /* a corrente do Kurapika (web/arte/corrente.js): as imagens saem do gerador, a borda com a Dowsing Chain, a barra de XP
    com a Judgment Chain e a vida do chefão escarlate */
 const CH = window.GB_CORRENTE, CHP = CH && CH.pendulo(2), CHL = CH && CH.lamina(), CHU = s => CH ? CH.uri(s) : 'none';
@@ -175,6 +197,14 @@ ${EL ? `
 .fxd.gyo-nova .mini{background-image:radial-gradient(70px circle at 45% 55%,color-mix(in srgb,var(--aura) 26%,transparent),transparent 70%);border-color:color-mix(in srgb,var(--aura) 55%,var(--hair))}
 /* rastro em código (web/arte/rastro.js): na prévia do card, os pontinhos do rastro de hoje */
 .fxd:is(.rastro-nova,.rastro-fio,.rastro-eco){background-image:radial-gradient(2px 2px at 20% 70%,var(--aura),transparent),radial-gradient(2px 2px at 60% 40%,var(--volt),transparent),radial-gradient(1.5px 1.5px at 85% 80%,var(--aura),transparent),radial-gradient(1.5px 1.5px at 40% 20%,var(--volt),transparent);animation:hjSobe 3s linear infinite}
+/* fundo em código (web/arte/poeira.js e aura-ambiente.js): o canvas fica atrás das telas; na prévia do card, grãos de várias cores e as duas nuvens */
+:root:is([data-fx~="estrelas-nova"],[data-fx~="drift-nova"],[data-fx~="ascensao-nova"]) .wrap{position:relative;z-index:1}
+/* Terminal vivo, Ascensão e Fúria novos (web/arte/digita.js, aurora.js, furia.js): na prévia do card, o cursor em bloco, as cortinas e o fogo */
+.fxd.digita-nova .mini b::after{content:"";display:inline-block;width:.55em;height:1em;margin-left:2px;vertical-align:-.15em;background:var(--prompt);animation:hjCursor .9s steps(1) infinite}
+.fxd.ascensao-nova{background-image:repeating-linear-gradient(90deg,transparent 0 3px,color-mix(in srgb,var(--grn) 14%,transparent) 3px 5px),linear-gradient(transparent 20%,color-mix(in srgb,var(--grn) 30%,transparent) 55%,color-mix(in srgb,var(--aura) 22%,transparent) 62%,transparent 70%)}
+.fxd.shake-nova .ring{box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 40%,transparent),0 -6px 12px -2px var(--red)}
+.fxd.estrelas-nova{background-image:radial-gradient(2.5px 2.5px at 18% 72%,var(--aura),transparent),radial-gradient(2px 2px at 62% 38%,var(--volt),transparent),radial-gradient(2px 2px at 84% 78%,var(--amb),transparent),radial-gradient(1.5px 1.5px at 40% 22%,var(--grn),transparent),radial-gradient(5px 5px at 30% 45%,color-mix(in srgb,var(--acc) 45%,transparent),transparent),radial-gradient(1.5px 1.5px at 72% 12%,var(--red),transparent);animation:hjSobe 5s linear infinite}
+.fxd.drift-nova{background-image:radial-gradient(circle at 78% 22%,color-mix(in srgb,var(--aura) 32%,transparent),transparent 45%),radial-gradient(circle at 18% 85%,color-mix(in srgb,var(--volt) 20%,transparent),transparent 40%);background-size:160% 160%;animation:drift2 6s ease-in-out infinite alternate}
 :root[data-cursor$="-nova"] body,:root[data-cursor$="-nova"] body *{cursor:none!important}
 .pvc .cur7 canvas{width:72px;height:72px}
 /* prévia das transições que só existem em código: a fumaça cobre e abre; a aba encolhe girando para o canto */
@@ -197,6 +227,27 @@ if(window.CURSORES){
     + C.cristal.css(':root[data-hp="cristal-nova"]') + C.cristal.css('.hp-cristal-nova')
     + C['costura-borda'].css(':root:is([data-borda="costura"],[data-borda="costura-nova"]) .card') + C['costura-borda'].css('.bd-costura-nova .mc');
   document.head.appendChild(h);
+}
+
+/* texturas de fundo em código (web/arte/texturas.js): pintam o ::before e o ::after do <html> (os do body já são da Aura
+   ambiente e da Ascensão) e da prévia do card */
+const TEX_NOVA = ['manga', 'grao', 'scan', 'hex', 'cartas', 'arena', 'nen'];
+if(window.GB_TEXTURAS){
+  const t = document.createElement('style'); t.id = 'gb-arte-tex';
+  t.textContent = TEX_NOVA.map(k => GB_TEXTURAS.css('tx-' + k, `:root[data-bg="${k}-nova"]`, 'fixed') + GB_TEXTURAS.css('tx-' + k, `.pv.tex-${k}-nova`, 'absolute')).join('\n')
+    + `\n.pv:is(${TEX_NOVA.map(k => '.tex-' + k + '-nova').join(',')}){isolation:isolate;--alto:96px;--larg:300px}\n.pv.tex-nen-nova{--dia:.6}`;
+  document.head.appendChild(t);
+}
+let auraXP = null, auraSim = null;
+const pulso = () => { const r = document.documentElement; r.classList.remove('tx-pulso'); void r.offsetWidth; r.classList.add('tx-pulso'); };
+/* "passar o dia" no provar: a aura sai do zero e avança um oitavo a cada 1,6 s até fechar; depois volta ao XP de verdade */
+function passaDia(){
+  const r = document.documentElement; clearInterval(auraSim); let n = 0;
+  r.style.setProperty('--dia', 0); r.style.setProperty('--cheio', 0);
+  auraSim = setInterval(() => {
+    n++; r.style.setProperty('--dia', n / 8); r.style.setProperty('--cheio', n >= 8 ? 1 : 0); pulso();
+    if(n >= 8){ clearInterval(auraSim); setTimeout(() => { auraSim = null; auraXP = null; render(); }, 4000); }
+  }, 1600);
 }
 
 /* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ, 神速 カンムル, 念糸縫合, 龍星群 ドラゴンダイヴ): Dela Gothic One, só com essas letras */
@@ -253,6 +304,24 @@ function rastro(){
   rasK = k;
   if(m && window.CURSORES && CURSORES.rastro) ras = CURSORES.rastro.liga(document.body, {modelo: m});
 }
+/* ---------- fundo em código: a Poeira de Nen nova ("estrelas-nova") e a Aura ambiente nova ("drift-nova"); o tema muda as
+   cores, e os dois módulos leem a paleta sozinhos a cada segundo ---------- */
+const FUNDO = {'estrelas-nova': () => window.GB_POEIRA, 'drift-nova': () => window.GB_AURA_AMB, 'ascensao-nova': () => window.GB_AURORA}, fundos = {};
+function fundo(){
+  const fx = (document.documentElement.getAttribute('data-fx') || '').split(' ');
+  for(const k in FUNDO){
+    const on = fx.includes(k), M = FUNDO[k]();
+    if(on && !fundos[k] && M) fundos[k] = M.liga({});
+    else if(!on && fundos[k]){ fundos[k].para(); delete fundos[k]; }
+  }
+}
+/* ---------- a Fúria nova ("shake-nova"): o fogo nos chefões em fúria; "enfurecer" no provar (.gb-fu-teste) põe todos ---------- */
+let furia = null;
+function furiaNova(){
+  const on = (document.documentElement.getAttribute('data-fx') || '').split(' ').includes('shake-nova');
+  if(on && !furia && window.GB_FURIA) furia = GB_FURIA.cola({sel: '.av.bs.hurt,.ring.fury,.gb-fu-teste .av.bs:not(.dead),.gb-fu-teste .ring:not(.dead)'});
+  else if(!on && furia){ furia.para(); furia = null; document.documentElement.classList.remove('gb-fu-teste'); }
+}
 /* ---------- transições em código: a troca de aba passa pelo módulo quando o <html> pede um "-nova" (deslizar, glitch) ou
    uma transição que só existe em código (fumaca, aspira). fn é a troca de verdade (esconde a velha, mostra a nova) ---------- */
 const SO_CODIGO = ['fumaca', 'aspira'], trs = {};
@@ -267,10 +336,16 @@ function aba(fn){
 }
 if(window.GB_FX){
   const aplica = GB_FX.aplica, ver = GB_FX.ver;
-  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); gyoNovo(); rastro(); };
+  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); gyoNovo(); rastro(); fundo(); furiaNova(); };
+  /* o Terminal vivo novo: digita os títulos da aba que acabou de abrir (depois do render, que reescreve a aba) */
+  const aba = GB_FX.aba;
+  GB_FX.aba = function(){ aba.apply(this, arguments);
+    if((document.documentElement.getAttribute('data-fx') || '').split(' ').includes('digita-nova') && window.GB_DIGITA) requestAnimationFrame(() => GB_DIGITA.aba(document, {sel: 'h1,h2,h3'})); };
   /* ▶ na loja: com a nova escolhida, o efeito novo cai no card do item */
   let mao = 0;
   GB_FX.ver = function(id, r){
+    if(id === 'fx-confete' && nova(id) && window.GB_CONFETE) return GB_CONFETE.dispara({});
+    if(id === 'fx-fogos' && nova(id) && window.GB_FOGOS) return GB_FOGOS.dispara({});
     const k = {'fx-godspeed':'godspeed', 'fx-jajanken':'jajanken', 'fx-costura':'costura', 'fx-soco':'soco', 'fx-dragao':'dragao'}[id];
     if(!k || !nova(id) || !window.CURSORES) return ver.apply(this, arguments);
     const b = document.querySelector(`[data-fxver="${id}"]`), card = b && b.closest('.it7'), rr = card ? card.getBoundingClientRect() : r;
@@ -296,6 +371,17 @@ window.GB_ARTE = {
   vista(v, it){
     if(nova(it.id) && it.eq && v[it.cat] === it.eq[it.cat] && ['borda','cursor','hp','heat','hover','trans'].includes(it.cat)) v[it.cat] += '-nova';
     if(FX_NOVA.includes(it.id) && nova(it.id)) v.fx = v.fx.map(f => f === it.fx ? f + '-nova' : f);
+    if(it.cat === 'tex' && nova(it.id) && v.bg === it.eq.bg) v.bg += '-nova';
+  },
+  /* a Aura do dia nova: --dia é o XP de hoje sobre a meta do dia; XP novo dá um pulso (render() no index.html) */
+  aura(S){
+    const r = document.documentElement;
+    if(r.getAttribute('data-bg') !== 'nen-nova'){ auraXP = null; return; }
+    if(auraSim) return;
+    const d = Math.min(1, S.hojeXP / Math.max(1, S.metaDia));
+    r.style.setProperty('--dia', d.toFixed(3)); r.style.setProperty('--cheio', d >= 1 ? 1 : 0);
+    if(auraXP !== null && S.hojeXP > auraXP) pulso();
+    auraXP = S.hojeXP;
   },
   /* a classe de efeito da prévia do card (a nova, se for a escolhida) */
   fx: it => FX_NOVA.includes(it.id) && nova(it.id) ? it.fx + '-nova' : it.fx,
@@ -327,9 +413,9 @@ window.GB_ARTE = {
       <div class="ar-res"><span class="ar-st fechado">fechado ${n('fechado')}</span><span class="ar-st finalizar">falta outro dev ${n('finalizar')}</span><span class="ar-st aberto">em aberto ${n('aberto')}</span><span class="ar-st dev">em desenvolvimento ${n('dev')}</span>
       <button type="button" class="btn${this.so ? ' v' : ''}" data-arteso>${this.so ? 'mostrar todos os itens' : 'só os itens da fila de arte'}</button></div></div>`;
   },
-  /* na faixa do provar: a troca e, nas chamas, nas pegadas e no Gungi, o momento de hoje */
+  /* na faixa do provar: a troca e, nas chamas, nas pegadas, no Gungi e na Aura do dia, o momento de hoje */
   faixa(id){ if(!tem(id) || ARTE[id].sem) return '';
-    const hoje = nova(id) && {'hm-chamas': ['chamas', 'acender hoje'], 'hm-pegadas': ['pegadas', 'pisar hoje'], 'hm-gungi': ['gungi', 'jogar hoje']}[id];
+    const hoje = nova(id) && {'hm-chamas': ['chamas', 'acender hoje'], 'hm-pegadas': ['pegadas', 'pisar hoje'], 'hm-gungi': ['gungi', 'jogar hoje'], 'tx-nen': ['aura', 'passar o dia'], 'fx-shake': ['furia', 'enfurecer']}[id];
     return `<span style="display:flex;gap:8px;align-items:center">versão ${troca(id)}${hoje ? `<button type="button" class="btn" data-artehoje="${hoje[0]}" style="background:#0b0d12;color:#fff;border-color:#0b0d12">${hoje[1]}</button>` : ''}</span>`; },
 };
 
@@ -350,6 +436,9 @@ document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('[data-arte],[data-arteso],[data-artehoje]'); if(!t) return;
   if(t.dataset.arte){ const [id, v] = t.dataset.arte.split(':'); VER[id] = v; }
   else if(t.hasAttribute('data-arteso')) GB_ARTE.so = !GB_ARTE.so;
+  else if(t.dataset.artehoje === 'aura'){ passaDia(); return; }
+  else if(t.dataset.artehoje === 'furia'){ const r = document.documentElement; r.classList.toggle('gb-fu-teste');
+    toast(r.classList.contains('gb-fu-teste') ? 'Todos os chefões em fúria, só para ver: abra a aba Chefões.' : 'Fúria de teste desligada.'); return; }
   else { const hj = document.querySelector('.l-hg i.hj'); if(hj) ({pegadas: () => CURSORES.pegadas.pisa(hj), gungi: () => CURSORES.gungi.joga(hj)}[t.dataset.artehoje] || (() => CURSORES.chamas.acende(hj)))(); else toast('O dia de hoje fica na Lista, no heatmap da constância: abra a aba e tente de novo.'); return; }
   render();
 });

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Texturas de fundo</title>
+<!-- Vitrine de avaliação (#134): as texturas refeitas (texturas.js) lado a lado, cada uma numa tela de 1280×800 do jogo
+     de mentira, reduzida; clicar abre grande. Abre direto do disco (file://). Não é do jogo: ao aprovar, o texturas.js vai
+     para web/arte/ e o CSS sai de GB_TEXTURAS.css(id, ':root[data-bg="X-nova"] body', 'fixed'). -->
+<style>
+:root{
+  --bg:#13141B;--panel:#1B1D28;--panel2:#222536;--ink:#E6E8F0;--soft:#9197AD;--faint:#5A6078;--hair:#2A2D3C;--track:#252838;
+  --prompt:#7AA2F7;--red:#F7768E;--amb:#E0AF68;--grn:#73C991;--volt:#9FD3FF;--aura:#B4A0FF;
+  --n1:#F7768E;--n2:#7DCFFF;--n3:#73C991;--n4:#FF9E64;--n5:#BB9AF7;--n6:#E0AF68;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;--f-hud:"Chakra Petch","JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:#0E0F14;color:#E6E8F0;font:14px/1.45 system-ui,sans-serif}
+main{max-width:1500px;margin:0 auto;padding:22px 16px 80px}
+h1{font:700 22px var(--f-hud);margin:0 0 4px}
+.sub{color:#9197AD;margin:0 0 16px;max-width:900px}
+.ctl{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 12px;margin:0 0 22px;
+  background:#1B1D28EE;border:1px solid #2A2D3C;border-radius:10px;backdrop-filter:blur(6px);font-size:13px}
+.ctl label{display:flex;gap:6px;align-items:center;color:#9197AD}
+.ctl button{font:inherit;background:#222536;color:#E6E8F0;border:1px solid #3A3E52;border-radius:7px;padding:3px 10px;cursor:pointer}
+.ctl .sep{width:1px;align-self:stretch;background:#2A2D3C}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:26px 22px}
+figure{margin:0}
+.hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin:0 0 4px}
+.hd b{font:700 15px var(--f-hud)}
+.tag{font:500 10px var(--f-mono);border:1px solid #2A2D3C;border-radius:99px;padding:1px 8px;color:#9197AD}
+.tag.epico{color:#E3B341;border-color:#E3B34188} .tag.raro{color:#7DCFFF;border-color:#7DCFFF66} .tag.comum{color:#9197AD}
+figcaption{color:#9197AD;font-size:12.5px;margin:8px 0 0}
+.moldura{position:relative;aspect-ratio:1280/800;overflow:hidden;border-radius:10px;border:1px solid #2A2D3C;cursor:zoom-in;background:#000}
+.moldura .tela{position:absolute;left:0;top:0;transform-origin:0 0}
+
+/* ---------- a tela do jogo de mentira (1280×800) ---------- */
+.tela{width:1280px;height:800px;position:relative;isolation:isolate;overflow:hidden;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;--alto:800px;--larg:1280px}
+.tela *{pointer-events:none}
+.jg{padding:18px 24px}
+.jg-topo{display:flex;align-items:center;gap:18px;margin:0 0 18px}
+.jg-topo .logo{font:700 19px var(--f-hud);letter-spacing:.06em}
+.jg-topo nav{display:flex;gap:6px;margin-left:12px}
+.jg-topo nav i{font:500 13px var(--f-hud);font-style:normal;color:var(--soft);padding:6px 12px;border-radius:8px}
+.jg-topo nav i.on{background:var(--panel);color:var(--ink);border:1px solid var(--hair)}
+.jg-topo .eu{margin-left:auto;display:flex;align-items:center;gap:10px}
+.jg-topo .av{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#DDE6F5,#8796B5);border:2px solid var(--hair)}
+.jg-topo .xp{width:170px;height:8px;border-radius:99px;background:var(--track);overflow:hidden}
+.jg-topo .xp b{display:block;width:62%;height:100%;background:linear-gradient(90deg,var(--aura),var(--volt))}
+.jg-grid{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
+.col{display:grid;gap:12px}
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:14px 16px}
+.card h4{margin:0 0 8px;font:600 13px var(--f-hud);color:var(--soft);letter-spacing:.04em}
+.tarefa{display:flex;align-items:center;gap:12px}
+.tarefa .ck{width:18px;height:18px;border-radius:5px;border:2px solid var(--faint);flex:none}
+.tarefa.ok .ck{background:var(--grn);border-color:var(--grn)}
+.tarefa.ok span{color:var(--faint);text-decoration:line-through}
+.tarefa small{margin-left:auto;font:500 11px var(--f-mono);color:var(--faint)}
+.nova{color:var(--faint);border-style:dashed}
+.heat{display:grid;grid-template-columns:repeat(15,1fr);gap:4px}
+.heat i{aspect-ratio:1;border-radius:3px;background:var(--track)}
+.heat i.h1{background:color-mix(in srgb,var(--grn) 35%,var(--track))} .heat i.h2{background:color-mix(in srgb,var(--grn) 60%,var(--track))} .heat i.h3{background:var(--grn)}
+.hp{height:10px;border-radius:99px;background:var(--track);overflow:hidden;margin-top:6px} .hp b{display:block;width:44%;height:100%;background:var(--red)}
+.tela[data-cards="sem"] .jg-grid{display:none}
+.tela[data-cards="poucos"] .muitas{display:none}
+.tela[data-cards="poucos"] .lado .card:nth-child(n+2){display:none}
+
+/* ---------- grande ---------- */
+.grande{position:fixed;inset:0;z-index:50;background:#000D;display:none;place-items:center;padding:20px}
+.grande.on{display:grid}
+.grande .caixa{display:grid;gap:10px;justify-items:center}
+.grande .moldura{cursor:default}
+.grande .barra{display:flex;gap:14px;align-items:center;color:#9197AD;font-size:13px}
+.grande button{font:inherit;background:#222536;color:#E6E8F0;border:1px solid #3A3E52;border-radius:7px;padding:3px 12px;cursor:pointer}
+
+/* ---------- as de hoje (copiadas de web/index.html e web/efeitos.js, só para comparar) ---------- */
+.tex-manga{background-image:radial-gradient(color-mix(in srgb,var(--ink) 9%,transparent) 1px,transparent 1.3px);background-size:6px 6px}
+.tex-nen{background-image:radial-gradient(60% 40% at 10% 90%,color-mix(in srgb,var(--aura) 16%,transparent),transparent 70%),radial-gradient(50% 35% at 90% 10%,color-mix(in srgb,var(--volt) 12%,transparent),transparent 70%)}
+.tex-cartas{background-image:repeating-linear-gradient(45deg,color-mix(in srgb,var(--volt) 6%,transparent) 0 14px,transparent 14px 28px),repeating-linear-gradient(-45deg,color-mix(in srgb,var(--aura) 5%,transparent) 0 14px,transparent 14px 28px)}
+.tex-arena{background-image:linear-gradient(color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--ink) 5%,transparent) 1px,transparent 1px);background-size:44px 44px}
+.tex-scan{background-image:repeating-linear-gradient(0deg,color-mix(in srgb,#000 22%,transparent) 0 1px,transparent 1px 3px),radial-gradient(130% 100% at 50% 50%,transparent 55%,color-mix(in srgb,#000 38%,transparent))}
+.tex-grao{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.tex-hex{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17.32' height='30' viewBox='0 0 17.32 30'%3E%3Cpath d='M8.66 0L17.32 5V15L8.66 20L0 15V5Z M8.66 20V30' fill='none' stroke='%23909090' stroke-opacity='.16' stroke-width='.7'/%3E%3C/svg%3E");background-size:31px 54px}
+:root[data-mov="0"] .tela::before,:root[data-mov="0"] .tela::after{animation:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>Texturas de fundo</h1>
+<p class="sub">As texturas refeitas (o Céu da Arena fica para depois; a teia saiu). A regra das novas: a textura mora nas bordas e nos cantos,
+onde os cards não cobrem, com uma composição de verdade em vez de um padrão apagado. Cada quadro é uma tela inteira do jogo
+(1280×800) reduzida; clique para ver grande. "cards" mostra como fica com a lista cheia, com poucas tarefas ou sem nada por cima.</p>
+
+<div class="ctl">
+  <label>versão <select id="ver"><option value="nova" selected>nova</option><option value="hoje">a de hoje</option></select></label>
+  <label>tema <select id="tema"></select></label>
+  <label>cards <select id="cards"><option value="cheio">cheio</option><option value="poucos" selected>poucas tarefas</option><option value="sem">sem nada</option></select></label>
+  <label><input id="mov" type="checkbox" checked> movimento</label>
+  <span class="sep"></span>
+  <b style="color:#E3B341;font:600 12px var(--f-mono)">AURA DO DIA</b>
+  <label>tipo <select id="tipo"><option value="1">Reforço</option><option value="2">Transmutação</option><option value="3">Emissão</option><option value="4">Conjuração</option><option value="5" selected>Manipulação</option><option value="6">Especialização</option></select></label>
+  <label>tarefas <input id="dia" type="range" min="0" max="8" value="2"> <span id="diaN">2/8</span></label>
+  <button id="conclui">concluir uma</button>
+  <button id="simula">passar o dia</button>
+</div>
+
+<div class="grade" id="grade"></div>
+</main>
+
+<div class="grande" id="grande"><div class="caixa">
+  <div class="moldura" id="gMold"></div>
+  <div class="barra"><b id="gNome" style="color:#E6E8F0"></b><button id="gVer">ver a de hoje</button><button id="gFecha">fechar (Esc)</button></div>
+</div></div>
+
+<script src="texturas.js"></script>
+<script>
+/* paletas do jogo (web/motor.js, PALS) que combinam com as texturas */
+const TK = 'bg panel panel2 ink soft faint hair track prompt red amb grn volt aura n1 n2 n3 n4 n5 n6'.split(' ');
+const PALS = {
+  painel:  ['Painel (escuro)','#13141B','#1B1D28','#222536','#E6E8F0','#9197AD','#5A6078','#2A2D3C','#252838','#7AA2F7','#F7768E','#E0AF68','#73C991','#9FD3FF','#B4A0FF','#F7768E','#7DCFFF','#73C991','#FF9E64','#BB9AF7','#E0AF68'],
+  claro:   ['Claro','#F4F5F9','#FFFFFF','#F3F4FA','#1B1E2E','#5B6180','#989EB6','#E1E4EE','#E8EAF2','#2F5FD0','#D6455D','#B7812A','#2F8A55','#1F78C8','#6B4FD8','#D6455D','#1F86B8','#2F8A55','#D0661F','#7E57C2','#B7812A'],
+  pergaminho:['Pergaminho','#EFE6D2','#FBF5E6','#F3EAD5','#2B1D14','#6B5544','#A08B76','#DCCDB0','#E5D8BC','#8A4B1F','#B3362F','#A8741A','#4F7A3A','#2F6A8A','#7A4E9C','#B3362F','#2F6A8A','#4F7A3A','#B4521E','#7A4E9C','#A8741A'],
+  killua:  ['Killua','#0C1120','#121A2E','#18223A','#EAF2FF','#93A3C4','#56648A','#22304F','#1C2742','#8CC8FF','#FF7A90','#FFD27A','#7CE0B0','#B6ECFF','#7FA8FF','#FF7A90','#B6ECFF','#7CE0B0','#FFB07A','#B9A2FF','#FFD27A'],
+  hisoka:  ['Hisoka','#160C1A','#211128','#2A1633','#FFEFFA','#C39BC0','#7E5C7F','#3D2346','#331C3B','#FFD23F','#FF5C8A','#FFD23F','#6EE7B7','#FF6FB5','#FFD23F','#FF5C8A','#7DD3FC','#6EE7B7','#FB923C','#E879F9','#FFD23F'],
+  meruem:  ['Meruem','#0B110D','#111A14','#17231B','#EEF3E6','#A3B29A','#64725E','#24331F','#1D2A1C','#C9B458','#E0605A','#C9B458','#5DBB8A','#E3CF6E','#5DBB8A','#E0605A','#8FC9D9','#5DBB8A','#D99A4E','#A99AD0','#C9B458'],
+  ryodan:  ['Genei Ryodan','#0E0A0B','#161012','#1E1618','#F3E9EA','#B09A9D','#6E5A5D','#2E2124','#261B1E','#FF4A5A','#FF3347','#E3B25B','#6FCF97','#FF6B6B','#C0394B','#FF3347','#8AB4F8','#6FCF97','#F2994A','#B57EDC','#E3B25B'],
+  greed:   ['Greed Island','#0A1512','#0F1E19','#152720','#E9F5EE','#93B5A6','#58776A','#1F3A30','#1A3229','#E8C35A','#F2696B','#E8C35A','#5FD6A0','#7DF0C9','#E8C35A','#F2696B','#7FC8F8','#5FD6A0','#F2A65A','#B79CF2','#E8C35A'],
+  zoldyck: ['Zoldyck','#100D16','#17131F','#1E1928','#ECE8F4','#A39CB5','#655E78','#2B2438','#241E30','#B9C4D6','#E5566F','#D8C08A','#7FCFA8','#9FE3FF','#A78BFA','#E5566F','#9FE3FF','#7FCFA8','#E8A06A','#A78BFA','#D8C08A'],
+};
+const $ = id => document.getElementById(id), R = document.documentElement, T = GB_TEXTURAS;
+$('tema').innerHTML = '<option value="">de cada pacote</option>' + Object.entries(PALS).map(([k, p]) => `<option value="${k}"${k === 'painel' ? ' selected' : ''}>${p[0]}</option>`).join('');
+const pal = k => TK.map((t, i) => `--${t}:${PALS[k][i + 1]}`).join(';');
+
+/* o CSS das novas, uma vez, no seletor da tela */
+const st = document.createElement('style');
+st.textContent = T.LISTA.map(it => T.css(it.id, `.tela[data-v="nova"][data-tx="${it.bg}"]`, 'absolute')).join('\n');
+document.head.append(st);
+
+const JOGO = `<div class="jg">
+  <div class="jg-topo"><span class="logo">GANBATTE</span><nav><i class="on">Hoje</i><i>Lista</i><i>Hábitos</i><i>Chefões</i><i>Loja</i></nav>
+    <span class="eu"><span class="xp"><b></b></span><span class="av"></span></span></div>
+  <div class="jg-grid">
+    <div class="col">
+      <div class="card nova">+ Nova tarefa</div>
+      <div class="card tarefa ok"><i class="ck"></i><span>Revisar a lista de cálculo</span><small>+40 XP</small></div>
+      <div class="card tarefa"><i class="ck"></i><span>Ler o capítulo 4 de Física</span><small>hoje</small></div>
+      <div class="card tarefa muitas"><i class="ck"></i><span>Responder o e-mail do estágio</span><small>amanhã</small></div>
+      <div class="card tarefa muitas"><i class="ck"></i><span>Academia</span><small>18h</small></div>
+      <div class="card tarefa muitas"><i class="ck"></i><span>Lavar a louça</span><small></small></div>
+      <div class="card tarefa muitas"><i class="ck"></i><span>Estudar inglês 30 min</span><small>hábito</small></div>
+      <div class="card tarefa muitas"><i class="ck"></i><span>Pagar a conta de luz</span><small>sexta</small></div>
+      <div class="card tarefa muitas"><i class="ck"></i><span>Separar as fotos da viagem</span><small></small></div>
+    </div>
+    <div class="col lado">
+      <div class="card"><h4>CONSTÂNCIA</h4><div class="heat">${Array.from({length: 60}, (_, i) => `<i class="h${[0, 1, 2, 3, 1, 0, 2, 3, 3, 1][i * 7 % 10]}"></i>`).join('')}</div></div>
+      <div class="card"><h4>CHEFÃO · ANDAR 97</h4><div class="hp"><b></b></div></div>
+      <div class="card"><h4>HOJE</h4><div style="color:var(--soft);font-size:13px">2 de 8 tarefas · meta do dia</div></div>
+    </div>
+  </div></div>`;
+
+const telas = [];
+$('grade').innerHTML = T.LISTA.map((it, i) => `<figure>
+  <div class="hd"><b>${it.n}</b><span class="tag ${it.fa}">${it.fa === 'epico' ? 'épico' : it.fa}</span><span class="tag">${it.id}${it.quem ? ' · ' + it.quem : ''}</span></div>
+  <div class="moldura" data-i="${i}"><div class="tela" data-tx="${it.bg}">${JOGO}</div></div>
+  <figcaption>${it.d}</figcaption></figure>`).join('');
+document.querySelectorAll('.grade .tela').forEach(t => telas.push(t));
+
+const cfg = {ver: 'nova', tema: 'painel', cards: 'poucos', tipo: 5, dia: 2};
+function aplica(t){
+  const it = T.LISTA.find(x => x.bg === t.dataset.tx), v = t.dataset.local || cfg.ver;
+  t.dataset.v = v; t.className = 'tela' + (v === 'hoje' ? ' tex-' + it.bg : '');
+  t.dataset.cards = cfg.cards;
+  t.style.cssText = pal(cfg.tema || it.pacote || 'painel') + `;--nen-forte:var(--n${cfg.tipo});--dia:${cfg.dia / 8};--cheio:${cfg.dia >= 8 ? 1 : 0}`;
+}
+const tudo = () => { telas.forEach(aplica); if(gT) aplica(gT); escala(); };
+function escala(){
+  document.querySelectorAll('.moldura').forEach(m => { const t = m.querySelector('.tela'); if(t) t.style.transform = `scale(${m.clientWidth / 1280})`; });
+}
+new ResizeObserver(escala).observe($('grade'));
+
+/* grande */
+let gT = null;
+document.querySelectorAll('.grade .moldura').forEach(m => m.onclick = () => {
+  const t = telas[+m.dataset.i], it = T.LISTA[+m.dataset.i];
+  const w = Math.min(innerWidth - 40, (innerHeight - 90) * 1.6);
+  $('gMold').style.width = w + 'px';
+  $('gMold').innerHTML = ''; gT = t.cloneNode(true); delete gT.dataset.local; $('gMold').append(gT);
+  $('gNome').textContent = it.n; $('gVer').textContent = cfg.ver === 'nova' ? 'ver a de hoje' : 'ver a nova';
+  $('grande').classList.add('on'); aplica(gT); escala();
+});
+const fecha = () => { $('grande').classList.remove('on'); gT = null; };
+$('gFecha').onclick = fecha;
+$('grande').onclick = e => { if(e.target === $('grande')) fecha(); };
+addEventListener('keydown', e => { if(e.key === 'Escape') fecha(); });
+$('gVer').onclick = () => {
+  const v = (gT.dataset.local || cfg.ver) === 'nova' ? 'hoje' : 'nova';
+  gT.dataset.local = v; aplica(gT); $('gVer').textContent = v === 'nova' ? 'ver a de hoje' : 'ver a nova';
+};
+
+$('ver').onchange = e => { cfg.ver = e.target.value; tudo(); };
+$('tema').onchange = e => { cfg.tema = e.target.value; tudo(); };
+$('cards').onchange = e => { cfg.cards = e.target.value; tudo(); };
+$('tipo').onchange = e => { cfg.tipo = +e.target.value; tudo(); };
+$('mov').onchange = e => R.dataset.mov = e.target.checked ? '1' : '0';
+const poeDia = n => { cfg.dia = n; $('dia').value = n; $('diaN').textContent = `${n}/8`; tudo(); };
+$('dia').oninput = e => poeDia(+e.target.value);
+$('conclui').onclick = () => {
+  poeDia(Math.min(8, cfg.dia + 1));
+  for(const t of [...telas, gT].filter(t => t && t.dataset.tx === 'nen')){ t.classList.remove('tx-pulso'); void t.offsetWidth; t.classList.add('tx-pulso'); }
+};
+/* passar o dia: zera e conclui uma tarefa a cada 1,8 s até fechar a meta */
+let sim = null;
+$('simula').onclick = () => {
+  clearInterval(sim); poeDia(0);
+  sim = setInterval(() => { if(cfg.dia >= 8) return clearInterval(sim); $('conclui').click(); }, 1800);
+};
+window.VITRINE = {cfg, tudo, poeDia};
+tudo();
+</script>
+</body>
+</html>
