@@ -39,6 +39,7 @@ const ARTE = {
   'lic-corrente':  {st:'finalizar', tx:'A corrente do Kurapika dando a volta no estojo. Aprovada, mas ainda provisória.'},
   'tr-deslizar':   {st:'finalizar', tx:'Lapidada (20/10): desliza no sentido da barra de abas, e a velha sai enquanto a nova entra. Aprovada pelo Caio; falta o outro dev ver.'},
   'tr-glitch':     {st:'finalizar', tx:'Lapidada (20/10): a velha separa as cores, rasga em faixas com a nova pelos rasgos, e a nova se firma com um tranco. Aprovada pelo Caio; falta o outro dev ver.'},
+  'fx-costura':    {st:'fechado', tx:'Aprovada (20/10). Nova, só em código: o card racha de verdade, a agulha da Machi costura em zigue-zague e o fio é puxado; o card fecha com um estalo e 念糸縫合 entra letra por letra.'},
   'tr-fumaca':     {st:'finalizar', tx:'Nova (20/10): a fumaça roxa sai de onde você clicou, cobre a tela e se desfaz já na aba nova. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
   'tr-aspira':     {st:'finalizar', tx:'Nova (20/10): os cards da aba velha são sugados para o canto mais perto do clique, com um redemoinho. Só existe em código. Aprovada pelo Caio; falta o outro dev ver.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
@@ -49,7 +50,6 @@ const PRAZO = ' Faz parte da Marca de prazo, categoria em teste: se os estilos n
 const IDEIAS = [
   ['cr-vara', 'cursor', 'epico', 'Gon', 'Vara de pescar do Gon', 'O cursor vira a vara de pescar: o clique lança a linha e fisga o card.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, com física como a carta e o ioiô: linha com anzol e boia, segurar recolhe.'],
   ['fx-borboletas', 'fx', 'epico', 'Pouf', 'Borboletas do Pouf', 'Borboletas de aura voam devagar pelo fundo, juntam-se perto do mouse e se espalham no clique.', 'dev', 'Ideia aprovada, ainda sem arte. Entra no lugar da Poeira de Nen; falta decidir se os pacotes que têm a poeira ficam com ela.'],
-  ['fx-costura', 'ev', 'epico', 'Machi', 'Costura da Machi', 'Ao concluir, o card racha no meio e os fios de nen o costuram de volta, ponto a ponto.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, com o fio puxado no fim.'],
   ['fx-dragao', 'ev', 'epico', 'Zeno', 'Dragon Dive', 'No andar novo, o dragão de aura sobe, curva no alto e desce em chuva de dragõezinhos.', 'dev', 'Ideia aprovada, ainda sem arte. Vai em código, como alternativa aos fogos.'],
   ['fx-soco', 'ev', 'raro', 'Leorio', 'Soco remoto do Leorio', 'No andar novo, um portal de nen abre perto do card e o punho do Leorio sai dele.', 'dev', 'A decidir: anotada como raro, só no andar novo; o Caio quer ver na prática antes de decidir se fica.'],
   ['bd-costura', 'borda', 'raro', 'Machi', 'Costura de nen', 'A borda dos cards vira uma costura de fio de nen, em zigue-zague.', 'dev', 'Ideia aprovada, ainda sem arte. Parada, em CSS ou SVG.'],
@@ -150,11 +150,11 @@ if(window.CURSORES){
   document.head.appendChild(h);
 }
 
-/* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ, 神速 カンムル): Dela Gothic One, só com essas letras */
+/* a fonte japonesa dos gritos (グー！パー！チー！, ボッ, カタカタ, 神速 カンムル, 念糸縫合): Dela Gothic One, só com essas letras */
 let fonteOk = null;
 function fonte(){
   if(fonteOk) return fonteOk;
-  const txt = 'グーパーチー！ボッカタ神速ンムルPEDRAPAPELTESOURA';
+  const txt = 'グーパーチー！ボッカタ神速ンムル念糸縫合PEDRAPAPELTESOURA';
   if(!document.querySelector('link[href*="Dela+Gothic+One"]')){
     const l = document.createElement('link'); l.rel = 'stylesheet';
     l.href = 'https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap&text=' + encodeURIComponent(txt); document.head.append(l);
@@ -202,10 +202,10 @@ if(window.GB_FX){
   /* ▶ na loja: com a nova escolhida, o efeito novo cai no card do item */
   let mao = 0;
   GB_FX.ver = function(id, r){
-    const k = {'fx-godspeed':'godspeed', 'fx-jajanken':'jajanken'}[id];
+    const k = {'fx-godspeed':'godspeed', 'fx-jajanken':'jajanken', 'fx-costura':'costura'}[id];
     if(!k || !nova(id) || !window.CURSORES) return ver.apply(this, arguments);
     const b = document.querySelector(`[data-fxver="${id}"]`), card = b && b.closest('.it7'), rr = card ? card.getBoundingClientRect() : r;
-    if(k === 'godspeed') return fonte().then(() => CURSORES.godspeed.dispara(rr, {el: card}));
+    if(k === 'godspeed' || k === 'costura') return fonte().then(() => CURSORES[k].dispara(rr, {el: card}));
     const m = ['pedra', 'papel', 'tesoura'][mao++ % 3];
     fonte().then(() => CURSORES.jajanken.dispara(rr, {el: card, mao: m}));
   };

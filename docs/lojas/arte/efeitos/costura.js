@@ -58,7 +58,7 @@ function cria(g, w, h, R, op, rnd){
     trincas.push({lado: lado < 0 ? 0 : 1, pts});
   }
   // os furos: zigue-zague de cima a baixo, um de cada lado; a metade dona de cada um
-  const n = Math.max(5, Math.round((R.h - 10) / 9) + 1);
+  const n = lim(Math.round((R.h - 10) / 9) + 1, 5, 9);   // card alto: no máximo 9 pontos, mais espaçados
   const furos = Array.from({length: n}, (_, i) => { const y = R.y + 5 + (R.h - 10) * i / (n - 1), lado = i % 2; return {lado, x: xEm(y) + (lado ? OFF : -OFF), y, t: PRIMEIRO + i * PASSO}; });
   const ULTIMO = furos[n - 1].t, PUXA = ULTIMO + 90;
   // de onde a agulha vem (a Machi, longe, em cima à esquerda) e para onde ela vai no puxão (em cima à direita)
@@ -69,7 +69,8 @@ function cria(g, w, h, R, op, rnd){
 
   // as metades: s = abertura (0 fechado, 1 aberto), uma mola; cada ponto dá um puxão, o fio esticado fecha de vez
   let sim = 0, s = 0, v = 0, alvoS = 0, feitos = 0, tenso = null, fechou = null;
-  const pos = lado => { const k = lado ? 1 : -1; return {x: k * GAP * s, y: 0, a: k * ANG * s}; };
+  const ang = Math.min(ANG, 10 / R.h);   // card alto abre menos, para o topo não varrer longe
+  const pos = lado => { const k = lado ? 1 : -1; return {x: k * GAP * s, y: 0, a: k * ang * s}; };
   const mundo = (lado, x, y) => { const m = pos(lado), c = Math.cos(m.a), sn = Math.sin(m.a), dx = x - pv[0], dy = y - pv[1];
     return [pv[0] + dx * c - dy * sn + m.x, pv[1] + dx * sn + dy * c + m.y]; };
   const furo = i => mundo(furos[i].lado, furos[i].x, furos[i].y);
