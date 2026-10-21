@@ -42,6 +42,8 @@ const ARTE = {
   'sm-moeda':      {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (20/10): fica como está. Dos sons, é o único que não vai ser refeito.'},
   'hv-contorno':   {st:'fechado', tx:'Aprovado (20/10). O contorno acende em 120 ms e apaga em 350 ms, sem piscar ao passar por vários cards.'},
   'hm-cartas':     {st:'fechado', tx:'Aprovada (17/10): carta de frente por nível, carta de figura no dia mais forte, verso no dia vazio e Coringa no dia salvo.'},
+  'hp-cristal':    {st:'aberto', tx:'Refeito em código (21/10): cristais lapidados chapados, ponta quebrada e engastes vazios na vida perdida; o reflexo passa com o mouse. O Caio achou melhor que o de antes, mas não sabe se gostou: em aberto, esperando o outro dev.'},
+  'hm-pegadas':    {st:'aberto', tx:'Refeita em código (21/10): um rastro de pés descalços, esquerdo e direito alternando pela semana; dia fraco só a sola, dia forte com terra. Provando, "pisar hoje" mostra o passo. O Caio achou melhor que a de antes, mas não sabe se gostou: em aberto, esperando o outro dev.'},
   'hm-chamas':     {st:'fechado', tx:'Aprovada (20/10): chama maior por nível, cinza no dia vazio, nen no dia salvo, fogo laranja. Provando, "acender hoje" mostra o acender.'},
   'lic-exame':     {st:'fechado', tx:'Carimbo 念 com anel duplo (16/10).'},
   'lic-chefao':    {st:'fechado', tx:'Selo da torre de tijolos com coroa e folhas (16/10).'},
@@ -184,12 +186,14 @@ ${EL ? `
 @keyframes arAspPv{0%,20%{transform:none;opacity:1}55%{transform:translate(40%,-40%) rotate(-40deg) scale(.05);opacity:.4}60%,75%{transform:scale(0);opacity:0}100%{transform:none;opacity:1}}
 .pvc .hmn{position:absolute;inset:12px 18px;display:grid;place-items:center} .pvc .hmn .l-hg{--n:9;grid-template-rows:repeat(4,auto);grid-template-columns:repeat(9,15px)}`;
 const st = document.createElement('style'); st.id = 'gb-arte'; st.textContent = CSS; document.head.appendChild(st);
-/* heatmaps em CSS: o mesmo CSS dos módulos, com o seletor do jogo e o da prévia */
+/* heatmaps e a vida de cristal em CSS: o mesmo CSS dos módulos, com o seletor do jogo e o da prévia */
 if(window.CURSORES){
   const C = CURSORES, h = document.createElement('style'); h.id = 'gb-arte-heat';
   const es = C.cartas.naipe('espadas');
   h.textContent = C.cartas.css(':root[data-heat="cartas-nova"]') + C.cartas.css('.hm-cartas-nova')
-    + `\n:root[data-heat="cartas-nova"],.hm-cartas-nova{--naipe:${es}}\n` + C.chamas.css(':root[data-heat="chamas-nova"]') + C.chamas.css('.hm-chamas-nova');
+    + `\n:root[data-heat="cartas-nova"],.hm-cartas-nova{--naipe:${es}}\n` + C.chamas.css(':root[data-heat="chamas-nova"]') + C.chamas.css('.hm-chamas-nova')
+    + C.pegadas.css(':root[data-heat="pegadas-nova"]') + C.pegadas.css('.hm-pegadas-nova')
+    + C.cristal.css(':root[data-hp="cristal-nova"]') + C.cristal.css('.hp-cristal-nova');
   document.head.appendChild(h);
 }
 
@@ -321,9 +325,10 @@ window.GB_ARTE = {
       <div class="ar-res"><span class="ar-st fechado">fechado ${n('fechado')}</span><span class="ar-st finalizar">falta outro dev ${n('finalizar')}</span><span class="ar-st aberto">em aberto ${n('aberto')}</span><span class="ar-st dev">em desenvolvimento ${n('dev')}</span>
       <button type="button" class="btn${this.so ? ' v' : ''}" data-arteso>${this.so ? 'mostrar todos os itens' : 'só os itens da fila de arte'}</button></div></div>`;
   },
-  /* na faixa do provar: a troca e, nas chamas, o acender */
+  /* na faixa do provar: a troca e, nas chamas e nas pegadas, o momento de hoje */
   faixa(id){ if(!tem(id) || ARTE[id].sem) return '';
-    return `<span style="display:flex;gap:8px;align-items:center">versão ${troca(id)}${id === 'hm-chamas' && nova(id) ? '<button type="button" class="btn" data-artehoje style="background:#0b0d12;color:#fff;border-color:#0b0d12">acender hoje</button>' : ''}</span>`; },
+    const hoje = nova(id) && {'hm-chamas': ['chamas', 'acender hoje'], 'hm-pegadas': ['pegadas', 'pisar hoje']}[id];
+    return `<span style="display:flex;gap:8px;align-items:center">versão ${troca(id)}${hoje ? `<button type="button" class="btn" data-artehoje="${hoje[0]}" style="background:#0b0d12;color:#fff;border-color:#0b0d12">${hoje[1]}</button>` : ''}</span>`; },
 };
 
 /* desenha os cursores novos nas prévias dos cards (canvas que acabou de entrar na página) */
@@ -342,7 +347,7 @@ document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('[data-arte],[data-arteso],[data-artehoje]'); if(!t) return;
   if(t.dataset.arte){ const [id, v] = t.dataset.arte.split(':'); VER[id] = v; }
   else if(t.hasAttribute('data-arteso')) GB_ARTE.so = !GB_ARTE.so;
-  else { const hj = document.querySelector('.l-hg i.hj'); if(hj) CURSORES.chamas.acende(hj); else toast('O dia de hoje fica na Lista, no heatmap da constância: abra a aba e tente de novo.'); return; }
+  else { const hj = document.querySelector('.l-hg i.hj'); if(hj) t.dataset.artehoje === 'pegadas' ? CURSORES.pegadas.pisa(hj) : CURSORES.chamas.acende(hj); else toast('O dia de hoje fica na Lista, no heatmap da constância: abra a aba e tente de novo.'); return; }
   render();
 });
 })();

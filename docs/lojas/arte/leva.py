@@ -1,5 +1,5 @@
 """Leva a arte da fila para o jogo (web/arte/), para os devs provarem na beta: os módulos em código (cursores, efeitos,
-heatmaps) copiados como estão e as imagens aprovadas reduzidas (precisa do ImageMagick, `magick`).
+heatmaps, vida do chefão) copiados como estão e as imagens aprovadas reduzidas (precisa do ImageMagick, `magick`).
 Rode de novo sempre que um módulo ou uma imagem aprovada mudar:  python3 docs/lojas/arte/leva.py
 O que cada item é no jogo e o status dele ficam no web/arte.js (ARTE), escrito à mão."""
 import shutil
@@ -13,7 +13,7 @@ WEB.mkdir(exist_ok=True)
 for pasta, nome in [("cursores", "carta"), ("cursores", "agulha"), ("cursores", "ioio"), ("efeitos", "godspeed"),
                     ("efeitos", "jajanken"), ("efeitos", "costura"), ("efeitos", "rastro"), ("efeitos", "soco"), ("efeitos", "dragao"), ("heatmap", "cartas"), ("heatmap", "chamas"), ("hover", "bungee"),
                     ("hover", "en"), ("hover", "vira"), ("hover", "shu"), ("hover", "contorno"), ("hover", "gyo"), ("prazo", "countdown"),
-                    ("correntes", "corrente"), ("eletrica", "eletrica")]:
+                    ("correntes", "corrente"), ("eletrica", "eletrica"), ("heatmap", "pegadas"), ("hp", "cristal")]:
     shutil.copyfile(ARTE / pasta / f"{nome}.js", WEB / f"{nome}.js")
 # transições de aba: a base vai como tr-base.js (o palco.js é o jogo de mentira da bancada, não vai)
 shutil.copyfile(ARTE / "transicoes" / "base.js", WEB / "tr-base.js")
