@@ -28,6 +28,17 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta7", "nome": "atualização da Torre Trick", "data": "2026-10-21", "aviso": "0.9.2-beta7",
+   "cap": "Codeforces pela cor do problema · aba nova do grupo",
+   "resumo": "O Codeforces agora vale pela cor de cada problema, e o XP dele na temporada foi recalculado. As contribuições pagam só em Jenny. Para testar, a aba Grupo e a Lista ganharam uma versão nova atrás de um botão, e chegaram efeitos novos para provar.",
+   "itens": [
+     {"ic": "flame", "t": "Codeforces pela cor do problema", "d": "Cada problema vale pela cor do rating comparada com a sua faixa: 15 XP na faixa, 25 e 35 acima, 8 e 3 abaixo, e +20 por contest ao vivo, sem teto no dia. A sua faixa sai do seu maior rating e do seu nível nos últimos problemas, e aparece no card do Codeforces e na aba Regras. O XP do Codeforces da temporada foi recalculado com a regra nova, e nenhum dia fechado perde XP (#180)."},
+     {"ic": "coin", "t": "Contribuições só em Jenny", "d": "Relatar um bug vale 300 J e uma ideia, 150 J, sem XP. O XP que as contribuições antigas davam saiu dos dias fechados, mas a Jenny tinha subido na mesma medida: a carteira fica igual (#180)."},
+     {"ic": "tower", "t": "Aba nova do grupo, para testar", "d": "Em Grupo, o botão \"experimentar a aba nova\" abre o redesenho: o Geral e a Superação da semana, que zeram toda segunda, o card da semana com a modalidade e a sua marca, os desafios com o chefão do mês, a temporada em rodadas e medalhas e a licença de cada um. O que ainda não existe aparece marcado como prévia. A aba antiga continua a padrão (#170)."},
+     {"ic": "card", "t": "Lista nova, para testar", "d": "No topo da Lista, um botão troca para a Lista redesenhada, na largura toda, com os hábitos em cima e o XP discreto em cada linha. O mesmo botão volta para a antiga (#178)."},
+     {"ic": "spider", "t": "Efeitos novos para provar", "d": "Terminal vivo, Ascensão (a aurora), Confete, Fogos e a Fúria dos chefões, a Poeira de Nen e a Aura ambiente refeitas, as texturas de fundo refeitas em código, a Costura de nen na borda dos cards e o título Futuro Médico, do Leorio (#134)."},
+     {"ic": "antenna", "t": "Loja mais enxuta", "d": "O mundo pixel saiu da loja (quem tem continua com ele). Paletas, fontes, títulos e sons ficam como estão; fontes e sons novos chegam quando o jogo passar de 8 jogadores ativos (#134)."}
+   ]},
   {"versao": "0.9.2-beta6", "nome": "atualização da Torre Trick", "data": "2026-10-21",
    "resumo": "Chegaram para provar a vara de pescar do Gon, o Rastro de aura em três modelos, a Constância no Gungi e em pegadas, o HP de cristal, o Soco remoto do Leorio e o Dragon Dive do Zeno. Na beta, a borda de status da vitrine agora pinta o card inteiro, em verde, amarelo ou vermelho.",
    "itens": [
@@ -801,6 +812,12 @@ function seuAviso(v){
     const rj = +(r.acertos || {}).retratos || 0;
     if(rj > 0) partes.push(`a carteira recebeu <strong>${rj.toLocaleString('pt-BR')} J</strong> pelos retratos de chefão que você tinha comprado, e eles continuam seus.`);
     else ok.push('você não tinha comprado retratos, então a sua carteira não mudou.');
+  }
+  if(v.aviso === '0.9.2-beta7'){   // #180: as contribuições saíram do XP dos dias fechados (migra contrib-xp) e o Codeforces foi recalculado
+    const m = (r.migra || {})['contrib-xp'], cf = (() => { try { return Math.round(+estado().cfXP || 0); } catch(e){ return 0; } })();
+    if(m && m.xp > 0) partes.push(`a torre ficou com <strong>${m.xp.toLocaleString('pt-BR')} XP a menos</strong> das contribuições antigas, e a carteira ficou igual.`);
+    else ok.push('nenhum XP de contribuição saiu da sua torre.');
+    if(cf > 0) ok.push(`o Codeforces vale agora <strong>${cf.toLocaleString('pt-BR')} XP</strong> na temporada, pela regra nova.`);
   }
   const todas = partes.concat(ok); if(!todas.length) return '';
   return `<div class="nv-seu${partes.length ? '' : ' ok'}"><b>No seu jogo</b><span>${todas.map(t => t[0].toUpperCase() + t.slice(1)).join(' ')}</span></div>`;
