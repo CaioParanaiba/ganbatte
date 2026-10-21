@@ -1614,7 +1614,9 @@ function salvaUI(){
 /* provar na loja (#29): paleta, tema, fundo, efeito contínuo, moldura ou fonte. UI.prova é o id do item; não grava
    nada, some ao recarregar e, enquanto dura, o jogo fica travado (travaProva) para ninguém jogar com o item emprestado */
 const PROVAVEL = ['pal','full','tex','fx','frame','font','borda','hover','cursor','hp','heat','trans'];
-const provavel = it => !OWN.has(it.id) && !GBx.padrao(it) && !it.lend && !it.ev && !it.grupo && PROVAVEL.includes(it.cat);
+/* o que já é seu também se prova quando tem arte nova para ver (#134): é a única forma de comparar a nova com a sua */
+const artNova = it => window.GB_ARTE && GB_ARTE.tem(it.id) && !GB_ARTE.ARTE[it.id].sem;
+const provavel = it => (!OWN.has(it.id) && !GBx.padrao(it) || artNova(it)) && !it.lend && !it.ev && !it.grupo && PROVAVEL.includes(it.cat);
 function vista(){
   const it = UI.prova && COS.find(i => i.id === UI.prova);
   if(!it) return UI;
@@ -1942,7 +1944,7 @@ function partes(S, it){
   else if(need) btn = `<button class="btn" disabled>abra o mundo pixel</button>`;
   else btn = `<button class="btn" data-cos="${it.id}" ${S.jenny >= preco ? '' : 'disabled'}>${!preco ? 'pegar' : S.jenny >= preco ? 'comprar' : `faltam ${fmt(preco - S.jenny)} J`}</button>`;
   const prova = UI.prova === it.id;
-  const ver = it.dev ? '' : !own && provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
+  const ver = it.dev ? '' : (!own || artNova(it)) && provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
     : it.ev || it.cat === 'som' ? `<button class="btn gb-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
   const pr = it.dev ? 'em desenvolvimento' : it.chefao ? 'chefão derrotado' : it.fora ? 'da sua coleção' : it.arq && !own ? 'arquivado' : pk ? (pk.completo ? 'pacote completo' : `${pk.p < it.p ? `<s>${fmt(it.p)}</s> ` : ''}${fmt(pk.p)} J`)
     : GBx.padrao(it) ? 'vem com o jogo' : it.prova ? 'só para provar' : it.grupo ? 'Trick Coin' : it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis';
@@ -3016,6 +3018,11 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 <script src="arte/dragao.js"></script>
 <script src="arte/poeira.js"></script>
 <script src="arte/aura-ambiente.js"></script>
+<script src="arte/digita.js"></script>
+<script src="arte/aurora.js"></script>
+<script src="arte/confete.js"></script>
+<script src="arte/fogos.js"></script>
+<script src="arte/furia.js"></script>
 <script src="arte/cartas.js"></script>
 <script src="arte/chamas.js"></script>
 <script src="arte/pegadas.js"></script>

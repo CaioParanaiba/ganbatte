@@ -55,10 +55,19 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-u
 .boss{display:flex;gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--hair)}
 .boss:first-of-type{border-top:0}
 .boss .nm{flex:1;min-width:0} .boss .nm b{display:block} .boss .nm small{color:var(--soft)}
+/* o retrato do chefão como no jogo (.av.bs; .ret recorta a foto) e a coluna da aba Chefões */
+.av{--s:30px;width:var(--s);height:var(--s);border-radius:50%;display:inline-grid;place-items:center;flex:none;position:relative;
+  background:color-mix(in srgb,var(--c,var(--soft)) 14%,var(--panel2));color:var(--c,var(--soft));border:1.5px solid var(--c,var(--soft));font-size:calc(var(--s)*.4);font-weight:700}
+.av.bs.hurt{--c:var(--amb)} .av.bs.ret{overflow:hidden;--c:var(--red)}
+.av.bs.ret i{position:absolute;inset:0;background:radial-gradient(circle at 50% 38%,#e9c3a8 0 22%,transparent 23%),radial-gradient(ellipse at 50% 100%,#2b2f45 0 45%,transparent 46%),radial-gradient(circle at 50% 30%,#3a2a24 0 34%,transparent 35%),#5b6b8a}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.cols .col2{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:18px 12px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.cols .col2 b{font:700 16px var(--f-hud)} .cols .col2 small{color:var(--soft);font:12px var(--f-mono)}
+.cols .hp{width:100%;height:12px;background:var(--track);margin-top:6px} .cols .hp i{display:block;height:100%;background:var(--red)}
 .fury{display:inline-flex;gap:5px;align-items:center;font:700 11px var(--f-mono);color:var(--red);border:1px solid color-mix(in srgb,var(--red) 50%,var(--hair));border-radius:99px;padding:1px 8px}
 /* versões de hoje (cópias do jogo) */
 @keyframes shake{0%,90%,100%{transform:none}92%{transform:translateX(-2px) rotate(-4deg)}95%{transform:translateX(2px) rotate(4deg)}98%{transform:translateX(-1px)}}
-:root[data-velha="furia"] .ring.fury{animation:shake 1.8s ease-in-out infinite}
+:root[data-velha="furia"] :is(.ring.fury,.av.bs.hurt){animation:shake 1.8s ease-in-out infinite}
 @keyframes hjDigita{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes hjCursor{50%{opacity:0}}
 :root[data-velha="digita"].gb-entra :is(h1,h3,.card h2){animation:hjDigita .75s steps(22) both}
@@ -69,7 +78,6 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-u
 .cf8{position:fixed;top:-12px;width:8px;height:12px;border-radius:2px;z-index:50;pointer-events:none;animation:cair 2.2s ease-in forwards}
 @keyframes cair{to{top:105vh;transform:rotate(540deg) translateX(40px)}}
 </style>
-<style id="furia-css"></style>
 </head>
 <body>
 <div class="wrap">
@@ -84,7 +92,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-u
     <span class="grp" data-g="digita"><label>modo <select id="dmodo"><option value="digita">digita</option><option value="decifra">decifra</option></select></label>
       <label>por letra <input type="range" id="dms" min="20" max="80" value="42"><output id="dmsO">42</output> ms</label></span>
     <span class="grp" data-g="ascensao"><label>força <input type="range" id="aforte" min="40" max="180" value="100"><output id="aforteO">1.0</output></label>
-      <label>altura <input type="range" id="aalt" min="30" max="80" value="50"><output id="aaltO">50</output>%</label>
+      <label>altura <input type="range" id="aalt" min="30" max="90" value="80"><output id="aaltO">80</output>%</label>
       <label><input type="checkbox" id="asurto" checked> surto</label></span>
     <span class="grp" data-g="confete"><label>de <select id="cde"><option value="cantos">dois canhões</option><option value="card">do card</option></select></label></span>
     <span class="grp" data-g="lento"><label><input type="checkbox" id="lento"> câmera lenta</label></span>
@@ -95,6 +103,11 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-u
 
   <div class="hud"><h1>Ganbatte</h1><span class="nv">NV 14 · 4.120 / 6.600 XP</span><div class="xp"><i></i></div></div>
   <div class="abas" id="abas"><button class="on">Lista</button><button>Progresso</button><button>Chefões</button><button>Loja</button><button>Conquistas</button></div>
+  <div class="cols" id="cols">
+    <div class="col2"><span class="av bs ret hurt" style="--s:60px"><i></i></span><b>Shalnark</b><small>ARQ1 · 13,6/100 pts</small><div class="hp"><i style="width:86%"></i></div></div>
+    <div class="col2"><span class="av bs hurt" style="--s:60px">🕷</span><b>Shizuku</b><small>BD · 13,4/100 pts</small><div class="hp"><i style="width:64%"></i></div></div>
+    <div class="col2"><span class="av bs" style="--s:60px">🧵</span><b>Machi</b><small>ED1 · 0/100 pts</small><div class="hp"><i style="width:100%"></i></div></div>
+  </div>
   <div class="grid">
     <div class="col">
       <div class="card"><h2>Tarefas de hoje</h2><div class="m">4 abertas · +270 XP no total</div></div>
@@ -149,18 +162,18 @@ const DICAS = {
   ascensao: 'Cortinas de aurora boreal no alto da tela: a barra de baixo acesa, os raios sumindo para cima, dobrando devagar. De tempos em tempos uma onda de luz corre uma das cortinas (o surto); o mouse acende um pouco a cortina embaixo dele. Veja no tema Aurora, que é a paleta do pacote. Hoje: um borrão de cores girando.',
   confete: 'Clique em disparar. Dois canhões estouram dos cantos de baixo, o papel sobe, perde força e desce flutuando: cada papel gira, vira de face (verso mais escuro) e balança. "do card" estoura de cima da 1ª tarefa. Proposta: vira comum.',
   fogos: 'Clique em disparar. Foguetes sobem com rastro de faíscas e estouram no alto com um clarão: peônia, anel inclinado, salgueiro dourado que escorre, crisântemo que estala e palmeira; no fim, um trio. Fica raro.',
-  furia: 'Os dois chefões em fúria soltam o Ren: labaredas vermelhas no contorno, desenhadas em três quadros que trocam aos saltos. A cada ~2,8 s um acesso de raiva: a veia 💢 salta no canto, as chamas sobem e o anel dá um tranco. O chefão sem fúria fica normal. Hoje: treme sem parar.',
+  furia: 'Os chefões em fúria (no alto, como a coluna da aba Chefões, e na lista à direita) soltam o Ren: fogo em duas camadas preso ao contorno, línguas que sobem e se soltam, brasas. A cada ~2,8 s, desencontrado entre eles, um acesso: onda de choque, as chamas dobram, a veia 💢 salta e o retrato dá um tranco. A Machi não está em fúria. Hoje: treme sem parar.',
 };
 function monta(){
   const fx = $('fx').value;
   if(fundo){ fundo.para(); fundo = null; }
-  delete R.dataset.velha; $('furia-css').textContent = '';
+  delete R.dataset.velha;
   document.querySelectorAll('.grp').forEach(g => { g.hidden = !(g.dataset.g === fx || (g.dataset.g === 'lento' && ['confete', 'fogos'].includes(fx))); });
   $('vai').hidden = !['digita', 'confete', 'fogos'].includes(fx);
   $('dica').textContent = DICAS[fx];
   if(ver === 'hoje'){ if(['digita', 'ascensao', 'furia'].includes(fx)) R.dataset.velha = fx; return; }
   if(fx === 'ascensao') fundo = GB_AURORA.liga({forte: +$('aforte').value / 100, altura: +$('aalt').value / 100, surto: $('asurto').checked, forca: true});
-  if(fx === 'furia') $('furia-css').textContent = GB_FURIA.css('.ring.fury', {veia: $('fveia').checked, tranco: $('ftranco').checked, ciclo: +$('fciclo').value / 10});
+  if(fx === 'furia') fundo = GB_FURIA.cola({sel: '.ring.fury,.av.bs.hurt', veia: $('fveia').checked, tranco: $('ftranco').checked, ciclo: +$('fciclo').value / 10, forca: true});
 }
 function vai(){
   const fx = $('fx').value;

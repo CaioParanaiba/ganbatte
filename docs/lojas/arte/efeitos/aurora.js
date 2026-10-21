@@ -9,7 +9,7 @@
 
    GB_AURORA.liga(op) -> {ajusta(op), para()}
      op.forte   intensidade (padrão 1)
-     op.altura  quanto da tela ela desce, 0..1 (padrão .5)
+     op.altura  quanto da tela ela desce, 0..1 (padrão .8, escolha do Caio)
      op.surto   a onda de luz de tempos em tempos (padrão true)
      op.mouse   a cortina acende um pouco onde o mouse está (padrão true)
      op.forca   liga mesmo com prefers-reduced-motion */
@@ -35,7 +35,7 @@ function sprite([r, g, b]){
 }
 
 function liga(op0){
-  let op = Object.assign({forte:1, altura:.5, surto:true, mouse:true, forca:false}, op0);
+  let op = Object.assign({forte:1, altura:.8, surto:true, mouse:true, forca:false}, op0);
   if(calmo() && !op.forca) return {ajusta(){}, para(){}};
   const cv = document.createElement('canvas');
   cv.className = 'gb-aurora';
