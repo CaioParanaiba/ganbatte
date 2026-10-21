@@ -1614,7 +1614,9 @@ function salvaUI(){
 /* provar na loja (#29): paleta, tema, fundo, efeito contínuo, moldura ou fonte. UI.prova é o id do item; não grava
    nada, some ao recarregar e, enquanto dura, o jogo fica travado (travaProva) para ninguém jogar com o item emprestado */
 const PROVAVEL = ['pal','full','tex','fx','frame','font','borda','hover','cursor','hp','heat','trans'];
-const provavel = it => !OWN.has(it.id) && !GBx.padrao(it) && !it.lend && !it.ev && !it.grupo && PROVAVEL.includes(it.cat);
+/* o que já é seu também se prova quando tem arte nova para ver (#134): é a única forma de comparar a nova com a sua */
+const artNova = it => window.GB_ARTE && GB_ARTE.tem(it.id) && !GB_ARTE.ARTE[it.id].sem;
+const provavel = it => (!OWN.has(it.id) && !GBx.padrao(it) || artNova(it)) && !it.lend && !it.ev && !it.grupo && PROVAVEL.includes(it.cat);
 function vista(){
   const it = UI.prova && COS.find(i => i.id === UI.prova);
   if(!it) return UI;
@@ -1942,7 +1944,7 @@ function partes(S, it){
   else if(need) btn = `<button class="btn" disabled>abra o mundo pixel</button>`;
   else btn = `<button class="btn" data-cos="${it.id}" ${S.jenny >= preco ? '' : 'disabled'}>${!preco ? 'pegar' : S.jenny >= preco ? 'comprar' : `faltam ${fmt(preco - S.jenny)} J`}</button>`;
   const prova = UI.prova === it.id;
-  const ver = it.dev ? '' : !own && provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
+  const ver = it.dev ? '' : (!own || artNova(it)) && provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
     : it.ev || it.cat === 'som' ? `<button class="btn gb-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
   const pr = it.dev ? 'em desenvolvimento' : it.chefao ? 'chefão derrotado' : it.fora ? 'da sua coleção' : it.arq && !own ? 'arquivado' : pk ? (pk.completo ? 'pacote completo' : `${pk.p < it.p ? `<s>${fmt(it.p)}</s> ` : ''}${fmt(pk.p)} J`)
     : GBx.padrao(it) ? 'vem com o jogo' : it.prova ? 'só para provar' : it.grupo ? 'Trick Coin' : it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis';
@@ -1965,13 +1967,13 @@ function detHTML(S, it){
 /* fontes e sons novos só entram na loja quando o jogo tiver mais gente: evita horas de arte para quase ninguém */
 const MAIS_ITENS = 'Quando o jogo passar de 8 jogadores ativos, chegam mais.';
 const SECS = {
-  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['prazo','Marca de prazo','Em teste: a marca na tarefa com prazo ou atrasada. Se os estilos não agradarem, a categoria sai inteira.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez. ' + MAIS_ITENS],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações. ' + MAIS_ITENS],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
+  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma. Quando o jogo passar de 8 jogadores ativos, chegam os efeitos de aviso: perigo, prazo e tarefa atrasada.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez. ' + MAIS_ITENS],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações. ' + MAIS_ITENS],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
   pixel:[['px','Mundo pixel','Arquivado: o mundo pixel saiu da loja. O que você tem continua seu, mas ninguém mais compra.']],
 };
 /* as famílias da Aparência: [chave, nome, descrição, prateleiras na ordem em que aparecem] */
 const FAM7 = [['perfil','Perfil','Foto, moldura, título e fonte: como você aparece.',['avatar','frame','title','font']],
   ['cores','Cores e fundo','Paleta, textura de fundo e os pacotes que juntam tudo.',['pal','tex','full']],
-  ['cards','Cards e telas','Borda, hover, cursor, troca de aba, HP, constância e prazo.',['borda','hover','cursor','trans','hp','heat','prazo']],
+  ['cards','Cards e telas','Borda, hover, cursor, troca de aba, HP e constância.',['borda','hover','cursor','trans','hp','heat']],
   ['efeitos','Efeitos e sons','Animações na tela, na hora da conquista e sons.',['fx','fxev','som']]];
 /* itens de uma prateleira (c = categoria; fxev = os efeitos da hora da conquista) */
 const daSec = (l, c) => l.filter(i => c === 'fxev' ? i.cat === 'fx' && i.ev && !i.sec : (i.sec || i.cat) === c && !(c === 'fx' && i.ev));
@@ -3016,6 +3018,11 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 <script src="arte/dragao.js"></script>
 <script src="arte/poeira.js"></script>
 <script src="arte/aura-ambiente.js"></script>
+<script src="arte/digita.js"></script>
+<script src="arte/aurora.js"></script>
+<script src="arte/confete.js"></script>
+<script src="arte/fogos.js"></script>
+<script src="arte/furia.js"></script>
 <script src="arte/cartas.js"></script>
 <script src="arte/chamas.js"></script>
 <script src="arte/pegadas.js"></script>

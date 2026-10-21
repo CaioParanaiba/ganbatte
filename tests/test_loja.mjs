@@ -15,7 +15,7 @@ for(const it of COS){
   else assert.ok(['comum','raro','epico','lenda'].includes(it.fa), it.id + ': faixa');
 }
 ok('faixa em cada item');
-assert.equal(item('fx-shake').fa, 'comum'); assert.equal(item('fx-drift').fa, 'raro'); assert.equal(item('fx-gyo').fa, 'epico');
+assert.equal(item('fx-shake').fa, 'raro'); assert.ok(item('fx-shake').hxh); assert.equal(item('fx-confete').fa, 'comum'); assert.equal(item('fx-drift').fa, 'raro'); assert.equal(item('fx-gyo').fa, 'epico');
 assert.equal(item('px-map-tarde').fa, 'comum'); assert.ok(!item('tx-ceu').hxh && !item('fr-nen').hxh); assert.ok(item('fx-corrente').hxh);
 ok('remanejamentos da vitrine');
 
