@@ -69,7 +69,6 @@ const ARTE = {
   'tx-cartas':     {st:'finalizar', tx:'Refeita em código (21/10): a tela vira o verso de uma carta, com a treliça de naipes, os cantos e o filete duplo. Aprovada pelo Caio; falta o outro dev ver.'},
   'tx-arena':      {st:'finalizar', tx:'Refeita em código (21/10): o piso do ringue em perspectiva no pé da tela, com a borda dourada. Aprovada pelo Caio; falta o outro dev ver.'},
   'tx-nen':        {st:'finalizar', tx:'Refeita em código (21/10), vira a Aura do dia (épico): a aura do seu tipo contorna a tela e engrossa para dentro conforme o XP de hoje chega na meta; as pontas se encontram no alto quando ela fecha, e cada XP novo dá um pulso. Provando, "passar o dia" mostra o dia inteiro. Aprovada pelo Caio; falta o outro dev ver.'},
-  'tx-teia':       {st:'aberto', sem:true, tx:'Revista (21/10): a teia refeita não agradou e o Caio quer tirar a textura. Falta decidir o que o pacote Genei Ryodan recebe no lugar.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
