@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Borboletas do Pouf</title>
+<!-- Vitrine de avaliação (#134): fx-borboletas por cima de uma tela de jogo de mentira, com a Poeira de Nen de hoje para
+     comparar. Abre direto do disco (file://). Não é do jogo: ao aprovar, o borboletas.js vai para web/arte/ e liga no
+     GB_FX.aplica (web/efeitos.js), no lugar do ligaPoeira. -->
+<style>
+:root{
+  --bg:#13141B;--panel:#1B1D28;--panel2:#222536;--ink:#E6E8F0;--soft:#9197AD;--faint:#5A6078;--hair:#2A2D3C;--track:#252838;
+  --acc:#7AA2F7;--red:#F7768E;--amb:#E0AF68;--grn:#73C991;--volt:#9FD3FF;--aura:#B4A0FF;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;--f-hud:"Chakra Petch","JetBrains Mono",ui-monospace,monospace}
+:root[data-tema="claro"]{color-scheme:light;--bg:#F4F5F9;--panel:#FFFFFF;--panel2:#F3F4FA;--ink:#1B1E2E;--soft:#5B6180;--faint:#989EB6;--hair:#E1E4EE;--track:#E8EAF2;--acc:#3D6FE0;--red:#D6455D;--amb:#B7812A;--grn:#2F8A55;--volt:#1F78C8;--aura:#6B4FD8}
+:root[data-tema="meruem"]{--bg:#0B110D;--panel:#111A14;--panel2:#17231B;--ink:#EEF3E6;--soft:#A3B29A;--faint:#64725E;--hair:#24331F;--track:#1D2A1C;--acc:#C9B458;--red:#E0605A;--amb:#C9B458;--grn:#5DBB8A;--volt:#E3CF6E;--aura:#5DBB8A}
+:root[data-tema="greed"]{--bg:#0A1512;--panel:#0F1E19;--panel2:#152720;--ink:#E9F5EE;--soft:#93B5A6;--faint:#58776A;--hair:#1F3A30;--track:#1A3229;--acc:#E8C35A;--red:#F2696B;--amb:#E8C35A;--grn:#5FD6A0;--volt:#7DF0C9;--aura:#E8C35A}
+:root[data-tema="aurora"]{--bg:#070914;--panel:#0D1020;--panel2:#13172C;--ink:#EEF0FF;--soft:#A4A9CC;--faint:#61678C;--hair:#21264A;--track:#1A1F3C;--acc:#7CF5C4;--red:#FF6FA8;--amb:#FFD27A;--grn:#7CF5C4;--volt:#8FB8FF;--aura:#C58BFF}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,sans-serif;min-height:100%}
+.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:16px 16px 80px}
+
+/* controles da avaliação */
+.ctl{position:sticky;top:8px;z-index:60;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:10px 12px;margin:0 0 18px;
+  background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px dashed var(--faint);border-radius:10px;font-size:13px}
+.ctl b{font:700 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--amb);margin-right:4px}
+.ctl label{display:flex;gap:6px;align-items:center;color:var(--soft)}
+.ctl select,.ctl input{accent-color:var(--volt)}
+.ctl output{font:600 12px var(--f-mono);color:var(--ink);min-width:20px}
+.dica{color:var(--soft);font-size:12.5px;margin:-8px 0 18px}
+
+/* o jogo de mentira */
+.hud{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.hud h1{font:700 20px var(--f-hud);margin:0}
+.nv{font:600 12px var(--f-mono);color:var(--soft)}
+.xp{flex:1;min-width:160px;height:10px;background:var(--track);border-radius:99px;overflow:hidden}
+.xp i{display:block;height:100%;width:62%;background:var(--acc);border-radius:99px}
+.abas{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.abas span{font:600 12.5px var(--f-hud);padding:6px 12px;border-radius:8px;color:var(--soft);border:1px solid var(--hair)}
+.abas span.on{color:var(--ink);background:var(--panel2);border-color:var(--faint)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:14px 16px;min-width:0}
+.card .t{font-weight:600;margin:0 0 4px;display:flex;gap:10px;align-items:center}
+.card .t::before{content:"";width:16px;height:16px;border:2px solid var(--faint);border-radius:5px;flex:none}
+.card .m{color:var(--soft);font-size:12.5px}
+.card .ln{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.card .ln span{font:500 10.5px var(--f-mono);color:var(--soft);background:var(--panel2);border-radius:6px;padding:2px 7px}
+.card h3{font:700 13px var(--f-hud);margin:0 0 10px;color:var(--soft);letter-spacing:.06em;text-transform:uppercase}
+.heat{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}
+.heat i{aspect-ratio:1;border-radius:3px;background:var(--track)}
+.heat i.a{background:color-mix(in srgb,var(--grn) 45%,var(--track))} .heat i.b{background:var(--grn)}
+.boss{height:8px;background:var(--track);border-radius:99px;overflow:hidden;margin-top:8px}
+.boss i{display:block;height:100%;width:38%;background:var(--red)}
+.nova{display:flex;gap:8px}
+.nova input{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--hair);border-radius:8px;color:var(--ink);padding:8px 10px;font:inherit}
+.nova button{background:var(--acc);color:var(--bg);border:0;border-radius:8px;padding:0 14px;font:600 13px var(--f-hud)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ctl" id="ctl">
+    <b>fx-borboletas</b>
+    <label>tema <select id="tema"><option value="">escuro</option><option>claro</option><option value="meruem">Meruem</option><option value="greed">Greed Island</option><option value="aurora">Aurora</option></select></label>
+    <label>quantas <input type="range" id="n" min="3" max="20" value="9"><output id="nO">9</output></label>
+    <label>tamanho <select id="tam"><option value="7">pequena</option><option value="9" selected>média</option><option value="12">grande</option></select></label>
+    <label>camada <select id="camada"><option value="cima">por cima das telas</option><option value="fundo">atrás (como a poeira)</option></select></label>
+    <label><input type="checkbox" id="pousa" checked> pousam nos cards</label>
+    <label><input type="checkbox" id="escamas" checked> escamas</label>
+    <label><input type="checkbox" id="brilho"> brilho</label>
+    <label>comparar <select id="modo"><option value="b">borboletas</option><option value="p">Poeira de Nen (hoje)</option></select></label>
+  </div>
+  <p class="dica">Passe o mouse e pare: elas se juntam em volta. Clique: se espalham soltando escamas. Sozinhas, de vez em quando pousam na borda de cima de um card e batem as asas devagar; chegar perto com o mouse as faz levantar.</p>
+
+  <div class="hud"><h1>Ganbatte</h1><span class="nv">NV 14 · 4.120 / 6.600 XP</span><div class="xp"><i></i></div></div>
+  <div class="abas"><span class="on">Hoje</span><span>Lista</span><span>Chefões</span><span>Loja</span><span>Perfil</span></div>
+  <div class="grid">
+    <div class="col">
+      <div class="card nova"><input placeholder="Nova tarefa…"><button>Adicionar</button></div>
+      <div class="card"><div class="t">Revisar capítulo 3 da dissertação</div><div class="m">Até as 18h · 45 min</div><div class="ln"><span>estudo</span><span>+120 XP</span></div></div>
+      <div class="card"><div class="t">Responder e-mails da orientadora</div><div class="m">Hoje · 15 min</div><div class="ln"><span>trabalho</span><span>+40 XP</span></div></div>
+      <div class="card"><div class="t">Treino de 30 minutos</div><div class="m">Todo dia · constância 12</div><div class="ln"><span>saúde</span><span>+60 XP</span></div></div>
+      <div class="card"><div class="t">Lavar a louça</div><div class="m">Hoje</div><div class="ln"><span>casa</span><span>+20 XP</span></div></div>
+      <div class="card"><div class="t">Ler 20 páginas</div><div class="m">Amanhã</div><div class="ln"><span>leitura</span><span>+50 XP</span></div></div>
+    </div>
+    <div class="col">
+      <div class="card"><h3>Constância</h3><div class="heat" id="heat"></div></div>
+      <div class="card"><h3>Chefão da semana</h3><div class="t" style="font-weight:600">Neferpitou</div><div class="m">62% derrotado</div><div class="boss"><i></i></div></div>
+      <div class="card"><h3>Jenny</h3><div style="font:700 22px var(--f-hud)">J 3.480</div><div class="m">+240 hoje</div></div>
+    </div>
+  </div>
+</div>
+<script src="borboletas.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+$('heat').innerHTML = Array.from({length:48}, (_, i) => `<i class="${(i*7)%5 === 0 ? 'b' : (i*3)%4 === 0 ? 'a' : ''}"></i>`).join('');
+
+/* a Poeira de Nen de hoje (cópia do ligaPoeira de web/efeitos.js), só para comparar */
+function poeira(){
+  const cv = document.createElement('canvas'); cv.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:0;opacity:.75'; document.body.prepend(cv);
+  const g = cv.getContext('2d'), ps = [], cor = n => getComputedStyle(document.documentElement).getPropertyValue('--' + n).trim();
+  const mede = () => { const dpr = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth*dpr; cv.height = innerHeight*dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  mede(); addEventListener('resize', mede);
+  for(let i = 0; i < 46; i++) ps.push({x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:.6 + Math.random()*1.8, v:.15 + Math.random()*.45, f:Math.random()*6, k:i % 2});
+  let vivo = true;
+  const passo = () => { if(!vivo) return;
+    const cs = [cor('aura'), cor('volt')]; g.clearRect(0, 0, innerWidth, innerHeight);
+    for(const p of ps){ p.y -= p.v; p.f += .02; p.x += Math.sin(p.f)*.25; if(p.y < -10){ p.y = innerHeight + 10; p.x = Math.random()*innerWidth; }
+      g.globalAlpha = .35 + .35*Math.sin(p.f*1.7); g.fillStyle = cs[p.k]; g.shadowColor = cs[p.k]; g.shadowBlur = 8; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); }
+    requestAnimationFrame(passo); };
+  passo();
+  return {para(){ vivo = false; cv.remove(); removeEventListener('resize', mede); }, ajusta(){}};
+}
+
+const opcoes = () => ({n:+$('n').value, tam:+$('tam').value, camada:$('camada').value, pousa:$('pousa').checked ? '.card' : '', escamas:$('escamas').checked, brilho:$('brilho').checked, forca:true});
+let fx = GB_BORBOLETAS.liga(opcoes()), modo = 'b';
+const atualiza = () => {
+  $('nO').textContent = $('n').value;
+  if($('modo').value !== modo){ modo = $('modo').value; fx.para(); fx = modo === 'b' ? GB_BORBOLETAS.liga(opcoes()) : poeira(); }
+  fx.ajusta(opcoes());
+};
+$('tema').onchange = () => { document.documentElement.dataset.tema = $('tema').value; fx.ajusta(opcoes()); };
+for(const id of ['n', 'tam', 'camada', 'pousa', 'escamas', 'brilho', 'modo']) $(id).addEventListener('input', atualiza);
+</script>
+</body>
+</html>
