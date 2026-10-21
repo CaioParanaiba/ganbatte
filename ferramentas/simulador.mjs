@@ -55,7 +55,7 @@ function simula(nome, P){
   const notas = [], notasJ = {};
   for(const b of DISC) for(const [k, w, dt] of AVS){ const n = nota(); notas.push(`${dt} | ${b} | ${k} | ${n}`); notasJ[b + ':' + k] = {nota:n, w, j: n >= GB.MEDIA ? Math.round(n*w*5) : 0, em:dt}; }
   const api = {hoje:TEMP.fim, todo:[], done, avaliacoes:aval, notas:notas.join('\n'), estado:{notasJ},
-    jogador:{nome:nome, habitos, cf: P.cf ? {handle:'sim', meta:3} : null}, cf:{por_dia:cf}};
+    jogador:{nome:nome, habitos, cf: P.cf ? {handle:'sim', meta:3} : null}, cf:{por_dia:cf, probs:Object.fromEntries(Object.entries(cf).map(([d, n]) => [d, Array(n).fill(0)]))}};   // #180: sem rating = na faixa (15 XP)
   // 1ª passada: quanto entra por dia; 2ª: o jogador compra a loja do mais barato ao mais caro, sempre que dá
   const C0 = GB.carregar(api), R0 = GB.relatorio(C0, GB.estado(C0));
   const loja = GB.COS.filter(it => it.p > 0 && !it.lend && !it.excl).sort((a, b) => a.p - b.p), compras = [];

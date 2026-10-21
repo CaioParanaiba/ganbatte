@@ -279,7 +279,7 @@ function passoHTML(){
     <div class="wz-col"><p class="wz-cap">contam sozinhos</p>
       <div class="wz-ig"><label class="sw" for="wz-cf"><span><b>Codeforces</b><small>problemas aceitos no dia</small></span><input type="checkbox" id="wz-cf"${W.cfOn ? ' checked' : ''}></label>
         ${W.cfOn ? `<div class="wz-f"><label>Handle<input id="wz-cfh" value="${esc(W.cfH)}" placeholder="ex.: tourist" maxlength="24"></label><label>Meta por dia<input id="wz-cfm" inputmode="numeric" value="${W.cfM}"></label></div>
-        <span>Conta os problemas <b>aceitos</b> no dia (+5 XP cada, até 6). Bater a meta dá +10.</span>` : ''}</div>
+        <span>Conta os problemas <b>aceitos</b> no dia. Cada um vale pela cor dele comparada à sua (15 XP na sua faixa, mais acima, menos abaixo). Bater a meta dá +10; contest ao vivo, +20.</span>` : ''}</div>
       <div class="wz-ig"><label class="sw" for="wz-duo"><span><b>Duolingo</b><small>a ofensiva do seu perfil</small></span><input type="checkbox" id="wz-duo"${W.duoOn ? ' checked' : ''}></label>
         ${W.duoOn ? `<label>Usuário do Duolingo<input id="wz-duou" value="${esc(W.duoU)}" placeholder="o nome do seu perfil" maxlength="40"></label>
         <span>Só o usuário, <b>sem senha</b>: o jogo lê a ofensiva e marca o hábito no dia em que você faz a lição.</span>` : ''}</div>
@@ -586,7 +586,7 @@ function avisosNovos(){
   for(const i of (c && c.issues) || []){ if(vistas['contrib:' + i.n]) continue;
     const R = GB.CONTRIB[i.tipo] || {xp:0, j:0}, beta = i.beta && main;
     its.push({k:'contrib:' + i.n, html:(i.tipo === 'bug' ? `Seu bug ${issueLink(i.n)} ${beta ? 'já foi corrigido no beta' : 'foi corrigido'}`
-      : `Sua ideia ${issueLink(i.n)} ${beta ? 'já está no beta' : 'entrou no jogo'}`) + `: <b>+${R.xp} XP e +${fmt(R.j)} J</b>`
+      : `Sua ideia ${issueLink(i.n)} ${beta ? 'já está no beta' : 'entrou no jogo'}`) + `: <b>${R.xp ? `+${R.xp} XP e ` : ''}+${fmt(R.j)} J</b>`
       + (beta ? '<small>chega na sua versão na próxima atualização</small>' : '')}); }
   for(const {t, x} of estado().xs) if(t.gh && t.done && !vistas['dev:' + t.gh])
     its.push({k:'dev:' + t.gh, html:`A issue ${issueLink(t.gh)} que você fez entrou no beta: <b>+${x} XP e +${fmt(x*10)} J</b><small>tarefa de dev concluída</small>`});
@@ -628,7 +628,7 @@ function cfgHTML(){
       <div class="wz-f" style="grid-template-columns:auto minmax(0,1fr);align-items:end">
         <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink);padding-bottom:9px"><input type="checkbox" data-cfg="duoOn"${c.duoOn ? ' checked' : ''}> Duolingo</label>
         <label>Usuário (sem senha: o jogo lê a ofensiva do perfil e marca sozinho o dia com lição)<input data-cfg="duoU" value="${esc(c.duoU)}" maxlength="40"${c.duoOn ? '' : ' disabled'}></label></div>
-      <label>Usuário do GitHub (opcional: bug que você reportou vale +${GB.CONTRIB.bug.xp} XP e +${GB.CONTRIB.bug.j.toLocaleString('pt-BR')} J quando a correção entra no beta; ideia, +${GB.CONTRIB.ideia.xp} XP e +${GB.CONTRIB.ideia.j.toLocaleString('pt-BR')} J. Quem desenvolve: a issue em que você é o responsável vira tarefa na Lista e se conclui sozinha quando entra no beta)<input data-cfg="gh" value="${esc(c.gh)}" maxlength="39" placeholder="deixe vazio se não usa"></label>
+      <label>Usuário do GitHub (opcional: bug que você reportou vale +${GB.CONTRIB.bug.j.toLocaleString('pt-BR')} J quando a correção entra no beta; ideia, +${GB.CONTRIB.ideia.j.toLocaleString('pt-BR')} J. Quem desenvolve: a issue em que você é o responsável vira tarefa na Lista e se conclui sozinha quando entra no beta)<input data-cfg="gh" value="${esc(c.gh)}" maxlength="39" placeholder="deixe vazio se não usa"></label>
       ${contribHTML()}
       <label>Tags (o nome muda; o significado de cada tipo continua o mesmo)</label>
       <div class="wz-f" style="grid-template-columns:repeat(5,minmax(0,1fr))">${TIPOS.filter(t => !t.fixo).map(t => `<label style="color:${NC(t.c)}">${t.n}<input data-cfgt="${t.k}" value="${esc(c.tags[t.k])}" maxlength="24"></label>`).join('')}</div>

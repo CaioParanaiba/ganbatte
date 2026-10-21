@@ -2264,11 +2264,10 @@ function rSys(S){
         linha(`<span class="d" style="--c:${NC(3)}"></span>vida`, '<b>10</b>', 'sem tag'),
         linha(`<span class="d" style="--c:${NC(4)}"></span>hábito`, '<b>3 a 12</b>', 'pelo nível do hábito (abaixo)')])}</div>
       <div class="card">${tab(['de fora das tarefas', 'XP', ''], [
-        linha('Codeforces', `<b>5</b> por problema`, 'até 6 no dia; bater a meta: +10'),
+        linha('Codeforces', `<b>${H.CF_NA_FAIXA}</b> por problema da sua faixa`, `1 cor acima: ${H.CF_ACIMA[0]}, 2 ou mais: ${H.CF_ACIMA[1]}; abaixo: ${H.CF_ABAIXO[0]} e ${H.CF_ABAIXO[1]}; contest ao vivo: +${H.CF_CONTEST}; bater a meta: +10`),
         linha('marco de expedição fechado', `<b>${H.MARCO_ETAPA}</b> por etapa + <b>${H.MARCO_DIA}</b> por dia`, 'até 12 etapas e 10 dias'),
-        linha('expedição concluída', `<b>${H.EXP_SEMANA}</b> por semana ativa`, 'até 20 semanas'),
-        linha('bug seu corrigido', `<b>${H.CONTRIB.bug.xp}</b>`, `+${n(H.CONTRIB.bug.j)} J`),
-        linha('ideia sua no jogo', `<b>${H.CONTRIB.ideia.xp}</b>`, `+${n(H.CONTRIB.ideia.j)} J`)])}
+        linha('expedição concluída', `<b>${H.EXP_SEMANA}</b> por semana ativa`, 'até 20 semanas')])}
+        ${S.cfCor ? `<p class="sub" style="margin:10px 0 0">Sua faixa no Codeforces hoje: <b>${cfFaixaTxt(S.cfCor)}</b> (a cor do seu maior rating e a do que você tem resolvido, no máximo duas cores).</p>` : ''}
         <p class="sub" style="margin:10px 0 0">O XP de um dia que já passou fica guardado: apagar a linha depois não tira XP.</p></div>
     </div>
 
@@ -2313,7 +2312,7 @@ function rSys(S){
       <div class="card">${tab(['de onde vem', 'quanto', ''], [
         linha('cada XP', '<b>10 J</b>', 'inclui todo bônus de XP'),
         linha(`nota ${MEDIA} ou mais`, '<b>nota × peso × 5</b>', 'peso = % da avaliação na nota final'),
-        linha('bug seu corrigido · ideia sua no jogo', `<b>${n(H.CONTRIB.bug.j)} J · ${n(H.CONTRIB.ideia.j)} J</b>`, 'além do XP'),
+        linha('bug seu corrigido · ideia sua no jogo', `<b>${n(H.CONTRIB.bug.j)} J · ${n(H.CONTRIB.ideia.j)} J</b>`, 'não dá XP: a torre é do seu esforço'),
         ...RK.map(r => linha(`desafio da IA rank ${r.rk} (${r.n})`, `<b>${n(r.j)} J</b>`, r.f === 'escolha' ? 'ou um feitiço à escolha' : `ou o feitiço ${esc(spell(r.f).n)}`))])}</div>
       <div class="card">
         ${conta('7,5 numa prova que vale 25%', ['7,5', '25', '5'], fmt(7.5 * 25 * 5) + ' J')}
@@ -2586,7 +2585,7 @@ function habitosL(S){
     h += `<div class="l-hb${ok ? ' ok' : ''}" style="--c:${NC(1)}"><span class="av" style="--c:${NC(1)};--s:22px">${ic('tra')}</span>
       <span class="t">Codeforces${cf ? ` <small>${esc(cf.handle)} · ${n} hoje · meta ${meta}${cfMaoBtn()}</small>` : ''}</span>
       <span class="l-slots" title="${n} problema(s) hoje">${Array.from({length:meta}, (_,i) => `<i class="${n > i ? 'on' : ''}"></i>`).join('')}<span class="sep"></span>${[0,1,2].map(i => `<i class="bn${n > meta + i ? ' on' : ''}"></i>`).join('')}</span>
-      <span class="l-auto">automático: conta os problemas aceitos no dia (+5 cada, até 6) · bater a meta dá +10${CTX.SRV ? ' · ✋ marca à mão o que o site não mostra (ITMO, grupo privado)' : ''}</span></div>`; }
+      <span class="l-auto">automático: conta os problemas aceitos no dia${S.cfCor ? ` (+${S.cfCor.xp} XP hoje) · cada um vale pela cor, sua faixa: ${cfFaixaTxt(S.cfCor)}` : ''} · bater a meta dá +10${CTX.SRV ? ' · ✋ marca à mão o que o site não mostra (ITMO, grupo privado)' : ''}</span></div>`; }
   if(J.duo && J.duo.usuario && duoT) h += `<div class="l-hb${duoT.ok ? ' ok' : ''}" style="--c:${NC(4)}"><span class="l-ck" style="--c:${NC(4)}" aria-hidden="true">${duoT.ok ? '✓' : ''}</span>
       <span class="t">Duolingo <small>${duoTxt()} · nv ${habNv(S, 'duo').nv}</small></span><span class="l-xp">+${habXPHoje(S, duoT)}</span>
       <span class="l-auto">automático: o jogo confere a sua ofensiva e marca sozinho quando você faz a lição do dia (o bloqueio de ofensiva não conta)</span></div>`;
@@ -2604,7 +2603,7 @@ function habitosL(S){
   /* Lista nova (#178): os mesmos hábitos como chips no topo; automáticos (Codeforces, Duolingo) em azul, os de marcar à mão em roxo */
   let c = '';
   if(cf || cfT){ const n = S.cfHoje, ok = n >= meta || (cfT && cfT.ok);
-    c += `<span class="nl-hc auto${ok ? ' ok' : ''}" style="--c:${NC(1)}" title="automático: conta os problemas aceitos no dia (+5 cada, até 6) · bater a meta dá +10"><span class="ck">${ok ? '✓' : ''}</span>Codeforces
+    c += `<span class="nl-hc auto${ok ? ' ok' : ''}" style="--c:${NC(1)}" title="automático: conta os problemas aceitos no dia${S.cfCor ? ` (+${S.cfCor.xp} XP hoje) · cada um vale pela cor, sua faixa: ${cfFaixaTxt(S.cfCor)}` : ''} · bater a meta dá +10"><span class="ck">${ok ? '✓' : ''}</span>Codeforces
       <span class="sl">${Array.from({length:meta}, (_,i) => `<i class="${n > i ? 'on' : ''}"></i>`).join('')}${[0,1,2].map(i => `<i class="bn${n > meta + i ? ' on' : ''}"></i>`).join('')}</span><small>${n}/${meta}</small>${cfMaoBtn()}</span>`; }
   if(J.duo && J.duo.usuario && duoT) c += `<span class="nl-hc auto${duoT.ok ? ' ok' : ''}" style="--c:${NC(1)}" title="automático: ${duoTxt()}"><span class="ck">${duoT.ok ? '✓' : ''}</span>Duolingo<small>+${habXPHoje(S, duoT)}</small></span>`;
   c += habs.map(t => { const id = recId(t), sm = sem(id), na = sm ? naSemana(id, SEG) : 0, n = habNv(S, id), x = habXPHoje(S, t) * (sm && na > sm ? GBx.HAB_EXTRA : 1);
@@ -2687,6 +2686,8 @@ async function tipoIA(btn){
   btn.disabled = false;
 }
 /* o ✋ ao lado de todo "Codeforces" (Lista: hábitos e heatmap; Arena: meta do dia); só com o servidor de verdade */
+/* faixa do Codeforces (#180) em palavras: "verde" ou "verde a ciano" */
+const cfFaixaTxt = f => f.chao === f.teto ? GBx.CF_COR_N[f.teto] : `${GBx.CF_COR_N[f.chao]} a ${GBx.CF_COR_N[f.teto]}`;
 const cfMaoBtn = () => { if(!CTX.SRV) return ''; const n = ((D.cf && D.cf.manual) || {})[HOJE];
   return ` <button type="button" class="l-cfm" data-cfmao title="fez problema onde o jogo não enxerga (ITMO Academy, grupo privado)? marque à mão">✋${n ? ' ' + n : ''}</button>`; };
 /* Codeforces à mão: o marcador ✋ no heatmap pede confirmação e soma 1 problema hoje (conta igual aos da API) */
