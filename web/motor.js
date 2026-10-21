@@ -82,7 +82,6 @@ const COS = [
   {id:'tx-scan', cat:'tex', n:'Tela de fliperama', d:'Linhas de tubo de TV e os cantos escurecidos, como num arcade.', p:1800, eq:{bg:'scan'}},
   {id:'tx-grao', cat:'tex', n:'Papel antigo', d:'Grão fino de papel em todas as telas. Fica ótimo com o Pergaminho.', p:2000, eq:{bg:'grao'}},
   {id:'tx-hex', cat:'tex', n:'Colmeia das Quimeras', d:'Favos hexagonais do ninho das Formigas Quimera.', p:2400, eq:{bg:'hex'}},
-  {id:'tx-teia', cat:'tex', n:'Teia da Aranha', d:'Uma teia enorme saindo do canto da tela.', p:2800, eq:{bg:'teia'}},
   {id:'tx-cartas', cat:'tex', n:'Baralho', d:'Losangos de baralho no fundo. Só vem no pacote Hisoka.', p:0, excl:'th-hisoka', eq:{bg:'cartas'}},
   {id:'fx-shake', cat:'fx', n:'Fúria visível', d:'O chefão em fúria treme de raiva.', p:1000, fx:'shake'},
   {id:'fx-shim', cat:'fx', n:'Barra elétrica', d:'A barra de XP corre como eletricidade.', p:1200, fx:'shim'},
@@ -128,7 +127,6 @@ const COS = [
   {id:'th-killua', cat:'full', n:'Pacote Killua', d:'Paleta Killua, céu da Arena e barra elétrica.', p:6000, eq:{theme:'killua', bg:'ceu'}, fxs:['shim'], parts:['pal-killua','tx-ceu','fx-shim'], antes:['fx-aura']},
   {id:'th-hisoka', cat:'full', n:'Pacote Hisoka', d:'Rosa e amarelo, losangos de baralho no fundo, fúria que treme e avisos com clarão.', p:8000, eq:{theme:'hisoka', bg:'cartas'}, fxs:['shake','zap'], parts:['pal-hisoka','tx-cartas','fx-shake','fx-zap']},
   {id:'th-meruem', cat:'full', n:'Pacote Meruem', d:'Verde-escuro e ouro real, névoa de Nen e aura ambiente.', p:10000, eq:{theme:'meruem', bg:'nen'}, fxs:['drift'], parts:['pal-meruem','tx-nen','fx-drift'], antes:['fx-aura']},
-  {id:'th-ryodan', cat:'full', n:'Pacote Genei Ryodan', d:'Preto e vermelho, a teia no canto, cartas a cada tarefa e o Gyo nos cards.', p:8500, eq:{theme:'ryodan', bg:'teia'}, fxs:['baralho','gyo'], parts:['pal-ryodan','tx-teia','fx-baralho','fx-gyo']},
   {id:'th-greed', cat:'full', n:'Pacote Greed Island', d:'Verde de cartão, tela de fliperama, letra de arcade, terminal vivo e poeira de Nen.', p:8800, eq:{theme:'greed', bg:'scan', font:'arcade'}, fxs:['digita','estrelas'], parts:['pal-greed','tx-scan','ft-arcade','fx-digita','fx-estrelas']},
   {id:'th-zoldyck', cat:'full', n:'Pacote Zoldyck', d:'Roxo e prata, papel antigo, Godspeed a cada tarefa e o rastro de aura no cursor.', p:9000, eq:{theme:'zoldyck', bg:'grao'}, fxs:['godspeed','rastro'], parts:['pal-zoldyck','tx-grao','fx-godspeed','fx-rastro']},
   {id:'th-ascensao', cat:'full', n:'Pacote Ascensão', d:'Paleta Aurora e a aurora girando atrás de tudo (só aqui), poeira de Nen, fogos e o sino do templo.', p:25000, eq:{theme:'aurora', bg:'', som:'sino'}, fxs:['ascensao','estrelas','fogos'], parts:['pal-aurora','fx-ascensao','fx-estrelas','fx-fogos','sm-sino'], antes:['fr-giro']},
@@ -206,12 +204,12 @@ COS.push(...RETRATOS.map(([s, n, alvo]) => ({id:'ch-'+s, cat:'chefe', n, d:'Retr
    Nen ou Arena não conta, porque esses nomes trocam com o tema. Os preços por faixa saem da #77 */
 const FAIXA = {
   comum: 'pal-leorio pal-claro pal-gon pal-biscuit pal-kurapika pal-netero pal-pergaminho pal-killua pal-zoldyck pal-ryodan pal-greed pal-abismo pal-grafite pal-sepia pal-contraste pal-nevoa fx-shake fx-zap fr-hunter fr-volt fr-nen fr-carta fr-fina fr-dupla tt-transm tt-cacador tt-silencio tt-zetsu tt-guarda sm-moeda sm-golpe sm-sino sm-clique sm-gota px-map-tarde px-map-noite px-p1-gb px-p1-noite px-gi-joy px-gi-noite px-ms-neon px-ms-papel bd-dupla bd-corte bd-cantos hv-contorno tr-deslizar',
-  raro: 'hm-gungi tx-scan tx-manga tx-grao tx-arena tx-hex tx-ceu tx-teia tx-nen fx-aura fx-digita fx-corrente fx-shim fx-confete fx-fogos fx-soco fx-drift fr-aranha fr-escarlate fr-giro tt-godspeed tt-floor tt-ten tt-estrela2 tt-mestre ft-maquina ft-manga ft-pixel ft-arcade sm-fanfarra bd-corrente hv-shu hv-vira cr-ioio cr-carta cr-agulha hp-corrente hp-cristal hm-cartas hm-pegadas tr-glitch tr-fumaca tr-aspira',
+  raro: 'hm-gungi tx-scan tx-manga tx-grao tx-arena tx-hex tx-ceu tx-nen fx-aura fx-digita fx-corrente fx-shim fx-confete fx-fogos fx-soco fx-drift fr-aranha fr-escarlate fr-giro tt-godspeed tt-floor tt-ten tt-estrela2 tt-mestre ft-maquina ft-manga ft-pixel ft-arcade sm-fanfarra bd-corrente hv-shu hv-vira cr-ioio cr-carta cr-agulha hp-corrente hp-cristal hm-cartas hm-pegadas tr-glitch tr-fumaca tr-aspira',
   epico: 'fx-costura fx-dragao fx-gyo fx-jajanken fx-baralho fx-godspeed fx-estrelas fx-rastro fx-rastro-fio fx-rastro-eco px-unlock bd-aura hv-en hv-bungee hm-chamas cr-vara',
 };
-const HXH = new Set(('pal-leorio pal-gon pal-biscuit pal-kurapika pal-netero pal-killua pal-zoldyck pal-ryodan pal-greed pal-abismo pal-hisoka pal-meruem tx-hex tx-teia tx-cartas ' +
+const HXH = new Set(('pal-leorio pal-gon pal-biscuit pal-kurapika pal-netero pal-killua pal-zoldyck pal-ryodan pal-greed pal-abismo pal-hisoka pal-meruem tx-hex tx-cartas ' +
   'fx-corrente fx-shim fx-costura fx-soco fx-dragao fx-gyo fx-jajanken fx-baralho fx-godspeed fx-rastro-eco fr-hunter fr-carta fr-aranha fr-escarlate tt-transm tt-cacador tt-silencio tt-zetsu tt-guarda tt-floor tt-ten tt-estrela2 tt-mestre ' +
-  'px-gi-joy px-gi-noite th-killua th-hisoka th-meruem th-ryodan th-greed th-zoldyck bd-corrente hv-shu hv-vira hv-en hv-bungee cr-ioio cr-carta cr-agulha cr-vara hp-corrente hm-cartas hm-gungi tr-fumaca tr-aspira').split(' '));
+  'px-gi-joy px-gi-noite th-killua th-hisoka th-meruem th-greed th-zoldyck bd-corrente hv-shu hv-vira hv-en hv-bungee cr-ioio cr-carta cr-agulha cr-vara hp-corrente hm-cartas hm-gungi tr-fumaca tr-aspira').split(' '));
 for(const [fa, ids] of Object.entries(FAIXA)) for(const id of ids.split(' ')){ const it = COS.find(i => i.id === id); if(it) it.fa = fa; }
 for(const it of COS){ if(it.cat === 'chefe'){ it.fa = 'raro'; it.hxh = 1; } else if(HXH.has(it.id)) it.hxh = 1; }
 const FAIXAS_LOJA = [['comum','Comum'],['raro','Raro'],['epico','Épico'],['lenda','Lendário']];
