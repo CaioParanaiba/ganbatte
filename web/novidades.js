@@ -28,6 +28,16 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta6", "nome": "atualização da Torre Trick", "data": "2026-10-21",
+   "resumo": "Chegaram para provar a vara de pescar do Gon, o Rastro de aura em três modelos, a Constância no Gungi e em pegadas, o HP de cristal, o Soco remoto do Leorio e o Dragon Dive do Zeno. Na beta, a borda de status da vitrine agora pinta o card inteiro, em verde, amarelo ou vermelho.",
+   "itens": [
+     {"ic": "alvo", "t": "Vara de pescar do Gon", "d": "Cursor épico: a ponta da vara é o ponteiro. Clique para lançar a linha, fisgue um card e puxe; segure para recolher. Parado um tempo, um peixe morde o anzol. Prove no provar da vitrine (#134)."},
+     {"ic": "flame", "t": "Rastro de aura em três modelos", "d": "O Rastro de aura foi refeito (vapor de Ten e Ren) e ganhou dois irmãos épicos: o Fio de aura, uma fita com física de corda, e o Eco do Killua, o Rhythm Echo. Mais leve que a primeira versão (#134)."},
+     {"ic": "tower", "t": "Constância no Gungi e em pegadas", "d": "Dois heatmaps novos para provar: o tabuleiro de Gungi do Meruem e da Komugi, com peças empilhadas pela força do dia, e o rastro de pés descalços, com pegada de nen no dia salvo (#134)."},
+     {"ic": "crown", "t": "HP de cristal", "d": "A vida do chefão vira uma fileira de cristais lapidados, com os engastes vazios na vida perdida. Refeito do zero, ainda em aberto (#134)."},
+     {"ic": "spider", "t": "Soco, Dragon Dive e Gyo", "d": "O Soco remoto do Leorio e o Dragon Dive do Zeno viraram itens para provar pelo ▶, e o Gyo ganhou a versão nova, uma lente que revela fios e selos no card. Os três estão aprovados e esperando o outro dev (#134)."},
+     {"ic": "coin", "t": "Borda de status de uma cor só", "d": "Na beta, a cor do status da arte vai no card inteiro da vitrine, com cores fixas que não somem em nenhum tema: verde fechado, amarelo aprovado e esperando o outro dev, vermelho em aberto."}
+   ]},
   {"versao": "0.9.2-beta5", "nome": "atualização da Torre Trick", "data": "2026-10-20",
    "resumo": "Chegaram para provar a Costura da Machi e a Barra elétrica do Killua refeita. Na beta, a borda de cada item da Masadora mostra em que pé está a arte dele: verde fechado, dourada aprovado e esperando o outro dev, vermelha em aberto ou ainda não revisto.",
    "itens": [
