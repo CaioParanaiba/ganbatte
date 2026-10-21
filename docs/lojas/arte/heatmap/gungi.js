@@ -1,14 +1,16 @@
 // Constância no Gungi (hm-gungi, raro, Meruem e Komugi): o heatmap vira um tabuleiro de Gungi, em CSS, sem imagem.
-// Cada dia é uma casa de madeira (o vão entre as casas faz as linhas do tabuleiro) e o dia jogado é uma peça de cinco
-// lados, como as do anime, com a marca entalhada em tinta. No Gungi as peças se empilham até três andares: quanto mais
-// forte o dia, mais alta a pilha.
-//   dia jogado (h1 a h4)  h1 uma peça só, a madeira mal tingida; h2 duas peças empilhadas; h3 três; h4 a torre de três na
-//                         cor cheia do hábito, com um brilho leve em volta
+// Como no anime e no jogo oficial (2022): o tabuleiro é de madeira, as peças são redondas, brancas e pretas, com o kanji
+// escrito, e ficam dentro das casas. Cada dia é uma casa (o vão entre as casas faz as linhas do tabuleiro) e o dia jogado
+// é uma peça branca com 兵 (soldado). No Gungi as peças se empilham até três: quanto mais forte o dia, mais alta a pilha.
+// A cor do hábito fica na lateral das peças (a borda do disco), como uma pilha de fichas.
+//   dia jogado (h1 a h4)  h1 uma peça só, lateral mal tingida; h2 duas peças empilhadas; h3 três; h4 a torre de três com a
+//                         lateral na cor cheia do hábito e um aro dessa cor em volta da peça de cima
 //   dia sem nada          a casa vazia
-//   dia salvo (z)         a peça do Rei (王 desenhado em traços, sem fonte), na cor da aura
+//   dia salvo (z)         a peça preta do 帥 (o rei do Gungi), com a lateral na cor da aura
 //   hoje                  o contorno de hoje; se ainda não jogou, o contorno tracejado da peça esperando a jogada
 //   futuro, férias, fora  a casa apagada (férias em verde): o tabuleiro fica inteiro, sem buraco na 1ª e na última semana
-// As cores da madeira saem do tema (--track e --hair), então o tabuleiro escurece no escuro e clareia no claro.
+// Os kanji são traços desenhados no SVG (não precisam de fonte); a 12 px viram só uma marca, de 20 px para cima já leem.
+// As cores da madeira saem do tema (--track), então o tabuleiro escurece no escuro e clareia no claro; as peças não mudam.
 // Nada se mexe sozinho (é raro): o mouse em cima levanta a peça, como quem vai jogá-la, e a jogada de hoje é um momento só.
 //   CURSORES.gungi.css('.hm-gungi')   o CSS com o seletor dado; no jogo: ':root[data-heat="gungi"]'
 //   CURSORES.gungi.joga(el)           quando o dia de hoje é jogado (o <i> novo de hoje): a pilha cai na casa com um
@@ -17,41 +19,45 @@
 (() => {
 const uri = svg => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 const box = corpo => uri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">${corpo}</svg>`);
-const P = pts => 'M' + pts.map(([x, y]) => `${x} ${y}`).join(' L') + ' Z';
-const FUNDO = 9.4, LADO = 1.1, ALTA = 5.4;   // o pé da pilha, a grossura de cada peça e a altura da face
-// a face de cinco lados com o pé em b, e a lateral de uma peça (o que aparece de cada andar de baixo)
-const face = b => { const t = b - ALTA; return [[5, t], [7.9, t + 1.4], [8.3, b], [1.7, b], [2.1, t + 1.4]]; };
-const lado = y => [[1.7, y], [8.3, y], [8.1, y + LADO], [1.9, y + LADO]];
-// a marca da peça: um 士 de três traços; o Rei leva um 王 (três horizontais e o traço do meio)
-const marca = (b, rei) => { const c = b - ALTA + 3.3;
-  return rei ? `M3.3 ${c - 1.4}H6.7M3.6 ${c}H6.4M2.9 ${c + 1.5}H7.1M5 ${c - 1.4}V${c + 1.5}`
-    : `M3.4 ${c - .6}H6.6M5 ${c - 1.7}V${c + 1.3}M3.9 ${c + 1.3}H6.1`; };
+const FUNDO = 9.5, ESP = 1, RX = 4, RY = 2.9;   // o pé da pilha, a grossura de cada peça e os raios do disco (visto de cima, inclinado)
+const BRANCA = '#F4F1E8', PRETA = '#1F1E24', TINTA = '#23180F';
+// os kanji em traços, com o centro em (0, 0): 兵 (soldado, a peça comum) e 帥 (o rei do Gungi)
+const HEI = 'M-1 -1.6L.9 -1.95M-.9 -1.5V-.1M-.9 -.75H1.1M.35 -.75V.35M-1.6 .4H1.6M-.55 .85L-1.3 1.7M.55 .85L1.3 1.7';
+const SUI = 'M-1.4 -1.85L-1.65 -1.35M-1.6 -1.25V1.7M-1.6 -1.15H-.75V-.2H-1.6M-1.6 .25H-.75V1.2H-1.6'
+  + 'M-.3 -1.4H1.75M.72 -1.95V1.95M-.15 -.65V.95M-.15 -.65H1.6V.75';
+const meia = (cy, rx = RX) => `M${5 - rx} ${cy} A${rx} ${RY} 0 0 0 ${5 + rx} ${cy}`;   // a metade de baixo de uma elipse
+const disco = (cy, rx = RX, ry = RY) => `M${5 - rx} ${cy} a${rx} ${ry} 0 1 0 ${2 * rx} 0 a${rx} ${ry} 0 1 0 ${-2 * rx} 0 Z`;
 function pilha(n, rei){
-  const b = FUNDO - LADO * n, lados = Array.from({length: n}, (_, k) => lado(FUNDO - LADO * (k + 1)));
-  const corpo = box(`<path d="${P(face(b))} ${lados.map(P).join(' ')}"/>`);
-  // a tinta: a lateral sombreada, o contorno de cada peça e a marca entalhada
-  const tinta = box(`<path d="${lados.map(P).join(' ')}" fill-opacity=".32"/>`
-    + `<g fill="none" stroke="#000" stroke-linejoin="round" stroke-linecap="round"><path d="${P(face(b))} ${lados.map(P).join(' ')}" stroke-width=".5"/>`
-    + `<path d="${marca(b, rei)}" stroke-width="${rei ? .62 : .7}"/></g>`);
-  return {corpo, tinta};
+  const cy = FUNDO - RY - ESP * n, pe = cy + ESP * n;   // o centro da face de cima e onde a lateral termina
+  const lateral = `M${5 - RX} ${cy} V${pe} A${RX} ${RY} 0 0 0 ${5 + RX} ${pe} V${cy} Z`;
+  // a cor (máscara, pintada com a cor do hábito): a lateral e um aro um pouco maior que a face (só aparece no h4)
+  const cor = box(`<path d="${lateral}"/>`), aro = box(`<path d="${lateral} ${disco(cy, RX + .55, RY + .45)}"/>`);
+  // o desenho (cores fixas, por cima): a face, o contorno, as divisões entre as peças e o kanji
+  const divisoes = Array.from({length: n - 1}, (_, k) => meia(cy + ESP * (k + 1))).join(' ');
+  const face = rei ? PRETA : BRANCA, letra = rei ? BRANCA : TINTA;
+  const arte = box(`<g stroke="${TINTA}" stroke-width=".42" stroke-linejoin="round"><path d="${lateral}" fill="none"/>`
+    + (divisoes ? `<path d="${divisoes}" fill="none"/>` : '') + `<path d="${disco(cy)}" fill="${face}"/></g>`
+    + `<path d="${rei ? SUI : HEI}" transform="translate(5 ${cy}) scale(.82 .78)" fill="none" stroke="${letra}" stroke-width=".55" stroke-linecap="round" stroke-linejoin="round"/>`);
+  return {cor, aro, arte};
 }
 const UM = pilha(1), DOIS = pilha(2), TRES = pilha(3), REI = pilha(1, true);
-const ESPERA = box(`<path d="${P(face(FUNDO - LADO))} ${P(lado(FUNDO - LADO))}" fill="none" stroke="#000" stroke-width=".55" stroke-dasharray="1.1 .8"/>`);
+const ESPERA = box(`<path d="${disco(FUNDO - RY - ESP)} ${meia(FUNDO - RY)} M${5 - RX} ${FUNDO - RY - ESP}V${FUNDO - RY}M${5 + RX} ${FUNDO - RY - ESP}V${FUNDO - RY}" fill="none" stroke="#000" stroke-width=".5" stroke-dasharray="1.1 .8"/>`);
 const masc = m => `-webkit-mask:${m} center/contain no-repeat;mask:${m} center/contain no-repeat`;
+const img = m => `background:${m} center/contain no-repeat`;
 
 function css(raiz){
   const i = `${raiz} .l-hg i`, jogado = `${i}:is(.h1,.h2,.h3,.h4,.z)`, vazia = `${i}:not(.h1,.h2,.h3,.h4,.z,.fut,.fer,.fora)`;
   const camada = 'content:"";position:absolute;inset:0;transition:translate .15s';
   return `
-${raiz} .l-hg{--gg-tab:color-mix(in srgb,#A87444 30%,var(--track));--gg-lin:color-mix(in srgb,#6B4423 45%,var(--track));--gg-peca:#E2C28A;--gg-tinta:#2A1C10;
+${raiz} .l-hg{--gg-tab:color-mix(in srgb,#A87444 30%,var(--track));--gg-lin:color-mix(in srgb,#6B4423 45%,var(--track));--gg-peca:#CFC6B4;
   background:var(--gg-lin);border-radius:4px}
 ${i}{position:relative;border-radius:1px;background:var(--gg-tab);outline:none}
-${jogado}::before{${camada};background:var(--p)} ${jogado}::after{${camada};background:var(--gg-tinta)}
-${i}.h1{--p:color-mix(in srgb,var(--c) 30%,var(--gg-peca))} ${i}.h1::before{${masc(UM.corpo)}} ${i}.h1::after{${masc(UM.tinta)}}
-${i}.h2{--p:color-mix(in srgb,var(--c) 55%,var(--gg-peca))} ${i}.h2::before{${masc(DOIS.corpo)}} ${i}.h2::after{${masc(DOIS.tinta)}}
-${i}.h3{--p:color-mix(in srgb,var(--c) 80%,var(--gg-peca))} ${i}:is(.h3,.h4)::before{${masc(TRES.corpo)}} ${i}:is(.h3,.h4)::after{${masc(TRES.tinta)}}
-${i}.h4{--p:var(--c);z-index:1} ${i}.h4::before{filter:drop-shadow(0 0 1.5px var(--c))}
-${i}.z{--p:var(--aura)} ${i}.z::before{${masc(REI.corpo)}} ${i}.z::after{${masc(REI.tinta)}}
+${jogado}::before{${camada};background:var(--p)} ${jogado}::after{${camada}}
+${i}.h1{--p:color-mix(in srgb,var(--c) 35%,var(--gg-peca))} ${i}.h1::before{${masc(UM.cor)}} ${i}.h1::after{${img(UM.arte)}}
+${i}.h2{--p:color-mix(in srgb,var(--c) 60%,var(--gg-peca))} ${i}.h2::before{${masc(DOIS.cor)}} ${i}.h2::after{${img(DOIS.arte)}}
+${i}.h3{--p:color-mix(in srgb,var(--c) 82%,var(--gg-peca))} ${i}.h3::before{${masc(TRES.cor)}} ${i}:is(.h3,.h4)::after{${img(TRES.arte)}}
+${i}.h4{--p:var(--c);z-index:1} ${i}.h4::before{${masc(TRES.aro)}}
+${i}.z{--p:var(--aura)} ${i}.z::before{${masc(REI.cor)}} ${i}.z::after{${img(REI.arte)}}
 ${jogado}:hover::before,${jogado}:hover::after{translate:0 -14%}
 ${i}:is(.fut,.fer,.fora){visibility:visible;background:color-mix(in srgb,var(--gg-tab) 50%,transparent);outline:none}
 ${i}.fer{background:color-mix(in srgb,var(--grn) 22%,var(--gg-tab))}
@@ -152,6 +158,6 @@ function previas(el){
 
 (window.CURSORES = window.CURSORES || {}).gungi = {css, joga, previas,
   titulo: 'Constância no Gungi',
-  dica: 'o heatmap vira o tabuleiro do Meruem e da Komugi: cada dia é uma casa de madeira, e o dia jogado é uma peça de cinco lados · no Gungi as peças se empilham até três andares: dia fraco = uma peça mal tingida, dia forte = a torre de três na cor do hábito · sem nada = a casa vazia · salvo = a peça do Rei (o kanji de rei, em traços) na cor da aura · hoje sem jogar = o contorno da peça esperando<br>"jogar hoje" mostra a peça caindo na casa',
+  dica: 'o heatmap vira o tabuleiro do Meruem e da Komugi: cada dia é uma casa de madeira, e o dia jogado é uma peça redonda e branca, de soldado · no Gungi as peças se empilham até três andares: a cor do hábito fica na lateral das peças: dia fraco = uma peça só, dia forte = a torre de três com a lateral na cor cheia · sem nada = a casa vazia · salvo = a peça preta do rei (o sui) com a lateral na cor da aura · hoje sem jogar = o contorno da peça esperando<br>"jogar hoje" mostra a peça caindo na casa',
   controles: []};
 })();
