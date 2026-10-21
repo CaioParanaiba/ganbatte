@@ -71,6 +71,12 @@ const ARTE = {
   'tx-cartas':     {st:'finalizar', tx:'Refeita em código (21/10): a tela vira o verso de uma carta, com a treliça de naipes, os cantos e o filete duplo. Aprovada pelo Caio; falta o outro dev ver.'},
   'tx-arena':      {st:'finalizar', tx:'Refeita em código (21/10): o piso do ringue em perspectiva no pé da tela, com a borda dourada. Aprovada pelo Caio; falta o outro dev ver.'},
   'tx-nen':        {st:'finalizar', tx:'Refeita em código (21/10), vira a Aura do dia (épico): a aura do seu tipo contorna a tela e engrossa para dentro conforme o XP de hoje chega na meta; as pontas se encontram no alto quando ela fecha, e cada XP novo dá um pulso. Provando, "passar o dia" mostra o dia inteiro. Aprovada pelo Caio; falta o outro dev ver.'},
+  'fx-aura':       {st:'fechado', sem:true, fixo:'na loja do grupo', tx:'Revisto (21/10): foi para a Loja da Associação, onde é a Aura do avatar; quem tem continua com ela.'},
+  'fx-digita':     {st:'aberto', sem:true, tx:'Refeito em código (21/10), ainda na bancada: os títulos digitados letra por letra, mais devagar, com o cursor em bloco e o ritmo de quem digita. Esperando o veredito do Caio.'},
+  'fx-ascensao':   {st:'aberto', sem:true, tx:'Refeita em código (21/10), ainda na bancada: cortinas de aurora boreal no alto da tela, no lugar do borrão que girava (lia como a Aura ambiente). Esperando o veredito do Caio.'},
+  'fx-confete':    {st:'aberto', sem:true, tx:'Lapidado em código (21/10), ainda na bancada: dois canhões e papel que flutua, vira e balança. Proposta: vira comum. Esperando o veredito do Caio.'},
+  'fx-fogos':      {st:'aberto', sem:true, tx:'Lapidado em código (21/10), ainda na bancada: foguetes com rastro e cinco tipos de estouro (peônia, anel, salgueiro, crisântemo, palmeira). Esperando o veredito do Caio.'},
+  'fx-shake':      {st:'aberto', sem:true, tx:'Refeita (21/10), ainda na bancada: o chefão em fúria solta o Ren, com labaredas que sobem e, de tempos em tempos, a veia de raiva e um tranco. Esperando o veredito do Caio.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
