@@ -2031,7 +2031,7 @@ function rCal(S){
     return `<div class="cl-sl${y === ym ? ' on' : ''}"><b>${nm.slice(0,3)} ${y.slice(2,4)}</b><div class="cl-sr">${r}</div></div>`;
   }).join('');
   const semC = `<div class="card cl-sem"><h2><span class="c">~/</span>${esc(TEMP.nome)}<span class="sub" style="margin-left:auto">semana ${semana().n} de ${semana().tot}</span></h2>${sem}<div class="tl-leg"><span>cor = tarefas feitas no dia</span><span>anel = avaliação</span></div></div>`;
-  document.getElementById('cal').innerHTML = faixaN(S) + `<div class="cl-g"><div class="cl-side">${mes}${semC}</div><div class="cl-side">${diaC2}${px}</div></div>`;
+  document.getElementById('cal').innerHTML = `<div class="cl-g"><div class="cl-side">${mes}${semC}</div><div class="cl-side">${diaC2}${px}</div></div>`;
 }
 function rD2(S){
   document.querySelector('[data-cnova]').textContent = UI.cnova ? '← voltar para o Calendário antigo' : 'experimentar o Calendário novo (beta) →';
