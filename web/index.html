@@ -1394,7 +1394,12 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .cl-dia .cl-add{margin-top:12px;width:100%;justify-content:center}
 .cl-dia .cl-add .l-nk{margin-left:8px}
 .cl-dia .pn-tt:first-of-type{margin-top:0}
-.cl-px .pn-td{cursor:pointer} .cl-px .pn-td:hover .pn-dl{color:var(--ink)}
+.cl-pr{display:grid;grid-template-columns:78px minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 6px;border-top:1px solid var(--hair);cursor:pointer;border-radius:4px}
+.cl-px h2 + .cl-pr{border-top:0}
+.cl-pr .dl{font:600 11.5px var(--f-mono);color:var(--soft)} .cl-pr.hj .dl{color:var(--volt)} .cl-pr.late .dl,.cl-pr.late .q{color:var(--red)}
+.cl-pr .cs{display:flex;flex-wrap:wrap;gap:4px;min-width:0} .cl-pr .cl-it{display:inline-block}
+.cl-pr .q{font:600 11px var(--f-mono);color:var(--faint);white-space:nowrap}
+.cl-pr:hover .dl{color:var(--ink)} .cl-pr.sel{background:var(--track)}
 .cl-sem .cl-sl{display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;align-items:center;padding:3px 0}
 .cl-sem .cl-sl > b{font:600 11px var(--f-mono);color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
 .cl-sem .cl-sl.on > b{color:var(--ink)}
@@ -2002,13 +2007,16 @@ function rCal(S){
   const diaC2 = `<div class="card cl-dia"><h2><span class="c">~/</span>${diaC(dia)}<small>${[[HOJE, addD(HOJE,1), addD(HOJE,-1)].includes(dia) ? `${SEMC[dow(dia)]} ${ddmm(dia)}` : '', gi(dia) ? 'Greed Island' : ''].filter(Boolean).join(' · ')}</small></h2>
     ${corpo || `<p class="sub">${dia < HOJE ? 'nada feito neste dia' : 'nada marcado para este dia'}</p>`}
     ${dia >= HOJE ? `<button type="button" class="btn cl-add" data-cadd>+ tarefa para ${diaC(dia)}<span class="l-nk">N</span></button>` : ''}</div>`;
-  /* próximos 14 dias: atrasadas, avaliações e prazos, agrupados por dia */
-  const lin = [];
-  const late = D.abertas.filter(t => t.due && t.due < HOJE && !t.done && !SIM.has(t.n)).sort((p,q) => p.due.localeCompare(q.due));
-  if(late.length) lin.push(`<div class="pn-td late" data-cdia="${late[0].due}"><span class="pn-dl">atrasadas · ${late.length}</span>${late.slice(0,4).map(t => pzL({t})).join('')}${late.length > 4 ? '<button class="go pn-mais" data-go="l">ver todas na Lista →</button>' : ''}</div>`);
+  /* próximos 14 dias, um resumo por dia: as avaliações pelo nome e as tarefas só contadas (o detalhe fica no dia escolhido) */
+  const lin = [], nT = n => `${n} ${n === 1 ? 'tarefa' : 'tarefas'}`;
+  const late = D.abertas.filter(t => t.due && t.due < HOJE && !t.done && !SIM.has(t.n));
+  if(late.length) lin.push(`<div class="cl-pr late" data-go="l" title="ver na Lista"><span class="dl">atrasadas</span><span class="cs"></span><span class="q">${nT(late.length)}</span></div>`);
   for(let i = 0; i < 14; i++){
     const d = addD(HOJE, i), x = M[d]; if(!x || !(x.av.length + x.pz.length)) continue;
-    lin.push(`<div class="pn-td${d === HOJE ? ' hj' : ''}" data-cdia="${d}"><span class="pn-dl">${diaC(d)}</span>${x.av.map(avL).join('')}${x.pz.map(pzL).join('')}</div>`);
+    const g = {}; x.av.forEach(o => (g[o.a.k] = g[o.a.k] || []).push(o));   // a mesma avaliação em várias disciplinas (ex.: AI) vira um chip só
+    const cs = Object.entries(g).map(([k, l]) => `<span class="cl-it cav" style="--c:${corAv(l[0].a)}" title="${l.map(o => esc(o.b.d + ' · ' + o.a.n)).join(', ')}">${esc(k)} · ${l.length > 1 ? l.length + ' disc.' : esc(l[0].b.d)}</span>`).join('');
+    const xp = x.pz.reduce((a, o) => a + xpDe({...o.t, done:o.t.due}), 0);
+    lin.push(`<div class="cl-pr${d === HOJE ? ' hj' : ''}${d === dia ? ' sel' : ''}" data-cdia="${d}"><span class="dl">${diaC(d)}</span><span class="cs">${cs}</span><span class="q">${x.pz.length ? `${nT(x.pz.length)} · +${xp}` : ''}</span></div>`);
   }
   const px = `<div class="card cl-px"><h2><span class="c">~/</span>próximos 14 dias</h2>${lin.join('') || '<p class="sub">nada marcado nas próximas duas semanas</p>'}</div>`;
   /* o semestre numa faixa: uma linha por mês, o calor do que foi feito e as avaliações */
