@@ -778,9 +778,8 @@ async function atualiza(){
   fala('O jogo está demorando para voltar. Recarregue a página em alguns segundos (ou reinicie o computador).');
 }
 
-/* aba no menu, com um ponto quando há versão nova ou novidade que você ainda não viu */
-const gnav1 = gnav;
-gnav = c => gnav1(c).replace('<button data-go="sys"', `<button data-go="nv"${c === 'nv' ? ' aria-current="page"' : ''}>${ic('antenna')}Novidades${temNova() || naoVista() ? '<i class="nv-dot" aria-label="novidade"></i>' : ''}</button><button data-go="sys"`);   // Novidades logo antes das Regras (no fim)
+/* ponto quando há versão nova ou novidade que você ainda não viu */
+window.nvTemDot = () => temNova() || naoVista();   // o ponto no botão Sistema e na sub-aba Novidades (index.html)
 RENDER.nv = rNV;
 document.addEventListener('click', e => {
   if(e.target.closest('[data-nvconfere]')){ confere(true); return; }

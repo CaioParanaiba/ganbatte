@@ -873,6 +873,13 @@ a.btn{display:inline-block;text-decoration:none}
 .gnav .back{color:var(--prompt)}
 .gnav .sp{flex:1}
 .gnav .px{border:1px dashed color-mix(in srgb,var(--grn) 55%,var(--hair));color:var(--grn)}
+.gnav .sis{border-color:var(--hair)}
+.gsub{display:flex;gap:4px;flex-wrap:wrap;margin:-8px 0 16px;padding:0 8px}
+.gsub button{display:inline-flex;gap:6px;align-items:center;border:0;border-bottom:2px solid transparent;background:none;padding:6px 10px;cursor:pointer;font:600 12.5px var(--f-ui);color:var(--soft)}
+.gsub button .ic{font-size:14px}
+.gsub button:hover{color:var(--ink)}
+.gsub button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--volt)}
+.gsub .nv-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amb);margin-left:2px;vertical-align:top}
 .pxnav .back8{background:var(--panel)!important;color:var(--prompt)!important;border-color:var(--prompt)!important}
 
 /* card curto */
@@ -1461,7 +1468,7 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 <div class="wrap">
   <header class="head">
     <div style="display:flex;gap:14px;align-items:center"><span class="plate" style="width:46px;height:46px"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3 58 18v28L32 61 6 46V18z' fill='%2316181F' stroke='%23E0364F' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M14 22v20M23 22v20M14 32h9M41 22v20M50 22v20M41 32h9' stroke='%23F4F1EA' stroke-width='4.2' fill='none'/%3E%3Cpath d='M28.6 28.6l6.8 6.8M35.4 28.6l-6.8 6.8' stroke='%23E0364F' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E" alt="Ganbatte"></span>
-      <div><h1>Ganbatte</h1><p style="margin:2px 0 0">O jogo do seu todo.txt. As regras estão na aba Regras; nome, hábitos e IA, em Configurações.</p></div></div>
+      <div><h1>Ganbatte</h1><p style="margin:2px 0 0">O jogo do seu todo.txt. Regras, novidades e configurações (nome, hábitos e IA) ficam em Sistema, no canto direito.</p></div></div>
     <div class="facts" id="facts"></div>
   </header>
   <div class="fact" id="demo-aviso" hidden style="margin-top:12px;border-style:dashed;color:var(--amb)">Modo demonstração: jogador de exemplo, nada é gravado. Recarregar a página volta ao começo.</div>
@@ -2385,10 +2392,15 @@ function rP3b(S){
 const ABA = Object.fromEntries([['l','lista'],['b','torre'],['b2','chefoes'],['x','projetos'],['d2','calendario'],['bk','cartas'],['ms','loja'],['cfg','config'],['tt','grupo']]
   .map(([t,k]) => [t, {n:GBx.NOMES[k], tema:GBx.TEMA[k] || ''}]));
 const abaTit = t => ABA[t].tema ? ` title="${ABA[t].tema}"` : '';
+/* Novidades, Configurações e Regras moram juntas na aba Sistema, no canto direito, com sub-abas embaixo da barra */
+const SIS = [['nv','antenna','Novidades'],['cfg','esp','Configurações'],['sys','crown','Regras']];
+let sisUlt = 'nv';   // a sub-aba que o botão Sistema abre: a última visitada
+const nvDot = () => window.nvTemDot && nvTemDot() ? '<i class="nv-dot" aria-label="novidade"></i>' : '';
 function gnav(cur){
-  const it = [['l','scroll'],['b','tower'],['b2','spider'],['x','island'],['d2','scroll'],['bk','card'],['ms','coin'],['cfg','esp']].map(([t,i]) => [t,i,ABA[t].n]);
-  // Torre Trick, depois Novidades (novidades.js a põe antes do botão das Regras) e as Regras no fim
-  return `<nav class="gnav" aria-label="Atalhos do jogo">${it.map(([t,i,n]) => `<button data-go="${t}"${t===cur?' aria-current="page"':''}${abaTit(t)}>${ic(i)}${n}</button>`).join('')}<button data-go="tt"${cur==='tt'?' aria-current="page"':''} title="${ABA.tt.tema}: o placar do grupo">${ic('tower')}${ABA.tt.n}</button><button data-go="sys"${cur==='sys'?' aria-current="page"':''}>${ic('crown')}Regras</button><span class="sp"></span>${cur==='b'?`<button class="px" data-go="px" data-px="map">${ic('island')} mundo pixel →</button>`:''}</nav>`;
+  const it = [['l','scroll'],['b','tower'],['b2','spider'],['x','island'],['d2','scroll'],['bk','card'],['ms','coin']].map(([t,i]) => [t,i,ABA[t].n]);
+  const naSis = SIS.some(([t]) => t === cur); if(naSis) sisUlt = cur;
+  const sub = naSis ? `<nav class="gsub" aria-label="Sistema">${SIS.map(([t,i,n]) => `<button data-go="${t}"${t===cur?' aria-current="page"':''}>${ic(i)}${n}${t === 'nv' ? nvDot() : ''}</button>`).join('')}</nav>` : '';
+  return `<nav class="gnav" aria-label="Atalhos do jogo">${it.map(([t,i,n]) => `<button data-go="${t}"${t===cur?' aria-current="page"':''}${abaTit(t)}>${ic(i)}${n}</button>`).join('')}<button data-go="tt"${cur==='tt'?' aria-current="page"':''} title="${ABA.tt.tema}: o placar do grupo">${ic('tower')}${ABA.tt.n}</button><span class="sp"></span>${cur==='b'?`<button class="px" data-go="px" data-px="map">${ic('island')} mundo pixel →</button>`:''}<button class="sis" data-go="${sisUlt}"${naSis?' aria-current="page"':''} title="Novidades, Configurações e Regras">${ic('esp')}Sistema${nvDot()}</button></nav>${sub}`;
 }
 /* ---------- Torre Trick (modo em grupo): sem grupo, explica o que vem; com grupo, grupo.js mostra o placar. Desenho em docs/COLETIVO.md ---------- */
 function rTT(){
