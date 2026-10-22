@@ -234,9 +234,6 @@ ul{list-style:none;margin:0;padding:0}
 .gi-blk b{font:700 14px var(--f-hud);color:var(--grn)}
 .tl-leg{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--soft);margin-top:10px}
 .season-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px}
-.ladder li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--hair);font-size:13.5px}
-.ladder li:first-child{border-top:0} .ladder .av{--s:26px} .ladder .st{font:600 12px var(--f-mono);color:var(--faint)}
-.ladder li.done .st{color:var(--grn)} .ladder li.next{color:var(--ink)} .ladder li.next .st{color:var(--amb)}
 .hall{width:100%;border-collapse:collapse;font-size:13px}
 .hall th{font:600 10.5px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.08em;text-align:left;padding:4px 0}
 .hall td{padding:8px 0;border-top:1px solid var(--hair)} .hall td:last-child,.hall th:last-child{text-align:right}
@@ -568,19 +565,6 @@ ul{list-style:none;margin:0;padding:0}
 .lanes tr.xpr i{display:block;width:100%;border-radius:4px 4px 0 0;background:linear-gradient(0deg,var(--aura),var(--volt))}
 .lanes .gi3{background:color-mix(in srgb,var(--grn) 10%,transparent);border:1.5px dashed var(--grn);color:var(--grn);font:700 12px var(--f-hud)}
 /* D2 · Semestre em dias */
-.months{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px}
-.mo h4{margin:0 0 6px;font:700 13px var(--f-hud);text-transform:uppercase;letter-spacing:.06em}
-.mo .g7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
-.mo .g7 span{font:600 9.5px var(--f-mono);color:var(--faint);text-align:center}
-.dd{aspect-ratio:1;border-radius:4px;background:var(--track);position:relative;display:grid;place-items:center;font:600 10px var(--f-mono);color:transparent}
-.dd.l1{background:color-mix(in srgb,var(--volt) 30%,var(--track))} .dd.l2{background:color-mix(in srgb,var(--volt) 60%,var(--track))} .dd.l3{background:var(--volt)}
-.dd.fut{background:transparent;border:1px solid var(--hair)} .dd.out{visibility:hidden}
-.dd.z{background:transparent;border:1.5px dashed var(--aura)}
-.dd.hj{outline:2px solid var(--ink);outline-offset:1px}
-.dd.av3{color:var(--bg)} .dd.av3::after{content:"";position:absolute;inset:-2px;border:2px solid var(--red);border-radius:5px}
-.dd.av3 b{position:absolute;inset:0;display:grid;place-items:center;font:800 9px var(--f-mono);color:var(--red)}
-.dd.fer3{background:color-mix(in srgb,var(--grn) 20%,transparent);border:1px dashed var(--grn)}
-.d2grid{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr);gap:16px;align-items:start}
 
 /* ================= E · Mangá (atualizado) ================= */
 .manga .vil{grid-column:span 6;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:10px;background:var(--ink2)}
@@ -695,7 +679,7 @@ ul{list-style:none;margin:0;padding:0}
   .manga .vil{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:900px){
-  .ctx3,.d2grid,.cl-g,.kanban,.shop8 .lay,.shop8 .how8,.jump .lay,.jump .side{grid-template-columns:minmax(0,1fr)}
+  .ctx3,.cl-g,.kanban,.shop8 .lay,.shop8 .how8,.jump .lay,.jump .side{grid-template-columns:minmax(0,1fr)}
   .arena3{grid-template-columns:minmax(0,1fr)} .arena3 > :last-child{grid-column:auto} .arena3 .tower{display:none}
   .map8{grid-template-columns:minmax(0,1fr)}
   .manga .vil{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -820,7 +804,6 @@ a.btn{display:inline-block;text-decoration:none}
   .arena4,.kan4,.bk,.ms,.prog{grid-template-columns:minmax(0,1fr)} .arena4 > :last-child,.ms > :last-child{grid-column:auto} .arena4 .tower{display:none}
   .bk .det{position:static}
 }
-.dd.av3::after{border-color:var(--rc,var(--red))}
 
 /* ---------- v5: temas das telas limpas (sobrescrevem os tokens) ---------- */
 .themes{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font:600 11px var(--f-mono);color:var(--faint)}
@@ -1378,7 +1361,6 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .cl-d.out{visibility:hidden;pointer-events:none}
 .cl-d .n{display:flex;align-items:baseline;gap:6px;font:600 12px var(--f-mono);color:var(--soft)}
 .cl-d .n small{margin-left:auto;font:600 10.5px var(--f-mono);color:var(--faint)}
-#d2-antiga[hidden]{display:none}
 .cl-d{position:relative}
 .cl-d.pas{background:color-mix(in srgb,var(--track) 45%,var(--panel))} .cl-d.pas .n{color:var(--faint)}
 .cl-d.pas::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:color-mix(in srgb,var(--volt) calc(var(--h,0) * 1%),transparent)}
@@ -1542,10 +1524,7 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 
   <section id="v-d2" hidden>
     <div id="gnav-d2"></div>
-    <div class="nl-troca"><button type="button" class="go" data-cnova></button></div>
-    <div id="cal" hidden></div>
-    <div class="d2grid" id="d2-antiga"><div class="card"><div class="months" id="d2-months"></div><div class="tl-leg" style="margin-top:14px"><span>azul = dia com tarefas</span><span>tracejado roxo = Zetsu</span><span>anel vermelho = avaliação futura · âmbar = aguardando nota · verde = nota ≥ 6</span><span>verde tracejado = Greed Island</span></div></div>
-      <div class="stack"><div class="card"><h2><span class="c">~/</span>escada da temporada</h2><ul class="ladder" id="d2-ladder"></ul></div><div class="card"><h2><span class="c">~/</span>próximas avaliações</h2><div id="d2-next"></div></div></div></div>
+    <div id="cal"></div>
   </section>
 
   <section id="v-bk" hidden>
@@ -1963,8 +1942,7 @@ function mesesTemporada(){
   }
   return out;
 }
-/* Calendário novo atrás de um botão, como foi com a Lista: o padrão segue o antigo até fechar o desenho */
-try { UI.cnova = localStorage.getItem('gb-cal') === 'nova'; } catch(e){ UI.cnova = false; }
+/* Calendário: o mês grande, o dia escolhido, os próximos 14 dias e o semestre numa faixa */
 const SEMC = ['seg','ter','qua','qui','sex','sáb','dom'];
 const diaC = d => d === HOJE ? 'hoje' : d === addD(HOJE,1) ? 'amanhã' : d === addD(HOJE,-1) ? 'ontem' : `${SEMC[dow(d)]} ${ddmm(d)}`;
 const corAv = a => a.st === 'ok' ? 'var(--grn)' : a.st === 'low' ? 'var(--soft)' : a.st === 'wait' || a.st === 'hoje' ? 'var(--amb)' : 'var(--red)';
@@ -1978,8 +1956,8 @@ function diasCal(S){
   return M;
 }
 /* a tecla N (e o botão do dia) abre a tarefa nova com o prazo do dia escolhido, se ele não passou */
-const prazoCal = () => cur === 'd2' && UI.cnova && UI.cdia && UI.cdia >= HOJE ? UI.cdia : '';
-function rCal(S){
+const prazoCal = () => cur === 'd2' && UI.cdia && UI.cdia >= HOJE ? UI.cdia : '';
+function rD2(S){
   const M = diasCal(S), dia = UI.cdia || HOJE, ym = UI.cmes || dia.slice(0,7), [ya, mm] = ym.split('-').map(Number);
   const gi = d => d > TEMP.fim && d < TEMP.volta;
   /* mês */
@@ -2032,29 +2010,6 @@ function rCal(S){
   }).join('');
   const semC = `<div class="card cl-sem"><h2><span class="c">~/</span>${esc(TEMP.nome)}<span class="sub" style="margin-left:auto">semana ${semana().n} de ${semana().tot}</span></h2>${sem}<div class="tl-leg"><span>cor = tarefas feitas no dia</span><span>anel = avaliação</span></div></div>`;
   document.getElementById('cal').innerHTML = `<div class="cl-g"><div class="cl-side">${mes}${semC}</div><div class="cl-side">${diaC2}${px}</div></div>`;
-}
-function rD2(S){
-  document.querySelector('[data-cnova]').textContent = UI.cnova ? '← voltar para o Calendário antigo' : 'experimentar o Calendário novo (beta) →';
-  document.getElementById('cal').hidden = !UI.cnova; document.getElementById('d2-antiga').hidden = UI.cnova;
-  if(UI.cnova){ rCal(S); return; }
-  const meses = mesesTemporada();
-  const avDia = {}; S.bs.forEach(b => b.avs.forEach(a => { if(!a.cont) (avDia[a.dt] = avDia[a.dt] || []).push({b,a}); }));
-  document.getElementById('d2-months').innerHTML = meses.map(([ym,nm]) => {
-    const first = ym+'-01', off = dow(first); let cells = '';
-    for(let i=0;i<off;i++) cells += '<i class="dd out"></i>';
-    for(let d = first; d.slice(0,7) === ym; d = addD(d,1)){
-      const k = S.porDia[d]||0, av = avDia[d], gi = d > TEMP.fim && d < TEMP.volta, st = S.ten.st[d];
-      let c = d > HOJE ? (gi ? 'fer3' : 'fut') : k >= 4 ? 'l3' : k >= 2 ? 'l2' : k ? 'l1' : st === 'z' ? 'z' : '';
-      const col = av ? (av.every(x => x.a.st==='ok') ? 'var(--grn)' : av.some(x => x.a.st==='wait'||x.a.st==='hoje') ? 'var(--amb)' : 'var(--red)') : '';
-      cells += `<i class="dd ${c}${av?' av3':''}${d===HOJE?' hj':''}" style="${av?`--rc:${col}`:''}" title="${ddmm(d)}${k?' · '+k+' tarefas · +'+(S.xpDia[d]||0)+' XP':''}${av?' · '+av.map(x => x.b.d+' '+x.a.n+' ('+stTxt(x.a)+')').join(', '):''}">${av?`<b style="color:${col}">${av.length>1?av.length:av[0].a.k}</b>`:''}</i>`;
-    }
-    return `<div class="mo"><h4>${nm}</h4><div class="g7">${'STQQSSD'.split('').map(x => `<span>${x}</span>`).join('')}${cells}</div></div>`;
-  }).join('');
-  const steps = [[50,'Andar 50','metade da primeira faixa'],[100,'Andar 100','o andar passa a custar o dobro'],[200,'Andar 200 · Floor Master','estrela ★'],[251,'Topo','estrela ★★'],[999,'Torneio','Guarda Real · ★★★']];
-  const nx = steps.find(s => S.a.n < s[0]);
-  document.getElementById('d2-ladder').innerHTML = steps.map(s => `<li class="${S.a.n>=s[0]?'done':s===nx?'next':''}"><span class="av" style="--c:${s[0]===999?'var(--aura)':'var(--amb)'}">${ic(s[0]===999?'crown':'tower')}</span><span><b>${s[1]}</b><br><span class="sub">${s[2]}</span></span><span class="st">${S.a.n>=s[0]?'✓':s===nx?`faltam ${fmt(xpAte(s[0]) - S.total)} XP`:''}</span></li>`).join('');
-  const prox = S.bs.flatMap(b => b.avs.filter(a => a.st !== 'ok' && a.st !== 'low').map(a => ({b,a}))).sort((p,q) => p.a.dt.localeCompare(q.a.dt)).slice(0,7);
-  document.getElementById('d2-next').innerHTML = prox.map(({b,a}) => `<div class="row">${avB(b,24)}<span>${b.d} · ${esc(a.n)} <span class="sub">${a.w}%${a.tot?` · prep ${a.ok}/${a.tot}`:''}</span></span><span class="d">${a.st==='wait'?'nota?':ddmm(a.dt)}</span></div>`).join('');
 }
 /* ---------- Book limpo ---------- */
 const TIERS = [['ano','Anual','lendária · uma por ano'],['semestre','Semestral','rara · uma por semestre'],['mes','Mensal','uma por mês'],['semana','Semanal','comum · uma por semana']];
@@ -3001,7 +2956,6 @@ document.addEventListener('click', async e => {
   const tp = q('[data-ltipo]'); if(tp){ LA.tipo = tp.dataset.ltipo; LA.auto = false; LA.por = 'escolhido por você'; marcaTipo();
     prevL(); return; }
   const pr = q('[data-lpri]'); if(pr){ LA.pri = pr.dataset.lpri; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b === pr)); prevL(); return; }
-  if(q('[data-cnova]')){ UI.cnova = !UI.cnova; try { localStorage.setItem('gb-cal', UI.cnova ? 'nova' : 'antiga'); } catch(e){} render(); window.scrollTo(0, 0); return; }
   const cm = q('[data-cmes]'); if(cm){ if(cm.dataset.cmes === 'hoje'){ UI.cdia = HOJE; UI.cmes = ''; } else UI.cmes = cm.dataset.cmes; render(); return; }
   const cd = q('[data-cdia]'); if(cd && !q('[data-go]')){ UI.cdia = cd.dataset.cdia; UI.cmes = UI.cdia.slice(0,7); render(); return; }
   if(q('[data-cadd]')){ if(window.GB_EXP) GB_EXP.abreN(undefined, prazoCal()); return; }
