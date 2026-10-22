@@ -111,6 +111,8 @@ CREATE TABLE IF NOT EXISTS cf_dia (grupo TEXT NOT NULL, dia TEXT NOT NULL, dados
 CREATE TABLE IF NOT EXISTS cf_feitos (grupo TEXT NOT NULL, dia TEXT NOT NULL, membro INTEGER NOT NULL, prob TEXT NOT NULL, t REAL NOT NULL,
   PRIMARY KEY (grupo, dia, membro, prob));
 CREATE TABLE IF NOT EXISTS cf_handles (handle TEXT PRIMARY KEY, resolvidos TEXT NOT NULL, rating INTEGER, lido REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS trick (grupo TEXT NOT NULL, membro INTEGER NOT NULL, chave TEXT NOT NULL, motivo TEXT NOT NULL, valor INTEGER NOT NULL,
+  criado REAL NOT NULL, PRIMARY KEY (grupo, membro, chave));
 CREATE TABLE IF NOT EXISTS frases (grupo TEXT NOT NULL, semana TEXT NOT NULL, membro INTEGER NOT NULL, texto TEXT NOT NULL, criado REAL NOT NULL,
   apagada REAL, PRIMARY KEY (grupo, semana));
 """
@@ -310,8 +312,45 @@ def fecha_periodos(t=None):
                     c.execute("INSERT OR IGNORE INTO fechados (grupo, periodo, fechado, dados) VALUES (?, ?, ?, ?)",
                               (g["id"], chave, t, json.dumps(numeros(g["id"], max(a, date.fromisoformat(ini)), b))))
                 fechou.append((g["id"], chave))
+                paga(g, chave)
             d += timedelta(days=1)
     return fechou
+
+
+# ---------- Trick Coin (#43): só de período fechado, nunca por posição ----------
+def credita(gid, valores, chave, motivo):
+    """{membro: valor} → o extrato; a chave (ex.: marca:2026-W43) faz o mesmo período nunca pagar duas vezes."""
+    with transacao() as c:
+        c.executemany("INSERT OR IGNORE INTO trick (grupo, membro, chave, motivo, valor, criado) VALUES (?, ?, ?, ?, ?, ?)",
+                      [(gid, m, chave, motivo, int(v), agora()) for m, v in valores.items() if v > 0])
+
+
+def paga(g, chave):
+    """O que um período que acabou de fechar paga: a semana, a marca de quem bateu; o dia, a tabela do Codeforces; o mês,
+    o chefão derrotado."""
+    g = grupo_ou_404(g["id"])
+    tipo, v = chave.split(":", 1)
+    cal = cal_de(g)
+    if tipo == "dia":
+        tab = q1("SELECT * FROM cf_dia WHERE grupo = ? AND dia = ?", (g["id"], v))
+        if tab:
+            d = json.loads(tab["dados"])
+            feitos = [(x["membro"], x["prob"], x["t"]) for x in q("SELECT * FROM cf_feitos WHERE grupo = ? AND dia = ?", (g["id"], v))]
+            credita(g["id"], cf_dia.pontua(d["problemas"], feitos, {int(k): x for k, x in d["ratings"].items()}, cal)[1], f"cf:{v}", "tabela do dia")
+    elif tipo == "semana":
+        s = next((x for x in retrato(g).semanal()["semanas"] if x["semana"] == v), None)
+        if s:
+            credita(g["id"], {x["membro"]: int(cal["tc_marca"]) for x in s["geral"] if x.get("bateu")}, f"marca:{v}", "marca da semana")
+    elif tipo == "mes":
+        G = retrato(g)
+        credita(g["id"], G.chefao_paga(G.chefao(date.fromisoformat(v + "-01")), cal["tc_chefao"]), f"chefao:{v}", "chefão do mês")
+
+
+def carteira(gid, membro):
+    r = q1("SELECT COALESCE(SUM(valor), 0) AS s FROM trick WHERE grupo = ? AND membro = ?", (gid, membro))
+    ext = [{"chave": x["chave"], "motivo": x["motivo"], "valor": x["valor"], "quando": x["criado"]}
+           for x in q("SELECT * FROM trick WHERE grupo = ? AND membro = ? ORDER BY criado DESC, chave DESC LIMIT 12", (gid, membro))]
+    return {"saldo": r["s"], "extrato": ext}
 
 
 # ---------- cópias do banco ----------
@@ -696,25 +735,25 @@ def retrato(g):
     """O grupo como a torre.py o lê: os membros, todos os dias guardados, o catálogo, os períodos fechados e a calibração."""
     ms = [{"id": m["id"], "nome": m["nome"]} for m in q("SELECT id, nome FROM membros WHERE grupo = ? AND saiu IS NULL ORDER BY entrou", (g["id"],))]
     dias = {}
-    for r in q("SELECT membro, dia, xp, hab, ferias FROM dias WHERE grupo = ?", (g["id"],)):
-        dias.setdefault(r["membro"], {})[r["dia"]] = {"xp": r["xp"], "hab": json.loads(r["hab"]), "f": bool(r["ferias"])}
+    for r in q("SELECT membro, dia, xp, hab, missao, ferias FROM dias WHERE grupo = ?", (g["id"],)):
+        dias.setdefault(r["membro"], {})[r["dia"]] = {"xp": r["xp"], "hab": json.loads(r["hab"]), "m": bool(r["missao"]), "f": bool(r["ferias"])}
     fech = {r["periodo"]: json.loads(r["dados"]) for r in q("SELECT periodo, dados FROM fechados WHERE grupo = ?", (g["id"],))}
     return torre.Grupo(ms, dias, catalogo(g["id"]), fech, hoje_no(g["fuso"]), g["ini"] or "", g["fim"] or "",
                        json.loads(g["calib"] or "{}"), json.loads(g["placares"] or "{}"))
 
 
 def frase_da_semana(g, G, eu=None):
-    """A frase do líder da última semana fechada (#76): quem mais desceu naquela semana escreve uma vez, e ela fica até a
+    """A frase do líder da última semana fechada (#76): o 1º do Geral daquela semana escreve uma vez, e ela fica até a
     semana seguinte fechar."""
     r = q1("SELECT MAX(periodo) AS p FROM fechados WHERE grupo = ? AND periodo LIKE 'semana:%'", (g["id"],))
     if not r or not r["p"]:
         return {"semana": "", "lider": None}
     sem = r["p"]
-    a = torre._inicio(sem)
-    andares = {m: G.andares_semana(m, a, a + timedelta(days=6)) for m in G.ids}
-    lider = max(G.ids, key=lambda m: (andares[m], -G.ids.index(m))) if andares and max(andares.values()) > 0 else None
+    s = next((x for x in G.semanal()["semanas"] if x["semana"] == sem[7:]), None)
+    top = s["geral"][0] if s and s["geral"] and s["geral"][0]["total"] > 0 else None
+    lider = top["membro"] if top else None
     f = q1("SELECT * FROM frases WHERE grupo = ? AND semana = ?", (g["id"], sem))
-    out = {"semana": sem[7:], "lider": lider, "andares": andares.get(lider), "limite": int(G.calib["frase_max"]),
+    out = {"semana": sem[7:], "lider": lider, "pontos": top["total"] if top else None, "limite": int(G.calib["frase_max"]),
            "texto": f["texto"] if f and not f["apagada"] else "", "escrita": f["criado"] if f else None, "apagada": bool(f and f["apagada"])}
     out["pode_escrever"] = bool(eu and lider == eu and not f)
     return out
@@ -770,6 +809,8 @@ def placar(gid, token):
     t.pop("config")
     t["frase"] = frase_da_semana(g, G, eu["id"])
     t["cf_dia"] = cf_placar(g, eu["id"])
+    cal = cal_de(g)
+    t["trick"] = {**carteira(gid, eu["id"]), "valores": {"marca": int(cal["tc_marca"]), "chefao": int(cal["tc_chefao"])}}
     return {"ok": True, "grupo": {"id": gid, "nome": g["nome"], "fuso": fuso_txt(g["fuso"]), "ini": g["ini"] or "", "fim": g["fim"] or ""},
             "hoje": hoje.isoformat(), "janela": ini.isoformat(), "fechado_ate": fechado[4:] if fechado else "",
             "voce": {"membro": eu["id"], "admin": bool(eu["admin"])}, "habitos": cat, "membros": membros, "torre": t, "protocolo": PROTOCOLO}

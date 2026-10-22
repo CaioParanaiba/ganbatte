@@ -11,21 +11,29 @@ calibração) e chama calcula(); os testes chamam direto. Regras no docs/COLETIV
   dá bônus (ele vira a base). O bônus entra nos andares quando o período fecha (#40); antes disso, aparece como projeção.
 - Férias não quebram sequência nem constância.
 """
+import random
 from datetime import date, timedelta
 
 CALIB = {"sup_xp": 5.0, "sup_cf": 1.0, "sup_hab": 3.0, "hab": 0.2, "sup_max": 0.5, "cf_min": 3.0, "frase_max": 80,
          # a tabela do dia do Codeforces (#171, grupo/cf_dia.py): ligada, valor da faixa A e quanto sobe por faixa, bônus do 1º,
          # problemas que pontuam por pessoa por dia e quantas faixas abaixo da sua ainda pontuam
-         "cf_tabela": 1, "cf_valor": 10, "cf_passo": 5, "cf_bonus": 5, "cf_teto": 2, "cf_piso": 1}
+         "cf_tabela": 1, "cf_valor": 2, "cf_passo": 1, "cf_bonus": 2, "cf_teto": 2, "cf_piso": 1,
+         # Trick Coin (#43, 22/10): a marca da semana batida e o chefão do mês (base para quem passa do mínimo, até +50%
+         # para quem chega ao teto); a tabela do dia paga os próprios pontos (cf_*). A posição no placar não paga moeda.
+         "tc_marca": 50, "tc_chefao": 80}
 CALIB_LIMITES = {"sup_xp": (0, 50), "sup_cf": (0, 20), "sup_hab": (0, 30), "hab": (0, 2), "sup_max": (0.1, 2), "cf_min": (0, 50),
                  "frase_max": (20, 200), "cf_tabela": (0, 1), "cf_valor": (0, 100), "cf_passo": (0, 50), "cf_bonus": (0, 50),
-                 "cf_teto": (1, 7), "cf_piso": (0, 6)}
+                 "cf_teto": (1, 7), "cf_piso": (0, 6), "tc_marca": (0, 500), "tc_chefao": (0, 1000)}
 SEMANAS_EVOLUCAO = 6
 # redesenho de 21/10 (#170, #172): números a calibrar, que vão para o administrar quando as fases entrarem de verdade
-MODALIDADES = ["ritmo", "prazos", "habitos", "superacao"]
-MARCA = 0.10           # a marca pessoal da semana: 10% sobre a média das últimas semanas (ou +5 pontos, o que for maior)
+BLOCOS = ["ritmo", "prazos", "habitos", "superacao"]   # os 4 blocos fixos do Geral
+# a modalidade é um 5º bloco que só existe naquela semana (22/10): um dos 4 (conta em dobro) ou outro sinal que o grupo já
+# mede; "hab:<id>" é um hábito do grupo específico. Prazos fica de fora até o protocolo mandar as entregas no prazo.
+MODALIDADES = BLOCOS + ["constancia", "cf", "missao"]
+OPCOES = 3             # quantas o 1º da semana vê para escolher a próxima
+MARCA = 0.15           # a marca da semana: 15% sobre a média das últimas semanas (ou +5 pontos, o que for maior)
 MARCA_MIN = 20         # e nunca abaixo de 20 de 100, para uma semana zerada não virar marca de graça
-CHEFAO = 0.8           # a vida do chefão: 80% do que cada um faz num mês normal
+CHEFAO = 1.0           # a vida do chefão: 100% do que cada um faz num mês normal (80% morria no dia 21 de outubro)
 CHEFAO_TETO = 1.5      # ninguém tira mais que 150% da própria meta
 MINIMO_CHEFAO = 0.5    # quem passa de 50% da própria meta ganha a recompensa base
 
@@ -437,11 +445,33 @@ class Grupo:
     def total(bl, mod):
         return sum(v * (2 if k == mod else 1) for k, v in bl.items() if v is not None)
 
+    def modalidades(self):
+        """As modalidades que este grupo pode ter: as de sempre que têm dado e cada hábito do grupo (um por vez)."""
+        cat = {h["id"] for h in self.catalogo}
+        base = [k for k in MODALIDADES if k != "prazos" and (k != "cf" or "cf" in cat)]
+        return base + [f"hab:{h['id']}" for h in self.catalogo if h["id"] != "cf"]
+
+    def mod_valor(self, m, mod, a, b, bl):
+        """O 5º bloco (0 a 100) da semana [a, b] para m. None = a pessoa não tem esse dado (não ligou o hábito)."""
+        if mod in bl:
+            return bl[mod]
+        dias = list(dias_entre(max(a, self.ini), min(b, self.fim)))
+        if not dias:
+            return None
+        if mod == "constancia":
+            return round(sum(1 for d in dias if (self.dia(m, d) or {}).get("xp", 0) > 0) / len(dias) * 100)
+        if mod == "missao":   # a missão da semana pede 3 dias
+            return round(min(3, sum(1 for d in dias if (self.dia(m, d) or {}).get("m"))) / 3 * 100)
+        chave = "cf" if mod == "cf" else mod[4:]
+        if not self.hab_participou(m, chave)(a, b):
+            return None
+        return round(sum(1 for d in dias if ((self.dia(m, d) or {}).get("hab") or {}).get(chave)) / len(dias) * 100)
+
     def semanal(self):
-        """O Geral de cada semana da temporada (a última é a em curso), com a modalidade, o pódio de superação, a marca
-        pessoal e a temporada em rodadas ganhas e medalhas. A escolha da modalidade ainda não existe no servidor: o
-        sistema rotaciona entre as que têm dado, o que nunca repete a da semana anterior."""
-        rot = [k for k in MODALIDADES if k != "prazos"]
+        """O Geral de cada semana da temporada (a última é a em curso): os 4 blocos e o da modalidade, o pódio de superação,
+        a marca da semana e a temporada em rodadas ganhas e medalhas. A escolha da modalidade ainda não existe no servidor:
+        o sistema rotaciona entre as que têm dado, o que nunca repete a da semana anterior."""
+        rot = self.modalidades()
         semanas, temporada = [], {m: {"rodadas": 0, "medalhas": [0, 0, 0], "superacao": 0, "marcas": 0} for m in self.ids}
         for i, (a, b) in enumerate(periodos("semana", self.ini, self.fim)):
             mod = rot[i % len(rot)]
@@ -449,20 +479,24 @@ class Grupo:
             for m in self.ids:
                 bl = self.blocos(m, a, b)
                 if bl:
-                    linhas.append({"membro": m, "blocos": bl, "total": self.total(bl, mod)})
+                    mv = self.mod_valor(m, mod, a, b, bl)
+                    linhas.append({"membro": m, "blocos": bl, "mod": mv, "total": sum(v for v in bl.values() if v is not None) + (mv or 0)})
             linhas.sort(key=lambda x: (-x["total"], -(x["blocos"]["superacao"] or 0), -(x["blocos"]["prazos"] or 0), self.ids.index(x["membro"])))
             sup = sorted([x for x in linhas if x["blocos"]["superacao"] is not None], key=lambda x: (-x["blocos"]["superacao"], -x["total"]))
             semanas.append({"semana": chave_semana(a)[7:], "ini": a.isoformat(), "fim": b.isoformat(), "fechada": b < self.fim, "modalidade": mod,
                             "geral": linhas, "superacao": [x["membro"] for x in sup]})
-        # marca pessoal: MARCA sobre a média das últimas 4 semanas no bloco da modalidade (até 100)
+        # marca da semana: MARCA sobre a média das últimas 4 semanas da pessoa na modalidade desta semana (até 100)
         for i, s in enumerate(semanas):
             for x in s["geral"]:
-                base = [y["blocos"][s["modalidade"]] for p in semanas[max(0, i - 4):i] for y in p["geral"]
-                        if y["membro"] == x["membro"] and y["blocos"].get(s["modalidade"]) is not None]
+                if x["mod"] is None:
+                    continue
+                base = [self.mod_valor(x["membro"], s["modalidade"], d_(p["ini"]), d_(p["fim"]), y["blocos"])
+                        for p in semanas[max(0, i - 4):i] for y in p["geral"] if y["membro"] == x["membro"]]
+                base = [v for v in base if v is not None]
                 if base:
                     med = sum(base) / len(base)
                     x["marca"] = min(100, max(round(med * (1 + MARCA)), round(med) + 5, MARCA_MIN))
-                    x["bateu"] = (x["blocos"][s["modalidade"]] or 0) >= x["marca"]
+                    x["bateu"] = x["mod"] >= x["marca"]
             if s["fechada"]:
                 for k, x in enumerate(s["geral"][:3]):
                     temporada[x["membro"]]["medalhas"][k] += 1
@@ -477,30 +511,45 @@ class Grupo:
         if semanas and semanas[-1]["geral"]:
             ult = [s["geral"][0]["membro"] for s in semanas[:-1] if s["geral"]][-2:]
             escolhe = next((x["membro"] for x in semanas[-1]["geral"] if not (len(ult) == 2 and ult[0] == ult[1] == x["membro"])), None)
-        opcoes = [k for k in MODALIDADES if not semanas or k != semanas[-1]["modalidade"]]
-        return {"semanas": semanas[-SEMANAS_EVOLUCAO:], "temporada": temporada, "escolhe": escolhe, "opcoes": opcoes}
+        resto = [k for k in rot if not semanas or k != semanas[-1]["modalidade"]]
+        opcoes = random.Random(semanas[-1]["semana"] if semanas else "").sample(resto, min(OPCOES, len(resto)))
+        return {"semanas": semanas, "temporada": temporada, "escolhe": escolhe, "opcoes": opcoes, "modalidades": rot,
+                "marca": MARCA, "habitos": {h["id"]: h["nome"] for h in self.catalogo}}
 
-    def chefao(self):
-        """O chefão do mês: vida = a soma das metas (CHEFAO × o XP com teto de um mês normal de cada um, medido pelas
-        últimas 4 semanas com XP; sem histórico, a mediana das metas dos outros; nunca menos de 2 dias cheios). Cada um
-        tira até CHEFAO_TETO × a própria meta."""
-        a, b = mes_de(self.fim)
+    def chefao(self, ref=None):
+        """O chefão do mês de ref (padrão: o de hoje): vida = a soma das metas (CHEFAO × o XP com teto de um mês normal de
+        cada um, pelas 4 semanas com XP antes, ou pelas 2 últimas se for maior; sem histórico, a mediana das metas dos outros; nunca menos de 2 dias cheios).
+        O dano é em andares (1 = um dia com o XP no teto do grupo), e cada um tira até CHEFAO_TETO × a própria meta."""
+        a, b = mes_de(ref or self.fim)
+        fim = min(b, self.fim)
         n = (b - a).days + 1
-        sems = [p for p in periodos("semana", self.ini, self.fim) if p[1] < semana_de(self.fim)[0]][-4:]
+        sems = [p for p in periodos("semana", self.ini, fim) if p[1] < semana_de(fim)[0]][-4:]
         metas = {}
         for m in self.ids:
             v = [sum(self.dia_andares(m, d)[0] for d in dias_entre(max(p[0], self.ini), p[1])) for p in sems if self.tem_xp(m)(p[0], p[1])]
-            if v:
-                metas[m] = max(sum(v) / len(v) * n / 7 * CHEFAO, 2.0)
+            if v:   # a média das 4 semanas ou a das 2 últimas, a maior: quem acabou de pegar ritmo não fica com a meta das semanas paradas
+                metas[m] = max(max(sum(v) / len(v), sum(v[-2:]) / len(v[-2:])) * n / 7 * CHEFAO, 2.0)
         med = mediana(list(metas.values())) or 10.0
         out = []
         for m in self.ids:
             meta = metas.get(m, med)
-            feito = sum(self.dia_andares(m, d)[0] for d in dias_entre(max(a, self.ini), self.fim))
+            feito = sum(self.dia_andares(m, d)[0] for d in dias_entre(max(a, self.ini), fim))
             out.append({"membro": m, "meta": round(meta, 1), "feito": round(feito, 1), "conta": round(min(feito, meta * CHEFAO_TETO), 1)})
         vida = sum(x["meta"] for x in out)
         return {"mes": a.strftime("%Y-%m"), "fim": b.isoformat(), "vida": round(vida, 1), "dano": round(min(vida, sum(x["conta"] for x in out)), 1),
-                "minimo": MINIMO_CHEFAO, "teto": CHEFAO_TETO, "membros": out}
+                "minimo": MINIMO_CHEFAO, "teto": CHEFAO_TETO, "fator": CHEFAO, "membros": out}
+
+    @staticmethod
+    def chefao_paga(ch, base):
+        """A Trick Coin do chefão derrotado: base para quem passou do mínimo da própria meta, subindo até +50% no teto."""
+        if ch["dano"] < ch["vida"] - 0.05:
+            return {}
+        out = {}
+        for x in ch["membros"]:
+            p = x["conta"] / x["meta"] if x["meta"] else 0
+            if p >= ch["minimo"]:
+                out[x["membro"]] = round(base * (1 + 0.5 * min(1, max(0, (p - 1) / (ch["teto"] - 1)))))
+        return out
 
 
 def _inicio(chave):
@@ -517,6 +566,8 @@ def calcula(g):
     os títulos (quem lidera cada um agora) e a posição de cada um nas últimas semanas."""
     teto, prov = g.teto(g.fim)
     geral = g.ranking_geral()
+    sem = g.semanal()
+    sem["semanas"] = sem["semanas"][-SEMANAS_EVOLUCAO:]
     s0, s1 = semana_de(g.fim)
     for x in geral:
         x["semana"] = g.andares_semana(x["membro"], s0, s1)
@@ -544,4 +595,4 @@ def calcula(g):
                 pos[m].append(k.get(m))
         evol["pos"][p["id"]] = {m: v for m, v in pos.items() if any(v)}
     return {"teto": {"mes": g.fim.strftime("%Y-%m"), "xp": round(teto, 1), "provisorio": prov}, "geral": geral,
-            "placares": placares, "config": specs, "titulos": titulos, "evolucao": evol, "semanal": g.semanal(), "chefao": g.chefao()}
+            "placares": placares, "config": specs, "titulos": titulos, "evolucao": evol, "semanal": sem, "chefao": g.chefao()}

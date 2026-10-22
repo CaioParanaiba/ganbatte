@@ -577,11 +577,11 @@ class TabelaDoDia(Base):
         feitos = [(1, "a", 10), (2, "a", 11), (1, "b", 12), (1, "c", 13), (2, "c", 14), (2, "d", 15)]
         linhas, pts = cf_dia.pontua(tab, feitos, {1: None, 2: 1750}, self.CAL)
         m = {(x["membro"], x["id"]): (x["pts"], x["motivo"]) for x in linhas}
-        self.assertEqual(m[(1, "a")], (10 + 5, "primeiro"))
+        self.assertEqual(m[(1, "a")], (2 + 2, "primeiro"))
         self.assertEqual(m[(2, "a")], (0, "piso"))          # faixa D (1750): A fica 3 faixas abaixo, o piso deixa só 1
         self.assertEqual(m[(1, "c")], (0, "teto"))          # o 3º do dia passa do teto de 2
-        self.assertEqual(m[(2, "c")], (25 + 2, "primeiro"))  # o bônus passa, pela metade, ao primeiro que pontua
-        self.assertEqual(pts, {1: 15 + 20, 2: 27 + 30 + 5})
+        self.assertEqual(m[(2, "c")], (5 + 1, "primeiro"))   # o bônus passa, pela metade, ao primeiro que pontua
+        self.assertEqual(pts, {1: 4 + 5, 2: 6 + 6 + 2})
 
     def test_rodada_sorteia_e_confere(self):
         gid, cod = self.grupo()
@@ -607,7 +607,44 @@ class TabelaDoDia(Base):
         p = sg.placar(gid, ana["token"])["torre"]["cf_dia"]
         self.assertTrue(p["ligado"])
         self.assertEqual([(x["id"], x["motivo"]) for x in p["feitos"]], [(alvo["id"], "primeiro")])
-        self.assertEqual(p["pontos"][ana["membro"]], 10 + 5 * 3 + 5)
+        self.assertEqual(p["pontos"][ana["membro"]], 2 + 3 + 2)
+        # o dia fecha e a tabela vira Trick Coin, uma vez só
+        sg.paga({"id": gid}, f"dia:{p['dia']}")
+        sg.paga({"id": gid}, f"dia:{p['dia']}")
+        self.assertEqual(sg.carteira(gid, ana["membro"])["saldo"], 7)
+
+
+class TrickCoin(Base):
+    """A Trick Coin (#43): a marca da semana, o chefão derrotado e a modalidade como 5º bloco."""
+
+    def test_chefao_paga_so_derrotado_e_ate_mais_50(self):
+        ch = {"vida": 30, "dano": 30, "minimo": 0.5, "teto": 1.5,
+              "membros": [{"membro": 1, "meta": 10, "conta": 15}, {"membro": 2, "meta": 10, "conta": 10}, {"membro": 3, "meta": 10, "conta": 4}]}
+        self.assertEqual(torre.Grupo.chefao_paga(ch, 80), {1: 120, 2: 80})
+        self.assertEqual(torre.Grupo.chefao_paga({**ch, "dano": 20}, 80), {})
+
+    def test_marca_da_semana_paga_quem_bateu(self):
+        gid, cod = self.grupo()
+        ana = self.entra(gid, cod)
+        seg = date.today() - timedelta(days=date.today().weekday() + 21)
+        # 2 semanas de base com XP em 3 dias e a 3ª com XP todos os dias: na modalidade Constância, só a 3ª bate a marca
+        dias = [{"dia": (seg + timedelta(days=k)).isoformat(), "xp": 100} for k in range(21) if k >= 14 or k % 7 < 3]
+        sg.envio(gid, ana["token"], {"protocolo": sg.PROTOCOLO, "dias": dias})
+        G = sg.retrato(sg.grupo_ou_404(gid))
+        with mock.patch.object(torre.Grupo, "modalidades", lambda self: ["constancia"]):
+            S = G.semanal()
+            sem = S["semanas"][2]
+            self.assertEqual(sem["geral"][0]["mod"], 100)
+            self.assertTrue(sem["geral"][0]["bateu"])
+            sg.paga({"id": gid}, "semana:" + sem["semana"])
+        c = sg.carteira(gid, ana["membro"])
+        self.assertEqual(c["saldo"], torre.CALIB["tc_marca"])
+        self.assertEqual(c["extrato"][0]["motivo"], "marca da semana")
+
+    def test_modalidades_tem_os_habitos_do_grupo(self):
+        G = torre.Grupo([{"id": 1, "nome": "a"}], {}, [{"id": "cf", "nome": "Codeforces"}, {"id": "duo", "nome": "Duolingo"}], {}, date.today())
+        self.assertEqual(G.modalidades(), ["ritmo", "habitos", "superacao", "constancia", "cf", "missao", "hab:duo"])
+        self.assertEqual(len(G.semanal()["opcoes"]), 3)
 
 
 if __name__ == "__main__":
