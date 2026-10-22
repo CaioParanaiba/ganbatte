@@ -46,31 +46,7 @@ async function sincroniza(){
 async function inicia(){ await carrega(); await sincroniza(); reRender(); setInterval(sincroniza, SINC_MIN * 60000); }
 const espera = setInterval(() => { if(CTX){ clearInterval(espera); inicia(); } }, 300);
 
-/* ---------- aba Torre Trick ---------- */
-function heat(m, P){
-  const cel = [], hs = habsDe(P).filter(h => h.id !== 'cf');
-  for(let d = P.janela; d <= P.hoje; d = GBx.addD(d, 1)){
-    const f = m.dias[d] || {}, aberto = !P.fechado_ate || d > P.fechado_ate;
-    const tit = [ddmm(d), f.a ? 'com XP' : 'sem XP', f.cf ? `Codeforces ${f.cf}` : '', ...hs.filter(h => f[h.id]).map(h => h.nome), f.m ? 'missão' : '', aberto ? 'provisório' : ''].filter(Boolean).join(' · ');
-    cel.push(`<i class="gp-c${f.a ? ' a' : ''}${f.cf ? ' cf' : ''}${aberto ? ' p' : ''}" title="${tit}"></i>`);
-  }
-  return `<span class="gp-heat" aria-hidden="true">${cel.join('')}</span>`;
-}
-function placarHTML(g){
-  const P = placarDe(g), r = G.res[g.chave] || {};
-  if(!P) return `<div class="card"><p style="margin:0;font-size:14px">${r.erro ? esc(r.erro) : 'Buscando o placar no servidor do grupo...'}</p></div>`;
-  const aviso = r.offline ? `<p class="gp-aviso">O servidor do grupo está fora do ar. Mostrando o placar de ${esc(quando(P.recebido))}; o que você fizer até lá vai junto na próxima vez.</p>`
-    : r.sem_acesso ? `<p class="gp-aviso">${esc(r.erro)}</p>` : '';
-  const soma = (m, k) => Object.values(m.dias).reduce((s, f) => s + (f[k] || 0), 0), hs = habsDe(P);
-  const linhas = P.membros.map(m => `<tr${m.id === P.voce.membro ? ' class="gp-eu"' : ''}>
-      <td><span class="gp-quem">${m.avatar ? `<span class="av pic" style="--s:26px;background-image:url(${avSrc(m.avatar)})"></span>` : `<span class="av logo" style="--s:26px"><img src="${LOGO}" alt=""></span>`}<b>${esc(m.nome)}</b>${m.admin ? '<small>admin</small>' : ''}</span></td>
-      <td class="mono">${m.sequencia}</td><td class="mono">${soma(m, 'a')}</td>${hs.map(h => `<td class="mono">${soma(m, h.id)}</td>`).join('')}
-      <td>${heat(m, P)}</td><td class="sub">${esc(quando(m.envio))}</td></tr>`).join('');
-  return `${aviso}<div class="card"><h2><span class="c">~/</span>${esc(P.grupo.nome)} · ${P.membros.length} ${P.membros.length === 1 ? 'membro' : 'membros'}</h2>
-    <p class="sub" style="margin:0 0 12px">Só fatos por enquanto: quem jogou em cada dia e os hábitos do grupo nos últimos ${GBx.dias(P.janela, P.hoje) + 1} dias. Os pontos da Torre Trick entram quando o grupo tiver algumas semanas de uso.${P.fechado_ate ? ` Dias fechados até ${ddmm(P.fechado_ate)}; os mais recentes ainda podem mudar.` : ' Nenhum dia fechado ainda: tudo é provisório.'}</p>
-    <div class="tbl-wrap"><table class="rg-t gp-t"><thead><tr><th>jogador</th><th title="dias seguidos com XP">seq.</th><th title="dias com XP na janela">dias</th>${hs.map(h => `<th title="${h.id === 'cf' ? 'problemas aceitos' : esc(h.nome) + ': dias cumpridos'}">${esc(curto(h))}</th>`).join('')}<th>últimos dias</th><th>sincronizou</th></tr></thead><tbody>${linhas}</tbody></table></div>
-    <p class="sub" style="margin:10px 0 0">O seu XP e as suas tarefas não aparecem aqui: o grupo vê só se você jogou no dia. Última sincronização: ${G.ultima ? esc(quando(G.ultima / 1000)) : 'ainda não'} <button type="button" class="btn" data-gpsinc style="margin-left:6px">sincronizar agora</button></p></div>`;
-}
+/* ---------- administrar ---------- */
 function adminHTML(g){
   const A = G.adm;
   if(G.admErr) return `<div class="card"><p class="gp-aviso" style="margin:0">${esc(G.admErr)}</p></div>`;
@@ -98,9 +74,9 @@ function adminHTML(g){
       <button type="button" class="btn v" data-gpcfg>salvar</button></div>
     ${torreAdminHTML(A)}`;
 }
-/* ---------- aba Torre Trick (#67, desenho aprovado em 14/10): sub-abas placar · placares · jogadores · administrar ----------
-   O servidor do grupo manda os fatos e, em P.torre, os andares, os placares específicos, os títulos, a evolução e a frase
-   do líder (grupo/torre.py). Clicar num nome abre a licença do jogador; clicar num placar abre a sub-aba placares. */
+/* ---------- aba Torre Trick: as peças em comum (o ícone, a licença e a frase do líder) ----------
+   O servidor do grupo manda os fatos e, em P.torre, o Geral da semana, o chefão, a tabela do dia, a carteira e a frase
+   do líder (grupo/torre.py). Clicar num nome abre a licença do jogador na sub-aba hunters. */
 const TT = {sub:'placar', jog:null, plac:'geral', esp:(() => { try { return localStorage.getItem('gb-tt-esp') || 'campeoes'; } catch(e){ return 'campeoes'; } })()};
 const SEMANA_EVO = n => n ? 's' + n.split('-W')[1] : '';
 const membroDe = (P, id) => P.membros.find(m => m.id === +id) || {id, nome:'?', avatar:''};
@@ -110,17 +86,9 @@ const temporadaDe = P => { const d = P.grupo.ini || P.hoje; return `${d.slice(0,
 const geralDe = P => P.torre.geral;
 const posGeral = (P, id) => geralDe(P).findIndex(x => x.membro === +id) + 1;
 const titulosDe = (P, id) => (P.torre.titulos[id] || []).map(pid => P.torre.placares.find(p => p.id === pid)).filter(Boolean);
-const placarDeId = (P, id) => P.torre.placares.find(p => p.id === id);
 const pl = (id, txt) => `<button type="button" class="tt-lk" data-ttplac="${esc(id)}">${esc(txt)}</button>`;
 const nm = (P, id) => `<button type="button" class="tt-lk" data-ttjog="${+id}">${esc(nomeDe(P, id))}</button>`;
 const medalha = k => `<span class="tt-md${k && k <= 3 ? ' m' + k : ''}">${k || '—'}</span>`;
-const COMO = {geral:'O XP do dia até o teto do grupo (1 andar por dia cheio), os hábitos do grupo (0,2 por dia cumprido) e a superação contra a sua própria média, somados na temporada.',
-  volume:'A soma no período.', sequencia:'A soma dos problemas dentro da sequência atual. Um dia sem resolver zera, com 1 folga por semana; as férias não quebram.',
-  superacao:'O período contra a sua média dos anteriores. Quem mantém um hábito em 100% conta como superação máxima.',
-  constancia:'A parte dos dias com o hábito ligado em que ele foi cumprido.', habitos:'A soma da constância de cada hábito: mais hábitos ajudam, desde que mantidos.',
-  total:'A média das superações de cada coisa de que você participa (XP e cada hábito).'};
-const PERIODO = {semana:'esta semana', mes:'este mês', temporada:'temporada', sequencia:'sequência atual'};
-
 /* ícone: a foto (banco de avatares) com o aro simples e o nickname embaixo (molduras e animações chegam com a loja, #43) */
 function ico(P, id, s, pos, opt){
   opt = opt || {};
@@ -129,16 +97,7 @@ function ico(P, id, s, pos, opt){
   const link = opt.nolink ? '' : ` data-ttjog="${+id}" role="button" tabindex="0" aria-label="ver a licença de ${esc(m.nome)}"`;
   return `<figure class="tt-ico${eu ? ' eu' : ''}" style="--s:${s}px"${link}><span class="tt-fr">${foto}${pos ? `<b class="tt-pos${pos <= 3 ? ' p' + pos : ''}">${pos}</b>` : ''}</span>${opt.semNome ? '' : `<figcaption>${esc(m.nome)}</figcaption>`}</figure>`;
 }
-const mix = x => { const t = x.teto + x.habitos + x.superacao || 1;
-  return `<span class="tt-mix" title="XP com teto ${andaresTxt(x.teto)} · hábitos ${andaresTxt(x.habitos)} · superação ${andaresTxt(x.superacao)}"><i class="t" style="width:${x.teto / t * 100}%"></i><i class="h" style="width:${x.habitos / t * 100}%"></i><i class="s" style="width:${x.superacao / t * 100}%"></i></span>`; };
 const legenda = P => `<div class="tt-leg"><span><i class="t"></i>XP com teto</span><span><i class="h"></i>hábitos</span><span><i class="s"></i>superação</span>${P.fechado_ate ? `<span class="tt-prov">os dias depois de ${ddmm(P.fechado_ate)} ainda podem mudar</span>` : '<span class="tt-prov">nenhum dia fechado ainda: tudo é provisório</span>'}</div>`;
-function ultimos(P, m, n){
-  const cel = [];
-  for(let i = n - 1; i >= 0; i--){ const d = GBx.addD(P.hoje, -i), f = m.dias[d] || {}, aberto = !P.fechado_ate || d > P.fechado_ate;
-    cel.push(`<i class="${f.a ? 'a' : ''}${aberto ? ' p' : ''}" title="${ddmm(d)} · ${f.a ? 'com XP' : 'sem XP'}"></i>`); }
-  return `<span class="tt-heat" aria-hidden="true">${cel.join('')}</span>`;
-}
-
 /* ---------- licença hunter (horizontal): frente com o principal, verso com o resto ---------- */
 const EMBLEMA = '<svg viewBox="0 0 120 70" aria-hidden="true"><path d="M60 10 L84 35 L60 60 L36 35 Z" fill="#C8102E"/><path d="M12 10 L60 60 M60 10 L12 60 M60 10 L108 60 M108 10 L60 60" stroke="#141418" stroke-width="7" fill="none"/><path d="M3 10 H23 M50 10 H70 M97 10 H117 M3 60 H23 M50 60 H70 M97 60 H117" stroke="#141418" stroke-width="3.5"/></svg>';
 function glifos(txt){   // a "escrita hunter" é só enfeite: cada letra vira três traços numa caixinha
@@ -285,34 +244,6 @@ function provaArte(){
 }
 const licenca = (P, id) => `<div class="tt-lic tt-flip" data-ttvirar title="clique para virar"><div class="flip-in"><div class="face">${frente(P, id)}</div><div class="face tras">${verso(P, id)}</div></div></div>`;
 
-function alvo(P, id){
-  const k = posGeral(P, id), g = geralDe(P), eu = g[k - 1], acima = g[k - 2];
-  if(!eu) return '';
-  if(!acima) return `<div class="tt-alvo"><div class="sub"><b>${+id === P.voce.membro ? 'você lidera' : 'lidera'}</b> o geral</div></div>`;
-  const base = g[g.length - 1].andares, falta = Math.max(0.1, acima.andares - eu.andares + 0.1);
-  return `<div class="tt-alvo"><div class="sub">faltam <b>${andaresTxt(falta)} andares</b> para passar ${nm(P, acima.membro)}</div><div class="barra"><i style="width:${acima.andares > base ? Math.round((eu.andares - base) / (acima.andares - base) * 100) : 0}%"></i></div></div>`;
-}
-
-/* ---------- pódio herói: o 1º com a vantagem sobre o 2º, e o 2º e o 3º ao lado ---------- */
-function podio(P, linhas, geral){
-  const [a, b, c] = linhas;
-  if(!a) return '<p class="sub" style="margin:0">Ninguém aqui ainda.</p>';
-  const val = x => geral ? `${andaresTxt(x.andares)}<small>andares</small>` : `${esc(x.txt)}<small>${esc(x.det)}</small>`;
-  const dif = b ? (geral ? `${andaresTxt(a.andares - b.andares)} andares à frente de ${esc(nomeDe(P, b.membro))}` : `à frente de ${esc(nomeDe(P, b.membro))} (${esc(b.txt)})`) : '';
-  return `<div class="tt-pod"><div class="tt-heroi">${ico(P, a.membro, 84, 1)}<div class="txt"><div class="tt-k">1º</div><div class="val">${val(a)}</div><div class="dif">${dif}</div>${geral ? `<div style="margin-top:8px">${mix(a)}</div>` : ''}</div></div>
-    <div class="tt-lado">${[b, c].filter(Boolean).map((x, i) => `<div class="l">${ico(P, x.membro, 52, i + 2)}<div class="val">${val(x)}</div></div>`).join('')}</div></div>`;
-}
-function listaGeral(P, de){
-  return `<div class="tt-rows">${geralDe(P).slice(de).map((x, i) => { const m = membroDe(P, x.membro);
-    return `<div class="tt-row${x.membro === P.voce.membro ? ' eu' : ''}"><span class="p">${i + de + 1}º</span>${ico(P, x.membro, 40)}
-      <div class="mid">${mix(x)}<div class="info"><span>seq. ${m.sequencia || 0}</span><span class="det">teto ${andaresTxt(x.teto)} · hábitos ${andaresTxt(x.habitos)} · superação ${andaresTxt(x.superacao)}</span>${ultimos(P, m, 14)}</div></div>
-      <div class="v">${andaresTxt(x.andares)}<small>andares</small></div></div>`; }).join('') || '<p class="sub" style="margin:0">Só o pódio por enquanto.</p>'}</div>`;
-}
-function listaEsp(P, p, de){
-  return `<div class="tt-rows">${p.linhas.slice(de).map((x, i) => `<div class="tt-row${x.membro === P.voce.membro ? ' eu' : ''}"><span class="p">${i + de + 1}º</span>${ico(P, x.membro, 40)}
-      <div class="mid"><span class="sub">${esc(x.det)}</span></div><div class="v">${esc(x.txt)}</div></div>`).join('') || '<p class="sub" style="margin:0">Só estes participam deste placar.</p>'}</div>`;
-}
-
 /* ---------- frase do líder da semana (#76) ---------- */
 function fraseCard(P){
   const f = P.torre.frase || {}, sem = f.semana ? `semana ${f.semana.split('-W')[1]}` : '';
@@ -325,95 +256,6 @@ function fraseCard(P){
       <div class="pe"><span class="sub" id="tt-frase-n">0/${f.limite || 80}</span><button type="button" class="btn v" data-ttfrase disabled>publicar (não dá para mudar depois)</button></div></div>`;
   else corpo = `<p class="sub tt-frase-vazia">${f.apagada ? 'A frase desta semana foi apagada por um admin.' : `O líder da semana, ${nm(P, f.lider)}, ainda não escreveu.`}</p>`;
   return `<section class="card tt-frase-c">${cab}${corpo}</section>`;
-}
-
-/* ---------- placares específicos: o jogador escolhe ver campeões ou quem lidera ---------- */
-function especificos(P){
-  const ps = P.torre.placares, eu = P.voce.membro;
-  const voceEm = p => { const k = p.linhas.findIndex(l => l.membro === eu) + 1; return k ? `você: <b>${k}º</b> · ${esc(p.linhas[k - 1].txt)}` : 'você não participa'; };
-  if(!ps.length) return '<p class="sub" style="margin:0">Os placares específicos aparecem quando 2 ou mais pessoas participam de um hábito do grupo.</p>';
-  if(TT.esp === 'campeoes') return `<div class="tt-camps">${ps.map(p => { const x = p.linhas[0];
-    return `<div class="tt-camp${x.membro === eu ? ' eu' : ''}"><div class="t">${pl(p.id, p.nome)}<br><span>${esc(PERIODO[p.per] || '')}</span></div>${ico(P, x.membro, 60, 1)}<div class="v">${esc(x.txt)}<small>${esc(x.det)}</small></div><div class="vc">${voceEm(p)}</div></div>`; }).join('')}</div>`;
-  const tit = P.torre.titulos, ids = P.membros.map(m => m.id).sort((a, b) => (tit[b] || []).length - (tit[a] || []).length);
-  return `<div class="tt-quem">${ids.map(id => { const l = titulosDe(P, id);
-    return `<div class="tt-qc${id === eu ? ' eu' : ''}">${ico(P, id, 64)}<div class="qt"><b>${l.length} ${l.length === 1 ? 'título' : 'títulos'}</b>
-      <ul>${l.map(p => `<li>${medalha(1)}${pl(p.id, p.nome)} <span class="sub">· ${esc(p.linhas[0].txt)}</span></li>`).join('') || '<li class="sub">nenhum ainda</li>'}</ul></div></div>`; }).join('')}</div>`;
-}
-
-/* ---------- sub-aba placar ---------- */
-function subPlacar(P){
-  const eu = P.voce.membro, g = geralDe(P);
-  return `<div class="tt-lt"><div class="tt-lcol">${licenca(P, eu)}<span class="tt-dica">clique na licença para virar</span>${alvo(P, eu)}
-      <div class="tt-bt"><button type="button" class="btn" data-ttjog="${eu}">meu perfil</button><button type="button" class="btn" data-ttplac="geral">minha evolução</button></div></div>
-    <div class="tt-dir"><section class="card"><h2><span class="c">~/</span>${pl('geral', 'pódio')} <span class="r">temporada · andares descidos</span></h2>${podio(P, g, true)}<div style="margin-top:12px">${legenda(P)}</div></section>${fraseCard(P)}</div></div>
-    <section class="card"><h2><span class="c">~/</span>do 4º em diante <span class="r">teto de ${(P.torre.teto.mes || '').slice(5)}/${(P.torre.teto.mes || '').slice(0, 4)}: ${andaresTxt(P.torre.teto.xp)} XP${P.torre.teto.provisorio ? ' (provisório)' : ''}</span></h2>${listaGeral(P, 3)}</section>
-    <section class="card"><h2><span class="c">~/</span>placares específicos <span class="r"><span class="tt-esp" role="group" aria-label="ver como">${[['campeoes', 'campeões'], ['lidera', 'quem lidera']].map(([v, n]) => `<button type="button" data-ttesp="${v}" aria-pressed="${TT.esp === v}">${n}</button>`).join('')}</span></span></h2>
-      <p class="sub" style="margin:-4px 0 12px">Clique num placar para ver todos; num nome para ver a licença do jogador.</p>${especificos(P)}</section>`;
-}
-
-/* ---------- sub-aba placares: o placar em foco e a evolução ---------- */
-function bump(P, pid, linhas){
-  const pos = (P.torre.evolucao.pos || {})[pid] || {}, sem = P.torre.evolucao.semanas || [], ids = Object.keys(pos).map(Number);
-  if(sem.length < 2 || !ids.length) return '<p class="sub" style="margin:0">A evolução aparece a partir da segunda semana do grupo.</p>';
-  const n = Math.max(...ids.map(id => Math.max(...pos[id].filter(Boolean)))), lid = linhas[0] && linhas[0].membro, eu = P.voce.membro;
-  const W = 900, pl0 = 44, pr = 150, pt = 16, row = 38, H = pt * 2 + (n - 1) * row + 24;
-  const x = w => pl0 + w * (W - pl0 - pr) / (sem.length - 1), y = k => pt + (k - 1) * row;
-  const cls = id => id === eu ? 'eu' : id === lid ? 'lid' : '';
-  const ordem = [...ids.filter(id => !cls(id)), ...ids.filter(id => cls(id) === 'lid'), ...ids.filter(id => cls(id) === 'eu')];
-  const rot = (s, w) => w === sem.length - 1 ? 'agora' : SEMANA_EVO(s);
-  let s = `<svg class="tt-bump" viewBox="0 0 ${W} ${H}" role="img" aria-label="posição de cada jogador nas últimas semanas">`;
-  for(let k = 1; k <= n; k++) s += `<line class="grade" x1="${pl0}" x2="${W - pr}" y1="${y(k)}" y2="${y(k)}"/><text x="${pl0 - 10}" y="${y(k) + 4}" text-anchor="end">${k}º</text>`;
-  sem.forEach((sm, w) => s += `<text x="${x(w)}" y="${H - 4}" text-anchor="middle">${rot(sm, w)}</text>`);
-  for(const id of ordem){
-    const c = cls(id), pts = pos[id].map((k, w) => k ? [x(w), y(k), k, w] : null).filter(Boolean);
-    if(!pts.length) continue;
-    s += `<polyline class="ln ${c}" points="${pts.map(p => p[0] + ',' + p[1]).join(' ')}"/>`;
-    pts.forEach(p => s += `<circle class="pt ${c}" cx="${p[0]}" cy="${p[1]}" r="${c ? 5 : 4}"/><circle class="hit" cx="${p[0]}" cy="${p[1]}" r="12"><title>${esc(nomeDe(P, id))} · ${p[2]}º · ${rot(sem[p[3]], p[3])}</title></circle>`);
-    const u = pts[pts.length - 1];
-    s += `<text class="nm ${c}" x="${x(sem.length - 1) + 14}" y="${u[1] + 4}">${esc(nomeDe(P, id))}${id === lid ? ' · líder' : ''}</text>`;
-  }
-  s += '</svg>';
-  const tabela = `<details class="tt-tabv"><summary>ver como tabela</summary><div class="tbl-wrap"><table><thead><tr><th>jogador</th>${sem.map((sm, w) => `<th>${rot(sm, w)}</th>`).join('')}</tr></thead><tbody>${ids.map(id => `<tr><td>${esc(nomeDe(P, id))}</td>${pos[id].map(k => `<td>${k ? k + 'º' : '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>`;
-  const meu = pos[eu] && pos[eu].filter(Boolean);
-  let resumo = '<div class="tt-resumo"><div><b>—</b><small>você não participa deste placar</small></div></div>';
-  if(meu && meu.length){ const ini = meu[0], fim = meu[meu.length - 1];
-    resumo = `<div class="tt-resumo"><div><b>${ini}º → ${fim}º</b><small>sua posição nessas semanas</small></div><div><b>${Math.min(...meu)}º</b><small>sua melhor posição</small></div><div><b>${fim < ini ? '▲ ' + (ini - fim) : fim > ini ? '▼ ' + (fim - ini) : '='}</b><small>${fim < ini ? 'posições que você subiu' : fim > ini ? 'posições que você caiu' : 'você se manteve'}</small></div></div>`; }
-  return `${resumo}<div class="tt-bleg"><span><i class="eu"></i>você</span><span><i class="lid"></i>líder</span><span><i></i>os outros</span></div><div class="tbl-wrap">${s}</div>${tabela}`;
-}
-function subPlacares(P){
-  const ps = [{id:'geral', nome:'Torre Trick (geral)', per:'temporada', tipo:'geral', linhas:geralDe(P).map(x => ({membro:x.membro, txt:andaresTxt(x.andares), det:'andares'}))}, ...P.torre.placares];
-  const p = ps.find(x => x.id === TT.plac) || ps[0], eu = P.voce.membro;
-  const menu = ps.map(x => { const k = x.linhas.findIndex(l => l.membro === eu) + 1;
-    return `<button type="button" class="tt-pm" data-ttplac="${esc(x.id)}" aria-pressed="${x.id === p.id}"><span class="t">${esc(x.nome)}<small>${esc(PERIODO[x.per] || '')}</small></span>
-      <span class="mini">${x.linhas.slice(0, 3).map((l, i) => ico(P, l.membro, 26, i + 1, {semNome:true, nolink:true})).join('')}</span><span class="vc">${k ? `você: <b>${k}º</b> · ${esc(x.linhas[k - 1].txt)}` : 'você não participa'}</span></button>`; }).join('');
-  const geral = p.id === 'geral';
-  return `<div class="tt-pl"><nav class="tt-pmenu" aria-label="placares">${menu}</nav><div class="tt-stack">
-    <section class="card"><h2><span class="c">~/</span>${esc(p.nome)} <span class="r">${esc(PERIODO[p.per] || '')}</span></h2><p class="sub" style="margin:0 0 14px">${esc(COMO[p.tipo] || '')}</p>
-      <div class="tt-ga"><div>${podio(P, geral ? geralDe(P) : p.linhas, geral)}${geral ? `<div style="margin-top:12px">${legenda(P)}</div>` : ''}</div><div class="tt-ga-l">${geral ? listaGeral(P, 3) : listaEsp(P, p, 3)}</div></div></section>
-    <section class="card"><h2><span class="c">~/</span>evolução <span class="r">posição de cada um no fim de cada semana</span></h2>${bump(P, p.id, p.linhas)}</section></div></div>`;
-}
-
-/* ---------- sub-aba jogadores: o perfil é a licença, frente e verso ---------- */
-function subJogadores(P){
-  const id = P.membros.some(m => m.id === TT.jog) ? TT.jog : P.voce.membro, m = membroDe(P, id);
-  const menu = geralDe(P).map((x, i) => `<button type="button" class="tt-jm" data-ttjog="${x.membro}" aria-pressed="${x.membro === id}">${ico(P, x.membro, 36, 0, {semNome:true, nolink:true})}<span class="n">${esc(nomeDe(P, x.membro))}${x.membro === P.voce.membro ? ' (você)' : ''}<small>${i + 1}º · ${andaresTxt(x.andares)} andares</small></span></button>`).join('');
-  return `<div class="tt-jg"><nav class="tt-jmenu" aria-label="jogadores">${menu}</nav><div class="tt-stack">
-    <section class="card"><h2><span class="c">~/</span>licença de ${esc(m.nome)} <span class="r">frente: o principal · verso: o resto</span></h2>
-      <div class="tt-duas"><div><span class="rot">frente</span><div class="tt-lic grande">${frente(P, id, true)}</div></div><div><span class="rot">verso</span><div class="tt-lic grande">${verso(P, id)}</div></div></div>
-      ${id === P.voce.membro ? `<div style="margin-top:14px;max-width:600px">${alvo(P, id)}</div>` : ''}</section>
-    <section class="card"><h2><span class="c">~/</span>em breve</h2><div class="tt-futuro"><div><b>personalizar a licença</b>cor, estojo, borda e brilho: prove na <button type="button" class="go" data-ttsub="loja">loja</button>; a compra chega com a Trick Coin (#43)</div><div><b>avatar</b>o corpo inteiro, com as peças da loja (#70)</div><div><b>medalhas e conquistas</b>dos períodos fechados (#69)</div></div></section>
-  </div></div>`;
-}
-
-function torreHTML(g){
-  const P = placarDe(g), r = G.res[g.chave] || {};
-  if(!P) return `<div class="card"><p style="margin:0;font-size:14px">${r.erro ? esc(r.erro) : 'Buscando o placar no servidor do grupo...'}</p></div>`;
-  if(!P.torre) return placarHTML(g);   // placar guardado de antes da Torre Trick (servidor do grupo antigo): a tabela de fatos
-  const aviso = r.offline ? `<p class="gp-aviso">O servidor do grupo está fora do ar. Mostrando o placar de ${esc(quando(P.recebido))}; o que você fizer até lá vai junto na próxima vez.</p>`
-    : r.sem_acesso ? `<p class="gp-aviso">${esc(r.erro)}</p>` : '';
-  const corpo = TT.sub === 'placares' ? subPlacares(P) : TT.sub === 'jogadores' ? subJogadores(P) : TT.sub === 'loja' ? subLoja(P) : subPlacar(P);
-  return `${aviso}<div class="tt">${corpo}</div>
-    <p class="sub" style="margin:4px 0 0">O seu XP e as suas tarefas não aparecem aqui: o grupo vê os seus andares, calculados com o teto. Última sincronização: ${G.ultima ? esc(quando(G.ultima / 1000)) : 'ainda não'} <button type="button" class="btn" data-gpsinc style="margin-left:6px">sincronizar agora</button></p>`;
 }
 
 /* administrar: os números da Torre Trick, os placares e as frases (#42, #67, #76) */
@@ -437,12 +279,11 @@ function torreAdminHTML(A){
       ${(A.frases || []).length ? A.frases.map(f => `<div class="gp-lin"><span><span class="sub">semana ${esc(f.semana.split('-W')[1] || '')} · ${esc(f.nome)}:</span> ${f.apagada ? '<i class="sub">apagada</i>' : esc(f.texto)}</span>${f.apagada ? '' : `<button type="button" class="btn" data-ttfraseapaga="${esc(f.semana)}">apagar</button>`}</div>`).join('') : '<p class="sub" style="margin:0">Nenhuma frase ainda.</p>'}</div>`;
 }
 
-/* ---------- aba nova (redesenho de 21/10, docs/COLETIVO-REDESENHO.md, #170–#173), atrás do botão antiga | nova ----------
+/* ---------- as sub-abas (redesenho de 21/10, docs/COLETIVO-REDESENHO.md, #170–#173) ----------
    semana (a licença, o card da semana e o Geral ou a Superação da semana) · desafios (tabela do dia do CF, chefão do mês,
    convites) · temporada (rodadas ganhas e medalhas) · hunters (a licença de cada um, com o detalhe por hábito) · loja.
    O Geral, a Superação, a marca e o chefão vêm do servidor do grupo (P.torre.semanal e P.torre.chefao). O que ainda não
-   existe (Prazos no protocolo, a escolha da modalidade, a tabela do dia, o duelo e o pacto) aparece como prévia. */
-TT.aba2 = (() => { try { return localStorage.getItem('gb-tt-aba') === 'nova'; } catch(e){ return false; } })();
+   existe (Prazos no protocolo, a escolha da modalidade, o duelo e o pacto) aparece como prévia. */
 TT.pod = 'geral';
 const NOVAS = ['semana', 'desafios', 'temporada', 'hunters', 'loja'];
 const MOD = {ritmo:['Ritmo', 'XP com teto', 'Jogue todo dia até o teto do grupo.', 'O XP de cada dia, até o teto do grupo. 100 = bateu o teto em todos os dias da semana; o que passa do teto não conta, então jogar todo dia vale mais que um dia enorme.'],
@@ -638,7 +479,7 @@ function carteiraHTML(P){
 function torreNova(g){
   const P = placarDe(g), r = G.res[g.chave] || {};
   if(!P) return `<div class="card"><p style="margin:0;font-size:14px">${r.erro ? esc(r.erro) : 'Buscando o placar no servidor do grupo...'}</p></div>`;
-  if(!P.torre || !temSemanal(P)) return `<div class="card"><p style="margin:0;font-size:14px">O servidor do grupo ainda não calcula o placar novo: quem hospeda o grupo precisa atualizar o jogo. Até lá, use a aba antiga no botão acima.</p></div>`;
+  if(!P.torre || !temSemanal(P)) return `<div class="card"><p style="margin:0;font-size:14px">O servidor do grupo ainda não calcula o placar desta versão: quem hospeda o grupo precisa atualizar o jogo.</p></div>`;
   const aviso = r.offline ? `<p class="gp-aviso">O servidor do grupo está fora do ar. Mostrando o placar de ${esc(quando(P.recebido))}.</p>` : r.sem_acesso ? `<p class="gp-aviso">${esc(r.erro)}</p>` : '';
   const sub = NOVAS.includes(TT.sub) ? TT.sub : 'semana';
   TT.habNomes = P.torre.semanal.habitos || {};
@@ -658,16 +499,9 @@ function rTT2(S){
   const fim = P && P.grupo.fim ? GBx.dias(P.hoje, P.grupo.fim) : null;
   const cab = P ? `<div class="tt-gh"><div><h3>${esc(P.grupo.nome)}</h3><div class="meta"><span><b>${temporadaDe(P)}</b>${fim != null && fim >= 0 ? ` · faltam ${fim} dias` : ''}</span><span>${P.membros.length} ${P.membros.length === 1 ? 'membro' : 'membros'}</span><span><i class="dot"></i>sincronizou ${esc(G.ultima ? quando(G.ultima / 1000) : quando(P.recebido))}</span></div></div>${sel}</div>` : sel;
   const admBt = adm ? `<button type="button" class="adm" data-gpaba="admin"${G.aba === 'admin' ? ' aria-current="page"' : ''}>administrar</button>` : '';
-  const troca = `<button type="button" class="tn-troca" data-tnaba>${TT.aba2 ? '← voltar para a aba antiga' : 'experimentar a aba nova (beta) →'}</button>`;
-  if(TT.aba2){
-    if(!NOVAS.includes(TT.sub)) TT.sub = 'semana';
-    const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('semana', 'semana')}${ab('desafios', 'desafios')}${ab('temporada', 'temporada')}${ab('hunters', 'hunters')}${ab('loja', 'loja')}${troca}${admBt}</nav>`;
-    document.getElementById('tt-root').innerHTML = cab + outro + nav + (G.aba === 'admin' ? adminHTML(g) : torreNova(g));
-    return;
-  }
-  if(!['placar', 'placares', 'jogadores', 'loja'].includes(TT.sub)) TT.sub = 'placar';
-  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('placar', 'placar')}${ab('placares', 'placares')}${ab('jogadores', 'jogadores')}${ab('loja', 'loja')}<button type="button" disabled>desafios<small>depois da 1.0</small></button>${troca}${admBt}</nav>`;
-  document.getElementById('tt-root').innerHTML = cab + outro + nav + (G.aba === 'admin' ? adminHTML(g) : torreHTML(g));
+  if(!NOVAS.includes(TT.sub)) TT.sub = 'semana';
+  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('semana', 'semana')}${ab('desafios', 'desafios')}${ab('temporada', 'temporada')}${ab('hunters', 'hunters')}${ab('loja', 'loja')}${admBt}</nav>`;
+  document.getElementById('tt-root').innerHTML = cab + outro + nav + (G.aba === 'admin' ? adminHTML(g) : torreNova(g));
 }
 const RENDER0 = {tt: RENDER.tt, cfg: RENDER.cfg};
 RENDER.tt = rTT2;
@@ -738,9 +572,7 @@ document.addEventListener('click', async e => {
   const q = s => e.target.closest(s);
   let b;
   if((b = q('[data-ttsub]'))){ vaiPara({sub: b.dataset.ttsub}); return; }
-  if((b = q('[data-ttplac]'))){ vaiPara({sub: TT.aba2 ? 'hunters' : 'placares', plac: b.dataset.ttplac}); return; }
-  if((b = q('[data-ttjog]'))){ vaiPara({sub: TT.aba2 ? 'hunters' : 'jogadores', jog: +b.dataset.ttjog}); return; }
-  if(q('[data-tnaba]')){ TT.aba2 = !TT.aba2; try { localStorage.setItem('gb-tt-aba', TT.aba2 ? 'nova' : 'antiga'); } catch(err){} G.aba = 'placar'; render(); return; }
+  if((b = q('[data-ttjog]'))){ vaiPara({sub: 'hunters', jog: +b.dataset.ttjog}); return; }
   if((b = q('[data-tnaj]'))){ TT.aj[b.dataset.tnaj] = !TT.aj[b.dataset.tnaj]; render(); return; }
   if((b = q('[data-tnpod]'))){ TT.pod = b.dataset.tnpod; render(); return; }
   if((b = q('[data-tnmod]'))){ toast(`${md(b.dataset.tnmod)[0]} <small>prévia: a escolha da modalidade ainda não vai para o servidor do grupo</small>`); return; }
@@ -1039,8 +871,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tl-lib{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font:600 11px var(--f-mono);color:var(--faint);margin-top:auto}
 .tl-lib span:last-child{color:var(--soft);border:1px dashed var(--hair);border-radius:3px;padding:0 6px}
 .tl-prov{font:600 11px var(--f-mono);color:var(--volt)}
-/* aba nova (redesenho de 21/10) */
-.tt-sub .tn-troca{margin-left:auto;color:var(--volt);font:600 11.5px var(--f-mono);letter-spacing:0} .tt-sub .tn-troca + .adm{margin-left:0}
+/* sub-abas do redesenho de 21/10 */
 .tt-heroi .txt:has(.tn-bl){flex:1} .tt-heroi .tn-bl{min-width:200px}
 .tn-prev{display:inline-block;font:600 10px var(--f-mono);color:var(--amb);border:1px dashed color-mix(in srgb,var(--amb) 60%,transparent);border-radius:3px;padding:0 6px;vertical-align:1px;white-space:nowrap;text-transform:none;letter-spacing:0}
 .tn-lic{width:min(300px,100%)} .tn-lic .lic2{width:100%!important} .tt-lcol:has(.tn-lic){width:min(300px,100%)}
