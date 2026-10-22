@@ -695,7 +695,7 @@ ul{list-style:none;margin:0;padding:0}
   .manga .vil{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:900px){
-  .ctx3,.d2grid,.kanban,.shop8 .lay,.shop8 .how8,.jump .lay,.jump .side{grid-template-columns:minmax(0,1fr)}
+  .ctx3,.d2grid,.cl-g,.kanban,.shop8 .lay,.shop8 .how8,.jump .lay,.jump .side{grid-template-columns:minmax(0,1fr)}
   .arena3{grid-template-columns:minmax(0,1fr)} .arena3 > :last-child{grid-column:auto} .arena3 .tower{display:none}
   .map8{grid-template-columns:minmax(0,1fr)}
   .manga .vil{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1365,6 +1365,46 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .pn-b .nx{grid-column:1/-1;font-size:12.5px;color:var(--soft);display:flex;justify-content:space-between;gap:8px;margin-top:2px} .pn-b .nx b{color:var(--ink);font-weight:600}
 .pn-b .nd{grid-column:1/-1;font-size:12px;color:var(--soft)}
 .pn-mais{margin-top:8px}
+/* ---------- Calendário novo: mês grande, o dia escolhido, os próximos 14 dias e a faixa do semestre ---------- */
+.cl-g{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(300px,1fr);gap:16px;align-items:start}
+.cl-side{display:grid;gap:16px}
+.cl-hd{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.cl-hd h2{margin:0;font:700 16px var(--f-hud);text-transform:uppercase;letter-spacing:.05em;min-width:150px}
+.cl-hd .btn{padding:3px 10px} .cl-hd .sub{margin-left:auto;font-size:12px}
+.cl-m{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cl-m > span{font:600 10.5px var(--f-mono);color:var(--faint);text-transform:uppercase;padding:0 6px 2px}
+.cl-d{all:unset;box-sizing:border-box;min-height:92px;padding:5px 6px;border:1px solid var(--hair);border-radius:6px;background:var(--panel);display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0;overflow:hidden}
+.cl-d:hover{border-color:var(--soft)} .cl-d:focus-visible{outline:2px solid var(--prompt);outline-offset:1px}
+.cl-d.out{visibility:hidden;pointer-events:none}
+.cl-d .n{display:flex;align-items:baseline;gap:6px;font:600 12px var(--f-mono);color:var(--soft)}
+.cl-d .n small{margin-left:auto;font:600 10.5px var(--f-mono);color:var(--faint)}
+#d2-antiga[hidden]{display:none}
+.cl-d{position:relative}
+.cl-d.pas{background:color-mix(in srgb,var(--track) 45%,var(--panel))} .cl-d.pas .n{color:var(--faint)}
+.cl-d.pas::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:color-mix(in srgb,var(--volt) calc(var(--h,0) * 1%),transparent)}
+.cl-d.z{border-style:dashed;border-color:var(--aura)}
+.cl-d.gi{background:color-mix(in srgb,var(--grn) 10%,var(--panel));border-style:dashed;border-color:color-mix(in srgb,var(--grn) 50%,transparent)}
+.cl-d.hj{border:2px solid var(--volt)} .cl-d.hj .n{color:var(--volt)}
+.cl-d.sel{box-shadow:inset 0 0 0 2px var(--ink)}
+.cl-it{display:block;font-size:11.5px;line-height:1.3;padding:1px 5px;border-radius:3px;border-left:3px solid var(--c,var(--soft));background:var(--track);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-it.cav{font-weight:700;color:var(--c)} .cl-it.late{--c:var(--red)} .cl-it.rep{color:var(--soft)}
+.cl-d .mais{font:600 10.5px var(--f-mono);color:var(--faint)}
+.cl-dia h2{display:flex;align-items:baseline;gap:8px} .cl-dia h2 small{font:600 11px var(--f-mono);color:var(--faint)}
+.pn-ti b.cav{color:var(--c)}
+.cl-dia .cl-add{margin-top:12px;width:100%;justify-content:center}
+.cl-dia .cl-add .l-nk{margin-left:8px}
+.cl-dia .pn-tt:first-of-type{margin-top:0}
+.cl-px .pn-td{cursor:pointer} .cl-px .pn-td:hover .pn-dl{color:var(--ink)}
+.cl-sem .cl-sl{display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;align-items:center;padding:3px 0}
+.cl-sem .cl-sl > b{font:600 11px var(--f-mono);color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
+.cl-sem .cl-sl.on > b{color:var(--ink)}
+.cl-sem .cl-sr{display:grid;grid-template-columns:repeat(31,minmax(0,18px));gap:3px}
+.cl-sem .cl-sr i{all:unset;aspect-ratio:1;border-radius:2px;background:var(--track);cursor:pointer;position:relative}
+.cl-sem .cl-sr i.l1{background:color-mix(in srgb,var(--volt) 30%,var(--track))} .cl-sem .cl-sr i.l2{background:color-mix(in srgb,var(--volt) 60%,var(--track))} .cl-sem .cl-sr i.l3{background:var(--volt)}
+.cl-sem .cl-sr i.fut{background:color-mix(in srgb,var(--track) 45%,transparent)} .cl-sem .cl-sr i.gi{background:color-mix(in srgb,var(--grn) 25%,transparent)}
+.cl-sem .cl-sr i.cav::after{content:"";position:absolute;inset:-2px;border:2px solid var(--rc,var(--red));border-radius:3px}
+.cl-sem .cl-sr i.hj{outline:2px solid var(--ink);outline-offset:1px} .cl-sem .cl-sr i.sel{outline:2px solid var(--prompt);outline-offset:1px}
+.cl-sem .tl-leg{margin-top:10px}
 /* ---------- Chefões novos, em teste: uma linha por chefão (retrato, frase, vida com a linha de aprovação, a próxima avaliação),
    que abre com as avaliações, as tarefas e as aulas (aulas.js). Só vale com a classe cnova no <html> (botão no topo dos Chefões);
    sem ela, o quadro antigo fica igual ---------- */
@@ -1497,7 +1537,9 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 
   <section id="v-d2" hidden>
     <div id="gnav-d2"></div>
-    <div class="d2grid"><div class="card"><div class="months" id="d2-months"></div><div class="tl-leg" style="margin-top:14px"><span>azul = dia com tarefas</span><span>tracejado roxo = Zetsu</span><span>anel vermelho = avaliação futura · âmbar = aguardando nota · verde = nota ≥ 6</span><span>verde tracejado = Greed Island</span></div></div>
+    <div class="nl-troca"><button type="button" class="go" data-cnova></button></div>
+    <div id="cal" hidden></div>
+    <div class="d2grid" id="d2-antiga"><div class="card"><div class="months" id="d2-months"></div><div class="tl-leg" style="margin-top:14px"><span>azul = dia com tarefas</span><span>tracejado roxo = Zetsu</span><span>anel vermelho = avaliação futura · âmbar = aguardando nota · verde = nota ≥ 6</span><span>verde tracejado = Greed Island</span></div></div>
       <div class="stack"><div class="card"><h2><span class="c">~/</span>escada da temporada</h2><ul class="ladder" id="d2-ladder"></ul></div><div class="card"><h2><span class="c">~/</span>próximas avaliações</h2><div id="d2-next"></div></div></div></div>
   </section>
 
@@ -1916,7 +1958,77 @@ function mesesTemporada(){
   }
   return out;
 }
+/* Calendário novo atrás de um botão, como foi com a Lista: o padrão segue o antigo até fechar o desenho */
+try { UI.cnova = localStorage.getItem('gb-cal') === 'nova'; } catch(e){ UI.cnova = false; }
+const SEMC = ['seg','ter','qua','qui','sex','sáb','dom'];
+const diaC = d => d === HOJE ? 'hoje' : d === addD(HOJE,1) ? 'amanhã' : d === addD(HOJE,-1) ? 'ontem' : `${SEMC[dow(d)]} ${ddmm(d)}`;
+const corAv = a => a.st === 'ok' ? 'var(--grn)' : a.st === 'low' ? 'var(--soft)' : a.st === 'wait' || a.st === 'hoje' ? 'var(--amb)' : 'var(--red)';
+/* o que há em cada dia: avaliações, prazos (abertas e recorrentes guardadas) e o que foi feito */
+function diasCal(S){
+  const M = {}, de = d => M[d] = M[d] || {av:[], pz:[], fe:[]};
+  S.bs.forEach(b => b.avs.forEach(a => { if(!a.cont && a.dt) de(a.dt).av.push({b,a}); }));
+  D.abertas.forEach(t => { if(t.due && !t.done && !SIM.has(t.n)) de(t.due).pz.push({t}); });
+  (D.guardadas || []).forEach(t => { if(t.due) de(t.due).pz.push({t, rep:true}); });
+  S.xs.forEach(o => { if(o.t.done) de(o.t.done).fe.push(o); });
+  return M;
+}
+/* a tecla N (e o botão do dia) abre a tarefa nova com o prazo do dia escolhido, se ele não passou */
+const prazoCal = () => cur === 'd2' && UI.cnova && UI.cdia && UI.cdia >= HOJE ? UI.cdia : '';
+function rCal(S){
+  const M = diasCal(S), dia = UI.cdia || HOJE, ym = UI.cmes || dia.slice(0,7), [ya, mm] = ym.split('-').map(Number);
+  const gi = d => d > TEMP.fim && d < TEMP.volta;
+  /* mês */
+  const first = ym + '-01'; let cells = SEMC.map(x => `<span>${x}</span>`).join('');
+  for(let i = 0; i < dow(first); i++) cells += '<i class="cl-d out"></i>';
+  for(let d = first; d.slice(0,7) === ym; d = addD(d,1)){
+    const m = M[d] || {av:[], pz:[], fe:[]}, k = S.porDia[d] || 0, x = S.xpDia[d] || 0, pas = d < HOJE;
+    const its = m.av.map(({b,a}) => `<span class="cl-it cav" style="--c:${corAv(a)}" title="${esc(b.n)} · ${esc(a.n)} (${a.w}%) · ${esc(stTxt(a))}">${esc(a.k)} · ${esc(b.d)}</span>`)
+      .concat(m.pz.map(({t,rep}) => `<span class="cl-it${rep ? ' rep' : pas ? ' late' : ''}" style="--c:${NC(nenDe(t))}" title="${esc(t.txt)}${rep ? ' · recorrente' : ''}">${rep ? '↻ ' : ''}${esc(t.txt)}</span>`));
+    const mx = 3, mostra = its.length > mx ? its.slice(0, mx - 1) : its;
+    const cls = [pas ? 'pas' : '', gi(d) ? 'gi' : '', pas && !k && S.ten.st[d] === 'z' ? 'z' : '', d === HOJE ? 'hj' : '', d === dia ? 'sel' : ''].filter(Boolean).join(' ');
+    cells += `<button type="button" class="cl-d ${cls}" data-cdia="${d}" style="--h:${pas ? Math.min(k, 5) * 20 : 0}" title="${ddmm(d)}${k ? ` · ${k} ${k === 1 ? 'tarefa' : 'tarefas'} · +${x} XP` : ''}${gi(d) ? ' · Greed Island' : ''}">
+      <span class="n">${+d.slice(8)}${k ? `<small>+${x}</small>` : ''}</span>${mostra.join('')}${its.length > mostra.length ? `<span class="mais">+${its.length - mostra.length}</span>` : ''}</button>`;
+  }
+  const ant = mm === 1 ? `${ya-1}-12` : `${ya}-${String(mm-1).padStart(2,'0')}`, prx = mm === 12 ? `${ya+1}-01` : `${ya}-${String(mm+1).padStart(2,'0')}`;
+  const mes = `<div class="card"><div class="cl-hd"><button type="button" class="btn" data-cmes="${ant}" aria-label="mês anterior">‹</button><h2>${NOMES_MES[mm-1]} ${ya}</h2><button type="button" class="btn" data-cmes="${prx}" aria-label="próximo mês">›</button>${ym !== HOJE.slice(0,7) || dia !== HOJE ? '<button type="button" class="go" data-cmes="hoje">hoje</button>' : ''}<span class="sub">clique num dia · N cria uma tarefa nele</span></div><div class="cl-m">${cells}</div></div>`;
+  /* o dia escolhido */
+  const m = M[dia] || {av:[], pz:[], fe:[]}, xD = S.xpDia[dia] || 0;
+  const ti = (av, txt, sub, dir, cls, st) => `<div class="pn-ti">${av}<span>${txt}${sub ? ` <small>${sub}</small>` : ''}</span><b class="${cls || ''}"${st ? ` style="${st}"` : ''}>${dir}</b></div>`;
+  const avL = ({b,a}) => ti(avB(b,20), `${esc(a.n)} · ${esc(b.d)}`, `${a.w}%${a.tot ? ` · prep ${a.ok}/${a.tot}` : ''}`, esc(a.st === 'fut' ? a.k : stTxt(a)), 'cav', `--c:${corAv(a)}`);
+  const pzL = ({t,rep}) => ti(avTask(t), esc(t.txt), [discOf(t), rep ? '↻ recorrente' : ''].filter(Boolean).join(' · '), '+' + xpDe({...t, done:t.due}));
+  const feL = o => ti(avTask(o.t), esc(o.t.txt), discOf(o.t), '+' + o.x, 'ok');
+  const sec = (n, l, f) => l.length ? `<h3 class="pn-tt">${n} <small>${l.length}</small></h3>${l.slice(0, 8).map(f).join('')}${l.length > 8 ? `<p class="sub" style="margin:4px 0 0">+ ${l.length - 8}</p>` : ''}` : '';
+  const corpo = sec('avaliações', m.av, avL) + sec(dia < HOJE ? 'prazo (não feitas)' : 'prazo', m.pz, pzL) + sec(`feito · +${xD} XP`, m.fe, feL);
+  const diaC2 = `<div class="card cl-dia"><h2><span class="c">~/</span>${diaC(dia)}<small>${[[HOJE, addD(HOJE,1), addD(HOJE,-1)].includes(dia) ? `${SEMC[dow(dia)]} ${ddmm(dia)}` : '', gi(dia) ? 'Greed Island' : ''].filter(Boolean).join(' · ')}</small></h2>
+    ${corpo || `<p class="sub">${dia < HOJE ? 'nada feito neste dia' : 'nada marcado para este dia'}</p>`}
+    ${dia >= HOJE ? `<button type="button" class="btn cl-add" data-cadd>+ tarefa para ${diaC(dia)}<span class="l-nk">N</span></button>` : ''}</div>`;
+  /* próximos 14 dias: atrasadas, avaliações e prazos, agrupados por dia */
+  const lin = [];
+  const late = D.abertas.filter(t => t.due && t.due < HOJE && !t.done && !SIM.has(t.n)).sort((p,q) => p.due.localeCompare(q.due));
+  if(late.length) lin.push(`<div class="pn-td late" data-cdia="${late[0].due}"><span class="pn-dl">atrasadas · ${late.length}</span>${late.slice(0,4).map(t => pzL({t})).join('')}${late.length > 4 ? '<button class="go pn-mais" data-go="l">ver todas na Lista →</button>' : ''}</div>`);
+  for(let i = 0; i < 14; i++){
+    const d = addD(HOJE, i), x = M[d]; if(!x || !(x.av.length + x.pz.length)) continue;
+    lin.push(`<div class="pn-td${d === HOJE ? ' hj' : ''}" data-cdia="${d}"><span class="pn-dl">${diaC(d)}</span>${x.av.map(avL).join('')}${x.pz.map(pzL).join('')}</div>`);
+  }
+  const px = `<div class="card cl-px"><h2><span class="c">~/</span>próximos 14 dias</h2>${lin.join('') || '<p class="sub">nada marcado nas próximas duas semanas</p>'}</div>`;
+  /* o semestre numa faixa: uma linha por mês, o calor do que foi feito e as avaliações */
+  const sem = mesesTemporada().map(([y, nm]) => {
+    let r = '';
+    for(let d = y + '-01'; d.slice(0,7) === y; d = addD(d,1)){
+      const k = S.porDia[d] || 0, av = (M[d] || {av:[]}).av;
+      const c = d > HOJE ? (gi(d) ? 'gi' : 'fut') : k >= 4 ? 'l3' : k >= 2 ? 'l2' : k ? 'l1' : '';
+      const rc = av.length ? (av.every(x => x.a.st === 'ok') ? 'var(--grn)' : av.some(x => x.a.st === 'wait' || x.a.st === 'hoje') ? 'var(--amb)' : 'var(--red)') : '';
+      r += `<i class="${c}${av.length ? ' cav' : ''}${d === HOJE ? ' hj' : ''}${d === dia ? ' sel' : ''}" data-cdia="${d}"${rc ? ` style="--rc:${rc}"` : ''} title="${ddmm(d)}${k ? ` · ${k} ${k === 1 ? 'tarefa' : 'tarefas'}` : ''}${av.length ? ' · ' + av.map(x => x.b.d + ' ' + x.a.k).join(', ') : ''}"></i>`;
+    }
+    return `<div class="cl-sl${y === ym ? ' on' : ''}"><b>${nm.slice(0,3)} ${y.slice(2,4)}</b><div class="cl-sr">${r}</div></div>`;
+  }).join('');
+  const semC = `<div class="card cl-sem"><h2><span class="c">~/</span>${esc(TEMP.nome)}<span class="sub" style="margin-left:auto">semana ${semana().n} de ${semana().tot}</span></h2>${sem}<div class="tl-leg"><span>cor = tarefas feitas no dia</span><span>anel = avaliação</span></div></div>`;
+  document.getElementById('cal').innerHTML = faixaN(S) + `<div class="cl-g"><div class="cl-side">${mes}${semC}</div><div class="cl-side">${diaC2}${px}</div></div>`;
+}
 function rD2(S){
+  document.querySelector('[data-cnova]').textContent = UI.cnova ? '← voltar para o Calendário antigo' : 'experimentar o Calendário novo (beta) →';
+  document.getElementById('cal').hidden = !UI.cnova; document.getElementById('d2-antiga').hidden = UI.cnova;
+  if(UI.cnova){ rCal(S); return; }
   const meses = mesesTemporada();
   const avDia = {}; S.bs.forEach(b => b.avs.forEach(a => { if(!a.cont) (avDia[a.dt] = avDia[a.dt] || []).push({b,a}); }));
   document.getElementById('d2-months').innerHTML = meses.map(([ym,nm]) => {
@@ -2881,6 +2993,10 @@ document.addEventListener('click', async e => {
   const tp = q('[data-ltipo]'); if(tp){ LA.tipo = tp.dataset.ltipo; LA.auto = false; LA.por = 'escolhido por você'; marcaTipo();
     prevL(); return; }
   const pr = q('[data-lpri]'); if(pr){ LA.pri = pr.dataset.lpri; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b === pr)); prevL(); return; }
+  if(q('[data-cnova]')){ UI.cnova = !UI.cnova; try { localStorage.setItem('gb-cal', UI.cnova ? 'nova' : 'antiga'); } catch(e){} render(); window.scrollTo(0, 0); return; }
+  const cm = q('[data-cmes]'); if(cm){ if(cm.dataset.cmes === 'hoje'){ UI.cdia = HOJE; UI.cmes = ''; } else UI.cmes = cm.dataset.cmes; render(); return; }
+  const cd = q('[data-cdia]'); if(cd && !q('[data-go]')){ UI.cdia = cd.dataset.cdia; UI.cmes = UI.cdia.slice(0,7); render(); return; }
+  if(q('[data-cadd]')){ if(window.GB_EXP) GB_EXP.abreN(undefined, prazoCal()); return; }
   const du = q('[data-ldue]'); if(du){ LA.due = du.dataset.ldue; document.getElementById('l-date').value = ''; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === du)); prevL(); return; }
   const cna = q('[data-cnab]'); if(cna){ const d = cna.dataset.cnab; if(UI.cnab.has(d)) UI.cnab.delete(d); else UI.cnab.add(d); try { localStorage.setItem('gb-cnab', JSON.stringify([...UI.cnab])); } catch(e){} render(); return; }
   if(q('[data-cnleg]')){ UI.cnleg = !UI.cnleg; render(); return; }

@@ -295,16 +295,23 @@ function depoisDeAdicionar(){
 }
 
 /* ---------- tecla N: o mesmo formulário da Lista, numa janela ---------- */
-/* Abre recolhida; abrir ou fechar os detalhes nela fica lembrado para o próximo N (por navegador, #111). */
+/* Abre recolhida; abrir ou fechar os detalhes nela fica lembrado para o próximo N (por navegador, #111).
+   due: o prazo já marcado (o dia escolhido no Calendário); ao fechar, o formulário da Lista volta ao prazo que tinha. */
 const N = {};
 const nDetLe = () => { try { return localStorage.getItem('gb-ndet') === '1'; } catch(e){ return false; } };
-function abreN(cac){
+function marcaPrazo(d){
+  LA.due = d || ''; const chip = [...document.querySelectorAll('[data-ldue]')].find(b => b.dataset.ldue === LA.due);
+  document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === chip));
+  document.getElementById('l-date').value = chip ? '' : GBx.brData(LA.due);
+}
+function abreN(cac, due){
   if(!CTX || document.getElementById('xn')) return;
   limpaAdicionada();
   const f = document.getElementById('l-add'); N.foco = document.activeElement; N.det = UI.ldet; UI.ldet = nDetLe() || cac !== undefined;
   if(cac !== undefined) UI.lcac = cac;
+  N.due = null; if(due){ N.due = [LA.due, document.getElementById('l-date').value]; formL(); marcaPrazo(due); }
   const bg = document.createElement('div'); bg.className = 'wz-bg'; bg.id = 'xn';
-  bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa<small>Enter adiciona · vazio, Enter fecha · Esc fecha · C cria uma caçada inteira</small></h3><div id="xn-slot"></div></div><div class="wz-foot"><button type="button" class="btn" data-nfecha>fechar</button></div></div>`;
+  bg.innerHTML = `<div class="wz xn" role="dialog" aria-modal="true" aria-labelledby="xn-t"><div class="wz-body"><h3 id="xn-t">Nova tarefa${due ? ` · prazo ${GBx.brData(due)}` : ''}<small>Enter adiciona · vazio, Enter fecha · Esc fecha · C cria uma caçada inteira</small></h3><div id="xn-slot"></div></div><div class="wz-foot"><button type="button" class="btn" data-nfecha>fechar</button></div></div>`;
   document.body.appendChild(bg); document.getElementById('xn-slot').appendChild(f); formL();
   document.getElementById('l-txt').focus();
 }
@@ -313,6 +320,7 @@ function fechaN(){
   limpaAdicionada();
   // O painel da IA e os irmãos do formulário podem mudar enquanto a janela está aberta.
   try { localStorage.setItem('gb-ndet', UI.ldet ? '1' : '0'); } catch(e){}
+  if(N.due){ marcaPrazo(N.due[0]); document.getElementById('l-date').value = N.due[1]; N.due = null; }
   document.getElementById('l-form').appendChild(document.getElementById('l-add')); UI.ldet = N.det; bg.remove(); formL();
   if(N.foco && N.foco.isConnected) N.foco.focus({preventScroll:true}); N.foco = null;
 }
@@ -619,7 +627,7 @@ document.addEventListener('keydown', ev => {
   if(ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
   const a = document.activeElement; if(a && (a.matches('input,textarea,select') || a.isContentEditable)) return;
   if(document.querySelector('.wz-bg, #tr-pop')) return;   // outra janela ou um tutorial aberto
-  if(ev.key === 'n' || ev.key === 'N'){ ev.preventDefault(); abreN(); }
+  if(ev.key === 'n' || ev.key === 'N'){ ev.preventDefault(); abreN(undefined, typeof prazoCal === 'function' ? prazoCal() : ''); }
   else if(ev.key === 'c' || ev.key === 'C'){ ev.preventDefault(); abreC(cur === 'x' ? X.sel : ''); }
 });
 
