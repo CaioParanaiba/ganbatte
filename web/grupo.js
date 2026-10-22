@@ -118,6 +118,8 @@ function adminHTML(g){
    do líder (grupo/torre.py). Clicar num nome abre a licença do jogador na sub-aba hunters. */
 const TT = {sub:'placar', jog:null, plac:'geral', esp:(() => { try { return localStorage.getItem('gb-tt-esp') || 'campeoes'; } catch(e){ return 'campeoes'; } })()};
 const SEMANA_EVO = n => n ? 's' + n.split('-W')[1] : '';
+const vde = x => `${x.v}V ${x.d}D${x.e ? ` ${x.e}E` : ''}`;
+const duelosTxt = m => m.duelos && m.duelos.v + m.duelos.d + m.duelos.e ? [`duelos: ${vde(m.duelos)}`] : [];   // o retrospecto no verso da licença
 const membroDe = (P, id) => P.membros.find(m => m.id === +id) || {id, nome:'?', avatar:''};
 const nomeDe = (P, id) => membroDe(P, id).nome;
 const andaresTxt = v => (Math.round(v * 10) / 10).toLocaleString('pt-BR');
@@ -162,7 +164,7 @@ function verso(P, id, pv){
   const q = k => `<span class="q${k <= 3 ? ' m' + k : ''}">${k}º</span>`;
   return `<div class="tt-lv"><div class="in"><div class="tarja"></div><div class="numq">${numeroDe(P, id, pv).map((n, i) => [...n].map(c => `<i>${c}</i>`).join('') + (i < 2 ? '<span class="esp"></span>' : '')).join('')}</div>
     <div class="vinfo"><div><h5>PLACARES</h5><ul>${pos.slice(0, 6).map(([p, k]) => `<li>${q(k)}${pl(p.id, p.nome)}</li>`).join('') || '<li>nenhum ainda</li>'}</ul></div>
-      <div><h5>EM CURSO</h5><ul><li>superação: +${andaresTxt(g.projecao)} andares</li><li>(entra quando o período fechar)</li></ul><h5 style="margin-top:2cqw">REGISTRO</h5><ul><li>${m.dias_com_xp || 0} dias com XP</li>${m.admin ? '<li>admin do grupo</li>' : ''}</ul></div></div></div>${pv && pv.bd ? '<i class="chain"></i>' : ''}</div>`;
+      <div><h5>EM CURSO</h5><ul><li>superação: +${andaresTxt(g.projecao)} andares</li><li>(entra quando o período fechar)</li></ul><h5 style="margin-top:2cqw">REGISTRO</h5><ul><li>${m.dias_com_xp || 0} dias com XP</li>${duelosTxt(m).map(x => `<li>${x}</li>`).join('')}${m.admin ? '<li>admin do grupo</li>' : ''}</ul></div></div></div>${pv && pv.bd ? '<i class="chain"></i>' : ''}</div>`;
 }
 /* ---------- sub-aba loja: a Loja da Associação como vitrine com provador (#136) ----------
    Sem Trick Coin e sem compra: cada item mostra a faixa, o 念 HxH e como vai ser liberado (#43). O provador aplica os itens
@@ -235,7 +237,7 @@ function licNova(P, id, pv, or, face, larg){
       tit[0] ? `LÍDER EM <b>${esc(tit[0].nome.toUpperCase())}</b>` : 'SEM TÍTULO AGORA'],
     glifo: glifos('hunter ' + m.nome + ' torre trick'), placares: pos.slice(0, 6).map(([p, k]) => [k, pl(p.id, p.nome)]),
     curso: [`superação: +${andaresTxt((geralDe(P).find(x => x.membro === +id) || {projecao:0}).projecao)} andares`, '(entra quando o período fechar)'],
-    registro: [`${m.dias_com_xp || 0} dias com XP`].concat(m.admin ? ['admin do grupo'] : [])};
+    registro: [`${m.dias_com_xp || 0} dias com XP`].concat(duelosTxt(m), m.admin ? ['admin do grupo'] : [])};
   const est = pv.bd === 'corrente' ? 'corrente' : pv.est === 'preto' ? 'preto' : pv.est === 'ouro' ? TT.ouro : 'padrao';
   const car = {'APROVADO':'lic-exame', 'CHEFÃO ✓':'lic-chefao', 'EXAME · T1':'lg-exame'}[pv.car] || '';
   return GB_LIC.peca(or, face, {est, cor: pv.cor || 'azul', emb: pv.emb || 'hunter', car, st: (pv.st || '').length, fx: pv.fx || '', d}, larg);
@@ -411,7 +413,7 @@ function dadosLic(P, id){
       `MEDALHAS <b>${md[0]}</b>·<b>${md[1]}</b>·<b>${md[2]}</b> · SEQ. <b>${m.sequencia || 0}</b>`, t.marcas ? `<b>${t.marcas}</b> ${t.marcas === 1 ? 'MARCA BATIDA' : 'MARCAS BATIDAS'}` : 'NENHUMA MARCA AINDA'],
     glifo: glifos('hunter ' + m.nome + ' torre trick'),
     placares: [[1, `${md[0]} ${md[0] === 1 ? 'semana' : 'semanas'} em 1º`], [2, `${md[1]} em 2º`], [3, `${md[2]} em 3º`]],
-    curso: habs.slice(0, 3).concat(t.superacao ? [`${t.superacao}× 1º na superação`] : []), registro: [`${m.dias_com_xp || 0} dias com XP`].concat(m.admin ? ['admin do grupo'] : [])};
+    curso: habs.slice(0, 3).concat(t.superacao ? [`${t.superacao}× 1º na superação`] : []), registro: [`${m.dias_com_xp || 0} dias com XP`].concat(duelosTxt(m), m.admin ? ['admin do grupo'] : [])};
 }
 const licPeca = (P, id, face, larg) => GB_LIC.peca('v', face, {est:'padrao', cor:'azul', emb:'hunter', car:'', st:estrelas(temp(P, id)), fx:'', d:dadosLic(P, id)}, larg);
 const licVira = (P, id) => ARTE() ? `<div class="tt-flip tn-lic" data-ttvirar title="clique para virar"><div class="flip-in"><div class="face">${licPeca(P, id, 'frente', 300)}</div><div class="face tras">${licPeca(P, id, 'verso', 300)}</div></div></div>` : licenca(P, id);
@@ -491,7 +493,7 @@ function convitesHTML(P, C){
   const lista = TT.desafiar && pode ? `<div class="tn-cvop">${outros.map(m => `<button type="button" class="btn" data-tndu="convidar" data-para="${m.id}"${m.cf ? '' : ' disabled title="ainda não ligou o Codeforces"'}>${esc(m.nome)}</button>`).join('')}</div>` : '';
   const duelo = `<div><b>Duelo de Codeforces</b><span class="sub">1×1, 3 problemas na faixa do mais fraco, ${R.minutos} minutos.</span>
     ${meuCf ? `<button type="button" class="btn" data-tndesafiar${pode ? '' : ' disabled'}>${TT.desafiar && pode ? 'fechar' : 'desafiar alguém'}</button>${lista}` : '<span class="sub">Ligue o Codeforces em Configurações (o seu handle) para duelar.</span>'}</div>`;
-  return `<section class="card">${h2(H.duelos ? `${H.vitorias} ${H.vitorias === 1 ? 'vitória' : 'vitórias'} em ${H.duelos} ${H.duelos === 1 ? 'duelo' : 'duelos'}` : '')}${como}
+  return `<section class="card">${h2(H.duelos ? `<button type="button" class="tt-lk" data-ttsub="duelo">${vde({v:H.vitorias, d:H.derrotas || 0, e:H.empates})} · ver histórico</button>` : '')}${como}
     ${ativo || rec || env ? `<div class="tn-cvs">${ativo}${rec}${env}</div>` : '<p class="sub" style="margin:0 0 10px">Nenhum convite aberto.</p>'}
     <div class="tn-cv">${duelo}${PACTO}</div></section>`;
 }
@@ -502,12 +504,33 @@ function convitesHTML(P, C){
    sorteio, contagem, em andamento, fim. */
 TT.dv = (() => { try { return localStorage.getItem('gb-tt-dv') || 'espelhada'; } catch(e){ return 'espelhada'; } })();
 const meuConvite = C => C ? C.convites.find(c => c.de === C.eu) : null;
-const temDuelo = C => !!C && !!(C.duelo || meuConvite(C));
 const faseDu = du => du.estado === 'convite' ? 'espera' : du.estado === 'aceito' ? 'sorteio' : du.estado === 'andamento' ? (agoraS() < du.ini ? 'conta' : 'vivo') : du.estado;
 const pips = n => `<span class="tn-pips">${[0, 1, 2].map(i => `<i${i < n ? ' class="ok"' : ''}></i>`).join('')}</span>`;
+/* a aba duelo: o duelo em curso (ou o convite que você mandou) no alto e o histórico embaixo; um duelo antigo aberto pelo
+   histórico usa a mesma tela do fim */
+TT.dvDet = null;
 function subDuelo(P, C){
-  const eu = P.voce.membro, du = (C && C.duelo) || meuConvite(C);
-  if(!du) return `<section class="card"><h2><span class="c">~/</span>duelo</h2><p class="sub" style="margin:0">Nenhum duelo agora. <button type="button" class="tt-lk" data-ttsub="desafios">desafiar alguém</button></p></section>`;
+  if(!C) return `<section class="card"><h2><span class="c">~/</span>duelo</h2><p class="sub" style="margin:0">O servidor do grupo precisa atualizar para ter o duelo.</p></section>`;
+  if(TT.dvDet) return cardDuelo(P, C, TT.dvDet, true);
+  const du = C.duelo || meuConvite(C);
+  return (du ? cardDuelo(P, C, du) : `<section class="card"><h2><span class="c">~/</span>duelo</h2><p class="sub" style="margin:0">Nenhum duelo agora. <button type="button" class="tt-lk" data-ttsub="desafios">desafiar alguém</button></p></section>`) + historicoHTML(P, C);
+}
+
+const diaDe = ts => new Date(ts * 1000).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+function historicoHTML(P, C){
+  const H = C.historico, eu = P.voce.membro;
+  if(!H.duelos) return `<section class="card"><h2><span class="c">~/</span>histórico</h2><p class="sub" style="margin:0">Os seus duelos terminados aparecem aqui.</p></section>`;
+  const contra = Object.entries(H.contra || {}).sort((a, b) => (b[1].v + b[1].d + b[1].e) - (a[1].v + a[1].d + a[1].e))
+    .map(([id, x]) => `<span class="tn-dhc">${ico(P, +id, 22, 0, {semNome:true, nolink:true})}<span>vs <b>${esc(nomeDe(P, id))}</b></span><b class="mono">${vde(x)}</b></span>`).join('');
+  const linhas = (H.lista || []).map(d => { const o = d.de === eu ? d.para : d.de, J = id => d.jogadores.find(j => j.membro === id) || {n:0, pts:0};
+    const k = d.venceu == null ? 'e' : d.venceu === eu ? 'v' : 'd';
+    return `<button type="button" class="tn-dhl" data-tndver="${d.id}"><span class="tn-dhr ${k}">${k.toUpperCase()}</span>${ico(P, o, 26, 0, {semNome:true, nolink:true})}<span>vs <b>${esc(nomeDe(P, o))}</b></span>
+      <b class="tn-dhp">${J(eu).n} × ${J(o).n}</b><span class="tn-dhd">${diaDe(d.fim)}</span>${TC(J(eu).pts)}</button>`; }).join('');
+  return `<section class="card"><h2><span class="c">~/</span>histórico <span class="r">${vde({v:H.vitorias, d:H.derrotas || 0, e:H.empates})} em ${H.duelos} ${H.duelos === 1 ? 'duelo' : 'duelos'}</span></h2>
+    <div class="tn-dw"><div class="tn-dhcs">${contra}</div><div class="tn-dhls">${linhas}</div></div></section>`;
+}
+function cardDuelo(P, C, du, antigo){
+  const eu = P.voce.membro;
   const fase = faseDu(du), outro = du.de === eu ? du.para : du.de;
   const J = id => (du.jogadores || []).find(j => j.membro === id) || {n:0, t:0, pts:0, feitos:{}};
   const vals = (P.torre.cf_dia || {}).valores || [];
@@ -524,8 +547,9 @@ function subDuelo(P, C){
     : fase === 'sorteio' ? '<div class="tn-dvx"><p>Sorteando 3 problemas que nenhum dos dois resolveu…</p></div>'
     : fase === 'conta' ? `<div class="tn-dvx"><b class="tn-dvbig">${relo(du.ini)}</b><p>Os problemas aparecem quando a contagem acabar: ninguém sai na frente.</p></div>`
     : fase === 'falhou' ? '<div class="tn-dvx"><p>A API do Codeforces não respondeu e o sorteio desistiu. Ninguém perde nada: desafie de novo.</p></div>' : '';
-  const fim = fase === 'fim' ? `<div class="tn-dvfim${du.venceu === eu ? ' ok' : du.venceu == null ? '' : ' perdeu'}"><b>${res}</b><span>Você ganhou ${TC(J(eu).pts)} pelos problemas que resolveu (já na carteira).</span></div>` : '';
-  const pe = fase === 'vivo' ? '<p class="tn-dvpe">Resolva no Codeforces: o servidor do grupo confere os envios dos dois a cada 15 s.</p>'
+  const fim = fase === 'fim' ? `<div class="tn-dvfim${du.venceu === eu ? ' ok' : du.venceu == null ? '' : ' perdeu'}"><b>${res}</b><span>Você ganhou ${TC(J(eu).pts)} pelos problemas que resolveu${antigo ? '' : ' (já na carteira)'}.</span></div>` : '';
+  const pe = antigo ? `<p class="tn-dvpe"><button type="button" class="tt-lk" data-tndvvolta>voltar ao histórico</button></p>`
+    : fase === 'vivo' ? '<p class="tn-dvpe">Resolva no Codeforces: o servidor do grupo confere os envios dos dois a cada 15 s.</p>'
     : fase === 'fim' || fase === 'falhou' ? '<p class="tn-dvpe"><button type="button" class="tt-lk" data-ttsub="desafios">voltar aos desafios</button></p>' : '';
   const comProbs = du.problemas && (fase === 'vivo' || fase === 'fim');
   let corpo;
@@ -543,7 +567,7 @@ function subDuelo(P, C){
         <div class="tn-dvm">${chip(p)}${link(p)}<small>${p.contest}${esc(p.index)} · ${tc(p)}</small></div>${tempo(outro, p)}</div>`).join('')}</div>` : espera;
     corpo = `<div class="tn-dw"><div class="tn-dvc">${lado(eu, 'e')}${meio}${lado(outro, 'd')}</div>${fim}${probs}${pe}</div>`;
   }
-  return `<section class="card"><h2><span class="c">~/</span>duelo · Codeforces <span class="r">${troca}</span></h2>${corpo}</section>`;
+  return `<section class="card"><h2><span class="c">~/</span>duelo · Codeforces${antigo ? ` · ${diaDe(du.fim)}` : ''} <span class="r">${troca}</span></h2>${corpo}</section>`;
 }
 function subDesafios(P){
   const S = P.torre.semanal, eu = P.voce.membro;
@@ -635,8 +659,8 @@ function rTT2(S){
   const admBt = adm ? `<button type="button" class="adm" data-gpaba="admin"${G.aba === 'admin' ? ' aria-current="page"' : ''}>administrar</button>` : '';
   if(!NOVAS.includes(TT.sub)) TT.sub = 'semana';
   const C = caixaDe(g), nConv = C ? C.convites.filter(c => c.para === C.eu).length : 0;
-  if(TT.sub === 'duelo' && !temDuelo(C)) TT.sub = 'desafios';
-  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('semana', 'semana')}${ab('desafios', nConv ? `desafios <b class="tn-bdg">${nConv}</b>` : 'desafios')}${temDuelo(C) ? ab('duelo', duVivo(C.duelo) ? '<i class="dot"></i>duelo' : 'duelo') : ''}${ab('temporada', 'temporada')}${ab('hunters', 'hunters')}${ab('loja', 'loja')}${admBt}</nav>`;
+  if(TT.sub === 'duelo' && !C) TT.sub = 'desafios';
+  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('semana', 'semana')}${ab('desafios', nConv ? `desafios <b class="tn-bdg">${nConv}</b>` : 'desafios')}${C ? ab('duelo', duVivo(C.duelo) ? '<i class="dot"></i>duelo' : 'duelo') : ''}${ab('temporada', 'temporada')}${ab('hunters', 'hunters')}${ab('loja', 'loja')}${admBt}</nav>`;
   document.getElementById('tt-root').innerHTML = cab + outro + nav + (G.aba === 'admin' ? adminHTML(g) : torreNova(g));
 }
 const RENDER0 = {tt: RENDER.tt, cfg: RENDER.cfg};
@@ -707,8 +731,10 @@ const vaiPara = mudar => { Object.assign(TT, mudar); G.aba = 'placar'; render();
 document.addEventListener('click', async e => {
   const q = s => e.target.closest(s);
   let b;
-  if((b = q('[data-ttsub]'))){ vaiPara({sub: b.dataset.ttsub}); return; }
+  if((b = q('[data-ttsub]'))){ TT.dvDet = null; vaiPara({sub: b.dataset.ttsub}); return; }
   if((b = q('[data-ttjog]'))){ vaiPara({sub: 'hunters', jog: +b.dataset.ttjog}); return; }
+  if((b = q('[data-tndver]'))){ try { TT.dvDet = (await post('/api/grupo/duelo', {chave: grupoSel().chave, acao: 'ver', id: +b.dataset.tndver})).duelo; vaiPara({sub: 'duelo'}); } catch(err){ toast('Não deu: ' + esc(err.message)); } return; }
+  if(q('[data-tndvvolta]')){ TT.dvDet = null; render(); return; }
   if((b = q('[data-tndv]'))){ TT.dv = b.dataset.tndv; try { localStorage.setItem('gb-tt-dv', TT.dv); } catch(err){} render(); return; }
   if(q('[data-tndesafiar]')){ TT.desafiar = !TT.desafiar; render(); return; }
   if((b = q('[data-tndu]'))){ const g = grupoSel(), acao = b.dataset.tndu; b.disabled = true;
@@ -1088,6 +1114,14 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-dvfim{display:grid;justify-items:center;gap:4px;text-align:center;padding:12px;margin-bottom:14px;border:1px solid var(--hair);border-radius:3px} .tn-dvfim b{font:700 20px var(--f-hud)}
 .tn-dvfim.ok{border-color:var(--grn)} .tn-dvfim.ok b{color:var(--grn)} .tn-dvfim span{font-size:13px;color:var(--soft)}
 .tn-dvpe{text-align:center;margin:12px 0 0;font-size:12.5px;color:var(--soft)}
+.tn-dhcs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px}
+.tn-dhc{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;border:1px solid var(--hair);border-radius:3px;padding:4px 10px 4px 4px} .tn-dhc .mono{font:600 12px var(--f-mono)}
+.tn-dhls{display:grid}
+.tn-dhl{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto auto;gap:12px;align-items:center;font:inherit;font-size:13.5px;color:inherit;text-align:left;background:none;border:0;border-top:1px dashed var(--hair);padding:8px 6px;cursor:pointer}
+.tn-dhl:first-child{border-top:0} .tn-dhl:hover{background:color-mix(in srgb,var(--volt) 5%,transparent)}
+.tn-dhr{font:700 11px var(--f-mono);width:20px;text-align:center;border:1px solid var(--hair);border-radius:3px;padding:1px 0;color:var(--faint)} .tn-dhr.v{color:var(--grn);border-color:var(--grn)} .tn-dhr.d{color:var(--red);border-color:color-mix(in srgb,var(--red) 60%,transparent)}
+.tn-dhp{font:700 15px var(--f-hud)} .tn-dhd{font:500 11px var(--f-mono);color:var(--faint)}
+@media (max-width:560px){.tn-dhl{grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px} .tn-dhl .tn-dhd,.tn-dhl .tn-tc{display:none}}
 .tn-dex{display:grid;grid-template-columns:1fr auto auto auto 1fr;gap:14px;align-items:center;margin:4px 0 2px}
 .tn-dexn{font:600 14px var(--f-hud)} .tn-dexn.e{justify-self:end} .tn-dexp{font:700 52px/1 var(--f-hud)} .tn-dexp.ok{color:var(--grn)} .tn-dexx{font:500 20px var(--f-hud);color:var(--faint)}
 .tn-dex + .tn-dvr{margin:0 auto 14px}

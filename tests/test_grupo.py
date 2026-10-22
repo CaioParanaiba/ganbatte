@@ -781,7 +781,16 @@ class Duelo(Base):
         sg.duelo_rodada(ini + 1100)                          # não paga duas vezes
         self.assertEqual(sg.carteira(self.gid, self.ana["membro"])["extrato"][0]["motivo"], "duelo")
         self.assertEqual(len(sg.carteira(self.gid, self.ana["membro"])["extrato"]), 1)
-        self.assertEqual(sg.caixa_de(self.gid, self.bia["token"])["historico"], {"duelos": 1, "vitorias": 1, "empates": 0})
+        h = sg.caixa_de(self.gid, self.bia["token"])["historico"]
+        self.assertEqual((h["duelos"], h["vitorias"], h["derrotas"], h["empates"]), (1, 1, 0, 0))
+        self.assertEqual(h["contra"], {str(self.ana["membro"]): {"v": 1, "d": 0, "e": 0}})
+        self.assertEqual([(x["id"], x["venceu"], [j["n"] for j in x["jogadores"]]) for x in h["lista"]], [(cid, self.bia["membro"], [1, 3])])
+        # o duelo inteiro, para abrir pelo histórico; o placar leva o retrospecto de cada um para a licença
+        self.assertEqual(len(self.d(self.ana, acao="ver", id=cid)["duelo"]["problemas"]), 3)
+        with self.assertRaises(sg.Erro):
+            self.d(self.ana, acao="ver", id=cid + 99)
+        ms = {m["id"]: m["duelos"] for m in sg.placar(self.gid, self.ana["token"])["membros"]}
+        self.assertEqual((ms[self.ana["membro"]], ms[self.cris["membro"]]), ({"v": 0, "d": 1, "e": 0}, {"v": 0, "d": 0, "e": 0}))
 
     def test_aceitar_derruba_os_outros_convites(self):
         sg.envio(self.gid, self.cris["token"], {"protocolo": sg.PROTOCOLO, "dias": [], "cf": "cris_cf"})

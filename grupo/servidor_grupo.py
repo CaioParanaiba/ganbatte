@@ -51,7 +51,7 @@ Rotas (JSON):
   POST /g/<id>/admin/relatorio {}             o relatório completo da temporada, para calibrar (semanas, chefões, tabela do dia, Trick Coin)
   POST /g/<id>/modalidade {mod}               o 1º da semana escolhe a modalidade da seguinte (#170)
   GET  /g/<id>/caixa                          a caixa de convites e o duelo em curso (leve: a tela do duelo pede a cada poucos s)
-  POST /g/<id>/duelo {acao, para?, id?}       duelo 1×1 do Codeforces (#171): convidar {para} | aceitar | recusar | cancelar {id}
+  POST /g/<id>/duelo {acao, para?, id?}       duelo 1×1 do Codeforces (#171): convidar {para} | aceitar | recusar | cancelar | ver {id}
 """
 import argparse
 import hashlib
@@ -678,17 +678,48 @@ def duelo_json(g, r, todo=False):
     return out
 
 
+DUELO_LISTA = 30   # duelos terminados que a caixa lista (o retrospecto conta todos)
+
+
+def retrospecto(gid, membro=None):
+    """{membro: {v, d, e}} de todos os duelos terminados do grupo (a licença mostra o de cada um); com membro, também
+    contra quem: {membro: {outro: {v, d, e}}}."""
+    tot, contra = {}, {}
+    for r in q("SELECT de, para, dados FROM duelos WHERE grupo = ? AND estado = 'fim'", (gid,)):
+        v = json.loads(r["dados"]).get("venceu")
+        for m, o in ((r["de"], r["para"]), (r["para"], r["de"])):
+            k = "e" if v is None else "v" if v == m else "d"
+            tot.setdefault(m, {"v": 0, "d": 0, "e": 0})[k] += 1
+            if m == membro:
+                contra.setdefault(o, {"v": 0, "d": 0, "e": 0})[k] += 1
+    return tot, contra
+
+
+def resumo_duelo(g, r, feitos):
+    """Uma linha do histórico: quem, quando, o placar e os pontos de cada um (o duelo inteiro sai com a ação ver)."""
+    d = json.loads(r["dados"])
+    pl, _ = cf_dia.duelo(d["problemas"], feitos, [r["de"], r["para"]], d["ini"], cal_de(g))
+    return {"id": r["id"], "de": r["de"], "para": r["para"], "fim": r["fim"], "venceu": d.get("venceu"),
+            "jogadores": [{"membro": m, "n": pl[m]["n"], "pts": pl[m]["pts"]} for m in (r["de"], r["para"])]}
+
+
 def caixa(g, eu):
     """A caixa de convites de quem pede: os convites abertos (recebidos e enviados), o duelo em curso (ou o último, por meia
-    hora depois do fim, para ver o resultado) e o histórico de duelos dele."""
+    hora depois do fim, para ver o resultado) e o histórico de duelos dele (os últimos e o retrospecto contra cada um)."""
     t = agora()
     rs = q("SELECT * FROM duelos WHERE grupo = ? AND (de = ? OR para = ?) AND (estado IN ('aceito', 'andamento') OR (estado = 'convite' AND vence > ?)"
            " OR fim > ?) ORDER BY id", (g["id"], eu, eu, t, t - 1800))
     vivo = [r for r in rs if r["estado"] in DUELO_VIVO] or [r for r in rs if r["estado"] in ("fim", "falhou")][-1:]
-    hist = q("SELECT * FROM duelos WHERE grupo = ? AND (de = ? OR para = ?) AND estado = 'fim' ORDER BY fim DESC LIMIT 30", (g["id"], eu, eu))
-    vit = [json.loads(r["dados"]).get("venceu") for r in hist]
+    hist = q("SELECT * FROM duelos WHERE grupo = ? AND (de = ? OR para = ?) AND estado = 'fim' ORDER BY fim DESC LIMIT ?", (g["id"], eu, eu, DUELO_LISTA))
+    feitos = {}
+    if hist:
+        for x in q(f"SELECT * FROM duelo_feitos WHERE duelo IN ({','.join('?' * len(hist))})", [r["id"] for r in hist]):
+            feitos.setdefault(x["duelo"], []).append((x["membro"], x["prob"], x["t"]))
+    tot, contra = retrospecto(g["id"], eu)
+    meu = tot.get(eu, {"v": 0, "d": 0, "e": 0})
     return {"agora": t, "eu": eu, "convites": [duelo_json(g, r) for r in rs if r["estado"] == "convite"], "duelo": duelo_json(g, vivo[0]) if vivo else None,
-            "historico": {"duelos": len(vit), "vitorias": vit.count(eu), "empates": vit.count(None)},
+            "historico": {"duelos": sum(meu.values()), "vitorias": meu["v"], "derrotas": meu["d"], "empates": meu["e"],
+                          "contra": {str(k): x for k, x in contra.items()}, "lista": [resumo_duelo(g, r, feitos.get(r["id"], [])) for r in hist]},
             "regras": {"convite": DUELO_CONVITE, "minutos": DUELO_MIN, "conta": DUELO_CONTA}}
 
 
@@ -702,10 +733,18 @@ def ocupado(c, gid, m):
 
 
 def duelo(gid, token, d):
-    """{acao: convidar, para} | {acao: aceitar | recusar | cancelar, id}."""
+    """{acao: convidar, para} | {acao: aceitar | recusar | cancelar | ver, id}. ver: um duelo terminado inteiro (o histórico)."""
     g = grupo_ou_404(gid)
     eu = membro_do(gid, token)
     acao, t = d.get("acao"), agora()
+    if acao == "ver":
+        try:
+            r = q1("SELECT * FROM duelos WHERE id = ? AND grupo = ? AND estado = 'fim'", (int(d.get("id") or 0), gid))
+        except (TypeError, ValueError):
+            r = None
+        if not r:
+            raise Erro("duelo não encontrado", 404)
+        return {"ok": True, "duelo": duelo_json(g, r, todo=True)}
     with transacao() as c:
         if acao == "convidar":
             try:
@@ -1059,7 +1098,7 @@ def placar(gid, token):
     ini = hoje - timedelta(days=JANELA - 1)
     cat = catalogo(gid)
     vale = {h["id"] for h in cat}
-    membros = []
+    membros, duelos = [], retrospecto(gid)[0]
     for m in q("SELECT * FROM membros WHERE grupo = ? AND saiu IS NULL ORDER BY entrou", (gid,)):
         dias, ativos = {}, set()
         for r in q("SELECT dia, xp, hab, missao FROM dias WHERE grupo = ? AND membro = ? AND dia >= ?", (gid, m["id"], ini.isoformat())):
@@ -1073,7 +1112,8 @@ def placar(gid, token):
                 dias[r["dia"]] = f
         com_xp = q1("SELECT COUNT(*) AS n FROM dias WHERE grupo = ? AND membro = ? AND xp > 0", (gid, m["id"]))["n"]
         membros.append({"id": m["id"], "nome": m["nome"], "avatar": m["avatar"], "admin": bool(m["admin"]), "envio": m["envio"],
-                        "sequencia": sequencia(ativos, hoje), "dias_com_xp": com_xp, "dias": dias, "cf": bool(m["cf"])})
+                        "sequencia": sequencia(ativos, hoje), "dias_com_xp": com_xp, "dias": dias, "cf": bool(m["cf"]),
+                        "duelos": duelos.get(m["id"], {"v": 0, "d": 0, "e": 0})})
     fechado = q1("SELECT MAX(periodo) AS p FROM fechados WHERE grupo = ? AND periodo LIKE 'dia:%'", (gid,))["p"]
     G = retrato(g)
     t = torre.calcula(G)

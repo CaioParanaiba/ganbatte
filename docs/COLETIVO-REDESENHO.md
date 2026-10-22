@@ -237,8 +237,11 @@ antiga | nova saíram. **Pouco texto na tela:** toda explicação fica no "?" do
 ## O que falta (para o próximo chat)
 
 1. ~~Duelo 1×1 de CF~~ e ~~caixa de convites~~: feitos em 22/10 (PR da branch `issue-171-duelo`). Tabelas `duelos` e
-   `duelo_feitos`, rotina `rotina_duelo`, rotas `GET /g/<id>/caixa` e `POST /g/<id>/duelo`, sub-aba "duelo". Falta a
-   aposta (com a loja) e equilibrar forte contra fraco.
+   `duelo_feitos`, rotina `rotina_duelo`, rotas `GET /g/<id>/caixa` e `POST /g/<id>/duelo`, sub-aba "duelo" (sempre
+   visível: o duelo em curso no alto, o histórico embaixo com o retrospecto contra cada um e os últimos 30 duelos, que
+   abrem pela ação `ver`; o retrospecto também vai no verso da licença). Os convites levam o tipo na frente (DUELO · CF).
+   Falta escolher a tela do duelo (espelhada ou enxuta, trocadas no card por `gb-tt-dv`), a aposta (com a loja) e
+   equilibrar forte contra fraco.
 2. **Pacto de hábito** (fase 3): regra decidida (ver "Pacto de hábito"); falta confirmar a base, o teto de dias e a
    moeda, e fazer. Usa a mesma caixa de convites (o pacto entra como outro tipo de convite).
 4. **Lançamento:** versão nova (`VERSAO`, `novidades.js`) com a **janela grande** na Novidades (mexe em pontos); o
