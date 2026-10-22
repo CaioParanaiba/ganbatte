@@ -1940,6 +1940,7 @@ function partes(S, it){
   else if(it.excl) btn = `<button class="btn" disabled>só no ${esc(COS.find(i => i.id === it.excl).n.replace('Pacote ','pacote '))}</button>`;
   else if(lk) btn = `<button class="btn" disabled>${it.why}</button>`;
   else if(need) btn = `<button class="btn" disabled>abra o mundo pixel</button>`;
+  else if(GBx.LOJA_TRAVADA && preco) btn = '<button class="btn" disabled title="os preços estão sendo balanceados (#77)">pausado</button>';
   else btn = `<button class="btn" data-cos="${it.id}" ${S.jenny >= preco ? '' : 'disabled'}>${!preco ? 'pegar' : S.jenny >= preco ? 'comprar' : `faltam ${fmt(preco - S.jenny)} J`}</button>`;
   const prova = UI.prova === it.id;
   const ver = it.dev ? '' : provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
@@ -2030,7 +2031,8 @@ function rMS(S){
       ? [...GBx.FAIXAS_LOJA, ['', 'Sem faixa', 'Pacotes, peças que só vêm num pacote e ideias com a faixa a decidir.']].map(([k, n, d]) => { const v = ordem.filter(i => (i.fa || '') === k);
           return v.length ? sec(n, d, v) : ''; }).join('')
       : cs.map(c => { const [, t, d] = UI.cat === 'aparencia' ? tit(c) : SECS[UI.cat].find(x => x[0] === c), v = vit(c); return v.length ? sec(t, d, v) : ''; }).join('');
-    main = fil + fams + (secs || `<p class="sub">Nenhum item ${UI.cat === 'aparencia' ? 'nesta família ' : ''}com esses filtros.${UI.cat === 'aparencia' ? ' O número em cada família mostra onde há.' : ''}${UI.ten7 && nTenho ? ' O que já é seu está em Comprados.' : ''}</p>`)
+    const trava = GBx.LOJA_TRAVADA ? `<p class="sub" style="margin:-4px 0 12px"><b>${esc(GBx.LOJA_TRAVADA)}.</b> Os preços vão ser ajustados com os relatórios dos jogadores na regra nova; até lá dá para provar tudo, e o que já é seu continua seu. Feitiços e prêmios reais seguem normais.</p>` : '';
+    main = trava + fil + fams + (secs || `<p class="sub">Nenhum item ${UI.cat === 'aparencia' ? 'nesta família ' : ''}com esses filtros.${UI.cat === 'aparencia' ? ' O número em cada família mostra onde há.' : ''}${UI.ten7 && nTenho ? ' O que já é seu está em Comprados.' : ''}</p>`)
       + (UI.cat==='aparencia' ? '<p class="sub nx7">Na próxima temporada (2027-1): os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p>' : '');
   }
   else if(UI.cat === 'premios') main = UI.pedit ? premiosEditor(S) : premiosHTML(S);
@@ -2918,7 +2920,7 @@ document.addEventListener('click', async e => {
   const fm = q('[data-fam7]'); if(fm){ UI.fam7 = fm.dataset.fam7; UI.sec7 = ''; render(); return; }
   const sc = q('[data-sec7]'); if(sc){ UI.sec7 = sc.dataset.sec7; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(), pk = it && it.parts ? GBx.pacote(it, OWN) : null, p = pk ? pk.p : it && it.p;
-    if(!it || it.prova || it.grupo || it.excl || it.arq || (it.lock && it.lock(S)) || (pk && pk.completo) || S.jenny < p) return;
+    if(!it || it.prova || it.grupo || it.excl || it.arq || (it.lock && it.lock(S)) || (pk && pk.completo) || S.jenny < p || (GBx.LOJA_TRAVADA && p)) return;
     SPENT += p; compra('cos', it.id, p, pk ? {pacote:1} : null); OWN.add(it.id); GBx.expandeOwn(OWN, EST.compras); [it.id, ...(it.parts || [])].forEach(k => { COMO[k] = 'compra'; }); UI.prova = ''; equipa(it); salvaUI(); guardaColecao();
     toast(`${esc(it.n)} é seu <small>${p ? `−${fmt(p)} J` : 'grátis'} · já equipado${it.parts ? ' · as peças ficam separadas também' : ''} · guardado em Comprados</small>`); render(); return; }
   const ic7 = q('[data-icone]'); if(ic7){ UI.icone = UI.icone === ic7.dataset.icone ? '' : ic7.dataset.icone; render(); return; }
