@@ -20,7 +20,7 @@ Há três jeitos de usar:
   revisar no editor, ou marcar várias (*selecionar todos*) e *salvar selecionados* de uma vez (disciplina ainda não
   cadastrada vira o botão *cadastrar*). Para uma só, *ler plano com IA* no
   editor da disciplina.
-- **Aulas:** nos Chefões novos (botão no topo da aba), abra o chefão e clique em *mandar aula*: o áudio da aula e/ou os
+- **Aulas:** em **Chefões**, abra o chefão e clique em *mandar aula*: o áudio da aula e/ou os
   slides em PDF, ou uma transcrição colada. O jogo transcreve o áudio no próprio computador (precisa do Whisper; o comando
   de instalação aparece ali) e a IA escreve o resumo e sugere tarefas de estudo. O resumo abre pelo chefão (fica em
   `~/.ganbatte/aulas/`); cada sugestão espera você escolher *não adicionar*, *adicionar* ou *juntar* com uma tarefa
@@ -82,7 +82,7 @@ automação já vem no jogo, e cada computador precisa ficar igual para dar supo
 2. Explique o que passa a acontecer sozinho: as cartas do Book que faltam, ao abrir o jogo (semana na segunda, mês no
    dia 1, semestre no dia seguinte ao fim da temporada, ano em 1º/jan). Não pergunte essas datas: são regras do jogo.
 3. Explique onde ficam os botões: *ler todos os planos* em Chefões, *ler plano com IA* e *aplicar lembretes com IA* no
-   editor de cada chefão, *mandar aula* no chefão aberto (Chefões novos), *IA?* no formulário da Lista, *escrever cartas antigas* e *propor conquistas com IA* no Book. Os planos de ensino ficam em `~/.ganbatte/planos/`.
+   editor de cada chefão, *mandar aula* no chefão aberto, *IA?* no formulário da Lista, *escrever cartas antigas* e *propor conquistas com IA* no Book. Os planos de ensino ficam em `~/.ganbatte/planos/`.
 
 O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer na conversa.
 

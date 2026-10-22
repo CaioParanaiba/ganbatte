@@ -1,4 +1,4 @@
-/* Ganbatte · aulas, dentro do chefão aberto (Chefões novos): o jogador manda o áudio e/ou os slides de uma aula, o servidor
+/* Ganbatte · aulas, dentro do chefão aberto (aba Chefões): o jogador manda o áudio e/ou os slides de uma aula, o servidor
  * transcreve (faster-whisper, se instalado) e a IA ligada escreve o resumo e sugere tarefas de estudo. Cada sugestão espera a
  * escolha do jogador: não adicionar, adicionar (POST /api/add, com +fac.SIGLA e aula:DATA) ou juntar com uma tarefa aberta
  * parecida (POST /api/act edit, que só acrescenta aula:DATA e o prazo). O resumo abre em /aulas/SIGLA/ARQUIVO.html.

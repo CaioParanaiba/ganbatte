@@ -1437,7 +1437,6 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
   <div style="height:18px"></div>
   <section id="v-l" hidden>
     <div id="gnav-l"></div>
-    <div class="nl-troca"><button type="button" class="go" data-lnova></button></div>
     <div class="l-hud" id="l-hud"></div>
     <div class="l-main">
       <div class="l-col">
@@ -1481,19 +1480,11 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 
   <section id="v-b" hidden>
     <div id="gnav-b"></div>
-    <div class="nl-troca"><button type="button" class="go" data-pnova></button></div>
     <div id="pn"></div>
-    <div class="arena4">
-      <div class="tower" id="b-tower"></div>
-      <div class="card sheet" id="b-sheet"></div>
-      <div class="card" id="b-bosses"></div>
-      <div class="stack"><div class="card"><h2><span class="c">~/</span>meta do dia</h2><div id="b-meta"></div></div><div class="card"><h2><span class="c">~/</span>missões da semana</h2><div id="b-quests"></div></div><div class="card"><h2><span class="c">~/</span>últimas lutas</h2><div id="b-log"></div></div></div>
-    </div>
   </section>
 
   <section id="v-b2" hidden>
     <div id="gnav-b2"></div>
-    <div class="nl-troca"><button type="button" class="go" data-cnova></button></div>
     <div class="b2wrap"><div class="b2main"><div id="cn"></div><div class="kan4" id="b2-cols"></div></div><div class="stack"><div class="card inbox" id="b2-inbox"></div><div class="card" id="b2-leg"></div></div></div>
   </section>
 
@@ -1553,17 +1544,12 @@ const UI = {bsel:'', bk:'slot', bksel:'001', page:0, sel:'001', mapsel:'', px:'m
 try { UI.fxOff = localStorage.getItem('gb-fxoff') === '1'; } catch(e){}
 try { UI.cfold = JSON.parse(localStorage.getItem('gb-cfold') || '{}') || {}; } catch(e){ UI.cfold = {}; }   // caçadas recolhidas na Lista, por navegador
 /* Lista nova (#178), em teste na beta: a escolha, o período (Hoje/Semana/Tudo) e as caçadas abertas ficam neste navegador */
-try { UI.lnova = localStorage.getItem('gb-lista') === 'nova'; } catch(e){ UI.lnova = false; }
+UI.lnova = UI.pnova = UI.cnova = true;   // Lista, Progresso e Chefões novos (#178, PR #193, PR #195): as antigas saíram
 try { UI.lmodo = localStorage.getItem('gb-lmodo') || 'semana'; } catch(e){ UI.lmodo = 'semana'; }
 try { UI.cabre = JSON.parse(localStorage.getItem('gb-cabre') || '{}') || {}; } catch(e){ UI.cabre = {}; }
-document.documentElement.classList.toggle('lnova', UI.lnova);
-/* Progresso nova, em teste na beta: a escolha fica neste navegador */
-try { UI.pnova = localStorage.getItem('gb-prog') === 'nova'; } catch(e){ UI.pnova = false; }
-document.documentElement.classList.toggle('pnova', UI.pnova);
-/* Chefões novos, em teste na beta, e os chefões abertos; tudo neste navegador ('completa' e 'minima' vêm do teste das duas formas) */
-try { UI.cnova = ['nova','completa','minima'].includes(localStorage.getItem('gb-chefes')); } catch(e){ UI.cnova = false; }
+document.documentElement.classList.add('lnova', 'pnova', 'cnova');
+/* os chefões abertos na aba Chefões, neste navegador */
 try { UI.cnab = new Set(JSON.parse(localStorage.getItem('gb-cnab') || '[]')); } catch(e){ UI.cnab = new Set(); }
-document.documentElement.classList.toggle('cnova', UI.cnova);
 const PXSKINS = {map:[['dia','Dia'],['tarde','Tarde'],['noite','Noite']], p1:[['lilas','Lilás'],['gameboy','Game Boy'],['noite','Noite']], p3:[['couro','Couro'],['joy','Joystation'],['noite','Noite']], p3b:[['madeira','Madeira'],['neon','Neon'],['papel','Papel']]};
 const THEMES = [['simples','Simples'],['painel','Painel'],['leorio','Leorio'],['claro','Claro'],['gon','Gon'],['biscuit','Biscuit'],['kurapika','Kurapika'],['netero','Netero'],['killua','Killua'],['hisoka','Hisoka'],['meruem','Meruem'],['pergaminho','Pergaminho'],['zoldyck','Zoldyck'],['ryodan','Genei Ryodan'],['greed','Greed Island'],['abismo','Continente Negro'],['aurora','Aurora'],['grafite','Grafite'],['sepia','Sépia'],['contraste','Alto contraste'],['nevoa','Névoa']];
 /* imagem guardada na coleção permanente (colecao/arquivos/ dos dados, #33): continua aparecendo mesmo se sair do jogo */
@@ -1790,20 +1776,6 @@ function hex(v, r, full, folga){
 function dots(n, T){ let h = ''; for(let i = n-1; i >= 0; i--){ const d = addD(HOJE,-i); h += `<i class="${T.st[d]||''}${d===HOJE?' hj':''}" title="${ddmm(d)}"></i>`; } return `<div class="dots">${h}</div>`; }
 const golpeRow = g => `<button class="tk golpe" data-hit="${g.t.n}" style="display:grid">${avTask(g.t)}<span class="t">${esc(g.t.txt)}</span>
   <span class="chiprow"><span class="pill xp">+${g.x} XP</span>${g.av?`<span class="pill" title="preparação">${ic(g.b.ic)} prepara ${g.b.d} ${g.av.k} ${g.av.ok}/${g.av.tot}</span>`:''}${g.t.prova===HOJE?'<span class="pill bon">prova hoje</span>':g.t.due?`<span class="pill">due ${ddmm(g.t.due)}</span>`:''}${g.fury?'<span class="pill dmg">fúria ×1,5</span>':g.bonus?'<span class="pill bon">missão ×1,5</span>':''}</span></button>`;
-function metaDia(S){
-  const cf = S.rot.find(t => /codeforces/i.test(t.txt));
-  return `<div class="meta"><div class="m"><span class="av" style="--c:var(--n2)">${ic('tra')}</span><span><b>Codeforces</b>${CTX.JOG.cf && CTX.JOG.cf.handle ? cfMaoBtn() : ''} <span class="sub">+5 por questão (até 6) · 3 = meta, +10</span></span>
-    <span class="slots" title="${S.cfHoje} hoje no Codeforces">${[0,1,2].map(i=>`<i class="${S.cfHoje>i||(cf&&cf.ok)?'on':''}"></i>`).join('')}<span class="sep"></span>${[3,4,5].map(i=>`<i class="bn${S.cfHoje>i?' on':''}"></i>`).join('')}</span></div>
-    ${duoMeta(S)}${S.rot.filter(t => t !== cf && !isDuo(t)).map(t => `<button class="tk" data-hit="${t.n}" style="padding:4px 0">${avTask(t)}<span class="t">${esc(t.txt)}</span><span class="v" style="color:var(--soft)">${t.ok?'✓':'+'+habXPHoje(S, t)}</span></button>`).join('')}</div>`;
-}
-const mission = S => { const l = NEN[S.fraco]; return S.pausa ? `<div class="mission" style="--c:var(--grn)">${avNen(S.fraco)}<span><b>Férias: missão da semana pausada</b><span class="sub">Até a volta às aulas (${ddmm(TEMP.volta)}) não há missão nem fúria dos chefões, e dia vazio não derruba o Ten. O XP continua subindo a torre.</span></span></div>`
-  : `<div class="mission" style="--c:${NC(S.fraco)}">${avNen(S.fraco)}<span><b>Missão da semana: ${l.n} (${l.c})</b><span class="sub">Seu atributo mais fraco rende ×1,5 até domingo. ${S.missDias}/3 dias feitos → 1 feitiço.</span></span></div>`; };
-function avList(b, where, withField){
-  return b.avs.map(a => `<div class="av4"><span class="nm">${esc(a.n)}<small>${a.w}%${a.real?'':' · ex.'}${a.cont?' · contínuo':''}</small></span><span class="st ${a.st==='ok'?'ok':a.st==='low'?'low':a.st==='wait'||a.st==='hoje'?'wait':'fut'}">${stTxt(a)}</span>
-    <span class="ln2"><span>${a.tot ? `preparação ${a.ok}/${a.tot}${a.prepOk?' · bônus ganho':a.prepFull?' · completa, bônus no dia':''}` : 'nenhuma tarefa ligada ainda'}</span>${prepBar(a)}</span>
-    ${a.cont && a.parts.length ? `<span class="prt">${a.parts.map((p,i) => `<span>${a.k}${i+1}: ${nf(p)}</span>`).join('')}</span>` : ''}
-    ${withField && a.cont ? `<span class="nf"><label class="sub" for="n-${b.d}-${a.k}-${where}">parcial</label><input id="n-${b.d}-${a.k}-${where}" placeholder="8 ou 4/5" title="de 0 a 10, ou em pontos: 4/5 = 4 de 5"><button data-nota="${b.d}:${a.k}" data-in="n-${b.d}-${a.k}-${where}" data-cont="1">+ parcial</button></span>` : withField && a.nota == null && a.dt <= HOJE ? `<span class="nf"><label class="sub" for="n-${b.d}-${a.k}-${where}">nota</label><input id="n-${b.d}-${a.k}-${where}" placeholder="7,5 ou 4/5" title="de 0 a 10, ou em pontos: 4/5 = 4 de 5"><button data-nota="${b.d}:${a.k}" data-in="n-${b.d}-${a.k}-${where}">registrar</button></span>` : ''}</div>`).join('');
-}
 const OG = {slot:'conquista', claude:'narrada com IA', ia:'criada pela IA'};
 const PXCLS = {map:'map8', p1:'c8', p3:'gi', p3b:'shop8'};
 function rPX(S){
@@ -1824,33 +1796,7 @@ function linksB(S){
   return [['b2','spider',ABA.b2.n,`${S.bs.filter(b=>b.dead).length}/5 derrotados · ${S.espera.length} nota aguardando`,'var(--red)'],['bk','card',ABA.bk.n,`${cartas(S).filter(c=>c.on).length} cartas · ${invN(S)} feitiços`,'var(--amb)'],['ms','coin',ABA.ms.n,`${fmt(S.jenny)} J na carteira`,'var(--amb)'],['d2','tower',ABA.d2.n,`semana ${semana().n} de ${semana().tot}`,'var(--volt)'],['px','island','Mundo pixel','mapa, ficha, ilha, loja','var(--grn)']]
     .map(([t,i,n,s,c]) => `<button class="lk" data-go="${t}"><span class="av" style="--c:${c}">${ic(i)}</span><span>${n}<small>${s}</small></span></button>`).join('');
 }
-function rB(S){
-  document.querySelector('[data-pnova]').textContent = UI.pnova ? '← voltar para a Progresso antiga' : 'experimentar a Progresso nova (beta) →';
-  if(UI.pnova) return rBN(S);
-  const a = S.a, pos = n => pct(n-1,250), w = semana();
-  document.getElementById('b-tower').innerHTML = `
-    <div class="tourn"><span>Torneio ▲</span><span class="gs">${GUARDA.map(g => avG(g)).join('')}</span></div>
-    <div class="shaft"><div class="fill" style="height:${pos(a.n)}%"></div>
-      ${[[1,''],[50,''],[100,'big'],[150,''],[200,'big'],[251,'big']].map(([n,c]) => `<span class="mk ${c}" style="bottom:${pos(n)}%">${n}</span>`).join('')}
-      <span class="pj" style="bottom:${pos(S.proj.n)}%"><span>fim: ~${S.proj.n}</span></span><div class="me" style="bottom:${pos(a.n)}%">${avMe(28)}<b>${a.n}</b></div></div>
-    <h2>Arena Celestial</h2><div class="zone">Semana ${w.n} de ${w.tot}. Zera em ${ddmm(TEMP.fim)}.</div>`;
-  document.getElementById('b-sheet').innerHTML = `
-    <div class="who">${avMe(60)}<div><div class="nm">${esc(CTX.JOG.nome)}</div>${UI.title?`<span class="titulo">${esc(UI.title)}</span>`:''}<div class="tp">Tipo forte: ${esc(NEN[S.attr.indexOf(Math.max(...S.attr))].n)}</div><div class="tp">Andar ${a.n} · ${a.into}/${a.need} XP · hoje +${S.hojeXP}</div><div class="tp">Ten ${tenTxt(S.ten)} · recorde ${S.ten.max} · Zetsu ${S.ten.zet}</div></div></div>
-    <div class="xpbar" style="margin-top:12px"><b style="width:${pct(a.into,a.need)}%"></b></div>
-    <div style="margin:10px auto 4px;max-width:380px">${hex(S.attr,66,true)}</div>
-    ${NEN.map((l,i) => `<div class="attr" style="--c:${NC(i)};margin-top:8px">${avNen(i)}<div class="nm">${esc(l.n)}<span>${esc(l.c)}</span></div><span class="lv">nv ${lvA(S.attr[i])}</span><span class="bar"><b style="width:${pct(S.attr[i],Math.max(...S.attr))}%"></b></span><span class="sg">${esc(l.s)}</span></div>`).join('')}
-    <div style="margin-top:12px">${mission(S)}</div>`;
-  document.getElementById('b-bosses').innerHTML = `<h2><span class="c">~/</span>chefões · genei ryodan<button class="go" data-go="b2" style="margin-left:auto">quadro →</button></h2>` + S.bs.map(b => {
-    const open = UI.bsel === b.d;
-    return `<button class="bcard" data-boss="${b.d}" aria-expanded="${open}">${avB(b,42)}<span class="nm">${b.n}<span>${b.d}</span>${b.fury?' <span class="fury">🔥 fúria</span>':''}</span><span class="hpv">${fmt(b.pts)}/100 pts</span><span class="bars">${hpBar(b)}</span></button>
-      ${open ? `<div class="bdet"><p class="why">${esc(b.why)}</p><div class="need">${needTxt(b)}</div>${avList(b,'b',true)}
-        <p class="cap" style="margin-top:10px">tarefas que preparam este chefão</p>${b.open.length ? b.open.map(t => `<button class="tk" data-hit="${t.n}">${avTask(t)}<span class="t">${esc(t.txt)}${ligTxt(b,t)}</span><span class="v" style="color:var(--volt)">+${xpDe({...t,done:HOJE})}</span></button>`).join('') : '<p class="sub">nenhuma pendente</p>'}</div>` : ''}`; }).join('');
-  document.getElementById('b-meta').innerHTML = metaDia(S);
-  const qs = D.abertas.filter(t => t.due && t.due <= addD(HOJE,7) && !SIM.has(t.n)).sort((p,q) => p.due.localeCompare(q.due));
-  document.getElementById('b-quests').innerHTML = qs.length ? qs.map(t => `<div class="row">${avTask(t)}<span>${esc(t.txt)} <span class="sub">${(discOf(t)||'')}</span></span><span><span class="d">${ddmm(t.due)}</span> <span class="r">+${xpDe({...t,done:t.due})}</span></span></div>`).join('') : '<p class="sub">nada com prazo nos próximos 7 dias</p>';
-  document.getElementById('b-log').innerHTML = S.xs.slice().sort((p,q) => q.t.done.localeCompare(p.t.done) || (q.t.n||0) - (p.t.n||0)).slice(0,6).map(o => `<div class="row">${avTask(o.t)}<span>${esc(o.t.txt)}</span><span><span class="d" style="color:var(--soft)">${ddmm(o.t.done)}</span> <span class="r">+${o.x}</span></span></div>`).join('');
-}
-/* ---------- Progresso nova (em teste) ---------- */
+/* ---------- Progresso: faixa da Lista, torre detalhada | Nen e chefões | meta do dia e semana ---------- */
 /* torre vertical: a régua de 1 a 251 com as faixas de custo, os marcos, você, a projeção e o recorde. Os rótulos à direita
    se afastam quando ficam perto (você no 196 e o marco do 200) e uma linha liga cada um ao seu andar */
 function torreN(S){
@@ -1883,7 +1829,7 @@ function torreN(S){
     <div class="pn-sh">${sv}${it.map(x => `<div class="pn-l ${x.c}" style="bottom:${P + x.ly}px">${x.h}</div>`).join('')}</div>
     <dl class="pn-st"><dt>XP na temporada</dt><dd>${fmt(S.total)}</dd><dt>ritmo</dt><dd>${fmt(Math.round(S.ritmo))} XP/semana</dd><dt>hoje</dt><dd>+${S.hojeXP} XP</dd><dt>a torre zera</dt><dd>${ddmm(TEMP.fim)}</dd></dl>`;
 }
-function rBN(S){
+function rB(S){
   const fr = S.fraco, mx = Math.max(...S.attr, 1), forte = S.attr.indexOf(Math.max(...S.attr));
   const nen = NEN.map((l,i) => `<div class="pn-a" style="--c:${NC(i)}" title="${esc(l.s)}">${avNen(i)}<span class="nm">${esc(l.n)}<small>${esc(l.c)}</small>${i === fr && !S.pausa ? `<span class="mi" title="missão da semana: ${esc(l.c)} rende ×1,5 até domingo · ${S.missDias}/3 dias → 1 feitiço">missão ×1,5 ${[0,1,2].map(k => `<i class="${k < S.missDias ? 'on' : ''}"></i>`).join('')}</span>` : ''}</span><span class="lv">nv ${lvA(S.attr[i])}</span><span class="bar"><b style="width:${pct(S.attr[i], mx)}%"></b></span></div>`).join('');
   const prox = b => b.avs.filter(a => a.st !== 'ok' && a.st !== 'low').sort((p,q) => p.dt.localeCompare(q.dt))[0];
@@ -1912,15 +1858,9 @@ function rBN(S){
 }
 /* ---------- B2 ---------- */
 function rB2(S){
-  const v = UI.cnova, nova = v && S.bs.length;
-  document.querySelector('[data-cnova]').textContent = v ? '← voltar para os Chefões antigos' : 'experimentar os Chefões novos (beta) →';
+  const nova = S.bs.length > 0;
   document.getElementById('cn').innerHTML = nova ? `<div class="card cn">${S.bs.map(rowCN).join('')}</div>` : '';
-  document.getElementById('b2-cols').innerHTML = nova ? '' : S.bs.map(b => `
-    <div class="col${b.dead?' dead':''}"><div class="ch">${avB(b,60)}<div class="nm">${b.n}</div><div class="ds">${b.d} · ${nf(b.pts)}/100 pts</div><div style="width:100%;margin-top:14px">${hpBar(b)}</div><div class="need" style="margin:2px 0 0">${needTxt(b)}</div>${b.fury?'<span class="fury">🔥 fúria: tarefas ×1,5</span>':''}</div>
-      <div class="bd"><h4>ícone do chefão</h4>${iconeHTML(b)}
-        <h4>avaliações (plano de ensino)</h4>${avList(b,'b2',true)}
-        <h4>tarefas pendentes (${b.open.length})</h4>${b.open.length ? b.open.map(t => `<button class="tk" data-hit="${t.n}">${avTask(t,22)}<span class="t">${esc(t.txt)}${ligTxt(b,t)}</span><span class="v" style="color:var(--volt)">+${xpDe({...t,done:HOJE})}</span></button>`).join('') : '<p class="sub">nada pendente</p>'}
-        <div class="drop">${ic('card')} preparação completa antes da data: 1 feitiço à escolha</div></div></div>`).join('');
+  document.getElementById('b2-cols').innerHTML = '';
   document.getElementById('b2-inbox').innerHTML = `<h2><span class="c">~/</span>caixa de entrada · plano de ensino</h2>
     <label class="sub" for="inbox-txt">Anote mudanças do plano de ensino (data, peso, avaliação nova). Ficam em ajustes.txt: aplique no plano (editar avaliações e notas; com a IA ligada, "aplicar lembretes com IA" no editor da disciplina) e marque como aplicado.</label>
     <textarea id="inbox-txt" placeholder="ex.: ARQ1: a P2 virou dois trabalhos de 15"></textarea>
@@ -2707,15 +2647,7 @@ function faixaN(S){
 function rL(S){
   formL();
   const a = S.a, fr = NEN[S.fraco];
-  document.querySelector('[data-lnova]').textContent = UI.lnova ? '← voltar para a Lista antiga' : 'experimentar a Lista nova (beta) →';
-  if(UI.lnova) document.getElementById('l-hud').innerHTML = faixaN(S);
-  else
-  document.getElementById('l-hud').innerHTML = `
-    <div class="card l-me">${avMe(54)}<div class="l-fl"><div class="l-row"><b class="l-nm">${esc(CTX.JOG.nome)}</b>${UI.title ? `<span class="titulo">${esc(UI.title)}</span>` : ''}<span class="l-meta">${esc(TEMP.nome)} · ${S.pausa ? `férias até ${ddmm(addD(TEMP.volta, -1))}` : `${S.pausa ? `férias até ${ddmm(addD(TEMP.volta, -1))}` : `semana ${S.sem.n}/${S.sem.tot}`}`}</span></div>
-      <div class="l-row"><span class="l-n"><small>ARENA CELESTIAL</small>andar ${a.n}</span><span class="l-meta">faltam ${a.need - a.into} XP para o ${a.n + 1}</span></div>
-      <div class="l-bar"><i style="width:${pct(a.into, a.need)}%"></i></div>
-      <div class="l-row"><span class="l-meta">hoje <b>+${S.hojeXP}</b> XP · meta ${S.metaDia} · ${fmt(S.total)} XP na temporada</span><span class="l-meta"><span class="l-ten" title="recorde ${S.ten.max} · ${S.ten.zet} Zetsu guardado${S.ten.zet === 1 ? '' : 's'}">Ten <b>${S.ten.cur}</b> ${S.ten.cur === 1 ? 'dia' : 'dias'}</span> · <span class="l-jen"><b>${fmt(S.jenny)}</b> J <button class="go" data-go="ms">Masadora →</button></span></span></div></div>
-      ${S.pausa ? `<div class="l-mis" style="--c:var(--grn)"><span class="l-k">férias</span><span class="l-v" style="color:var(--c)">até ${ddmm(addD(TEMP.volta, -1))}</span><span class="l-s">missão e fúria pausadas · o Ten não cai</span></div></div>` : `<div class="l-mis" style="--c:${NC(S.fraco)}"><span class="l-k">missão da semana</span><span class="l-v" style="color:var(--c)">${esc(fr.n)}</span><span class="l-s">${esc(fr.c)} ×1,5 · ${S.missDias}/3 dias → 1 feitiço</span><div class="l-pips">${[0,1,2].map(i => `<i class="${i < S.missDias ? 'on' : ''}"></i>`).join('')}</div></div></div>`}`;
+  document.getElementById('l-hud').innerHTML = faixaN(S);
   const ab = D.abertas.filter(t => !t.done).sort((p,q) => (p.pri||'Z').localeCompare(q.pri||'Z') || (p.due||'9').localeCompare(q.due||'9'));
   /* cada item é uma tarefa solta ou uma caçada inteira (bloco com as etapas abertas, no grupo da etapa mais urgente) */
   const its = ab.filter(t => !isRec(t) && !GBx.cacDe(t)).map(t => ({due:t.due, prova:t.prova, h:rowL(t,S), x:valeL(t,S).x}))
@@ -2760,10 +2692,6 @@ function habXPHoje(S, t){ const n = habNv(S, String(t.rec || '').split(':')[0]);
 function habNvTxt(n){ return n.max ? 'nível máximo' : `${n.s}/${n.pede} ${n.sem ? (n.pede === 1 ? 'semana' : 'semanas') : 'dias'} para o nv ${n.nv + 1}`; }
 /* Duolingo: o servidor lê a ofensiva do perfil público e conclui a rec:duo do dia com lição feita (o bloqueio de ofensiva não conta) */
 const duoTxt = () => { const o = D.duo && D.duo.ofensiva; return `${esc(CTX.JOG.duo.usuario)}${o != null ? ` · ofensiva de ${o} dia${o === 1 ? '' : 's'}` : ''}`; };
-function duoMeta(S){
-  const t = S.rot.find(isDuo); if(!t) return '';
-  return `<div class="tk" style="padding:4px 0">${avTask(t)}<span class="t">Duolingo <span class="sub">automático</span></span><span class="v" style="color:var(--soft)">${t.ok ? '✓' : '+' + habXPHoje(S, t)}</span></div>`;
-}
 function habitosL(S, soChips){   // soChips: só os chips (a Progresso nova usa os mesmos)
   const J = CTX.JOG, cf = J.cf && J.cf.handle ? J.cf : null, meta = (cf && cf.meta) || 3;
   const habs = S.rot.filter(t => !isCF(t) && !isDuo(t)), cfT = S.rot.find(isCF), duoT = S.rot.find(isDuo);
@@ -2937,9 +2865,6 @@ document.addEventListener('click', async e => {
     prevL(); return; }
   const pr = q('[data-lpri]'); if(pr){ LA.pri = pr.dataset.lpri; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b === pr)); prevL(); return; }
   const du = q('[data-ldue]'); if(du){ LA.due = du.dataset.ldue; document.getElementById('l-date').value = ''; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === du)); prevL(); return; }
-  if(q('[data-lnova]')){ UI.lnova = !UI.lnova; try { localStorage.setItem('gb-lista', UI.lnova ? 'nova' : 'antiga'); } catch(e){} document.documentElement.classList.toggle('lnova', UI.lnova); render(); window.scrollTo(0, 0); return; }
-  if(q('[data-pnova]')){ UI.pnova = !UI.pnova; try { localStorage.setItem('gb-prog', UI.pnova ? 'nova' : 'antiga'); } catch(e){} document.documentElement.classList.toggle('pnova', UI.pnova); render(); window.scrollTo(0, 0); return; }
-  if(q('[data-cnova]')){ UI.cnova = !UI.cnova; try { localStorage.setItem('gb-chefes', UI.cnova ? 'nova' : 'antiga'); } catch(e){} document.documentElement.classList.toggle('cnova', UI.cnova); render(); window.scrollTo(0, 0); return; }
   const cna = q('[data-cnab]'); if(cna){ const d = cna.dataset.cnab; if(UI.cnab.has(d)) UI.cnab.delete(d); else UI.cnab.add(d); try { localStorage.setItem('gb-cnab', JSON.stringify([...UI.cnab])); } catch(e){} render(); return; }
   if(q('[data-cnleg]')){ UI.cnleg = !UI.cnleg; render(); return; }
   const lm = q('[data-lmodo]'); if(lm){ UI.lmodo = lm.dataset.lmodo; try { localStorage.setItem('gb-lmodo', UI.lmodo); } catch(e){} render(); return; }
@@ -3073,7 +2998,7 @@ function confete(forcado){
 }
 /* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
-const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-cnova],[data-cnab],[data-cnleg],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-cnab],[data-cnleg],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
 let avisoProvaAtual = null;
 function avisoProva(){
