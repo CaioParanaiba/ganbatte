@@ -216,6 +216,9 @@ for(const [fa, ids] of Object.entries(FAIXA)) for(const id of ids.split(' ')){ c
 for(const it of COS){ if(it.cat === 'chefe'){ it.fa = 'raro'; it.hxh = 1; } else if(HXH.has(it.id)) it.hxh = 1; }
 /* os itens novos à venda (#77): o preço é a mediana do que já se vendia em cada faixa; título comum, 500 */
 const PRECO_FAIXA = {comum:1000, raro:2200, epico:3200};
+/* compras da Aparência pausadas até o balanceamento dos preços (#77): com os relatórios dos jogadores na regra nova, os preços
+   mudam e a loja abre de novo ('' = aberta). Provar, o que já é seu, feitiços e prêmios reais seguem normais */
+const LOJA_TRAVADA = 'Compras pausadas até o balanceamento dos preços';
 for(const it of COS) if(it.prova && PRECO_FAIXA[it.fa]){ it.p = it.cat === 'title' ? 500 : PRECO_FAIXA[it.fa]; delete it.prova; }
 const FAIXAS_LOJA = [['comum','Comum'],['raro','Raro'],['epico','Épico'],['lenda','Lendário']];
 /* pacote (ex-tema completo): comprar o pacote dá cada peça (paleta, textura, efeitos) para usar e misturar separado.
@@ -1396,7 +1399,7 @@ function resumoGrupo(C, S, pessoais){
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 
-window.GB = {PRECO_FAIXA, TORRE, TORRE_ANTES, TORRE_MIGRA, devolucao, FAIXAS_LOJA, pacote, retratosJ, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, CONTRIB_MIGRA, CF_CORES, CF_COR_N, CF_NA_FAIXA, CF_ACIMA, CF_ABAIXO, CF_CONTEST, cfDias, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.GB = {LOJA_TRAVADA, PRECO_FAIXA, TORRE, TORRE_ANTES, TORRE_MIGRA, devolucao, FAIXAS_LOJA, pacote, retratosJ, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, CONTRIB_MIGRA, CF_CORES, CF_COR_N, CF_NA_FAIXA, CF_ACIMA, CF_ABAIXO, CF_CONTEST, cfDias, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   repRegra, repPasso, repProxima, repSucessora, repAcum, repAntes, repVisivel, repEntra, repFrase, SEM_REP,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
