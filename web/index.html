@@ -1312,6 +1312,55 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .lnova #v-l .l-xp{background:none;border:0;color:var(--soft);font-weight:600;min-width:0;padding:2px 0}
 .lnova #v-l .l-groups{margin-top:10px}
 .lnova #v-l .l-const{margin-top:18px}
+/* ---------- Progresso nova, em teste: faixa da Lista nova e três colunas (torre detalhada | Nen e chefões | meta do dia e semana).
+   Só vale com a classe pnova no <html> (botão no topo da Progresso); sem ela, a Progresso antiga fica igual ---------- */
+#pn{display:none} .pnova #pn{display:grid;gap:16px} .pnova #v-b .arena4{display:none}
+.pnova .wrap:has(#v-b:not([hidden])) > .head h1 + p, .pnova .wrap:has(#v-b:not([hidden])) #facts{display:none}
+.pnova .gnav .px{display:none}
+.pn-main{display:grid;gap:16px;min-width:0}
+.pn-g3{display:grid;grid-template-columns:320px minmax(0,1fr) 330px;gap:16px;align-items:start}
+.pn-hab{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pn-tt{display:flex;align-items:baseline;gap:6px;margin:4px 0 6px;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.pn-tt small{font:inherit;color:var(--soft)} .pn-tt ~ .pn-tt{margin-top:16px;padding-top:12px;border-top:1px solid var(--hair)}
+.pn-td{position:relative;padding:2px 0 6px 14px;border-left:2px solid var(--hair);margin-left:4px}
+.pn-td::before{content:"";position:absolute;left:-5px;top:5px;width:8px;height:8px;border-radius:99px;background:var(--panel);border:2px solid var(--soft)}
+.pn-td.hj::before{border-color:var(--volt);background:var(--volt)} .pn-td.late::before{border-color:var(--red);background:var(--red)} .pn-td.feito::before{border-color:var(--grn)}
+.pn-dl{display:block;font:600 11px var(--f-mono);color:var(--soft);margin-bottom:2px} .pn-td.hj .pn-dl{color:var(--volt)} .pn-td.late .pn-dl{color:var(--red)}
+.pn-ti{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:4px 0;font-size:13px;line-height:1.3}
+.pn-ti .av{--s:20px} .pn-ti small{font:11px var(--f-mono);color:var(--faint)} .pn-ti b{font:600 11.5px var(--f-mono);color:var(--volt)} .pn-ti b.ok{color:var(--soft)}
+.pn-torre h2 .sb{margin-left:auto;color:var(--faint);font-weight:500}
+.pn-tn{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px dashed color-mix(in srgb,var(--aura) 55%,var(--hair));border-radius:10px;color:var(--aura);font:12px var(--f-mono)}
+.pn-tn small{display:block;color:var(--faint)} .pn-tn .gs{display:flex;gap:4px;margin-left:auto} .pn-tn .av{--s:22px}
+.pn-sh{position:relative;margin:34px 0 8px}
+.pn-sh svg{display:block;overflow:visible}
+.pn-sh text{font:600 10px var(--f-mono);fill:var(--faint)} .pn-sh text.b{fill:var(--amb)} .pn-sh text.f{font:600 9.5px var(--f-mono);fill:var(--soft)}
+.pn-sh .tr{fill:var(--track)} .pn-sh .fl{fill:var(--volt)} .pn-sh .tk{stroke:var(--hair)} .pn-sh .tk.b{stroke:var(--soft)} .pn-sh .fx{stroke:var(--hair);fill:none}
+.pn-sh .cn{stroke:var(--hair);fill:none} .pn-sh .pjl{stroke:var(--soft);stroke-width:2;stroke-dasharray:3 3} .pn-sh .dt{fill:var(--panel);stroke:var(--soft);stroke-width:1.5} .pn-sh .dt.ok{fill:var(--grn);stroke:var(--grn)} .pn-sh .dt.eu{fill:var(--volt);stroke:var(--volt)} .pn-sh .dt.nx{stroke:var(--amb)}
+.pn-l{position:absolute;left:84px;right:0;transform:translateY(50%);display:flex;flex-direction:column;font-size:12.5px;line-height:1.25;min-width:0}
+.pn-l b{font-weight:600} .pn-l small{font:11px var(--f-mono);color:var(--soft)}
+.pn-l.mk b{color:var(--soft)} .pn-l.mk.ok b{color:var(--grn)} .pn-l.mk.nx b{color:var(--amb)}
+.pn-l.eu{flex-direction:row;align-items:center;gap:8px} .pn-l.eu .av{--s:32px} .pn-l.eu b{font:700 16px var(--f-hud)} .pn-l.eu span{display:flex;flex-direction:column}
+.pn-l.pj b,.pn-l.rc b{color:var(--soft);font-weight:500}
+.pn-st{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font:12px var(--f-mono);color:var(--soft);border-top:1px solid var(--hair);padding-top:10px;margin:0}
+.pn-st dt{margin:0} .pn-st dd{margin:0;text-align:right;color:var(--ink)}
+.pn-nen-g{display:grid;gap:12px} .pn-nen-g > div:first-child{max-width:420px;justify-self:center;width:100%}
+.pn-a{display:grid;grid-template-columns:26px minmax(0,1fr) 44px;gap:4px 10px;align-items:center;padding:7px 0;border-top:1px solid var(--hair)}
+.pn-a:first-child{border-top:0}
+.pn-a .av{--s:26px;grid-row:span 2} .pn-a .nm{font-size:13.5px;font-weight:600;display:flex;gap:8px;align-items:baseline;min-width:0}
+.pn-a .nm small{font:500 11px var(--f-mono);color:var(--faint)}
+.pn-a .lv{grid-column:3;grid-row:1/3;font:600 12px var(--f-mono);color:var(--soft);text-align:right}
+.pn-a .bar{height:5px;border-radius:99px;background:var(--track);overflow:hidden} .pn-a .bar b{display:block;height:100%;background:var(--c)}
+.pn-a .mi{display:inline-flex;align-items:center;gap:4px;font:600 10.5px var(--f-mono);color:var(--c);border:1px solid color-mix(in srgb,var(--c) 50%,var(--hair));border-radius:99px;padding:1px 7px;margin-left:auto;white-space:nowrap}
+.pn-a .mi i{width:6px;height:6px;border-radius:99px;background:var(--track)} .pn-a .mi i.on{background:var(--c)}
+.pn-bs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.pn-b{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center;text-align:left;padding:12px;border:1px solid var(--hair);border-radius:12px;background:var(--panel2);cursor:pointer;color:var(--ink);font:inherit}
+.pn-b:hover{border-color:color-mix(in srgb,var(--red) 50%,var(--hair))}
+.pn-b .av{--s:38px} .pn-b .nm{font:700 14px var(--f-hud)} .pn-b .nm small{font:500 11.5px var(--f-mono);color:var(--soft);margin-left:6px}
+.pn-b .pt{display:block;font:11.5px var(--f-mono);color:var(--soft)}
+.pn-b .hp4{grid-column:1/-1;margin-top:16px}
+.pn-b .nx{grid-column:1/-1;font-size:12.5px;color:var(--soft);display:flex;justify-content:space-between;gap:8px;margin-top:2px} .pn-b .nx b{color:var(--ink);font-weight:600}
+.pn-b .nd{grid-column:1/-1;font-size:12px;color:var(--soft)}
+.pn-mais{margin-top:8px}
 </style>
 </head>
 <body>
@@ -1399,6 +1448,8 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 
   <section id="v-b" hidden>
     <div id="gnav-b"></div>
+    <div class="nl-troca"><button type="button" class="go" data-pnova></button></div>
+    <div id="pn"></div>
     <div class="arena4">
       <div class="tower" id="b-tower"></div>
       <div class="card sheet" id="b-sheet"></div>
@@ -1472,6 +1523,9 @@ try { UI.lnova = localStorage.getItem('gb-lista') === 'nova'; } catch(e){ UI.lno
 try { UI.lmodo = localStorage.getItem('gb-lmodo') || 'semana'; } catch(e){ UI.lmodo = 'semana'; }
 try { UI.cabre = JSON.parse(localStorage.getItem('gb-cabre') || '{}') || {}; } catch(e){ UI.cabre = {}; }
 document.documentElement.classList.toggle('lnova', UI.lnova);
+/* Progresso nova, em teste na beta: a escolha fica neste navegador */
+try { UI.pnova = localStorage.getItem('gb-prog') === 'nova'; } catch(e){ UI.pnova = false; }
+document.documentElement.classList.toggle('pnova', UI.pnova);
 const PXSKINS = {map:[['dia','Dia'],['tarde','Tarde'],['noite','Noite']], p1:[['lilas','Lilás'],['gameboy','Game Boy'],['noite','Noite']], p3:[['couro','Couro'],['joy','Joystation'],['noite','Noite']], p3b:[['madeira','Madeira'],['neon','Neon'],['papel','Papel']]};
 const THEMES = [['simples','Simples'],['painel','Painel'],['leorio','Leorio'],['claro','Claro'],['gon','Gon'],['biscuit','Biscuit'],['kurapika','Kurapika'],['netero','Netero'],['killua','Killua'],['hisoka','Hisoka'],['meruem','Meruem'],['pergaminho','Pergaminho'],['zoldyck','Zoldyck'],['ryodan','Genei Ryodan'],['greed','Greed Island'],['abismo','Continente Negro'],['aurora','Aurora'],['grafite','Grafite'],['sepia','Sépia'],['contraste','Alto contraste'],['nevoa','Névoa']];
 /* imagem guardada na coleção permanente (colecao/arquivos/ dos dados, #33): continua aparecendo mesmo se sair do jogo */
@@ -1681,9 +1735,9 @@ const hpBar = b => `<div class="hp4${b.dead?' dead':''}"><b style="width:${pct(b
 const prepBar = a => a.tot ? `<span class="prep" style="width:90px">${Array.from({length:a.tot},(_,i)=>`<i class="${i<a.ok?'on':''}"></i>`).join('')}</span>` : '';
 const stTxt = a => a.prov ? `parcial ${nf(a.nota)} (${a.parts.length})` : a.st === 'ok' ? `nota ${nf(a.nota)} ✓` : a.st === 'low' ? `nota ${nf(a.nota)}` : a.st === 'wait' ? 'aguardando nota' : a.st === 'hoje' ? 'hoje · boa prova' : ddmm(a.dt);
 const needTxt = b => b.dead ? '<b>Derrotado.</b> Média acima de 6.' : b.need == null ? '' : b.need > 10 ? '<b>Só a recuperação salva.</b>' : `Precisa de <b>${nf(Math.max(0,b.need))}</b> de média no que falta.`;
-function hex(v, r, full){
+function hex(v, r, full, folga){
   const mx = Math.max(...v,1), pt = (i,k) => { const a = -Math.PI/2 + i*Math.PI/3; return [Math.cos(a)*r*k, Math.sin(a)*r*k]; };
-  const W = r + (full ? 100 : 34), H = r + (full ? 34 : 22);
+  const W = r + (full ? folga || 100 : 34), H = r + (full ? 34 : 22);
   let s = `<svg class="hx" viewBox="${-W} ${-H} ${2*W} ${2*H}" width="100%" role="img" aria-label="hexágono de Nen">`;
   for(const k of [.33,.66,1]) s += `<polygon class="g" points="${[0,1,2,3,4,5].map(i=>pt(i,k).join(',')).join(' ')}"/>`;
   for(let i=0;i<6;i++){ const p = pt(i,1); s += `<line class="g" x1="0" y1="0" x2="${p[0]}" y2="${p[1]}"/>`; }
@@ -1733,6 +1787,8 @@ function linksB(S){
     .map(([t,i,n,s,c]) => `<button class="lk" data-go="${t}"><span class="av" style="--c:${c}">${ic(i)}</span><span>${n}<small>${s}</small></span></button>`).join('');
 }
 function rB(S){
+  document.querySelector('[data-pnova]').textContent = UI.pnova ? '← voltar para a Progresso antiga' : 'experimentar a Progresso nova (beta) →';
+  if(UI.pnova) return rBN(S);
   const a = S.a, pos = n => pct(n-1,250), w = semana();
   document.getElementById('b-tower').innerHTML = `
     <div class="tourn"><span>Torneio ▲</span><span class="gs">${GUARDA.map(g => avG(g)).join('')}</span></div>
@@ -1755,6 +1811,66 @@ function rB(S){
   const qs = D.abertas.filter(t => t.due && t.due <= addD(HOJE,7) && !SIM.has(t.n)).sort((p,q) => p.due.localeCompare(q.due));
   document.getElementById('b-quests').innerHTML = qs.length ? qs.map(t => `<div class="row">${avTask(t)}<span>${esc(t.txt)} <span class="sub">${(discOf(t)||'')}</span></span><span><span class="d">${ddmm(t.due)}</span> <span class="r">+${xpDe({...t,done:t.due})}</span></span></div>`).join('') : '<p class="sub">nada com prazo nos próximos 7 dias</p>';
   document.getElementById('b-log').innerHTML = S.xs.slice().sort((p,q) => q.t.done.localeCompare(p.t.done) || (q.t.n||0) - (p.t.n||0)).slice(0,6).map(o => `<div class="row">${avTask(o.t)}<span>${esc(o.t.txt)}</span><span><span class="d" style="color:var(--soft)">${ddmm(o.t.done)}</span> <span class="r">+${o.x}</span></span></div>`).join('');
+}
+/* ---------- Progresso nova (em teste) ---------- */
+/* torre vertical: a régua de 1 a 251 com as faixas de custo, os marcos, você, a projeção e o recorde. Os rótulos à direita
+   se afastam quando ficam perto (você no 196 e o marco do 200) e uma linha liga cada um ao seu andar */
+function torreN(S){
+  const a = S.a, H = 620, P = 12, y = n => (Math.min(n,251)-1)/250*H, Y = v => P + H - v, w = semana();
+  const M = [[50,'Andar 50','metade da primeira faixa'],[100,'Andar 100','o andar passa a custar o dobro'],[200,'Floor Master','estrela ★'],[251,'Topo','estrela ★★ · abre o Torneio']];
+  const nx = M.find(m => a.n < m[0]), pj = S.proj.n > a.n && !S.pausa, rc = S.andarRec > a.n;
+  // a projeção e o recorde que caem num marco viram uma linha a mais dele, em vez de outro rótulo
+  const it = M.map(m => { const ok = a.n >= m[0], prox = m === nx;
+    const ex = (pj && S.proj.n === m[0] ? `<small>no ritmo, chega aqui até ${ddmm(TEMP.fim)}</small>` : '') + (rc && S.andarRec === m[0] ? '<small>seu recorde (antes da torre ×2)</small>' : '');
+    return {y:y(m[0]), c:'mk' + (ok ? ' ok' : prox ? ' nx' : ''), d:ok ? 'ok' : prox ? 'nx' : '', h:`<b>${m[0]} · ${m[1]}</b><small>${ok ? '✓ ' + m[2] : prox ? `faltam ${fmt(xpAte(m[0]) - S.total)} XP · ${m[2]}` : m[2]}</small>${ex}`}; });
+  it.push({y:y(a.n), c:'eu', d:'eu', h:`${avMe(32)}<span><b>andar ${a.n}</b><small>${a.into}/${a.need} XP · faltam ${a.need - a.into}</small></span>`});
+  if(pj && !M.some(m => m[0] === S.proj.n)) it.push({y:y(S.proj.n), c:'pj', d:'', h:`<b>~${S.proj.n} no fim das aulas</b><small>no ritmo de ${fmt(Math.round(S.ritmo))} XP/semana</small>`});
+  if(rc && !M.some(m => m[0] === S.andarRec)) it.push({y:y(S.andarRec), c:'rc', d:'', h:`<b>recorde: andar ${S.andarRec}</b>`});
+  it.sort((p,q) => p.y - q.y);
+  const G = 44; let ult = -1e9; for(const x of it){ x.ly = Math.max(x.y, ult + G); ult = x.ly; }
+  let teto = H + 6; for(let i = it.length - 1; i >= 0; i--){ it[i].ly = Math.min(it[i].ly, teto); teto = it[i].ly - G; }
+  const FX = [[1,99],[100,199],[200,251]];
+  let sv = `<svg width="84" height="${H + 2*P}" aria-hidden="true">`;
+  FX.forEach(([de,ate],i) => { const y1 = Y(y(ate)) + 3, y2 = Y(y(de)) - 3, m = (y1 + y2)/2;
+    sv += `<path class="fx" d="M8 ${y1}h-4v${y2 - y1}h4"/><text class="f" transform="translate(12 ${m}) rotate(-90)" text-anchor="middle">${custo(de)} XP/andar</text>`; });
+  for(let n = 10; n <= 250; n += 10){ const b = n % 50 === 0; sv += `<line class="tk${b ? ' b' : ''}" x1="${b ? 40 : 46}" x2="52" y1="${Y(y(n))}" y2="${Y(y(n))}"/>`; if(b) sv += `<text class="${n === 100 || n === 200 ? 'b' : ''}" x="37" y="${Y(y(n)) + 3.5}" text-anchor="end">${n}</text>`; }
+  sv += `<text class="b" x="37" y="${Y(H) + 3.5}" text-anchor="end">251</text><text x="37" y="${Y(0) + 3.5}" text-anchor="end">1</text>`;
+  sv += `<rect class="tr" x="54" y="${P}" width="8" height="${H}" rx="4"/><rect class="fl" x="54" y="${Y(y(a.n))}" width="8" height="${y(a.n)}" rx="4"/>`;
+  if(S.proj.n > a.n && !S.pausa) sv += `<line class="pjl" x1="58" x2="58" y1="${Y(y(S.proj.n))}" y2="${Y(y(a.n))}"/>`;
+  for(const x of it) sv += `<path class="cn" d="M62 ${Y(x.y)}C72 ${Y(x.y)} 72 ${Y(x.ly)} 84 ${Y(x.ly)}"/>`;
+  for(const x of it) sv += `<circle class="dt ${x.d}" cx="58" cy="${Y(x.y)}" r="${x.c === 'eu' ? 5 : 3.5}"/>`;
+  sv += '</svg>';
+  return `<h2><span class="c">~/</span>arena celestial<span class="sb">sem ${w.n}/${w.tot}</span></h2>
+    <div class="pn-tn"><span>Torneio ▲<small>Guarda Real, depois do 251</small></span><span class="gs">${GUARDA.map(g => avG(g)).join('')}</span></div>
+    <div class="pn-sh">${sv}${it.map(x => `<div class="pn-l ${x.c}" style="bottom:${P + x.ly}px">${x.h}</div>`).join('')}</div>
+    <dl class="pn-st"><dt>XP na temporada</dt><dd>${fmt(S.total)}</dd><dt>ritmo</dt><dd>${fmt(Math.round(S.ritmo))} XP/semana</dd><dt>hoje</dt><dd>+${S.hojeXP} XP</dd><dt>a torre zera</dt><dd>${ddmm(TEMP.fim)}</dd></dl>`;
+}
+function rBN(S){
+  const fr = S.fraco, mx = Math.max(...S.attr, 1), forte = S.attr.indexOf(Math.max(...S.attr));
+  const nen = NEN.map((l,i) => `<div class="pn-a" style="--c:${NC(i)}" title="${esc(l.s)}">${avNen(i)}<span class="nm">${esc(l.n)}<small>${esc(l.c)}</small>${i === fr && !S.pausa ? `<span class="mi" title="missão da semana: ${esc(l.c)} rende ×1,5 até domingo · ${S.missDias}/3 dias → 1 feitiço">missão ×1,5 ${[0,1,2].map(k => `<i class="${k < S.missDias ? 'on' : ''}"></i>`).join('')}</span>` : ''}</span><span class="lv">nv ${lvA(S.attr[i])}</span><span class="bar"><b style="width:${pct(S.attr[i], mx)}%"></b></span></div>`).join('');
+  const prox = b => b.avs.filter(a => a.st !== 'ok' && a.st !== 'low').sort((p,q) => p.dt.localeCompare(q.dt))[0];
+  const bs = S.bs.map(b => { const av = prox(b);
+    return `<button class="pn-b${b.dead ? ' dead' : ''}" data-go="b2" title="abrir em ${ABA.b2.n}">${avB(b,38)}<span><span class="nm">${b.n}<small>${b.d}</small></span><span class="pt">${nf(b.pts)}/100 pts${b.fury ? ' · 🔥 fúria' : ''}</span></span>${hpBar(b)}
+      ${av ? `<span class="nx"><span><b>${esc(av.n)}</b> · ${av.tot ? `prep ${av.ok}/${av.tot}` : 'sem tarefas'}</span><span>${av.st === 'wait' ? 'nota?' : av.st === 'hoje' ? 'hoje' : ddmm(av.dt)}</span></span>` : ''}
+      ${needTxt(b) ? `<span class="nd">${needTxt(b)}</span>` : ''}</button>`; }).join('');
+  /* semana: os prazos dos próximos 7 dias e o que foi feito há pouco, numa linha do tempo agrupada por dia */
+  const SEMD = ['seg','ter','qua','qui','sex','sáb','dom'];
+  const diaTxt = d => d === addD(HOJE,-1) ? 'ontem' : d === HOJE ? 'hoje' : d === addD(HOJE,1) ? 'amanhã' : `${SEMD[dow(d)]} ${ddmm(d)}`;
+  const porDia = (l, chave, rot) => { const g = []; for(const x of l){ const k = rot(chave(x)); if(!g.length || g[g.length-1][0] !== k) g.push([k, []]); g[g.length-1][1].push(x); } return g; };
+  const qs = D.abertas.filter(t => t.due && t.due <= addD(HOJE,7) && !SIM.has(t.n)).sort((p,q) => p.due.localeCompare(q.due));
+  const fe = S.xs.slice().sort((p,q) => q.t.done.localeCompare(p.t.done) || (q.t.n||0) - (p.t.n||0)).slice(0,6);
+  const ti = (t, dir, cls) => `<div class="pn-ti">${avTask(t)}<span>${esc(t.txt)}${discOf(t) ? ` <small>${discOf(t)}</small>` : ''}</span><b class="${cls}">${dir}</b></div>`;
+  const vem = qs.slice(0,8), tl = `<div class="card"><h2><span class="c">~/</span>semana</h2>
+    <h3 class="pn-tt">próximos 7 dias${qs.length ? ` <small>${qs.length}</small>` : ''}</h3>
+    ${vem.length ? porDia(vem, t => t.due, d => d < HOJE ? 'atrasadas' : diaTxt(d)).map(([k,l]) => `<div class="pn-td${k === 'atrasadas' ? ' late' : k === 'hoje' ? ' hj' : ''}"><span class="pn-dl">${k}</span>${l.map(t => ti(t, '+' + xpDe({...t,done:t.due}), '')).join('')}</div>`).join('') : '<p class="sub">nada com prazo nos próximos 7 dias</p>'}
+    ${qs.length > vem.length ? `<button class="go pn-mais" data-go="l">+ ${qs.length - vem.length} na Lista →</button>` : ''}
+    <h3 class="pn-tt">feito há pouco</h3>
+    ${porDia(fe, o => o.t.done, diaTxt).map(([k,l]) => `<div class="pn-td feito"><span class="pn-dl">${k}</span>${l.map(o => ti(o.t, '+' + o.x, 'ok')).join('')}</div>`).join('') || '<p class="sub">nada ainda</p>'}</div>`;
+  const meta = `<div class="card"><h2><span class="c">~/</span>meta do dia<button class="go" data-go="cfg" style="margin-left:auto">editar →</button></h2><div class="pn-hab">${habitosL(S, true) || '<p class="sub" style="margin:0">Nenhum hábito. Adicione em Configurações.</p>'}</div></div>`;
+  const nenC = `<div class="card"><h2><span class="c">~/</span>nen<span class="sub" style="margin-left:auto">tipo forte: ${esc(NEN[forte].n)}</span></h2><div class="pn-nen-g"><div>${hex(S.attr, 66, true, 140)}</div><div>${nen}</div></div></div>`;
+  const chefC = `<div class="card"><h2><span class="c">~/</span>chefões · genei ryodan<button class="go" data-go="b2" style="margin-left:auto">quadro →</button></h2><div class="pn-bs">${bs}</div></div>`;
+  const torre = `<div class="card pn-torre">${torreN(S)}</div>`;
+  document.getElementById('pn').innerHTML = faixaN(S) + `<div class="pn-g3">${torre}<div class="pn-main">${nenC}${chefC}</div><div class="pn-main">${meta}${tl}</div></div>`;
 }
 /* ---------- B2 ---------- */
 function rB2(S){
@@ -2502,21 +2618,25 @@ function rowL(t, S, x, jan){   // jan: a linha está na janela ↻ recorrentes (
     <div class="l-right">${v.ms.length ? `<span class="l-mult" title="${v.base} XP · ${v.ms.map(multL).join(' · ')}">${v.ms.join(' + ')}</span>` : ''}<span class="l-rewards"><span class="l-xp" title="${v.ms.length ? `${v.base} XP · ${v.ms.map(multL).join(' · ')}` : v.base != null ? v.base + ' XP de base' : 'XP ganho'}">+${v.x}</span>${jennyL(v.x, feita)}</span>
       ${feita ? '' : `<span class="l-acts"><button class="l-ib" data-l="d1" title="adiar 1 dia" aria-label="adiar 1 dia">${ic('moon')}</button>${t.pri !== 'A' ? '<button class="l-ib" data-l="up" title="subir prioridade" aria-label="subir prioridade">▲</button>' : ''}${'ABC'.includes(t.pri || 'Z') ? '<button class="l-ib" data-l="down" title="descer prioridade" aria-label="descer prioridade">▼</button>' : ''}<button class="l-ib" data-l="edit" title="editar" aria-label="editar">✎</button><button class="l-ib del" data-l="delete" title="remover" aria-label="remover">✕</button></span>`}</div></li>`;
 }
-function rL(S){
-  formL();
+/* faixa única do topo, da Lista nova (#178); a Progresso nova usa a mesma */
+function faixaN(S){
   const a = S.a, fr = NEN[S.fraco];
-  document.querySelector('[data-lnova]').textContent = UI.lnova ? '← voltar para a Lista antiga' : 'experimentar a Lista nova (beta) →';
-  if(UI.lnova){
   const mis = S.pausa ? `<span class="nl-k" style="color:var(--grn)">férias até <b>${ddmm(addD(TEMP.volta, -1))}</b></span>`
     : `<span class="nl-k nl-mis" style="--c:${NC(S.fraco)}" title="missão da semana: ${esc(fr.c)} ×1,5 · ${S.missDias}/3 dias → 1 feitiço">missão <b>${esc(fr.n)}</b>${[0,1,2].map(i => `<i class="${i < S.missDias ? 'on' : ''}"></i>`).join('')}</span>`;
-  document.getElementById('l-hud').innerHTML = `<div class="card nl-hud">${avMe(34)}
+  return `<div class="card nl-hud">${avMe(34)}
     <span class="nl-and" title="${esc(CTX.JOG.nome)}${UI.title ? ' · ' + esc(UI.title) : ''} · faltam ${a.need - a.into} XP para o andar ${a.n + 1} · ${fmt(S.total)} XP na temporada"><span class="n"><small>ANDAR</small>${a.n}</span><span class="nl-pb"><i style="width:${pct(a.into, a.need)}%"></i></span><span>faltam ${a.need - a.into}</span></span>
     <span class="nl-k${S.hojeXP >= S.metaDia ? ' ok' : ''}" title="XP de hoje e a meta do dia">hoje <b>+${S.hojeXP}</b>/${S.metaDia}</span>
     <span class="nl-k" title="recorde ${S.ten.max} · ${S.ten.zet} Zetsu guardado${S.ten.zet === 1 ? '' : 's'}">Ten <b>${S.ten.cur}</b> ${S.ten.cur === 1 ? 'dia' : 'dias'}</span>
     ${mis}
     <button type="button" class="nl-j" data-go="ms" title="Masadora"><b>${fmt(S.jenny)}</b> J</button>
     <span class="nl-sem">${esc(TEMP.nome)} · sem ${S.sem.n}/${S.sem.tot}</span></div>`;
-  } else
+}
+function rL(S){
+  formL();
+  const a = S.a, fr = NEN[S.fraco];
+  document.querySelector('[data-lnova]').textContent = UI.lnova ? '← voltar para a Lista antiga' : 'experimentar a Lista nova (beta) →';
+  if(UI.lnova) document.getElementById('l-hud').innerHTML = faixaN(S);
+  else
   document.getElementById('l-hud').innerHTML = `
     <div class="card l-me">${avMe(54)}<div class="l-fl"><div class="l-row"><b class="l-nm">${esc(CTX.JOG.nome)}</b>${UI.title ? `<span class="titulo">${esc(UI.title)}</span>` : ''}<span class="l-meta">${esc(TEMP.nome)} · ${S.pausa ? `férias até ${ddmm(addD(TEMP.volta, -1))}` : `${S.pausa ? `férias até ${ddmm(addD(TEMP.volta, -1))}` : `semana ${S.sem.n}/${S.sem.tot}`}`}</span></div>
       <div class="l-row"><span class="l-n"><small>ARENA CELESTIAL</small>andar ${a.n}</span><span class="l-meta">faltam ${a.need - a.into} XP para o ${a.n + 1}</span></div>
@@ -2571,7 +2691,7 @@ function duoMeta(S){
   const t = S.rot.find(isDuo); if(!t) return '';
   return `<div class="tk" style="padding:4px 0">${avTask(t)}<span class="t">Duolingo <span class="sub">automático</span></span><span class="v" style="color:var(--soft)">${t.ok ? '✓' : '+' + habXPHoje(S, t)}</span></div>`;
 }
-function habitosL(S){
+function habitosL(S, soChips){   // soChips: só os chips (a Progresso nova usa os mesmos)
   const J = CTX.JOG, cf = J.cf && J.cf.handle ? J.cf : null, meta = (cf && cf.meta) || 3;
   const habs = S.rot.filter(t => !isCF(t) && !isDuo(t)), cfT = S.rot.find(isCF), duoT = S.rot.find(isDuo);
   /* hábitos semanais: quantas vezes cada um foi feito na semana (seg a dom) que começa em seg, pelo dia do hábito */
@@ -2610,6 +2730,7 @@ function habitosL(S){
   if(faltam.length && D.feitas.some(t => t.done && t.done < HOJE)) c += UI.ontem
     ? `<div class="nl-ont"><span class="sub">Marcar como feito <b>ontem</b>:</span>${faltam.map(x => `<button class="btn" data-ontem="${esc(x.id)}">${esc(x.n)}</button>`).join('')}<button class="go" data-ontemabre="0">fechar</button></div>`
     : `<button class="go nl-ontb" data-ontemabre="1">esqueci de marcar ontem</button>`;
+  if(soChips) return c;
   document.getElementById('nl-hab').innerHTML = c || `<p class="sub" style="margin:0">Nenhum hábito. Adicione em Configurações.</p>`;
   document.getElementById('l-hab').innerHTML = h || `<p class="sub" style="margin:0">Nenhum hábito. Adicione na aba Configurações (digitação, leitura, exercício…) ou ligue o Codeforces e o Duolingo.</p>`;
   /* heatmaps: a temporada inteira, uma coluna por semana (seg → dom); os dias fora dela na 1ª e na última semana ficam ocultos (#14) */
@@ -2744,6 +2865,7 @@ document.addEventListener('click', async e => {
   const pr = q('[data-lpri]'); if(pr){ LA.pri = pr.dataset.lpri; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b === pr)); prevL(); return; }
   const du = q('[data-ldue]'); if(du){ LA.due = du.dataset.ldue; document.getElementById('l-date').value = ''; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === du)); prevL(); return; }
   if(q('[data-lnova]')){ UI.lnova = !UI.lnova; try { localStorage.setItem('gb-lista', UI.lnova ? 'nova' : 'antiga'); } catch(e){} document.documentElement.classList.toggle('lnova', UI.lnova); render(); window.scrollTo(0, 0); return; }
+  if(q('[data-pnova]')){ UI.pnova = !UI.pnova; try { localStorage.setItem('gb-prog', UI.pnova ? 'nova' : 'antiga'); } catch(e){} document.documentElement.classList.toggle('pnova', UI.pnova); render(); window.scrollTo(0, 0); return; }
   const lm = q('[data-lmodo]'); if(lm){ UI.lmodo = lm.dataset.lmodo; try { localStorage.setItem('gb-lmodo', UI.lmodo); } catch(e){} render(); return; }
   if(q('[data-nlconst]')){ document.getElementById('l-heatc').scrollIntoView({behavior:'smooth', block:'start'}); return; }
   const oa = q('[data-ontemabre]'); if(oa){ UI.ontem = oa.dataset.ontemabre === '1'; render(); return; }
