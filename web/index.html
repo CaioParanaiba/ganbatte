@@ -1361,6 +1361,47 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .pn-b .nx{grid-column:1/-1;font-size:12.5px;color:var(--soft);display:flex;justify-content:space-between;gap:8px;margin-top:2px} .pn-b .nx b{color:var(--ink);font-weight:600}
 .pn-b .nd{grid-column:1/-1;font-size:12px;color:var(--soft)}
 .pn-mais{margin-top:8px}
+/* ---------- Chefões novos, em teste: uma linha por chefão, que abre com as avaliações e as tarefas. Duas formas: completa
+   (retrato, frase, vida com a linha de aprovação) e mínima (sigla, barra fina e números). Só vale com a classe cnova no <html>
+   (botão no topo dos Chefões); sem ela, o quadro antigo fica igual ---------- */
+#cn:empty,.cnova #b2-cols:empty{display:none}
+.b2main{min-width:0;display:grid;gap:16px}
+#cn-troca{gap:14px;align-items:center}
+.cn{padding:2px 16px}
+.cn-b{border-top:1px solid var(--hair)} .cn-b:first-child{border-top:0}
+.cn-h{display:grid;grid-template-columns:auto minmax(0,1.1fr) minmax(0,1.3fr) minmax(0,1fr) 14px;gap:18px;align-items:center;width:100%;padding:14px 0;border:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.cn-h:hover .cv,.cn-b.ab .cv{color:var(--ink)}
+.cn-h .nm{font:700 15px var(--f-hud);min-width:0} .cn-h .nm small{font:500 11.5px var(--f-mono);color:var(--soft);margin-left:6px}
+.cn-h .nm i{display:block;margin-top:3px;font:italic 400 12.5px var(--f-ui);color:var(--soft)}
+.cn-h .vd{padding-top:14px;min-width:0} .cn-h .vd .need{margin-top:6px}
+.cn-h .nx{display:flex;flex-direction:column;gap:5px;align-items:flex-start;font:12px var(--f-mono);color:var(--soft);min-width:0}
+.cn-h .nx b{color:var(--ink)} .cn-h .nx small{color:var(--faint)} .cn-w{color:var(--amb)}
+.cn-h .cv{color:var(--faint);font-size:12px}
+.cn.min .cn-h{grid-template-columns:auto minmax(0,1.3fr) minmax(70px,1fr) 58px 110px minmax(0,1.3fr) 14px;gap:14px;padding:9px 0}
+.cn.min .cn-h .nm{font:600 13px var(--f-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .cn.min .cn-h .nm small{font:13px var(--f-ui)}
+.cn-hp{position:relative;height:5px;border-radius:99px;background:var(--track)}
+.cn-hp b{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--red)} .cn-b.dead .cn-hp b{background:var(--grn)}
+.cn-hp i{position:absolute;left:40%;top:-3px;bottom:-3px;border-left:1.5px solid var(--grn)}
+.cn-h .pt{font:600 12.5px var(--f-mono);text-align:right} .cn-h .pt small{color:var(--faint);font-weight:400}
+.cn-h .nd{font:12px var(--f-mono);color:var(--soft);white-space:nowrap} .cn-h .nd b{color:var(--ink)} .cn-h .nd b.ok{color:var(--grn)} .cn-h .nd b.ruim{color:var(--red)}
+.cn.min .cn-h .nx{flex-direction:row;gap:6px;align-items:baseline;white-space:nowrap;overflow:hidden}
+.cn-c{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:10px 32px;padding:0 0 16px 62px} .cn.min .cn-c{padding-left:40px}
+.cn-s h4{font:600 10.5px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin:0 0 2px} .cn-s h4 small{font:inherit;color:var(--soft);margin-left:6px}
+.cn-av{display:grid;grid-template-columns:minmax(0,1fr) auto 118px;gap:4px 14px;align-items:center;padding:7px 0;border-top:1px solid var(--hair);font-size:13px}
+.cn-s h4 + .cn-av{border-top:0}
+.cn-av .nm{font-weight:600} .cn-av .nm small{font:500 11.5px var(--f-mono);color:var(--soft);margin-left:6px}
+.cn-av .pp{display:flex;align-items:center;gap:8px;font:11px var(--f-mono);color:var(--faint)} .cn-av .pp .prep{width:70px!important}
+.cn-av .st{font:600 11.5px var(--f-mono);text-align:right;white-space:nowrap} .cn-av .st small{font-weight:400;color:var(--faint)}
+.cn-av .st.ok{color:var(--grn)} .cn-av .st.wait{color:var(--amb)} .cn-av .st.low{color:var(--red)} .cn-av .st.fut{color:var(--soft)}
+.cn-av .prt{grid-column:1/-1;font:11.5px var(--f-mono);color:var(--soft)}
+.cn-av .nf{grid-column:1/-1;display:flex;gap:6px;align-items:center}
+.cn-av .nf input{width:100px;font:600 13px var(--f-mono);padding:3px 6px;border-radius:6px;border:1px solid var(--hair);background:var(--panel2);color:var(--ink)}
+.cn-s .tk .t{font-size:13px}
+.cn-c .drop{font-size:12px;color:var(--aura);margin-top:10px;display:flex;gap:6px;align-items:center}
+.cn-op{grid-column:1/-1;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.cn-leg{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:0;cursor:pointer;font:600 12px var(--f-mono);color:var(--soft)} .cn-leg .c{color:var(--prompt)}
+.cn-leg + p{margin-top:10px!important}
+@media (max-width:1100px){ .cn-c,.cn.min .cn-c{grid-template-columns:minmax(0,1fr);padding-left:0} }
 </style>
 </head>
 <body>
@@ -1460,7 +1501,8 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 
   <section id="v-b2" hidden>
     <div id="gnav-b2"></div>
-    <div class="b2wrap"><div class="kan4" id="b2-cols"></div><div class="stack"><div class="card inbox" id="b2-inbox"></div><div class="card" id="b2-leg"></div></div></div>
+    <div class="nl-troca" id="cn-troca"></div>
+    <div class="b2wrap"><div class="b2main"><div id="cn"></div><div class="kan4" id="b2-cols"></div></div><div class="stack"><div class="card inbox" id="b2-inbox"></div><div class="card" id="b2-leg"></div></div></div>
   </section>
 
   <section id="v-x" hidden>
@@ -1526,6 +1568,10 @@ document.documentElement.classList.toggle('lnova', UI.lnova);
 /* Progresso nova, em teste na beta: a escolha fica neste navegador */
 try { UI.pnova = localStorage.getItem('gb-prog') === 'nova'; } catch(e){ UI.pnova = false; }
 document.documentElement.classList.toggle('pnova', UI.pnova);
+/* Chefões novos, em teste na beta: '' (o quadro antigo), 'completa' ou 'minima', e os chefões abertos; tudo neste navegador */
+try { UI.cnova = ({completa:'completa', minima:'minima'})[localStorage.getItem('gb-chefes')] || ''; } catch(e){ UI.cnova = ''; }
+try { UI.cnab = new Set(JSON.parse(localStorage.getItem('gb-cnab') || '[]')); } catch(e){ UI.cnab = new Set(); }
+document.documentElement.classList.toggle('cnova', !!UI.cnova);
 const PXSKINS = {map:[['dia','Dia'],['tarde','Tarde'],['noite','Noite']], p1:[['lilas','Lilás'],['gameboy','Game Boy'],['noite','Noite']], p3:[['couro','Couro'],['joy','Joystation'],['noite','Noite']], p3b:[['madeira','Madeira'],['neon','Neon'],['papel','Papel']]};
 const THEMES = [['simples','Simples'],['painel','Painel'],['leorio','Leorio'],['claro','Claro'],['gon','Gon'],['biscuit','Biscuit'],['kurapika','Kurapika'],['netero','Netero'],['killua','Killua'],['hisoka','Hisoka'],['meruem','Meruem'],['pergaminho','Pergaminho'],['zoldyck','Zoldyck'],['ryodan','Genei Ryodan'],['greed','Greed Island'],['abismo','Continente Negro'],['aurora','Aurora'],['grafite','Grafite'],['sepia','Sépia'],['contraste','Alto contraste'],['nevoa','Névoa']];
 /* imagem guardada na coleção permanente (colecao/arquivos/ dos dados, #33): continua aparecendo mesmo se sair do jogo */
@@ -1874,7 +1920,12 @@ function rBN(S){
 }
 /* ---------- B2 ---------- */
 function rB2(S){
-  document.getElementById('b2-cols').innerHTML = S.bs.map(b => `
+  const v = UI.cnova, nova = v && S.bs.length;
+  document.getElementById('cn-troca').innerHTML = v
+    ? `<span class="nl-seg">${[['completa','completa'],['minima','mínima']].map(([k,n]) => `<button type="button" data-cnv="${k}" aria-pressed="${v === k}">${n}</button>`).join('')}</span><button type="button" class="go" data-cnv="">← voltar para os Chefões antigos</button>`
+    : '<button type="button" class="go" data-cnv="completa">experimentar os Chefões novos (beta) →</button>';
+  document.getElementById('cn').innerHTML = nova ? `<div class="card cn${v === 'minima' ? ' min' : ''}">${S.bs.map(b => rowCN(b, v === 'minima')).join('')}</div>` : '';
+  document.getElementById('b2-cols').innerHTML = nova ? '' : S.bs.map(b => `
     <div class="col${b.dead?' dead':''}"><div class="ch">${avB(b,60)}<div class="nm">${b.n}</div><div class="ds">${b.d} · ${nf(b.pts)}/100 pts</div><div style="width:100%;margin-top:14px">${hpBar(b)}</div><div class="need" style="margin:2px 0 0">${needTxt(b)}</div>${b.fury?'<span class="fury">🔥 fúria: tarefas ×1,5</span>':''}</div>
       <div class="bd"><h4>ícone do chefão</h4>${iconeHTML(b)}
         <h4>avaliações (plano de ensino)</h4>${avList(b,'b2',true)}
@@ -1885,7 +1936,44 @@ function rB2(S){
     <textarea id="inbox-txt" placeholder="ex.: ARQ1: a P2 virou dois trabalhos de 15"></textarea>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="sub mono">grava em ajustes.txt</span><button class="btn v" data-inbox>enviar</button></div>
     <div class="log">${INBOX.map((m,i) => [m,i]).reverse().map(([m,i]) => `<div class="${m.st==='ok'?'':'p'}"><small>${GBx.brDatas(m.d)} · ${m.st==='ok'?'aplicado':'pendente'} <button class="go" data-aplic="${i}">${m.st==='ok'?'voltar a pendente':'marcar aplicado'}</button></small>${esc(m.t)}${m.r?`<small>→ ${esc(m.r)}</small>`:''}</div>`).join('')}</div>`;
-  document.getElementById('b2-leg').innerHTML = `<h2><span class="c">~/</span>como ler</h2><p style="margin:0;font-size:13.5px">A barra é a <b>vida</b> do chefão e só cai com nota: cada avaliação tira peso × nota. Passou da linha verde (média 6), ele cai. As tarefas enchem a <b>preparação</b> e dão XP. Preparação completa antes da data vale um feitiço, seja qual for a nota.</p><p style="margin:8px 0 0;font-size:13.5px">O <span class="mono">→ P2</span> ao lado de cada tarefa é a avaliação que ela prepara (passe o mouse para ver por quê). Para trocar, edite a tarefa na Lista e escreva <span class="mono">av:P1</span>.</p>${SIM.size||Object.keys(NOTAS).length?'<button class="reset" data-reset style="margin-top:10px">desfazer simulação</button>':''}`;
+  /* nos Chefões novos, o "como ler" fica fechado numa linha */
+  const leg = `<p style="margin:0;font-size:13.5px">A barra é a <b>vida</b> do chefão e só cai com nota: cada avaliação tira peso × nota. Passou da linha verde (média 6), ele cai. As tarefas enchem a <b>preparação</b> e dão XP. Preparação completa antes da data vale um feitiço, seja qual for a nota.</p><p style="margin:8px 0 0;font-size:13.5px">O <span class="mono">→ P2</span> ao lado de cada tarefa é a avaliação que ela prepara (passe o mouse para ver por quê). Para trocar, edite a tarefa na Lista e escreva <span class="mono">av:P1</span>.</p>`;
+  document.getElementById('b2-leg').innerHTML = (nova ? `<button type="button" class="cn-leg" data-cnleg aria-expanded="${!!UI.cnleg}"><span class="c">~/</span>como ler<span style="margin-left:auto">${UI.cnleg ? '▾' : '▸'}</span></button>${UI.cnleg ? leg : ''}` : `<h2><span class="c">~/</span>como ler</h2>${leg}`)
+    + (SIM.size||Object.keys(NOTAS).length?'<button class="reset" data-reset style="margin-top:10px">desfazer simulação</button>':'');
+}
+/* ---------- Chefões novos (em teste): uma linha por chefão, que abre com as avaliações e as tarefas pendentes.
+   min: a forma mínima (sigla, barra fina, números); sem ela, a completa (retrato, frase, vida com a linha de aprovação) ---------- */
+const proxAv = b => b.avs.filter(a => a.st !== 'ok' && a.st !== 'low').sort((p,q) => p.dt.localeCompare(q.dt))[0];
+const emDias = k => k === 0 ? 'hoje' : k === 1 ? 'amanhã' : `em ${k}d`;
+function proxTxt(a, min){
+  if(!a) return '<span>nada pela frente</span>';
+  const qd = a.st === 'wait' ? '<span class="cn-w">nota?</span>' : `${ddmm(a.dt)} <small>${emDias(dias(HOJE, a.dt))}</small>`;
+  return min ? `<b>${esc(a.k)}</b> ${qd}${a.tot ? ` <small>prep ${a.ok}/${a.tot}</small>` : ''}`
+    : `<span><b>${esc(a.n)}</b> · ${qd}</span><small>${a.tot ? `preparação ${a.ok}/${a.tot}` : 'nenhuma tarefa ligada'}</small>`;
+}
+function rowCN(b, min){
+  const ab = UI.cnab.has(b.d), a = proxAv(b);
+  const cab = min
+    ? `${avB(b,26)}<span class="nm">${b.d} <small>${esc(b.n)}</small></span><span class="cn-hp"><b style="width:${pct(b.rest,b.tot)}%"></b><i></i></span><span class="pt">${nf(b.pts)}<small>/100</small></span>
+      <span class="nd">${b.dead ? '<b class="ok">derrotado</b>' : b.need == null ? '' : b.need > 10 ? '<b class="ruim">recuperação</b>' : `precisa <b>${nf(Math.max(0,b.need))}</b>`}${b.fury ? ' 🔥' : ''}</span><span class="nx">${proxTxt(a, true)}</span>`
+    : `${avB(b,44)}<span class="nm">${esc(b.n)}<small>${b.d} · ${nf(b.pts)}/100 pts</small>${b.why ? `<i>${esc(b.why)}</i>` : ''}</span>
+      <span class="vd">${hpBar(b)}<div class="need">${needTxt(b)}</div></span><span class="nx">${proxTxt(a)}${b.fury ? '<span class="fury">🔥 fúria: tarefas ×1,5</span>' : ''}</span>`;
+  return `<div class="cn-b${b.dead ? ' dead' : ''}${ab ? ' ab' : ''}"><button type="button" class="cn-h" data-cnab="${b.d}" aria-expanded="${ab}">${cab}<span class="cv">${ab ? '▾' : '▸'}</span></button>${ab ? corpoCN(b, min) : ''}</div>`;
+}
+function avRowCN(b, a){
+  const id = `n-${b.d}-${a.k}-cn`, campo = a.cont ? ['parcial', '8 ou 4/5', ' data-cont="1"', '+ parcial'] : a.nota == null && a.dt <= HOJE ? ['nota', '7,5 ou 4/5', '', 'registrar'] : null;
+  const st = a.st === 'ok' ? 'ok' : a.st === 'low' ? 'low' : a.st === 'wait' || a.st === 'hoje' ? 'wait' : 'fut';
+  return `<div class="cn-av"><span class="nm">${esc(a.n)}<small>${a.w}%${a.real ? '' : ' · ex.'}${a.cont ? ' · contínua' : ''}</small></span>
+    <span class="pp" title="preparação: tarefas feitas / ligadas${a.prepOk ? ' · bônus ganho' : a.prepFull ? ' · completa, bônus no dia' : ''}">${prepBar(a)}${a.tot ? `${a.ok}/${a.tot}${a.prepOk ? ' ✓' : ''}` : 'sem tarefas'}</span>
+    <span class="st ${st}">${stTxt(a)}${st === 'fut' ? ` <small>${emDias(dias(HOJE, a.dt))}</small>` : ''}</span>
+    ${a.cont && a.parts.length ? `<span class="prt">${a.parts.map((p,i) => `${a.k}${i+1}: ${nf(p)}`).join(' · ')}</span>` : ''}
+    ${campo ? `<span class="nf"><input id="${id}" placeholder="${campo[1]}" aria-label="${campo[0]} de ${esc(a.n)}" title="de 0 a 10, ou em pontos: 4/5 = 4 de 5"><button class="btn" data-nota="${b.d}:${a.k}" data-in="${id}"${campo[2]}>${campo[3]}</button></span>` : ''}</div>`;
+}
+function corpoCN(b, min){
+  return `<div class="cn-c"><div class="cn-s"><h4>avaliações</h4>${b.avs.length ? b.avs.map(a => avRowCN(b, a)).join('') : '<p class="sub">Nenhuma avaliação ainda: use "editar avaliações e notas".</p>'}</div>
+    <div class="cn-s"><h4>tarefas pendentes<small>${b.open.length}</small></h4>${b.open.length > 6 ? `<button class="go" data-go="l" style="float:right;margin-top:-18px">+ ${b.open.length - 6} na Lista →</button>` : ''}${b.open.length ? b.open.slice(0, 6).map(t => `<button class="tk" data-hit="${t.n}">${avTask(t,22)}<span class="t">${esc(t.txt)}${ligTxt(b,t)}</span><span class="v" style="color:var(--volt)">+${xpDe({...t,done:HOJE})}</span></button>`).join('') : '<p class="sub">nada pendente</p>'}
+      ${min ? '' : `<div class="drop">${ic('card')} preparação completa antes da data: 1 feitiço à escolha</div>`}</div>
+    <div class="cn-op"><button type="button" class="btn" data-cedit="${b.d}">editar avaliações e notas</button>${iconeHTML(b)}</div></div>`;
 }
 /* ---------- D2 ---------- */
 /* do mês do início da temporada até o da volta às aulas (as férias aparecem no fim), no máximo 12 meses (#2) */
@@ -2866,6 +2954,9 @@ document.addEventListener('click', async e => {
   const du = q('[data-ldue]'); if(du){ LA.due = du.dataset.ldue; document.getElementById('l-date').value = ''; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === du)); prevL(); return; }
   if(q('[data-lnova]')){ UI.lnova = !UI.lnova; try { localStorage.setItem('gb-lista', UI.lnova ? 'nova' : 'antiga'); } catch(e){} document.documentElement.classList.toggle('lnova', UI.lnova); render(); window.scrollTo(0, 0); return; }
   if(q('[data-pnova]')){ UI.pnova = !UI.pnova; try { localStorage.setItem('gb-prog', UI.pnova ? 'nova' : 'antiga'); } catch(e){} document.documentElement.classList.toggle('pnova', UI.pnova); render(); window.scrollTo(0, 0); return; }
+  const cnv = q('[data-cnv]'); if(cnv){ UI.cnova = cnv.dataset.cnv; try { localStorage.setItem('gb-chefes', UI.cnova || 'antiga'); } catch(e){} document.documentElement.classList.toggle('cnova', !!UI.cnova); render(); return; }
+  const cna = q('[data-cnab]'); if(cna){ const d = cna.dataset.cnab; if(UI.cnab.has(d)) UI.cnab.delete(d); else UI.cnab.add(d); try { localStorage.setItem('gb-cnab', JSON.stringify([...UI.cnab])); } catch(e){} render(); return; }
+  if(q('[data-cnleg]')){ UI.cnleg = !UI.cnleg; render(); return; }
   const lm = q('[data-lmodo]'); if(lm){ UI.lmodo = lm.dataset.lmodo; try { localStorage.setItem('gb-lmodo', UI.lmodo); } catch(e){} render(); return; }
   if(q('[data-nlconst]')){ document.getElementById('l-heatc').scrollIntoView({behavior:'smooth', block:'start'}); return; }
   const oa = q('[data-ontemabre]'); if(oa){ UI.ontem = oa.dataset.ontemabre === '1'; render(); return; }
@@ -2997,7 +3088,7 @@ function confete(forcado){
 }
 /* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
-const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-cnv],[data-cnab],[data-cnleg],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
 let avisoProvaAtual = null;
 function avisoProva(){
