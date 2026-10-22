@@ -20,6 +20,11 @@ Há três jeitos de usar:
   revisar no editor, ou marcar várias (*selecionar todos*) e *salvar selecionados* de uma vez (disciplina ainda não
   cadastrada vira o botão *cadastrar*). Para uma só, *ler plano com IA* no
   editor da disciplina.
+- **Aulas:** nos Chefões novos (botão no topo da aba), abra o chefão e clique em *mandar aula*: o áudio da aula e/ou os
+  slides em PDF, ou uma transcrição colada. O jogo transcreve o áudio no próprio computador (precisa do Whisper; o comando
+  de instalação aparece ali) e a IA escreve o resumo e sugere tarefas de estudo. O resumo abre pelo chefão (fica em
+  `~/.ganbatte/aulas/`); cada sugestão espera você escolher *não adicionar*, *adicionar* ou *juntar* com uma tarefa
+  parecida que já existe.
 - **Tipo da tarefa:** no formulário da Lista, o botão *IA?* pergunta à IA qual tipo combina (pedido curto, com o modelo
   mais leve). Sem IA, o jogo sugere pelas palavras e o *?* mostra o que encaixa em quê.
 - **Caixa de entrada:** no editor da disciplina, *aplicar lembretes com IA*. Ao salvar, os lembretes ficam marcados
@@ -63,9 +68,9 @@ abaixo). Se não, use o **modo chat** (no fim): o jogador cola um pedido do jogo
 | Escrever cartas narradas no Book | Criar ou remover disciplina, hábito ou mudar o semestre: peça ao jogador para usar a aba **Configurações** |
 | Propor conquistas no formato do pedido 3 (o jogador aceita pelo Book) | Criar, marcar ou resgatar conquista: quem confere e dá a recompensa é o jogo |
 
-**O que o jogo não tem** (diga isso em vez de improvisar e não ofereça): aulas de qualquer tipo (cadastrar aula,
-grade horária, transformar anotações, áudio ou transcrição de aula em tarefas), agenda do Google, lembretes por
-notificação.
+**O que o jogo não tem** (diga isso em vez de improvisar e não ofereça): grade horária, agenda do Google, lembretes por
+notificação. Áudio, slides ou transcrição de aula viram resumo e sugestões só pelo botão *mandar aula* do chefão: não
+monte isso por fora.
 
 ### Se o jogador pedir para "configurar", "automatizar" ou "instalar" a IA
 
@@ -77,7 +82,7 @@ automação já vem no jogo, e cada computador precisa ficar igual para dar supo
 2. Explique o que passa a acontecer sozinho: as cartas do Book que faltam, ao abrir o jogo (semana na segunda, mês no
    dia 1, semestre no dia seguinte ao fim da temporada, ano em 1º/jan). Não pergunte essas datas: são regras do jogo.
 3. Explique onde ficam os botões: *ler todos os planos* em Chefões, *ler plano com IA* e *aplicar lembretes com IA* no
-   editor de cada chefão, *IA?* no formulário da Lista, *escrever cartas antigas* e *propor conquistas com IA* no Book. Os planos de ensino ficam em `~/.ganbatte/planos/`.
+   editor de cada chefão, *mandar aula* no chefão aberto (Chefões novos), *IA?* no formulário da Lista, *escrever cartas antigas* e *propor conquistas com IA* no Book. Os planos de ensino ficam em `~/.ganbatte/planos/`.
 
 O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer na conversa.
 
@@ -101,6 +106,7 @@ O resto do modo agente (abaixo) serve para os pedidos soltos que o jogador fizer
 | `narradas.json` | cartas do Book | acrescentar, **pela API** |
 | `conquistas.json` | conquistas criadas pela IA e o que foi resgatado | só ler: quem cria é o jogador, pelo Book |
 | `planos/` | planos de ensino (PDF, HTML...) | ler |
+| `aulas/` | resumos (`.html`) e transcrições (`.md`) das aulas, por disciplina; `aulas.json` é o índice, com as sugestões | só ler: quem cria é o botão *mandar aula* |
 | `temporadas/` | temporadas guardadas: `NOME/resumo.json` com os números finais congelados (chaves neutras e os nomes do tema em `tema`) e uma cópia dos arquivos daquele momento | só ler: quem guarda é o jogo |
 | `jogador.json` | nome, tags, hábitos, disciplinas, Codeforces, Duolingo, formato de data, IA ligada (`ia`) | só ler |
 | `estado.json`, `cf.json`, `duo.json`, `contrib.json` | loja, carteira; cache do Codeforces, do Duolingo e das contribuições no GitHub | não mexer |
