@@ -5,6 +5,12 @@ tem as pendências dele em [`COLETIVO.md`](COLETIVO.md).
 
 ## Onde estamos
 
+**Issue #186 — Constância por mês:** os heatmaps da Lista mostram blocos com mês e ano, mantendo a temporada inteira
+e as férias. `habitosL()` em `web/index.html` divide apenas a apresentação: cada dia aparece no seu mês, e cada semana
+de hábito semanal no mês da segunda-feira (a primeira semana parcial fica no mês do início da temporada). Não divide
+metas semanais nem altera os resumos, XP ou Jenny. A faixa de meses rola em blocos estreitos. Teste no Firefox, incluindo
+virada de ano e fevereiro bissexto: `node tests/test_constancia.mjs http://127.0.0.1:8799/?demo`.
+
 **Issue #57 — Jenny por tarefa:** a Lista mostra o dinheiro ao lado do XP, inclusive na criação e na edição.
 `valeL()` usa `estado().valeTarefa()`, com a mesma conta da conclusão (prazo, missão, fúria, férias, nível dos hábitos e
 feitiços), e converte o XP final em Jenny ×10. As regras de ganho e os recibos permanecem iguais.
@@ -542,8 +548,8 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
   `pythonw` sem janela, boas-vindas no terminal. Precisa de um amigo em cada sistema.
 - **GitHub Pages:** no ar em https://caioparanaiba.github.io/ganbatte/ (atualiza a cada push que mexe em `web/`).
 - **Testes automáticos** do `servidor.py` (hoje os testes são scripts soltos e o Firefox controlado por script).
-- **Aba Lista, bloco "constância":** sobra muito espaço entre os heatmaps (20 semanas) e a borda direita. Avaliar: mais
-  semanas conforme a largura, quadradinhos maiores, ou outra coisa ao lado (resumo dos números, por exemplo).
+- **Aba Lista, bloco "constância": resolvido em #14 e #186.** A temporada inteira aparece em blocos mensais, com
+  quadradinhos que acompanham a largura e resumo da temporada ao lado quando há espaço.
 
 ## Renomear para `ganbatte` (nome decidido em 13/10/2026, #15)
 

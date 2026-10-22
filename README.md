@@ -158,6 +158,8 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 - `servidor.py`: servidor local (só a biblioteca padrão do Python). Lê e grava os seus arquivos, cria os hábitos de cada dia
   e consulta o Codeforces e o Duolingo. Só aceita conexões do próprio computador.
 - `web/index.html`: a página do jogo. `web/motor.js`: todas as regras e contas. `web/guia.js`: assistente e tutorial.
+  Na Lista, `habitosL()` mostra a Constância em blocos mensais, com rolagem horizontal quando necessário. Os resumos
+  continuam sendo da temporada; hábitos semanais conservam a semana inteira no mês em que ela começa (#186).
   `web/chefes.js`: editor de avaliações e notas. `web/ia.js`: pedidos para a IA e a IA ligada. `web/conquistas.js`:
   conquistas criadas pela IA (as regras ficam no motor). Novas cartas exigem mínimos de volume e dias de atividade,
   sequências, semanas completas de XP e nota com peso mínimo, sem promover o rank pela falta de histórico (#75).

@@ -1095,8 +1095,12 @@ a.btn{display:inline-block;text-decoration:none}
 .l-hm{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px 14px;align-items:start}
 .l-hm .nm{font:600 12px var(--f-mono);color:var(--ink);padding-top:2px} .l-hm .nm small{display:block;font:11px var(--f-mono);color:var(--soft);margin-top:2px}
 .l-hg.sem{grid-template-rows:auto;min-height:30px;align-content:start}
-/* uma coluna por semana da temporada; os quadradinhos crescem de 12 até 26px para ocupar a largura (#14) */
+/* uma coluna por semana, em blocos mensais; os quadradinhos crescem de 12 até 26px (#14, #186) */
 .l-hg{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,auto);grid-template-columns:repeat(var(--n),minmax(12px,26px));gap:3px;overflow-x:auto;padding:2px}
+.l-hmonths{display:flex;gap:12px;flex:1;min-width:0;overflow-x:auto;align-items:flex-start;padding-bottom:2px;scrollbar-width:thin;scrollbar-color:var(--soft) var(--track)}
+.l-hmonth{flex:var(--n) 0 calc(var(--n)*15px + 1px);max-width:calc(var(--n)*29px + 1px)}
+.l-hmonth>small{display:block;margin-bottom:6px;font:10.5px/14px var(--f-mono);color:var(--soft);white-space:nowrap}
+.l-hmonth .l-hg{overflow:visible}
 .l-hg i{border-radius:3px;background:var(--track);aspect-ratio:1}
 .l-hg i.h1{background:color-mix(in srgb,var(--c) 30%,var(--track))} .l-hg i.h2{background:color-mix(in srgb,var(--c) 55%,var(--track))}
 .l-hg i.h3{background:color-mix(in srgb,var(--c) 80%,var(--track))} .l-hg i.h4{background:var(--c)}
@@ -1106,7 +1110,7 @@ a.btn{display:inline-block;text-decoration:none}
 /* à direita de cada heatmap: uma barra por dia da semana, na altura da linha dele, e o número da temporada; some em bloco estreito */
 .l-const{container-type:inline-size}
 .l-hrow{display:flex;gap:20px;align-items:stretch;min-width:0} .l-hrow .l-hg{flex:0 1 auto;min-width:0}
-.l-hres{flex:0 0 290px;display:flex;gap:16px;padding:2px 0}   /* mesma largura em todas as linhas: as grades ficam do mesmo tamanho */
+.l-hres{flex:0 0 290px;display:flex;gap:16px;padding:22px 0 2px}   /* mesma largura em todas as linhas; abaixo dos títulos dos meses */
 .l-hds{display:grid;grid-template-rows:repeat(7,1fr);gap:3px;width:150px}
 .l-hds span{display:grid;grid-template-columns:28px 1fr 32px;align-items:center;gap:6px;min-height:0;font:10.5px var(--f-mono);color:var(--faint)}
 .l-hds em{font-style:normal} .l-hds small{text-align:right;font-size:10.5px}
@@ -1120,7 +1124,7 @@ a.btn{display:inline-block;text-decoration:none}
 .l-hnvb{grid-column:1/-1;display:block;height:4px;border-radius:2px;background:var(--track);overflow:hidden} .l-hnvb i{display:block;height:100%;background:var(--c)}
 .l-hcab .l-hnvb{margin-top:6px;max-width:120px}
 @container (max-width:860px){.l-hres{display:none}}
-.l-hl{grid-column:2;display:flex;gap:4px;align-items:center;font:10.5px var(--f-mono);color:var(--faint);margin-top:-8px}
+.l-hl{grid-column:2;display:flex;gap:4px;align-items:center;font:10.5px var(--f-mono);color:var(--faint);margin-top:8px}
 .l-hl i{width:10px;height:10px;border-radius:2px;display:inline-block}
 .l-hb{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--hair)}
 .l-hb:first-child{border-top:0;padding-top:0}
@@ -2739,9 +2743,18 @@ function habitosL(S, soChips){   // soChips: só os chips (a Progresso nova usa 
   const FIMG = TEMP.volta && TEMP.volta > TEMP.fim ? addD(TEMP.volta, -1) : TEMP.fim, fer = d => d > TEMP.fim && d <= FIMG;
   const ini = addD(TEMP.ini, -dow(TEMP.ini)), NS = Math.max(1, Math.ceil((dias(ini, FIMG) + 1) / 7));
   const DIAS = Array.from({length:NS*7}, (_,i) => addD(ini, i)), fora = d => d < TEMP.ini || d > FIMG;
-  const grade = (cor, nivel, tt, res) => `<div class="l-hrow" style="--c:${cor}"><div class="l-hg" style="--n:${NS}">${DIAS.map(d => fora(d) ? '<i class="fora"></i>'
+  /* cada mês tem sua grade seg → dom; as semanas na virada se repetem só com os dias do próprio mês (#186) */
+  const MESES = [];
+  for(let ym = TEMP.ini.slice(0,7); ym <= FIMG.slice(0,7); ){
+    const [a, m] = ym.split('-').map(Number), prox = m === 12 ? `${a+1}-01` : `${a}-${String(m+1).padStart(2,'0')}`;
+    const primeiro = ym + '-01', seg = addD(primeiro, -dow(primeiro)), n = Math.ceil(dias(seg, prox + '-01') / 7);
+    MESES.push({ym, seg, n, nome:NOMES_MES[m-1]}); ym = prox;
+  }
+  const mesesGrade = (celula, semanal = false) => `<div class="l-hmonths" tabindex="0" role="group" aria-label="Constância por mês">${MESES.map(m =>
+    `<div class="l-hmonth" data-mes="${m.ym}" style="--n:${m.n}"><small title="${m.nome} de ${m.ym.slice(0,4)}">${m.nome.slice(0,3).toLowerCase()} ${m.ym.slice(0,4)}</small><div class="l-hg${semanal ? ' sem' : ''}">${Array.from({length:m.n * (semanal ? 1 : 7)}, (_,i) => celula(addD(m.seg, i * (semanal ? 7 : 1)), m.ym)).join('')}</div></div>`).join('')}</div>`;
+  const grade = (cor, nivel, tt, res) => `<div class="l-hrow" style="--c:${cor}">${mesesGrade((d, ym) => fora(d) || d.slice(0,7) !== ym ? '<i class="fora"></i>'
     : d > HOJE ? `<i class="${fer(d) ? 'fer' : 'fut'}"${fer(d) ? ` title="${ddmm(d)} · férias"` : ''}></i>`
-    : `<i class="${nivel(d) || (fer(d) ? 'fer' : '')}${d === HOJE ? ' hj' : ''}" title="${ddmm(d)} · ${tt(d)}${fer(d) ? ' · férias' : ''}"></i>`).join('')}</div>${res || ''}</div>`;
+    : `<i class="${nivel(d) || (fer(d) ? 'fer' : '')}${d === HOJE ? ' hj' : ''}" title="${ddmm(d)} · ${tt(d)}${fer(d) ? ' · férias' : ''}"></i>`)}${res || ''}</div>`;
   /* resumo à direita: v(d) de 0 a 1 por dia já vivido da temporada (hoje só conta se já tem algo), média por dia da semana
      (o mais fraco em destaque, se for um só) e cab(média, dias) = [número, legenda] */
   const DSEM = ['seg','ter','qua','qui','sex','sáb','dom'], VIVIDOS = DIAS.filter(d => !fora(d) && !fer(d) && d <= HOJE);   // as médias são do semestre; férias não cobram
@@ -2769,8 +2782,12 @@ function habitosL(S, soChips){   // soChips: só os chips (a Progresso nova usa 
   const pcHab = () => { const ds = VIVIDOS.filter(d => d < HOJE || (hd[d]||0) > 0); return Math.round(ds.reduce((x, d) => x + Math.min(1, (hd[d]||0)/nh), 0) / Math.max(1, ds.length) * 100) + '%'; };
   const SEMS = Array.from({length:NS}, (_,i) => addD(ini, 7*i));
   const gradeSem = (x, cor) => { const conta = SEMS.filter(s => s <= TEMP.fim && (s < SEG || (s === SEG && naSemana(x.id, s) >= x.semana))), na = conta.filter(s => naSemana(x.id, s) >= x.semana).length;   // ao lado: semanas na meta e o nível
-    return `<div class="l-hrow" style="--c:${cor}"><div class="l-hg sem" style="--n:${NS}">${SEMS.map(s => { const n = naSemana(x.id, s), fut = s > HOJE;
-    return fut ? `<i class="${s > TEMP.fim ? 'fer' : 'fut'}"></i>` : `<i class="${lv(n / x.semana) || (s > TEMP.fim ? 'fer' : '')}${s === SEG ? ' hj' : ''}" title="semana de ${ddmm(s)} · ${n} de ${x.semana}${s > TEMP.fim ? ' · férias' : ''}"></i>`; }).join('')}</div><div class="l-hres">${conta.length ? cabRes(`${na} de ${conta.length}`, 'semanas na meta') : ''}${nvCab(x.id)}</div></div>`; };
+    return `<div class="l-hrow" style="--c:${cor}">${mesesGrade((s, ym) => {
+    /* semana inteira no mês da segunda-feira; a primeira, se parcial, fica no mês do início da temporada */
+    if(s < ini || s > FIMG || (s < TEMP.ini ? TEMP.ini : s).slice(0,7) !== ym) return '<i class="fora"></i>';
+    const n = naSemana(x.id, s), fut = s > HOJE;
+    return `<i class="${fut ? (s > TEMP.fim ? 'fer' : 'fut') : lv(n / x.semana) || (s > TEMP.fim ? 'fer' : '')}${s === SEG ? ' hj' : ''}" title="semana de ${ddmm(s)} a ${ddmm(addD(s, 6))} · ${fut ? 'futura' : `${n} de ${x.semana}`}${s > TEMP.fim ? ' · férias' : ''}"></i>`;
+    }, true)}<div class="l-hres">${conta.length ? cabRes(`${na} de ${conta.length}`, 'semanas na meta') : ''}${nvCab(x.id)}</div></div>`; };
   const cfd = (D.cf && D.cf.por_dia) || {};
   const lv = r => r <= 0 ? '' : r < .34 ? 'h1' : r < .67 ? 'h2' : r < 1 ? 'h3' : 'h4';
   const leg = cor => `<div class="l-hl">menos ${['','h1','h2','h3','h4'].map(c => `<i style="background:${c ? `color-mix(in srgb,${cor} ${({h1:30,h2:55,h3:80,h4:100})[c]}%,var(--track))` : 'var(--track)'}"></i>`).join('')} mais${FIMG > TEMP.fim ? ' <i class="fer" style="margin-left:10px"></i> férias' : ''}</div>`;
