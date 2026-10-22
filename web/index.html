@@ -1320,7 +1320,17 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .pn-troca{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:-8px 0 12px;font:12px var(--f-mono);color:var(--faint)}
 .pn-g{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px;align-items:start}
 .pn-main{display:grid;gap:16px;min-width:0}
-.pn-baixo{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;align-items:start}
+.pn-g3{display:grid;grid-template-columns:320px minmax(0,1fr) 330px;gap:16px;align-items:start}
+.pn-g3 .pn-nen-g{grid-template-columns:minmax(0,1fr)} .pn-g3 .pn-nen-g > div:first-child{max-width:420px;justify-self:center;width:100%}
+.pn-hab{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pn-tt{display:flex;align-items:baseline;gap:6px;margin:4px 0 6px;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.pn-tt small{font:inherit;color:var(--soft)} .pn-tt ~ .pn-tt{margin-top:16px;padding-top:12px;border-top:1px solid var(--hair)}
+.pn-td{position:relative;padding:2px 0 6px 14px;border-left:2px solid var(--hair);margin-left:4px}
+.pn-td::before{content:"";position:absolute;left:-5px;top:5px;width:8px;height:8px;border-radius:99px;background:var(--panel);border:2px solid var(--soft)}
+.pn-td.hj::before{border-color:var(--volt);background:var(--volt)} .pn-td.late::before{border-color:var(--red);background:var(--red)} .pn-td.feito::before{border-color:var(--grn)}
+.pn-dl{display:block;font:600 11px var(--f-mono);color:var(--soft);margin-bottom:2px} .pn-td.hj .pn-dl{color:var(--volt)} .pn-td.late .pn-dl{color:var(--red)}
+.pn-ti{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:4px 0;font-size:13px;line-height:1.3}
+.pn-ti .av{--s:20px} .pn-ti small{font:11px var(--f-mono);color:var(--faint)} .pn-ti b{font:600 11.5px var(--f-mono);color:var(--volt)} .pn-ti b.ok{color:var(--soft)}
 .pn-torre h2 .sb{margin-left:auto;color:var(--faint);font-weight:500}
 .pn-tn{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px dashed color-mix(in srgb,var(--aura) 55%,var(--hair));border-radius:10px;color:var(--aura);font:12px var(--f-mono)}
 .pn-tn small{display:block;color:var(--faint)} .pn-tn .gs{display:flex;gap:4px;margin-left:auto} .pn-tn .av{--s:22px}
@@ -1516,9 +1526,11 @@ try { UI.lnova = localStorage.getItem('gb-lista') === 'nova'; } catch(e){ UI.lno
 try { UI.lmodo = localStorage.getItem('gb-lmodo') || 'semana'; } catch(e){ UI.lmodo = 'semana'; }
 try { UI.cabre = JSON.parse(localStorage.getItem('gb-cabre') || '{}') || {}; } catch(e){ UI.cabre = {}; }
 document.documentElement.classList.toggle('lnova', UI.lnova);
-/* Progresso nova, em teste: antiga | nova | sem (nova sem a meta do dia), neste navegador */
+/* Progresso nova, em teste: antiga | coluna | trilho, e com ou sem a meta do dia, neste navegador */
 try { UI.pnova = localStorage.getItem('gb-prog') || 'antiga'; } catch(e){ UI.pnova = 'antiga'; }
-const marcaPN = () => { document.documentElement.classList.toggle('pnova', UI.pnova !== 'antiga'); document.documentElement.classList.toggle('pn-sem', UI.pnova === 'sem'); };
+try { UI.pnmeta = localStorage.getItem('gb-progmeta') !== 'sem'; } catch(e){ UI.pnmeta = true; }
+if(!['antiga','coluna','trilho'].includes(UI.pnova)) UI.pnova = 'coluna';   // nova/sem eram do primeiro teste
+const marcaPN = () => { document.documentElement.classList.toggle('pnova', UI.pnova !== 'antiga'); document.documentElement.classList.toggle('pn-sem', !UI.pnmeta); };
 marcaPN();
 const PXSKINS = {map:[['dia','Dia'],['tarde','Tarde'],['noite','Noite']], p1:[['lilas','Lilás'],['gameboy','Game Boy'],['noite','Noite']], p3:[['couro','Couro'],['joy','Joystation'],['noite','Noite']], p3b:[['madeira','Madeira'],['neon','Neon'],['papel','Papel']]};
 const THEMES = [['simples','Simples'],['painel','Painel'],['leorio','Leorio'],['claro','Claro'],['gon','Gon'],['biscuit','Biscuit'],['kurapika','Kurapika'],['netero','Netero'],['killua','Killua'],['hisoka','Hisoka'],['meruem','Meruem'],['pergaminho','Pergaminho'],['zoldyck','Zoldyck'],['ryodan','Genei Ryodan'],['greed','Greed Island'],['abismo','Continente Negro'],['aurora','Aurora'],['grafite','Grafite'],['sepia','Sépia'],['contraste','Alto contraste'],['nevoa','Névoa']];
@@ -1781,7 +1793,8 @@ function linksB(S){
     .map(([t,i,n,s,c]) => `<button class="lk" data-go="${t}"><span class="av" style="--c:${c}">${ic(i)}</span><span>${n}<small>${s}</small></span></button>`).join('');
 }
 function rB(S){
-  document.getElementById('pn-troca').innerHTML = `Progresso em teste:<span class="nl-seg">${[['antiga','antiga'],['nova','nova'],['sem','nova sem meta do dia']].map(([k,n]) => `<button type="button" data-pnova="${k}" aria-pressed="${UI.pnova === k}">${n}</button>`).join('')}</span>`;
+  document.getElementById('pn-troca').innerHTML = `Progresso em teste:<span class="nl-seg">${[['antiga','antiga'],['coluna','nova · coluna'],['trilho','nova · trilho']].map(([k,n]) => `<button type="button" data-pnova="${k}" aria-pressed="${UI.pnova === k}">${n}</button>`).join('')}</span>`
+    + (UI.pnova !== 'antiga' ? `meta do dia:<span class="nl-seg">${[['com','com'],['sem','sem']].map(([k,n]) => `<button type="button" data-pnmeta="${k}" aria-pressed="${UI.pnmeta === (k === 'com')}">${n}</button>`).join('')}</span>` : '');
   if(UI.pnova !== 'antiga') return rBN(S);
   const a = S.a, pos = n => pct(n-1,250), w = semana();
   document.getElementById('b-tower').innerHTML = `
@@ -1847,20 +1860,26 @@ function rBN(S){
     return `<button class="pn-b${b.dead ? ' dead' : ''}" data-go="b2" title="abrir em ${ABA.b2.n}">${avB(b,38)}<span><span class="nm">${b.n}<small>${b.d}</small></span><span class="pt">${nf(b.pts)}/100 pts${b.fury ? ' · 🔥 fúria' : ''}</span></span>${hpBar(b)}
       ${av ? `<span class="nx"><span><b>${esc(av.n)}</b> · ${av.tot ? `prep ${av.ok}/${av.tot}` : 'sem tarefas'}</span><span>${av.st === 'wait' ? 'nota?' : av.st === 'hoje' ? 'hoje' : ddmm(av.dt)}</span></span>` : ''}
       ${needTxt(b) ? `<span class="nd">${needTxt(b)}</span>` : ''}</button>`; }).join('');
+  /* semana: os prazos dos próximos 7 dias e o que foi feito há pouco, numa linha do tempo agrupada por dia */
+  const SEMD = ['seg','ter','qua','qui','sex','sáb','dom'];
+  const diaTxt = d => d === addD(HOJE,-1) ? 'ontem' : d === HOJE ? 'hoje' : d === addD(HOJE,1) ? 'amanhã' : `${SEMD[dow(d)]} ${ddmm(d)}`;
+  const porDia = (l, chave, rot) => { const g = []; for(const x of l){ const k = rot(chave(x)); if(!g.length || g[g.length-1][0] !== k) g.push([k, []]); g[g.length-1][1].push(x); } return g; };
   const qs = D.abertas.filter(t => t.due && t.due <= addD(HOJE,7) && !SIM.has(t.n)).sort((p,q) => p.due.localeCompare(q.due));
-  const prazos = qs.length ? qs.slice(0,6).map(t => `<div class="row">${avTask(t)}<span>${esc(t.txt)} <span class="sub">${discOf(t) || ''}</span></span><span><span class="d">${ddmm(t.due)}</span> <span class="r">+${xpDe({...t,done:t.due})}</span></span></div>`).join('')
-    + (qs.length > 6 ? `<button class="go pn-mais" data-go="l">+ ${qs.length - 6} na Lista →</button>` : '') : '<p class="sub">nada com prazo nos próximos 7 dias</p>';
-  const lutas = S.xs.slice().sort((p,q) => q.t.done.localeCompare(p.t.done) || (q.t.n||0) - (p.t.n||0)).slice(0,6).map(o => `<div class="row">${avTask(o.t)}<span>${esc(o.t.txt)}</span><span><span class="d" style="color:var(--soft)">${ddmm(o.t.done)}</span> <span class="r">+${o.x}</span></span></div>`).join('');
-  document.getElementById('pn').innerHTML = `${faixaN(S)}
-    <div class="pn-g"><div class="card pn-torre">${torreN(S)}</div>
-      <div class="pn-main">
-        <div class="card"><h2><span class="c">~/</span>nen<span class="sub" style="margin-left:auto">tipo forte: ${esc(NEN[forte].n)}</span></h2><div class="pn-nen-g"><div>${hex(S.attr, 66, true, 140)}</div><div>${nen}</div></div></div>
-        <div class="card"><h2><span class="c">~/</span>chefões · genei ryodan<button class="go" data-go="b2" style="margin-left:auto">quadro →</button></h2><div class="pn-bs">${bs}</div></div>
-        <div class="pn-baixo">
-          <div class="card" id="pn-meta"><h2><span class="c">~/</span>meta do dia</h2>${metaDia(S)}</div>
-          <div class="card"><h2><span class="c">~/</span>prazos · 7 dias</h2>${prazos}</div>
-          <div class="card"><h2><span class="c">~/</span>últimas lutas</h2>${lutas}</div>
-        </div></div></div>`;
+  const fe = S.xs.slice().sort((p,q) => q.t.done.localeCompare(p.t.done) || (q.t.n||0) - (p.t.n||0)).slice(0,6);
+  const ti = (t, dir, cls) => `<div class="pn-ti">${avTask(t)}<span>${esc(t.txt)}${discOf(t) ? ` <small>${discOf(t)}</small>` : ''}</span><b class="${cls}">${dir}</b></div>`;
+  const vem = qs.slice(0,8), tl = `<div class="card pn-sem"><h2><span class="c">~/</span>semana</h2>
+    <h3 class="pn-tt">próximos 7 dias${qs.length ? ` <small>${qs.length}</small>` : ''}</h3>
+    ${vem.length ? porDia(vem, t => t.due, d => d < HOJE ? 'atrasadas' : diaTxt(d)).map(([k,l]) => `<div class="pn-td${k === 'atrasadas' ? ' late' : k === 'hoje' ? ' hj' : ''}"><span class="pn-dl">${k}</span>${l.map(t => ti(t, '+' + xpDe({...t,done:t.due}), '')).join('')}</div>`).join('') : '<p class="sub">nada com prazo nos próximos 7 dias</p>'}
+    ${qs.length > vem.length ? `<button class="go pn-mais" data-go="l">+ ${qs.length - vem.length} na Lista →</button>` : ''}
+    <h3 class="pn-tt">feito há pouco</h3>
+    ${porDia(fe, o => o.t.done, diaTxt).map(([k,l]) => `<div class="pn-td feito"><span class="pn-dl">${k}</span>${l.map(o => ti(o.t, '+' + o.x, 'ok')).join('')}</div>`).join('') || '<p class="sub">nada ainda</p>'}</div>`;
+  const meta = `<div class="card pn-meta" id="pn-meta"><h2><span class="c">~/</span>meta do dia<button class="go" data-go="cfg" style="margin-left:auto">editar →</button></h2><div class="pn-hab">${habitosL(S, true) || '<p class="sub" style="margin:0">Nenhum hábito. Adicione em Configurações.</p>'}</div></div>`;
+  const nenC = `<div class="card"><h2><span class="c">~/</span>nen<span class="sub" style="margin-left:auto">tipo forte: ${esc(NEN[forte].n)}</span></h2><div class="pn-nen-g"><div>${hex(S.attr, 66, true, 140)}</div><div>${nen}</div></div></div>`;
+  const chefC = `<div class="card"><h2><span class="c">~/</span>chefões · genei ryodan<button class="go" data-go="b2" style="margin-left:auto">quadro →</button></h2><div class="pn-bs">${bs}</div></div>`;
+  const torre = `<div class="card pn-torre">${torreN(S)}</div>`;
+  document.getElementById('pn').innerHTML = faixaN(S) + (UI.pnova === 'trilho'
+    ? `<div class="pn-g3">${torre}<div class="pn-main">${nenC}${chefC}</div><div class="pn-main">${meta}${tl}</div></div>`
+    : `<div class="pn-g"><div class="pn-main">${torre}${tl}</div><div class="pn-main">${meta}${nenC}${chefC}</div></div>`);
 }
 /* ---------- B2 ---------- */
 function rB2(S){
@@ -2681,7 +2700,7 @@ function duoMeta(S){
   const t = S.rot.find(isDuo); if(!t) return '';
   return `<div class="tk" style="padding:4px 0">${avTask(t)}<span class="t">Duolingo <span class="sub">automático</span></span><span class="v" style="color:var(--soft)">${t.ok ? '✓' : '+' + habXPHoje(S, t)}</span></div>`;
 }
-function habitosL(S){
+function habitosL(S, soChips){   // soChips: só os chips (a Progresso nova usa os mesmos)
   const J = CTX.JOG, cf = J.cf && J.cf.handle ? J.cf : null, meta = (cf && cf.meta) || 3;
   const habs = S.rot.filter(t => !isCF(t) && !isDuo(t)), cfT = S.rot.find(isCF), duoT = S.rot.find(isDuo);
   /* hábitos semanais: quantas vezes cada um foi feito na semana (seg a dom) que começa em seg, pelo dia do hábito */
@@ -2720,6 +2739,7 @@ function habitosL(S){
   if(faltam.length && D.feitas.some(t => t.done && t.done < HOJE)) c += UI.ontem
     ? `<div class="nl-ont"><span class="sub">Marcar como feito <b>ontem</b>:</span>${faltam.map(x => `<button class="btn" data-ontem="${esc(x.id)}">${esc(x.n)}</button>`).join('')}<button class="go" data-ontemabre="0">fechar</button></div>`
     : `<button class="go nl-ontb" data-ontemabre="1">esqueci de marcar ontem</button>`;
+  if(soChips) return c;
   document.getElementById('nl-hab').innerHTML = c || `<p class="sub" style="margin:0">Nenhum hábito. Adicione em Configurações.</p>`;
   document.getElementById('l-hab').innerHTML = h || `<p class="sub" style="margin:0">Nenhum hábito. Adicione na aba Configurações (digitação, leitura, exercício…) ou ligue o Codeforces e o Duolingo.</p>`;
   /* heatmaps: a temporada inteira, uma coluna por semana (seg → dom); os dias fora dela na 1ª e na última semana ficam ocultos (#14) */
@@ -2855,6 +2875,7 @@ document.addEventListener('click', async e => {
   const du = q('[data-ldue]'); if(du){ LA.due = du.dataset.ldue; document.getElementById('l-date').value = ''; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === du)); prevL(); return; }
   if(q('[data-lnova]')){ UI.lnova = !UI.lnova; try { localStorage.setItem('gb-lista', UI.lnova ? 'nova' : 'antiga'); } catch(e){} document.documentElement.classList.toggle('lnova', UI.lnova); render(); window.scrollTo(0, 0); return; }
   const pn = q('[data-pnova]'); if(pn){ UI.pnova = pn.dataset.pnova; try { localStorage.setItem('gb-prog', UI.pnova); } catch(e){} marcaPN(); render(); return; }
+  const pm = q('[data-pnmeta]'); if(pm){ UI.pnmeta = pm.dataset.pnmeta === 'com'; try { localStorage.setItem('gb-progmeta', UI.pnmeta ? 'com' : 'sem'); } catch(e){} marcaPN(); render(); return; }
   const lm = q('[data-lmodo]'); if(lm){ UI.lmodo = lm.dataset.lmodo; try { localStorage.setItem('gb-lmodo', UI.lmodo); } catch(e){} render(); return; }
   if(q('[data-nlconst]')){ document.getElementById('l-heatc').scrollIntoView({behavior:'smooth', block:'start'}); return; }
   const oa = q('[data-ontemabre]'); if(oa){ UI.ontem = oa.dataset.ontemabre === '1'; render(); return; }
