@@ -69,6 +69,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 import servidor as jogo  # noqa: E402  (versão, início automático e o log, os mesmos do jogo)
 import torre  # noqa: E402  (as contas da Torre Trick e dos placares)
+import cf_dia  # noqa: E402  (a tabela do dia do Codeforces, #171)
 
 APP = "ganbatte-grupo"
 PORTA = 8643
@@ -106,6 +107,10 @@ CREATE TABLE IF NOT EXISTS ligado (id INTEGER PRIMARY KEY, ini REAL NOT NULL, fi
 CREATE TABLE IF NOT EXISTS habitos (grupo TEXT NOT NULL, id TEXT NOT NULL, nome TEXT NOT NULL, fonte TEXT NOT NULL, desde TEXT NOT NULL,
   criado REAL NOT NULL, removido REAL, PRIMARY KEY (grupo, id));
 CREATE TABLE IF NOT EXISTS servidor (chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS cf_dia (grupo TEXT NOT NULL, dia TEXT NOT NULL, dados TEXT NOT NULL, criado REAL NOT NULL, PRIMARY KEY (grupo, dia));
+CREATE TABLE IF NOT EXISTS cf_feitos (grupo TEXT NOT NULL, dia TEXT NOT NULL, membro INTEGER NOT NULL, prob TEXT NOT NULL, t REAL NOT NULL,
+  PRIMARY KEY (grupo, dia, membro, prob));
+CREATE TABLE IF NOT EXISTS cf_handles (handle TEXT PRIMARY KEY, resolvidos TEXT NOT NULL, rating INTEGER, lido REAL NOT NULL);
 CREATE TABLE IF NOT EXISTS frases (grupo TEXT NOT NULL, semana TEXT NOT NULL, membro INTEGER NOT NULL, texto TEXT NOT NULL, criado REAL NOT NULL,
   apagada REAL, PRIMARY KEY (grupo, semana));
 """
@@ -139,6 +144,8 @@ def abre_banco():
     for col in ("calib", "placares"):   # 0.9.0-beta1: grupos sem a calibração e a configuração dos placares (#42, #67)
         if col not in cols:
             CON.execute(f"ALTER TABLE grupos ADD COLUMN {col} TEXT NOT NULL DEFAULT '{{}}'")
+    if "cf" not in {r["name"] for r in CON.execute("PRAGMA table_info(membros)").fetchall()}:   # 0.9.2: o handle do Codeforces (#171)
+        CON.execute("ALTER TABLE membros ADD COLUMN cf TEXT")
     # grupos de antes do catálogo (0.9.0-beta1): começam com o Codeforces, como um grupo novo
     for g in CON.execute("SELECT id FROM grupos WHERE id NOT IN (SELECT DISTINCT grupo FROM habitos)").fetchall():
         poe_cf(CON, g["id"])
@@ -391,6 +398,17 @@ def restaura(corpo):
     return {"ok": True, "grupos": gs}
 
 
+def rotina_cf():
+    """A cada 10 minutos: sorteia a tabela do dia que falta e confere quem resolveu (#171). Fora da rotina principal porque
+    a API do Codeforces é lenta e pede 2 s entre as chamadas."""
+    while True:
+        try:
+            cf_rodada()
+        except Exception as e:   # API fora do ar ou banco ocupado: tenta de novo na próxima volta
+            log("tabela do dia:", repr(e))
+        time.sleep(CF_VOLTA)
+
+
 def rotina():
     """A cada minuto: marca que está ligado; a cada 5, fecha os períodos e faz a cópia do dia."""
     n = 0
@@ -405,6 +423,128 @@ def rotina():
             log("rotina:", repr(e))
         n += 1
         time.sleep(60)
+
+
+# ---------- tabela do dia do Codeforces (#171) ----------
+CF_VOLTA = 600       # segundos entre as conferências
+CF_PAUSA = 2         # a API pede 2 s entre as chamadas
+CF_RECENTES = 50     # envios lidos de cada um a cada volta
+CF_CACHE = {"dia": None, "problemas": []}
+HANDLE = re.compile(r"^[A-Za-z0-9_.-]{1,40}$")
+
+
+def handle_ok(h):
+    h = str(h or "").strip()
+    if h and not HANDLE.match(h):
+        raise Erro("handle do Codeforces inválido")
+    return h or None
+
+
+def cf_api(metodo, **params):
+    time.sleep(CF_PAUSA)
+    return jogo.cf_api(metodo, **params)
+
+
+def dia_cf(fuso, t=None):
+    """O dia da tabela: ela vira às 6h do fuso do grupo."""
+    return (datetime.fromtimestamp(t or agora(), timezone.utc) + timedelta(minutes=fuso - 360)).date()
+
+
+def cal_de(g):
+    return {**torre.CALIB, **json.loads(g["calib"] or "{}")}
+
+
+def cf_problemset(hoje):
+    """O problemset inteiro, uma vez por dia (é grande: fica só na memória)."""
+    if CF_CACHE["dia"] != hoje:
+        CF_CACHE.update(dia=hoje, problemas=cf_api("problemset.problems")["problems"])
+    return CF_CACHE["problemas"]
+
+
+def cf_ok(envios):
+    return {cf_dia.chave(x["problem"]) for x in envios if x.get("verdict") == "OK" and x.get("problem", {}).get("contestId")}
+
+
+def cf_handle(handle):
+    """O que o handle já resolveu, para o sorteio não repetir. Na 1ª vez lê o histórico inteiro; depois, só os recentes."""
+    r = q1("SELECT * FROM cf_handles WHERE handle = ?", (handle,))
+    if r:
+        feitos = set(json.loads(r["resolvidos"])) | cf_ok(cf_api("user.status", handle=handle, **{"from": 1, "count": CF_RECENTES}))
+    else:
+        time.sleep(CF_PAUSA)
+        feitos = cf_ok(jogo.cf_envios(handle, date(2010, 1, 1))[0])
+    with db_lock:
+        CON.execute("INSERT OR REPLACE INTO cf_handles (handle, resolvidos, rating, lido) VALUES (?, ?, ?, ?)",
+                    (handle, json.dumps(sorted(feitos)), r["rating"] if r else None, agora()))
+    return feitos
+
+
+def cf_ratings(handles):
+    """O rating atual de cada handle (user.info), para o piso."""
+    if not handles:
+        return {}
+    out = {u["handle"].lower(): u.get("rating") for u in cf_api("user.info", handles=";".join(handles))}
+    with db_lock:
+        for h in handles:
+            CON.execute("UPDATE cf_handles SET rating = ? WHERE handle = ?", (out.get(h.lower()), h))
+    return {h: out.get(h.lower()) for h in handles}
+
+
+def cf_rodada(t=None):
+    """Uma volta: em cada grupo com a tabela ligada e alguém com o handle, sorteia a do dia se ainda não saiu e confere os
+    envios recentes de cada um contra ela."""
+    for g in q("SELECT * FROM grupos"):
+        cal = cal_de(g)
+        ms = q("SELECT id, cf FROM membros WHERE grupo = ? AND saiu IS NULL AND cf IS NOT NULL", (g["id"],))
+        if not cal["cf_tabela"] or not ms:
+            continue
+        dia = dia_cf(g["fuso"], t).isoformat()
+        tab = q1("SELECT * FROM cf_dia WHERE grupo = ? AND dia = ?", (g["id"], dia))
+        if not tab:
+            resolvidos = set()
+            for m in ms:
+                resolvidos |= cf_handle(m["cf"])
+            ratings = cf_ratings([m["cf"] for m in ms])
+            dados = {"problemas": cf_dia.sorteia(cf_problemset(dia), resolvidos, f"{g['id']}:{dia}"),
+                     "ratings": {str(m["id"]): ratings.get(m["cf"]) for m in ms}}
+            with transacao() as c:
+                c.execute("INSERT OR IGNORE INTO cf_dia (grupo, dia, dados, criado) VALUES (?, ?, ?, ?)", (g["id"], dia, json.dumps(dados), agora()))
+            log("tabela do dia:", g["id"], dia, " ".join(p["id"] for p in dados["problemas"]))
+            continue   # os envios de agora são de antes do sorteio
+        ids = {p["id"] for p in json.loads(tab["dados"])["problemas"]}
+        ini = instante(date.fromisoformat(dia), g["fuso"])
+        for m in ms:
+            env = cf_api("user.status", handle=m["cf"], **{"from": 1, "count": CF_RECENTES})
+            novos = [(cf_dia.chave(x["problem"]), x["creationTimeSeconds"]) for x in env if x.get("verdict") == "OK"
+                     and x.get("problem", {}).get("contestId") and cf_dia.chave(x["problem"]) in ids and ini <= x.get("creationTimeSeconds", 0) < ini + 86400]
+            if novos:
+                with transacao() as c:
+                    c.executemany("INSERT OR IGNORE INTO cf_feitos (grupo, dia, membro, prob, t) VALUES (?, ?, ?, ?, ?)",
+                                  [(g["id"], dia, m["id"], pid, ts) for pid, ts in novos])
+
+
+def cf_placar(g, eu):
+    """A tabela de hoje como o placar mostra: os problemas, quem resolveu (com os pontos e o motivo) e os pontos do dia e da
+    semana de cada um. Sem a tabela de hoje (ninguém com o handle, ou a API fora), vai sem problemas."""
+    dia, cal = dia_cf(g["fuso"]), cal_de(g)
+    me = q1("SELECT cf FROM membros WHERE id = ?", (eu,))
+    base = {"dia": dia.isoformat(), "ligado": bool(me and me["cf"]), "tabela": bool(cal["cf_tabela"]), "faixas": cf_dia.FAIXAS,
+            "valores": [cf_dia.valor(i, cal) for i in range(len(cf_dia.FAIXAS))], "regras": {k[3:]: int(cal[k]) for k in ("cf_teto", "cf_piso", "cf_bonus")},
+            "problemas": [], "feitos": [], "pontos": {}, "faixa": {}, "semana": {}}
+    if not q1("SELECT 1 FROM cf_dia WHERE grupo = ? AND dia = ?", (g["id"], dia.isoformat())):
+        return base
+    seg = dia - timedelta(days=dia.weekday())
+    semana = {}
+    for r in q("SELECT * FROM cf_dia WHERE grupo = ? AND dia >= ? AND dia <= ?", (g["id"], seg.isoformat(), dia.isoformat())):
+        d = json.loads(r["dados"])
+        feitos = [(x["membro"], x["prob"], x["t"]) for x in q("SELECT * FROM cf_feitos WHERE grupo = ? AND dia = ?", (g["id"], r["dia"]))]
+        linhas, pontos = cf_dia.pontua(d["problemas"], feitos, {int(k): v for k, v in d["ratings"].items()}, cal)
+        for m, v in pontos.items():
+            semana[m] = semana.get(m, 0) + v
+        if r["dia"] == dia.isoformat():
+            base.update(problemas=d["problemas"], feitos=linhas, pontos=pontos, faixa={int(k): cf_dia.faixa_de(v) for k, v in d["ratings"].items()})
+    base["semana"] = semana
+    return base
 
 
 # ---------- grupos, convites e membros ----------
@@ -538,6 +678,8 @@ def envio(gid, token, d):
         c.execute("UPDATE membros SET envio = ? WHERE id = ?", (t, m["id"]))
         if "avatar" in d:   # a foto mudou no jogo depois de entrar (#109)
             c.execute("UPDATE membros SET avatar = ? WHERE id = ?", (avatar_ok(d["avatar"]), m["id"]))
+        if "cf" in d:   # o handle do Codeforces, para a tabela do dia (#171); vazio = desligou
+            c.execute("UPDATE membros SET cf = ? WHERE id = ?", (handle_ok(d["cf"]), m["id"]))
     return {"ok": True, "gravados": len(linhas), "ignorados": len(dias) - len(linhas)}
 
 
@@ -627,6 +769,7 @@ def placar(gid, token):
     t = torre.calcula(G)
     t.pop("config")
     t["frase"] = frase_da_semana(g, G, eu["id"])
+    t["cf_dia"] = cf_placar(g, eu["id"])
     return {"ok": True, "grupo": {"id": gid, "nome": g["nome"], "fuso": fuso_txt(g["fuso"]), "ini": g["ini"] or "", "fim": g["fim"] or ""},
             "hoje": hoje.isoformat(), "janela": ini.isoformat(), "fechado_ate": fechado[4:] if fechado else "",
             "voce": {"membro": eu["id"], "admin": bool(eu["admin"])}, "habitos": cat, "membros": membros, "torre": t, "protocolo": PROTOCOLO}
@@ -732,7 +875,7 @@ def admin_calibracao(gid, token, d):
         lo, hi = torre.CALIB_LIMITES[k]
         if not isinstance(x, (int, float)) or isinstance(x, bool) or not lo <= x <= hi:
             raise Erro(f"{k} precisa ficar entre {torre.num(lo, 2)} e {torre.num(hi, 2)}")
-        atual[k] = int(x) if k == "frase_max" else float(x)
+        atual[k] = int(x) if k == "frase_max" or k.startswith("cf_") and k != "cf_min" else float(x)
     with transacao() as c:
         c.execute("UPDATE grupos SET calib = ? WHERE id = ?", (json.dumps(atual, sort_keys=True), gid))
     log("admin", eu["id"], "mudou a calibração do grupo", gid)
@@ -1018,6 +1161,7 @@ def main():
     srv.recarregar = False
     marca_ligado()
     threading.Thread(target=rotina, daemon=True).start()
+    threading.Thread(target=rotina_cf, daemon=True).start()
     threading.Thread(target=vigia_codigo, args=(srv,), daemon=True).start()
     print(f"Ganbatte · servidor do grupo em http://127.0.0.1:{a.porta}/ (só nesta máquina; o host o expõe pelo Tailscale Funnel)")
     print(f"Dados: {DADOS}")

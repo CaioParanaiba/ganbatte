@@ -13,9 +13,13 @@ calibração) e chama calcula(); os testes chamam direto. Regras no docs/COLETIV
 """
 from datetime import date, timedelta
 
-CALIB = {"sup_xp": 5.0, "sup_cf": 1.0, "sup_hab": 3.0, "hab": 0.2, "sup_max": 0.5, "cf_min": 3.0, "frase_max": 80}
+CALIB = {"sup_xp": 5.0, "sup_cf": 1.0, "sup_hab": 3.0, "hab": 0.2, "sup_max": 0.5, "cf_min": 3.0, "frase_max": 80,
+         # a tabela do dia do Codeforces (#171, grupo/cf_dia.py): ligada, valor da faixa A e quanto sobe por faixa, bônus do 1º,
+         # problemas que pontuam por pessoa por dia e quantas faixas abaixo da sua ainda pontuam
+         "cf_tabela": 1, "cf_valor": 10, "cf_passo": 5, "cf_bonus": 5, "cf_teto": 2, "cf_piso": 1}
 CALIB_LIMITES = {"sup_xp": (0, 50), "sup_cf": (0, 20), "sup_hab": (0, 30), "hab": (0, 2), "sup_max": (0.1, 2), "cf_min": (0, 50),
-                 "frase_max": (20, 200)}
+                 "frase_max": (20, 200), "cf_tabela": (0, 1), "cf_valor": (0, 100), "cf_passo": (0, 50), "cf_bonus": (0, 50),
+                 "cf_teto": (1, 7), "cf_piso": (0, 6)}
 SEMANAS_EVOLUCAO = 6
 # redesenho de 21/10 (#170, #172): números a calibrar, que vão para o administrar quando as fases entrarem de verdade
 MODALIDADES = ["ritmo", "prazos", "habitos", "superacao"]

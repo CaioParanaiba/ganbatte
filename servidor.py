@@ -2883,6 +2883,10 @@ def sincroniza_grupo(g, dias, avatar=None):
     novos = [x for x in dias_g if feito.get(x.get("dia")) != assinatura(x)]
     eu = next((m for m in p.get("membros") or [] if m.get("id") == (p.get("voce") or {}).get("membro")), None)
     foto = {} if avatar is None or (eu and eu.get("avatar", "") == avatar) else {"avatar": avatar}
+    # o handle do Codeforces, para a tabela do dia (#171): vai enquanto o placar não mostrar que o servidor já tem
+    cf, tab = cf_conf(jogador()), (p.get("torre") or {}).get("cf_dia") or {}
+    if cf and not tab.get("ligado"):
+        foto["cf"] = cf["handle"]
     for i in range(0, max(len(novos), 1 if foto else 0), 400):
         parte = novos[i:i + 400]
         grupo_pede(g["url"], "POST", f"/g/{g['id']}/envio", {"protocolo": PROTOCOLO_GRUPO, "dias": parte, **foto}, g["token"], tempo=30)
