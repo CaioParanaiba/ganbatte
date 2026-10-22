@@ -62,7 +62,8 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
                                           (#109), e traz o placar
   POST /api/grupo/vinculo {chave, habito, pessoal} liga um hábito pessoal a um hábito do catálogo do grupo ("" desliga)
   POST /api/grupo/frase {chave, texto}    a frase do líder da semana (#76), repassada ao servidor do grupo
-  POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config | habito | calibracao | placar | frase
+  POST /api/grupo/modalidade {chave, mod} a escolha da modalidade da semana seguinte, repassada ao servidor do grupo
+  POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config | habito | calibracao | placar | frase | relatorio
   POST /api/grupo/host {acao, ...}        estado | servidor | funnel | criar {nome, endereco} | restaurar {banco, endereco} |
                                           mudar {endereco}: este computador como servidor do grupo
   GET  /api/grupo/copia                   cópia do banco do servidor do grupo desta máquina (só o dono)
@@ -2610,7 +2611,7 @@ def retoma_aulas():
 #   grupo/        o último placar de cada grupo, para a aba continuar mostrando quando o servidor está fora do ar
 GRUPO_PORTA = 8643
 GRUPO_APP = "ganbatte-grupo"
-PROTOCOLO_GRUPO = 1
+PROTOCOLO_GRUPO = 2   # 2: os prazos de cada dia (pz)
 LINK_GRUPO = re.compile(r"^(https?://[^/\s#?]+)/g/([a-z0-9][a-z0-9-]{1,30})/?#([A-Za-z0-9]{6,12})$")
 LINK_NOVO = re.compile(r"^(https?://[^/\s#?]+)/g/([a-z0-9][a-z0-9-]{1,30})/?$")   # o grupo mudou de computador (#91): o link sem código
 ENDERECO_GRUPO = re.compile(r"^https?://[^/\s#?]+$")
@@ -2883,6 +2884,10 @@ def sincroniza_grupo(g, dias, avatar=None):
     novos = [x for x in dias_g if feito.get(x.get("dia")) != assinatura(x)]
     eu = next((m for m in p.get("membros") or [] if m.get("id") == (p.get("voce") or {}).get("membro")), None)
     foto = {} if avatar is None or (eu and eu.get("avatar", "") == avatar) else {"avatar": avatar}
+    # o handle do Codeforces, para a tabela do dia (#171): vai enquanto o placar não mostrar que o servidor já tem
+    cf, tab = cf_conf(jogador()), (p.get("torre") or {}).get("cf_dia") or {}
+    if cf and not tab.get("ligado"):
+        foto["cf"] = cf["handle"]
     for i in range(0, max(len(novos), 1 if foto else 0), 400):
         parte = novos[i:i + 400]
         grupo_pede(g["url"], "POST", f"/g/{g['id']}/envio", {"protocolo": PROTOCOLO_GRUPO, "dias": parte, **foto}, g["token"], tempo=30)
@@ -2932,11 +2937,12 @@ def api_grupo_vinculo(d):
 
 
 ADMIN_ACOES = {"convite": "admin/convite", "cancelar": "admin/cancelar", "membro": "admin/membro", "config": "admin/config",
-               "habito": "admin/habito", "calibracao": "admin/calibracao", "placar": "admin/placar", "frase": "admin/frase"}
+               "habito": "admin/habito", "calibracao": "admin/calibracao", "placar": "admin/placar", "frase": "admin/frase",
+               "relatorio": "admin/relatorio"}
 
 
 def api_grupo_admin(d):
-    """{chave, acao: ver | convite | cancelar | membro | config | habito | calibracao | placar | frase, ...}: a aba Administrar,
+    """{chave, acao: ver | convite | cancelar | membro | config | habito | calibracao | placar | frase | relatorio, ...}: a aba Administrar,
     repassada ao servidor do grupo."""
     g = grupo_da(d.get("chave"))
     acao = d.get("acao")
@@ -2949,6 +2955,12 @@ def api_grupo_admin(d):
     if acao == "convite":
         r["link"] = (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}#{r['codigo']}"
     return r
+
+
+def api_grupo_modalidade(d):
+    """{chave, mod}: o 1º da semana escolhe a modalidade da seguinte (#170)."""
+    g = grupo_da(d.get("chave"))
+    return pede_g(g, "POST", f"/g/{g['id']}/modalidade", {"mod": str(d.get("mod") or "")})
 
 
 def api_grupo_frase(d):
@@ -3291,7 +3303,7 @@ ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada, "/api/colecao": api_colecao,
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
          "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
-         "/api/grupo/frase": api_grupo_frase, "/api/aulas/nova": api_aulas_nova, "/api/aulas/processar": api_aulas_processar,
+         "/api/grupo/frase": api_grupo_frase, "/api/grupo/modalidade": api_grupo_modalidade, "/api/aulas/nova": api_aulas_nova, "/api/aulas/processar": api_aulas_processar,
          "/api/aulas/cancela": api_aulas_cancela, "/api/aulas/decidir": api_aulas_decidir, "/api/aulas/apagar": api_aulas_apagar}
 LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/aulas/processar": 1_700_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000, "/api/grupo/host": 140_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),

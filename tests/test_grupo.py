@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "grupo"))
 import servidor as s  # noqa: E402
 import servidor_grupo as sg  # noqa: E402
 import torre  # noqa: E402
+import cf_dia  # noqa: E402
 
 
 class Base(unittest.TestCase):
@@ -552,6 +553,140 @@ class Jogo(Base):
             s.api_grupo_sair({"chave": self.chave})
         self.assertEqual(s.grupos(), [])
         self.assertNotIn(self.chave, s.ler_json("enviado.json", {}))
+
+
+class TabelaDoDia(Base):
+    """A tabela do dia do Codeforces (#171): grupo/cf_dia.py e a volta do servidor do grupo, com a API trocada por dados fixos."""
+    CAL = {**torre.CALIB}
+
+    def prob(self, c, i, r):
+        return {"contestId": c, "index": i, "rating": r, "name": f"P{c}{i}", "tags": []}
+
+    def test_sorteia_um_por_faixa_dentro_do_intervalo_e_fora_dos_resolvidos(self):
+        ps = [self.prob(1000 + r, "A", r) for r in range(800, 3100, 100)] + [self.prob(100500, "A", 900)]
+        tab = cf_dia.sorteia(ps, {"1900A"}, "g:2026-10-22")
+        self.assertEqual([p["letra"] for p in tab], list("ABCDEFG"))
+        for p in tab:
+            lo, hi = cf_dia.FAIXAS[p["faixa"]]
+            self.assertTrue(lo <= p["rating"] <= hi)
+        self.assertNotIn("1900A", [p["id"] for p in tab])
+        self.assertEqual(tab, cf_dia.sorteia(ps, {"1900A"}, "g:2026-10-22"))   # a mesma semente, o mesmo sorteio
+
+    def test_piso_teto_e_bonus(self):
+        tab = [{"id": x, "faixa": f} for x, f in (("a", 0), ("b", 1), ("c", 3), ("d", 4))]
+        feitos = [(1, "a", 10), (2, "a", 11), (1, "b", 12), (1, "c", 13), (2, "c", 14), (2, "d", 15)]
+        linhas, pts = cf_dia.pontua(tab, feitos, {1: None, 2: 1750}, self.CAL)
+        m = {(x["membro"], x["id"]): (x["pts"], x["motivo"]) for x in linhas}
+        self.assertEqual(m[(1, "a")], (2 + 2, "primeiro"))
+        self.assertEqual(m[(2, "a")], (0, "piso"))          # faixa D (1750): A fica 3 faixas abaixo, o piso deixa só 1
+        self.assertEqual(m[(1, "c")], (0, "teto"))          # o 3º do dia passa do teto de 2
+        self.assertEqual(m[(2, "c")], (5 + 1, "primeiro"))   # o bônus passa, pela metade, ao primeiro que pontua
+        self.assertEqual(pts, {1: 4 + 5, 2: 6 + 6 + 2})
+
+    def test_rodada_sorteia_e_confere(self):
+        gid, cod = self.grupo()
+        ana = self.entra(gid, cod)
+        sg.envio(gid, ana["token"], {"protocolo": sg.PROTOCOLO, "dias": [], "cf": "ana_cf"})
+        ps = [self.prob(1000 + r, "A", r) for r in range(800, 3100, 100)]
+        envios = []
+
+        def api(metodo, **kw):
+            if metodo == "problemset.problems":
+                return {"problems": ps}
+            if metodo == "user.info":
+                return [{"handle": "ana_cf", "rating": 1450}]
+            return envios
+        with mock.patch.object(sg, "cf_api", side_effect=api), mock.patch.object(sg.jogo, "cf_envios", return_value=([], True)), \
+                mock.patch.object(sg, "CF_PAUSA", 0):
+            sg.cf_rodada()
+            tab = json.loads(sg.q1("SELECT dados FROM cf_dia WHERE grupo = ?", (gid,))["dados"])
+            self.assertEqual(len(tab["problemas"]), 7)
+            alvo = tab["problemas"][3]
+            envios.append({"verdict": "OK", "problem": {"contestId": alvo["contest"], "index": alvo["index"]}, "creationTimeSeconds": int(time.time())})
+            sg.cf_rodada()
+        p = sg.placar(gid, ana["token"])["torre"]["cf_dia"]
+        self.assertTrue(p["ligado"])
+        self.assertEqual([(x["id"], x["motivo"]) for x in p["feitos"]], [(alvo["id"], "primeiro")])
+        self.assertEqual(p["pontos"][ana["membro"]], 2 + 3 + 2)
+        # o dia fecha e a tabela vira Trick Coin, uma vez só
+        sg.paga({"id": gid}, f"dia:{p['dia']}")
+        sg.paga({"id": gid}, f"dia:{p['dia']}")
+        self.assertEqual(sg.carteira(gid, ana["membro"])["saldo"], 7)
+
+
+class TrickCoin(Base):
+    """A Trick Coin (#43): a marca da semana, o chefão derrotado e a modalidade como 5º bloco."""
+
+    def test_chefao_paga_so_derrotado_e_ate_mais_50(self):
+        ch = {"vida": 30, "dano": 30, "minimo": 0.5, "teto": 1.5,
+              "membros": [{"membro": 1, "meta": 10, "conta": 15}, {"membro": 2, "meta": 10, "conta": 10}, {"membro": 3, "meta": 10, "conta": 4}]}
+        self.assertEqual(torre.Grupo.chefao_paga(ch, 80), {1: 120, 2: 80})
+        self.assertEqual(torre.Grupo.chefao_paga({**ch, "dano": 20}, 80), {})
+
+    def test_marca_da_semana_paga_quem_bateu(self):
+        gid, cod = self.grupo()
+        ana = self.entra(gid, cod)
+        seg = date.today() - timedelta(days=date.today().weekday() + 21)
+        # 2 semanas de base com XP em 3 dias e a 3ª com XP todos os dias: na modalidade Constância, só a 3ª bate a marca
+        dias = [{"dia": (seg + timedelta(days=k)).isoformat(), "xp": 100} for k in range(21) if k >= 14 or k % 7 < 3]
+        sg.envio(gid, ana["token"], {"protocolo": sg.PROTOCOLO, "dias": dias})
+        G = sg.retrato(sg.grupo_ou_404(gid))
+        with mock.patch.object(torre.Grupo, "modalidades", lambda self: ["constancia"]):
+            S = G.semanal()
+            sem = S["semanas"][2]
+            self.assertEqual(sem["geral"][0]["mod"], 100)
+            self.assertTrue(sem["geral"][0]["bateu"])
+            sg.paga({"id": gid}, "semana:" + sem["semana"])
+        c = sg.carteira(gid, ana["membro"])
+        self.assertEqual(c["saldo"], torre.CALIB["tc_marca"])
+        self.assertEqual(c["extrato"][0]["motivo"], "marca da semana")
+
+    def test_modalidades_tem_os_habitos_do_grupo(self):
+        G = torre.Grupo([{"id": 1, "nome": "a"}], {}, [{"id": "cf", "nome": "Codeforces"}, {"id": "duo", "nome": "Duolingo"}], {}, date.today())
+        self.assertEqual(G.modalidades(), ["ritmo", "habitos", "superacao", "constancia", "cf", "missao", "hab:duo"])
+        self.assertEqual(len(G.semanal()["opcoes"]), 3)
+
+
+class Fase1(Base):
+    """Prazos no protocolo 2, a escolha da modalidade pelo 1º da semana e o relatório para calibrar (#170)."""
+
+    def setUp(self):
+        super().setUp()
+        self.gid, cod = self.grupo()
+        self.ana = self.entra(self.gid, cod)
+        self.seg = date.today() - timedelta(days=date.today().weekday())
+
+    def test_prazos_viram_o_bloco(self):
+        d = self.seg.isoformat()
+        sg.envio(self.gid, self.ana["token"], {"protocolo": 2, "dias": [{"dia": d, "xp": 50, "pz": [4, 3]}]})
+        s = sg.retrato(sg.grupo_ou_404(self.gid)).semanal()["semanas"][-1]
+        self.assertEqual(s["geral"][0]["blocos"]["prazos"], 75)
+        with self.assertRaises(sg.Erro):
+            sg.envio(self.gid, self.ana["token"], {"protocolo": 2, "dias": [{"dia": d, "xp": 50, "pz": [1, 2]}]})
+
+    def test_escolha_da_modalidade(self):
+        dias = [{"dia": (self.seg - timedelta(days=7) + timedelta(days=k)).isoformat(), "xp": 50} for k in range(7 + date.today().weekday() + 1)]
+        sg.envio(self.gid, self.ana["token"], {"protocolo": 2, "dias": dias})
+        G = sg.retrato(sg.grupo_ou_404(self.gid))
+        s = G.semanal()["semanas"][-1]
+        self.assertEqual(s["escolhe"], self.ana["membro"])
+        with self.assertRaises(sg.Erro):
+            sg.escolhe_modalidade(self.gid, self.ana["token"], {"mod": "nao-existe"})
+        sg.escolhe_modalidade(self.gid, self.ana["token"], {"mod": s["opcoes"][1]})
+        G = sg.retrato(sg.grupo_ou_404(self.gid))
+        self.assertEqual(G.semanal()["escolha"], s["opcoes"][1])
+        # na semana seguinte, a modalidade é a escolhida (e quem escolheu fica registrado)
+        G2 = torre.Grupo(G.membros, {m: {k.isoformat(): v for k, v in G.dias[m].items()} for m in G.ids}, G.catalogo, {}, self.seg + timedelta(days=7),
+                         escolhas=G.escolhas, desde=G.desde)
+        prox = G2.semanal()["semanas"][-1]
+        self.assertEqual((prox["modalidade"], prox["escolhida_por"]), (s["opcoes"][1], self.ana["membro"]))
+
+    def test_relatorio_so_para_admin(self):
+        sg.envio(self.gid, self.ana["token"], {"protocolo": 2, "dias": [{"dia": self.seg.isoformat(), "xp": 50}]})
+        r = sg.admin_relatorio(self.gid, self.ana["token"])
+        self.assertIn("semanas", r)
+        self.assertNotIn("xp", json.dumps(r["dias"]))   # o XP bruto não sai, só os andares
+        self.assertEqual(len(r["tabela_do_dia"]["faixas"]), 7)
 
 
 if __name__ == "__main__":

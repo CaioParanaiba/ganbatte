@@ -168,27 +168,74 @@ Decidido na ordem do Caio: o CF vem na fase 2, antes do chefão e do pacto.
   desde 1999**, **Ren no pódio** e **Entrada no pódio** (os dois últimos viram efeito de quem ganhou a semana, ou saem).
 - **Os desafios de item** passam a sair do que todos podem cumprir: marca da semana, chefão, tabela do dia e pacto.
 
-## A aba (protótipo na beta, atrás do botão antiga | nova)
+## A aba (22/10: a única da Torre Trick na beta)
 
-Sub-abas: **semana** · **desafios** · **temporada** · **hunters** · **loja** (· administrar). No máximo 3 coisas por tela.
+Sub-abas: **semana** · **desafios** · **temporada** · **hunters** · **loja** (· administrar). A aba antiga e o botão
+antiga | nova saíram. **Pouco texto na tela:** toda explicação fica no "?" do próprio card (pedido do Caio em 22/10).
 
-- **semana** (a inicial): a licença (vira com um clique) e um resumo (posição na semana, rodadas, marcas batidas); o
-  card da semana (modalidade, marca pessoal com barra, quem escolhe a próxima); o placar da semana com a troca
-  **Geral | Superação**, os 4 blocos de cada um (o da modalidade em dobro) e a frase do líder no rodapé.
-- **desafios**: tabela do dia do CF e convites (duelo, pacto), à esquerda; chefão do mês (barra de vida e a contribuição
-  de cada um contra a própria meta, com o mínimo e o teto) e as suas marcas semana a semana, à direita.
-- **temporada**: rodadas ganhas, medalhas, pódios de superação, marcas batidas e estrelas; a grade semana a semana com a
-  posição de cada um e a modalidade de cada semana.
-- **hunters**: a licença de cada um, frente e verso, os blocos da semana e os números por hábito (sem posição).
+- **semana**: a licença em pé (vira com um clique), posição, rodadas e saldo de Trick Coin; o card da semana
+  (modalidade, marca da semana, a escolha da próxima); o placar **Geral | Superação** com os 4 blocos de cada um e, embaixo,
+  as outras modalidades em números pequenos; a frase do líder.
+- **desafios**: a tabela do dia do CF (real), os convites (prévia), o chefão do mês e as marcas semana a semana.
+- **temporada**: rodadas, medalhas, superação, marcas e estrelas; a grade semana a semana.
+- **hunters**: a licença frente e verso e, ao lado, os 4 blocos, as outras modalidades, a marca e os números por hábito.
+- **loja**: a carteira (saldo e extrato) e a vitrine, **travada com aviso grande até o grupo derrotar o 1º chefão**. As
+  compras ficam para depois da v1.0.
 
-O servidor do grupo já calcula de verdade (em `torre.py`, `semanal()` e `chefao()`): o Geral semanal com Ritmo, Hábitos
-e Superação, o pódio de superação, a marca pessoal (10% sobre a média das últimas 4 semanas, ou +5, com piso de 20), a
-temporada em rodadas e medalhas e o chefão do mês (meta = 80% do XP com teto de um mês normal de cada um, pelas últimas 4
-semanas; teto 150%; mínimo 50%). **Prévia** (marcado na tela): Prazos (falta no protocolo), a escolha da modalidade (o
-sistema rotaciona Ritmo, Hábitos e Superação), a tabela do dia, o duelo, o pacto e a Trick Coin.
+## Como está implementado (22/10/2026, PR da branch `issue-171-tabela`)
 
-Primeira leitura com os dados reais (21/10): com 80%, o grupo derrotou o chefão de outubro já no dia 21; a vida precisa
-subir. A frase do líder ainda segue o líder dos andares, não o 1º do Geral semanal.
+**Os três sistemas** (e a tabela do dia), que não se misturam:
+
+| | Contra quem | O que mede | O que dá |
+|---|---|---|---|
+| Placar da semana (Geral) | o grupo | 4 blocos 0–100 (Ritmo, Prazos, Hábitos, Superação) + a modalidade | medalha, título, frase do líder, escolha da próxima modalidade; **sem moeda** |
+| Marca da semana | você | a modalidade, **15%** acima da sua média das últimas 4 semanas (ou +5, piso 20) | **50 TC** |
+| Chefão do mês | todos juntos | XP com teto do mês contra a **meta do chefão** de cada um (não é a marca) | **80 TC** a quem passa de 50% da meta, até **120** no teto (150%), se ele cair |
+| Tabela do dia (CF) | — | 1 problema por faixa, às 6h | faixa A **2 TC**, +1 por faixa (G = 8), 1º a resolver +2 |
+
+- **Modalidades:** um dos 4 blocos (conta em dobro) ou Constância (dias com XP), Codeforces (dias com problema), Missão
+  (3 dias da missão) e cada hábito do grupo (`hab:<id>`), que entram como 5º bloco. O 1º da semana escolhe a da seguinte
+  entre 3 sorteadas (`POST /g/<id>/modalidade`); vale se ele fechar em 1º; sem escolha, o sistema sorteia uma delas. Quem
+  ganhou as 2 últimas não escolhe. As semanas de antes da 1ª com a escolha (`escolha_desde`) mantêm a rotação.
+- **Prazos:** protocolo 2. O jogo manda por dia `pz: [tarefas com prazo nesse dia, entregues até ele]` (`resumoGrupo`);
+  a aberta de hoje não conta. Quem está numa versão antiga fica sem o bloco.
+- **Chefão:** vida = 100% de um mês normal (`CHEFAO`); a meta de cada um é a maior entre a média das 4 semanas e a das 2
+  últimas (as semanas paradas derrubavam a meta: com 80%, o chefão de outubro caía no dia 21). Com os dados reais, 59% no
+  dia 22. Os **andares** viram só a unidade do dano do chefão.
+- **Tabela do dia** (`grupo/cf_dia.py`, `rotina_cf`): 7 faixas de rating, cada uma um intervalo (A 800–1000, B 1100–1300,
+  C 1400–1600, D 1700–1900, E 2000–2200, F 2300–2600, G 2700–3000). Sorteio às 6h do fuso do grupo entre os problemas que
+  ninguém do grupo resolveu; conferência a cada 10 minutos pela API do CF; o handle vai no envio do jogo. Piso: pontua da
+  sua faixa −1 para cima (pelo rating atual); teto: 2 problemas por pessoa por dia; o bônus do 1º passa pela metade ao
+  primeiro que ainda pontua.
+- **Trick Coin** (tabela `trick`): paga só quando o período fecha, uma vez por período (`marca:`, `cf:`, `chefao:`). Não é
+  retroativa: conta a partir de quando o servidor do grupo for atualizado. Valores na calibração (`tc_marca`, `tc_chefao`,
+  `cf_*`).
+- **Estrelas:** das rodadas ganhas (1º do Geral numa semana fechada): ★ na 1ª, ★★ na 4ª. Recalculadas para trás com a
+  fórmula nova.
+- **Frase do líder:** o 1º do Geral da última semana fechada.
+- **Relatório para calibrar:** no administrar, "baixar o relatório (JSON)" (`POST /g/<id>/admin/relatorio`): calibração,
+  cada semana com todos os blocos e modalidades, marcas, escolhas, chefões de cada mês (com o que pagariam), tabela do dia
+  por faixa (sorteados, resolvidos, pontuados), Trick Coin (extrato e somas) e os dias de cada um em andares, sem o XP.
+
+## O que falta (para o próximo chat)
+
+1. **Duelo 1×1 de CF** (fase 2): convite, aceite, problema da faixa do mais fraco dos dois, quem resolve primeiro vence.
+   ⏳ aposta e valor em Trick Coin. Usa a mesma API do CF da tabela do dia (`cf_api`, `cf_handle`).
+2. **Caixa de convites** (fase 2): hoje é prévia em desafios. Só entra o que a pessoa aceita; vai servir para o duelo e o
+   pacto.
+3. **Pacto de hábito** (fase 3): um propõe, os dois cumprem X dias, XP fixo e pequeno, 1–2 ativos por pessoa, sem punição.
+   ⏳ X dias e o valor.
+4. **Lançamento:** versão nova (`VERSAO`, `novidades.js`) com a **janela grande** na Novidades (mexe em pontos); o
+   servidor do grupo de quem hospeda e o jogo de cada membro precisam atualizar (protocolo 2, handle do CF).
+5. **Calibrar com o uso real** pelo relatório: valores da tabela do dia (2 a 8 TC são estimativa), vida do chefão,
+   15% da marca e os 4 blocos (aceitos sem avaliação completa em 21/10). A vida do chefão (`CHEFAO`) ainda é constante no
+   código: levar para o administrar.
+6. **Limpar o administrar:** ainda mostra os números da aba antiga (superação em tetos, os placares específicos por
+   hábito, `specs()` em `torre.py`), que só alimentam a licença e o "por hábito".
+7. **Loja (depois da v1.0):** preços em Trick Coin e a compra; trocar na `LOJA_TT` os desafios de item que dependiam de
+   liderar.
+8. A escolha só vale durante a semana: se os dias da folga do fechamento mudarem o 1º, a modalidade da semana seguinte
+   pode trocar. Rever se incomodar.
 
 ## O que muda no COLETIVO.md
 
@@ -208,7 +255,7 @@ subir. A frase do líder ainda segue o líder dos andares, não o 1º do Geral s
 
 ## O que muda nos dados e no servidor
 
-- **Prazos:** o resumo do jogo (`resumoGrupo`, `protocolo: 1`) leva hoje `xp`, `hab`, `missao` e `ferias`. Entregas no
+- **Prazos:** feito em 22/10 (protocolo 2, `pz`). Antes, o resumo (`resumoGrupo`, `protocolo: 1`) levava só `xp`, `hab`, `missao` e `ferias`. Entregas no
   prazo não vão. Precisa de **um fato novo no protocolo** (versão do jogo e do servidor).
 - **Handle do CF:** hoje só a contagem diária vai. O handle (público) precisa ir para o servidor do grupo na fase 2.
 - **Tabelas novas no servidor:** convites de duelo e pacto, tabela do dia, escolha da modalidade, chefão do mês.
@@ -226,14 +273,9 @@ subir. A frase do líder ainda segue o líder dos andares, não o 1º do Geral s
 
 ## Pendências (⏳)
 
-1. Percentual da marca pessoal (10% sobre a média é só o exemplo) e valor da recompensa em Trick Coin.
-2. Teto e piso da tabela do dia (sugestão: 3 problemas, teto 2) e tamanho do bônus do primeiro.
-3. Aposta e valor do duelo.
-4. O que a contribuição do chefão mede, o mínimo de participação e a recompensa coletiva.
-5. X dias e XP do pacto.
-6. O que acontece com os andares.
-7. Primeira semana da escolha de modalidade; escolha de hábito dentro da modalidade Hábitos.
-8. ~~Revisar os desafios de item da loja que dependem de liderança~~: decidido em 21/10 (prestígio grátis); falta trocar
-   os desafios dos outros itens na `LOJA_TT`.
-9. Os 4 blocos do Geral foram aceitos sem avaliação completa (o Caio não conseguiu julgar tudo em 21/10): **rever com o
-   uso real** quando a fase 1 estiver na beta; o Prazos é o único que pede dado novo.
+Decididas em 22/10/2026: marca a 15% e 50 TC; tabela do dia com 7 faixas, teto 2 e bônus 2; chefão 80–120 TC; os andares
+viram o dano do chefão; a escolha da modalidade começa na semana em que o servidor atualizar. Continuam abertas:
+
+1. Aposta e valor do duelo.
+2. X dias e XP do pacto.
+3. Os 4 blocos do Geral e os valores de Trick Coin: **rever com o uso real** (relatório no administrar).
