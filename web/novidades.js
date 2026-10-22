@@ -28,6 +28,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta8", "nome": "atualização da Torre Trick", "data": "2026-10-21",
+   "cap": "torre mais alta · loja completa",
+   "resumo": "A Arena Celestial ficou mais alta: cada andar custa o dobro, para o topo ficar perto do fim das aulas. A arte nova das lojas está fechada e os itens que eram só para provar estão à venda.",
+   "itens": [
+     {"ic": "tower", "t": "Torre mais alta", "d": "Cada andar custa o dobro (16, 32 e 80 XP; o topo, 8.864 XP). O seu XP e a sua Jenny não mudaram, só o andar em que eles caem. Conquistas de andar e os títulos Mestre de Nen e Floor Master que você já tinha continuam seus (#77)."},
+     {"ic": "coin", "t": "Loja completa", "d": "Os itens que eram só para provar estão à venda pelo preço da faixa: comum 1.000 J, raro 2.200 J, épico 3.200 J, título 500 J. Os preços de antes não mudaram (#77)."},
+     {"ic": "spider", "t": "Arte nova fechada", "d": "O que você já tem ganhou o desenho novo, sem a troca antiga | nova. Godspeed, Jajanken, Costura, Soco, Dragon Dive, Confete e Fogos agora aparecem no jogo de verdade, não só no ▶ da loja (#134)."}
+   ]},
   {"versao": "0.9.2-beta7", "nome": "atualização da Torre Trick", "data": "2026-10-21", "aviso": "0.9.2-beta7",
    "cap": "Codeforces pela cor do problema · aba nova do grupo",
    "resumo": "O Codeforces agora vale pela cor de cada problema, e o XP dele na temporada foi recalculado. As contribuições pagam só em Jenny. Para testar, a aba Grupo e a Lista ganharam uma versão nova atrás de um botão, e chegaram efeitos novos para provar.",
