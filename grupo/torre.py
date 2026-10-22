@@ -104,7 +104,9 @@ class Grupo:
     fonte, desde}] (ativos) · fechados {periodo: dados} · calib {} (sobre CALIB) · placares {id: {on, per}} · hoje · ini/fim
     (temporada; vazio = desde o primeiro dia que chegou)."""
 
-    def __init__(self, membros, dias, catalogo, fechados, hoje, ini="", fim="", calib=None, placares=None):
+    def __init__(self, membros, dias, catalogo, fechados, hoje, ini="", fim="", calib=None, placares=None, escolhas=None, desde=""):
+        self.escolhas = escolhas or {}   # {semana: {membro, mod}}: a modalidade que o 1º escolheu para a semana seguinte
+        self.desde = desde               # a 1ª semana em que a escolha vale (antes dela, o sistema rotacionava)
         self.membros = membros
         self.ids = [m["id"] for m in membros]
         self.dias = {m: {d_(k): v for k, v in dias.get(m, {}).items()} for m in self.ids}
@@ -438,7 +440,10 @@ class Grupo:
             cp = self.hab_participou(m, "cf")
             rs.append(self.razao(m, "semana", a, b, self.cf_total(m), lambda x, y: cp(x, y) > 0, self.calib["cf_min"]))
         sup = [self.sup_100(r) for r in rs if r is not None]
-        return {"ritmo": round(rit * 100), "prazos": None, "habitos": round(feito / part * 100) if part else None,
+        pz = [(self.dia(m, d) or {}).get("pz") or (0, 0) for d in dias]   # [venceram, no prazo] por dia (protocolo 2)
+        n_pz = sum(x[0] for x in pz)
+        return {"ritmo": round(rit * 100), "prazos": round(sum(x[1] for x in pz) / n_pz * 100) if n_pz else None,
+                "habitos": round(feito / part * 100) if part else None,
                 "superacao": round(sum(sup) / len(sup)) if sup else None}
 
     @staticmethod
@@ -468,23 +473,40 @@ class Grupo:
         return round(sum(1 for d in dias if ((self.dia(m, d) or {}).get("hab") or {}).get(chave)) / len(dias) * 100)
 
     def semanal(self):
-        """O Geral de cada semana da temporada (a última é a em curso): os 4 blocos e o da modalidade, o pódio de superação,
-        a marca da semana e a temporada em rodadas ganhas e medalhas. A escolha da modalidade ainda não existe no servidor:
-        o sistema rotaciona entre as que têm dado, o que nunca repete a da semana anterior."""
+        """O Geral de cada semana da temporada (a última é a em curso): os 4 blocos, a modalidade (dobra um deles ou entra
+        como 5º), os valores de todas as modalidades (mods), o pódio de superação, a marca da semana e a temporada em
+        rodadas ganhas e medalhas. A modalidade de cada semana: a que o 1º da anterior escolheu entre as 3 opções; sem
+        escolha, uma delas sorteada. Antes de `desde`, o sistema rotacionava (as semanas antigas não mudam)."""
         rot = self.modalidades()
         semanas, temporada = [], {m: {"rodadas": 0, "medalhas": [0, 0, 0], "superacao": 0, "marcas": 0} for m in self.ids}
         for i, (a, b) in enumerate(periodos("semana", self.ini, self.fim)):
-            mod = rot[i % len(rot)]
+            chave, quem = chave_semana(a)[7:], None
+            p = semanas[-1] if semanas else None
+            if p and self.desde and p["semana"] >= self.desde and p["opcoes"]:
+                e = self.escolhas.get(p["semana"])
+                if e and e["membro"] == p["escolhe"] and e["mod"] in p["opcoes"]:
+                    mod, quem = e["mod"], e["membro"]
+                else:
+                    mod = random.Random(f"sorteio:{p['semana']}").choice(p["opcoes"])
+            else:
+                mod = rot[i % len(rot)]
             linhas = []
             for m in self.ids:
                 bl = self.blocos(m, a, b)
                 if bl:
-                    mv = self.mod_valor(m, mod, a, b, bl)
-                    linhas.append({"membro": m, "blocos": bl, "mod": mv, "total": sum(v for v in bl.values() if v is not None) + (mv or 0)})
+                    mods = {k: self.mod_valor(m, k, a, b, bl) for k in rot if k not in bl}
+                    mv = bl[mod] if mod in bl else mods.get(mod)
+                    linhas.append({"membro": m, "blocos": bl, "mods": mods, "mod": mv, "total": sum(v for v in bl.values() if v is not None) + (mv or 0)})
             linhas.sort(key=lambda x: (-x["total"], -(x["blocos"]["superacao"] or 0), -(x["blocos"]["prazos"] or 0), self.ids.index(x["membro"])))
             sup = sorted([x for x in linhas if x["blocos"]["superacao"] is not None], key=lambda x: (-x["blocos"]["superacao"], -x["total"]))
-            semanas.append({"semana": chave_semana(a)[7:], "ini": a.isoformat(), "fim": b.isoformat(), "fechada": b < self.fim, "modalidade": mod,
-                            "geral": linhas, "superacao": [x["membro"] for x in sup]})
+            # quem escolhe a próxima: o 1º desta semana, a não ser que tenha ganhado as 2 anteriores
+            ult = [s["geral"][0]["membro"] for s in semanas if s["geral"]][-2:]
+            escolhe = next((x["membro"] for x in linhas if not (len(ult) == 2 and ult[0] == ult[1] == x["membro"])), None)
+            resto = [k for k in rot if k != mod]
+            semanas.append({"semana": chave, "ini": a.isoformat(), "fim": b.isoformat(), "fechada": b < self.fim, "modalidade": mod,
+                            "escolhida_por": quem, "geral": linhas, "superacao": [x["membro"] for x in sup], "escolhe": escolhe,
+                            "opcoes": random.Random(chave).sample(resto, min(OPCOES, len(resto))),
+                            "escolha": (self.escolhas.get(chave) or {}).get("mod") if (self.escolhas.get(chave) or {}).get("membro") == escolhe else None})
         # marca da semana: MARCA sobre a média das últimas 4 semanas da pessoa na modalidade desta semana (até 100)
         for i, s in enumerate(semanas):
             for x in s["geral"]:
@@ -506,15 +528,9 @@ class Grupo:
                     temporada[s["superacao"][0]]["superacao"] += 1
                 for x in s["geral"]:
                     temporada[x["membro"]]["marcas"] += bool(x.get("bateu"))
-        # quem escolhe a modalidade da semana seguinte: o 1º da semana em curso, a não ser que tenha ganhado as 2 anteriores
-        escolhe = None
-        if semanas and semanas[-1]["geral"]:
-            ult = [s["geral"][0]["membro"] for s in semanas[:-1] if s["geral"]][-2:]
-            escolhe = next((x["membro"] for x in semanas[-1]["geral"] if not (len(ult) == 2 and ult[0] == ult[1] == x["membro"])), None)
-        resto = [k for k in rot if not semanas or k != semanas[-1]["modalidade"]]
-        opcoes = random.Random(semanas[-1]["semana"] if semanas else "").sample(resto, min(OPCOES, len(resto)))
-        return {"semanas": semanas, "temporada": temporada, "escolhe": escolhe, "opcoes": opcoes, "modalidades": rot,
-                "marca": MARCA, "habitos": {h["id"]: h["nome"] for h in self.catalogo}}
+        ult = semanas[-1] if semanas else {}
+        return {"semanas": semanas, "temporada": temporada, "escolhe": ult.get("escolhe"), "opcoes": ult.get("opcoes", []),
+                "escolha": ult.get("escolha"), "modalidades": rot, "marca": MARCA, "habitos": {h["id"]: h["nome"] for h in self.catalogo}}
 
     def chefao(self, ref=None):
         """O chefão do mês de ref (padrão: o de hoje): vida = a soma das metas (CHEFAO × o XP com teto de um mês normal de

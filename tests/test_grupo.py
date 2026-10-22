@@ -647,5 +647,47 @@ class TrickCoin(Base):
         self.assertEqual(len(G.semanal()["opcoes"]), 3)
 
 
+class Fase1(Base):
+    """Prazos no protocolo 2, a escolha da modalidade pelo 1º da semana e o relatório para calibrar (#170)."""
+
+    def setUp(self):
+        super().setUp()
+        self.gid, cod = self.grupo()
+        self.ana = self.entra(self.gid, cod)
+        self.seg = date.today() - timedelta(days=date.today().weekday())
+
+    def test_prazos_viram_o_bloco(self):
+        d = self.seg.isoformat()
+        sg.envio(self.gid, self.ana["token"], {"protocolo": 2, "dias": [{"dia": d, "xp": 50, "pz": [4, 3]}]})
+        s = sg.retrato(sg.grupo_ou_404(self.gid)).semanal()["semanas"][-1]
+        self.assertEqual(s["geral"][0]["blocos"]["prazos"], 75)
+        with self.assertRaises(sg.Erro):
+            sg.envio(self.gid, self.ana["token"], {"protocolo": 2, "dias": [{"dia": d, "xp": 50, "pz": [1, 2]}]})
+
+    def test_escolha_da_modalidade(self):
+        dias = [{"dia": (self.seg - timedelta(days=7) + timedelta(days=k)).isoformat(), "xp": 50} for k in range(7 + date.today().weekday() + 1)]
+        sg.envio(self.gid, self.ana["token"], {"protocolo": 2, "dias": dias})
+        G = sg.retrato(sg.grupo_ou_404(self.gid))
+        s = G.semanal()["semanas"][-1]
+        self.assertEqual(s["escolhe"], self.ana["membro"])
+        with self.assertRaises(sg.Erro):
+            sg.escolhe_modalidade(self.gid, self.ana["token"], {"mod": "nao-existe"})
+        sg.escolhe_modalidade(self.gid, self.ana["token"], {"mod": s["opcoes"][1]})
+        G = sg.retrato(sg.grupo_ou_404(self.gid))
+        self.assertEqual(G.semanal()["escolha"], s["opcoes"][1])
+        # na semana seguinte, a modalidade é a escolhida (e quem escolheu fica registrado)
+        G2 = torre.Grupo(G.membros, {m: {k.isoformat(): v for k, v in G.dias[m].items()} for m in G.ids}, G.catalogo, {}, self.seg + timedelta(days=7),
+                         escolhas=G.escolhas, desde=G.desde)
+        prox = G2.semanal()["semanas"][-1]
+        self.assertEqual((prox["modalidade"], prox["escolhida_por"]), (s["opcoes"][1], self.ana["membro"]))
+
+    def test_relatorio_so_para_admin(self):
+        sg.envio(self.gid, self.ana["token"], {"protocolo": 2, "dias": [{"dia": self.seg.isoformat(), "xp": 50}]})
+        r = sg.admin_relatorio(self.gid, self.ana["token"])
+        self.assertIn("semanas", r)
+        self.assertNotIn("xp", json.dumps(r["dias"]))   # o XP bruto não sai, só os andares
+        self.assertEqual(len(r["tabela_do_dia"]["faixas"]), 7)
+
+
 if __name__ == "__main__":
     unittest.main()

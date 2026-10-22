@@ -1389,13 +1389,19 @@ function resumoGrupo(C, S, pessoais){
   const ids = pessoais ? (J.habitos || []).map(h => h.id).concat(J.duo && J.duo.usuario ? ['duo'] : []) : [];
   const feitos = ids.map(id => [id, diasHab(C, id)]);
   const habitos = ligaCf ? ['cf'] : [], fer = feriasDe(TEMP), linhas = [];
+  // prazos (protocolo 2, bloco Prazos do grupo): por dia, [tarefas com prazo nele, entregues até ele]. A de hoje ainda aberta
+  // não conta (dá tempo); a que venceu aberta ou foi entregue depois conta como fora do prazo
+  const pz = {}, conta = (d, ok) => { const x = pz[d] || (pz[d] = [0, 0]); x[0]++; if(ok) x[1]++; };
+  for(const t of C.D.feitas) if(t.due && t.due >= TEMP.ini && t.due <= ate) conta(t.due, t.done && t.done <= t.due);
+  for(const t of C.D.abertas.concat(C.D.guardadas || [])) if(!t.done && t.due && t.due >= TEMP.ini && t.due < HOJE && t.due <= ate) conta(t.due, false);
   for(let d = TEMP.ini; d <= ate; d = addD(d, 1)){
     const hab = {}; if(ligaCf) hab.cf = cfDia[d] || 0;
     const x = {dia:d, xp:S.xpDia[d] || 0, hab, missao:S.missaoDias.has(d), ferias:!!fer(d)};
+    if(pz[d]) x.pz = pz[d];
     if(pessoais){ x.pes = {}; for(const [id, ds] of feitos) if(ds.has(d)) x.pes[id] = 1; }
     linhas.push(x);
   }
-  return {formato:1, protocolo:1, gerado:HOJE, versao:(C.SRV && C.SRV.versao) || '', jogador:J.nick || J.nome || '',
+  return {formato:1, protocolo:2, gerado:HOJE, versao:(C.SRV && C.SRV.versao) || '', jogador:J.nick || J.nome || '',
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 

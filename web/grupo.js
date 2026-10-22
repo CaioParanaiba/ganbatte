@@ -271,6 +271,9 @@ function torreAdminHTML(A){
       <p style="margin:0 0 10px;font-size:14px">Tudo em tetos (1 andar = 1 dia com o XP no teto do grupo), então acompanha o XP de vocês sozinho. Mudar um número recalcula o que ainda está aberto; o que já fechou fica como estava.</p>
       <div class="gp-f">${Object.keys(CALIB_NOMES).map(k => `<label>${CALIB_NOMES[k][0]}<input id="tt-cal-${k}" type="number" step="${k === 'frase_max' || /^(cf|tc)_/.test(k) ? 1 : 0.1}" min="${c.limites[k][0]}" max="${c.limites[k][1]}" value="${c.valores[k]}" class="mono"><span class="sub" style="text-transform:none;letter-spacing:0;font-weight:400">${CALIB_NOMES[k][1]} · padrão ${String(c.padrao[k]).replace('.', ',')}</span></label>`).join('')}</div>
       <button type="button" class="btn v" data-ttcal>salvar os números</button></div>
+    <div class="card"><h2><span class="c">~/</span>relatório para calibrar</h2>
+      <p style="margin:0 0 10px;font-size:14px">Tudo da temporada num arquivo: cada semana com os blocos e todas as modalidades, as marcas, os chefões, a tabela do dia por faixa, a Trick Coin e os dias de cada um (em andares, sem o XP). Serve para ajustar os números com dado real.</p>
+      <button type="button" class="btn" data-ttrel>baixar o relatório (JSON)</button></div>
     <div class="card"><h2><span class="c">~/</span>placares específicos</h2>
       <p style="margin:0 0 10px;font-size:14px">Os placares saem dos hábitos do grupo. Desligue os que ninguém quer ver e escolha o período de cada um.</p>
       ${A.placares.map(p => `<div class="gp-lin"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-ttplon="${esc(p.id)}"${p.on ? ' checked' : ''}> <b>${esc(p.nome)}</b></label>
@@ -283,7 +286,7 @@ function torreAdminHTML(A){
    semana (a licença, o card da semana e o Geral ou a Superação da semana) · desafios (tabela do dia do CF, chefão do mês,
    convites) · temporada (rodadas ganhas e medalhas) · hunters (a licença de cada um, com o detalhe por hábito) · loja.
    O Geral, a Superação, a marca e o chefão vêm do servidor do grupo (P.torre.semanal e P.torre.chefao). O que ainda não
-   existe (Prazos no protocolo, a escolha da modalidade, o duelo e o pacto) aparece como prévia. */
+   existe (o duelo e o pacto) aparece como prévia. */
 TT.pod = 'geral';
 const NOVAS = ['semana', 'desafios', 'temporada', 'hunters', 'loja'];
 const MOD = {ritmo:['Ritmo', 'XP com teto', 'Jogue todo dia até o teto do grupo.', 'O XP de cada dia, até o teto do grupo. 100 = bateu o teto em todos os dias da semana; o que passa do teto não conta, então jogar todo dia vale mais que um dia enorme.'],
@@ -318,28 +321,29 @@ const temp = (P, id) => (P.torre.semanal.temporada || {})[id] || {rodadas:0, med
 const linhaDe = (s, id) => s.geral.find(x => x.membro === +id);
 const estrelas = t => t.rodadas >= 4 ? 2 : t.rodadas >= 1 ? 1 : 0;   // prestígio grátis: ★ na 1ª rodada ganha, ★★ na 4ª (★★★ é o lendário)
 
-/* os 4 blocos numa barra, de 0 a 100 cada; o da modalidade aparece ×2, e uma modalidade que não é um dos 4 entra como 5º.
-   Prazos fica tracejado até o protocolo mandar */
+/* os 4 blocos numa barra, de 0 a 100 cada (o da modalidade ×2) e, embaixo, as outras modalidades em números pequenos; a da
+   semana, quando não é um dos 4, fica destacada (ela entra no Geral como 5º bloco) */
 function blocosHTML(x, mod){
-  const b = (k, v, x2) => `<span class="b${x2 ? ' x2' : ''}${v == null ? ' nd' : ''}" title="${md(k)[0]}: ${v == null ? (k === 'prazos' ? 'chega com a versão nova do jogo' : 'sem dado') : v + ' de 100'}${x2 ? ' · modalidade da semana' : ''}"><i style="--v:${v || 0}%"></i><small>${md(k)[0].slice(0, 3)}${x2 ? (dobra(k) ? ' ×2' : ' ★') : ''}</small></span>`;
-  return `<span class="tn-bl${dobra(mod) ? '' : ' c5'}">${BLOCOS.map(k => b(k, x.blocos[k], k === mod)).join('')}${dobra(mod) ? '' : b(mod, x.mod, true)}</span>`;
+  const b = (k, v) => `<span class="b${k === mod ? ' x2' : ''}${v == null ? ' nd' : ''}" title="${md(k)[0]}: ${v == null ? (k === 'prazos' ? 'sem tarefa com prazo nesta semana' : 'sem dado') : v + ' de 100'}${k === mod ? ' · modalidade da semana' : ''}"><i style="--v:${v || 0}%"></i><small>${md(k)[0].slice(0, 3)}${k === mod ? ' ×2' : ''}</small></span>`;
+  const mods = Object.entries(x.mods || {}).map(([k, v]) => `<span class="${k === mod ? 'on' : ''}" title="${md(k)[0]}${k === mod ? ': modalidade da semana, entra como 5º bloco' : ': conta só na semana em que for a modalidade'}">${esc(md(k)[0])} <b>${v == null ? '—' : v}</b></span>`).join('');
+  return `<span class="tn-bl">${BLOCOS.map(k => b(k, x.blocos[k])).join('')}</span>${mods ? `<span class="tn-mods">${mods}</span>` : ''}`;
 }
 function cardSemana(P){
   const S = P.torre.semanal, s = semAtual(P), eu = P.voce.membro, x = linhaDe(s, eu), m = md(s.modalidade), tc = (P.torre.trick ? '' : prev());
-  const resta = GBx.dias(P.hoje, s.fim), ant = S.semanas[S.semanas.length - 2], quem = ant && ant.geral[0];
+  const resta = GBx.dias(P.hoje, s.fim);
   const pc = Math.round((S.marca || .15) * 100), tcM = tcV(P).marca;
   const marca = x && x.marca != null ? `<div class="tn-marca"><div class="tn-mt"><span><b>marca da semana</b> ${ajBt('marca')}</span><span><b>${x.mod || 0}</b> / ${x.marca}${x.bateu ? ' <b class="ok">✓</b>' : ''} · ${TC(tcM)}</span></div>
       <div class="tn-pb"><i style="width:${Math.min(100, (x.mod || 0) / x.marca * 100)}%"></i></div>
       ${ajTx('marca', `<p>Você contra você: ${pc}% acima da sua média em ${m[0]} nas últimas semanas. Bateu, ganha ${tcM} Trick Coin quando a semana fecha. ${tc}</p>`)}</div>`
     : x && x.mod == null ? `<p class="sub">Você não tem dado em ${m[0]} (não ligou esse hábito do grupo): nesta semana não há marca para você.</p>` : '<p class="sub">Sua marca aparece quando você tiver uma semana de base.</p>';
-  const ops = S.opcoes.map(k => `<button type="button" class="btn" data-tnmod="${k}">${md(k)[0]}</button>`).join('');
-  const prox = S.escolhe === eu ? `<div class="tn-esc"><span>Você escolhe a próxima:</span><span class="tn-ops">${ops}</span>${prev()}</div>`
-    : S.escolhe ? `<div class="tn-esc sub"><span>Próxima: ${nm(P, S.escolhe)} escolhe entre ${S.opcoes.map(k => md(k)[0]).join(', ')}.</span></div>` : '';
+  const ops = S.opcoes.map(k => `<button type="button" class="btn" data-tnmod="${k}" aria-pressed="${S.escolha === k}">${md(k)[0]}</button>`).join('');
+  const prox = S.escolhe === eu ? `<div class="tn-esc"><span>${S.escolha ? 'Você escolheu a próxima:' : 'Você escolhe a próxima:'}</span><span class="tn-ops">${ops}</span></div>`
+    : S.escolhe ? `<div class="tn-esc sub"><span>Próxima: ${nm(P, S.escolhe)} ${S.escolha ? `escolheu ${md(S.escolha)[0]}` : `escolhe entre ${S.opcoes.map(k => md(k)[0]).join(', ')}`}.</span></div>` : '';
   return `<section class="card tn-sem"><h2><span class="c">~/</span>semana ${s.semana.split('-W')[1]} <span class="r">${ddmm(s.ini)} a ${ddmm(s.fim)} · ${resta > 0 ? `faltam ${resta} ${resta === 1 ? 'dia' : 'dias'}` : 'último dia'} ${ajBt('sis', 'os três sistemas')}</span></h2>
     ${ajTx('sis', sistemasHTML(P))}
     <div class="tn-mod"><div><span class="tn-k">modalidade ${ajBt('mod', 'o que cada modalidade mede')}</span><b>${m[0]}${dobra(s.modalidade) ? ' <small class="tn-x2">×2</small>' : ''}</b><p class="sub">${m[2]}</p>
-      ${ajTx('mod', `<p>A modalidade muda toda semana. Se é um dos 4 blocos do Geral, ele conta em dobro; se não, entra como 5º bloco. ${quem ? `Escolhida por ${esc(nomeDe(P, quem.membro))}, 1º da semana passada.` : ''} ${prev('hoje o sistema rotaciona')}</p>
-        ${S.modalidades.concat(['prazos']).map(k => `<p${k === s.modalidade ? ' class="on"' : ''}><b>${md(k)[0]}${k === 'prazos' ? ' ' + prev() : ''}</b> ${md(k)[3]}</p>`).join('')}`)}</div>${marca}</div>${prox}</section>`;
+      ${ajTx('mod', `<p>A modalidade muda toda semana: o 1º da semana escolhe a da seguinte entre 3 opções (se não escolher, o sistema sorteia uma). Se é um dos 4 blocos do Geral, ele conta em dobro; se não, entra como 5º bloco. ${s.escolhida_por ? `Esta foi escolhida por ${esc(nomeDe(P, s.escolhida_por))}.` : ''}</p>
+        ${S.modalidades.map(k => `<p${k === s.modalidade ? ' class="on"' : ''}><b>${md(k)[0]}</b> ${md(k)[3]}</p>`).join('')}`)}</div>${marca}</div>${prox}</section>`;
 }
 function placarSemana(P){
   const s = semAtual(P), eu = P.voce.membro, sup = TT.pod === 'superacao';
@@ -349,7 +353,7 @@ function placarSemana(P){
   const tg = `<span class="tt-esp" role="group" aria-label="pódio">${[['geral', 'Geral'], ['superacao', 'Superação']].map(([v, n]) => `<button type="button" data-tnpod="${v}" aria-pressed="${TT.pod === v}">${n}</button>`).join('')}</span>`;
   const como = (sup ? '<p>Quem mais evoluiu contra a própria média nesta semana. Desempata o Geral.</p>'
     : `<p>Ritmo, Prazos, Hábitos e Superação, de 0 a 100 cada; ${md(s.modalidade)[0]}, a modalidade, ${dobra(s.modalidade) ? 'conta em dobro' : 'entra como 5º bloco'}. Zera toda segunda; a posição dá medalha, não moeda.</p>`)
-    + `<p>${P.fechado_ate ? `Dias fechados até ${ddmm(P.fechado_ate)}; os seguintes ainda podem mudar.` : 'Nenhum dia fechado ainda.'} Prazos chega com a versão nova do jogo.</p>`;
+    + `<p>${P.fechado_ate ? `Dias fechados até ${ddmm(P.fechado_ate)}; os seguintes ainda podem mudar.` : 'Nenhum dia fechado ainda.'} Prazos conta as tarefas com prazo; quem ainda está numa versão antiga do jogo fica sem esse bloco.</p>`;
   const pod = a ? `<div class="tt-pod"><div class="tt-heroi">${ico(P, a.membro, 84, 1)}<div class="txt"><div class="tt-k">1º da semana</div><div class="val">${val(a)}<small>${uni}</small></div>
       <div class="dif">${!b ? '' : val(a) > val(b) ? `${val(a) - val(b)} à frente de ${esc(nomeDe(P, b.membro))}` : `empatado com ${esc(nomeDe(P, b.membro))}: desempata ${sup ? 'o Geral' : 'a Superação'}`}</div>${sup ? '' : `<div style="margin-top:8px">${blocosHTML(a, s.modalidade)}</div>`}</div></div>
     <div class="tt-lado">${[b, c].filter(Boolean).map((x, i) => `<div class="l">${ico(P, x.membro, 52, i + 2)}<div class="val">${val(x)}<small>${uni}</small></div></div>`).join('')}</div></div>` : '<p class="sub">Ninguém jogou nesta semana ainda.</p>';
@@ -461,7 +465,7 @@ function subHunters(P){
     : `<div class="tt-duas"><div><span class="rot">frente</span><div class="tt-lic grande">${frente(P, id, true)}</div></div><div><span class="rot">verso</span><div class="tt-lic grande">${verso(P, id)}</div></div></div>`;
   return `<div class="tt-jg"><nav class="tt-jmenu" aria-label="hunters">${menu}</nav><div class="tt-stack">
     <section class="card"><h2><span class="c">~/</span>licença de ${esc(m.nome)} <span class="r">a carteira que cada um monta: personalize na <button type="button" class="tt-lk" data-ttsub="loja">loja</button></span></h2>${lic}</section>
-    <section class="card"><h2><span class="c">~/</span>esta semana</h2>${x ? `<div class="tn-det">${BLOCOS.map(k => `<div><small>${md(k)[0]}</small><b>${x.blocos[k] == null ? '—' : x.blocos[k]}</b></div>`).join('')}<div><small>${md(s.modalidade)[0]} ★</small><b>${x.mod == null ? '—' : x.mod}</b></div><div><small>marca da semana</small><b>${x.marca == null ? '—' : x.bateu ? '✓' : `${x.mod || 0}/${x.marca}`}</b></div></div>` : '<p class="sub">Ainda sem dias nesta semana.</p>'}</section>
+    <section class="card"><h2><span class="c">~/</span>esta semana</h2>${x ? `<div class="tn-det">${BLOCOS.map(k => `<div><small>${md(k)[0]}</small><b>${x.blocos[k] == null ? '—' : x.blocos[k]}</b></div>`).join('')}${Object.entries(x.mods || {}).map(([k, v]) => `<div><small>${md(k)[0]}${k === s.modalidade ? ' ★' : ''}</small><b>${v == null ? '—' : v}</b></div>`).join('')}<div><small>marca da semana</small><b>${x.marca == null ? '—' : x.bateu ? '✓' : `${x.mod || 0}/${x.marca}`}</b></div></div>` : '<p class="sub">Ainda sem dias nesta semana.</p>'}</section>
     <section class="card"><h2><span class="c">~/</span>por hábito <span class="r">números do perfil, não placar</span></h2>
       ${habs.length ? `<div class="tn-det">${habs.map(([p, l]) => `<div><small>${esc(p.nome)}</small><b>${esc(l.txt)}</b><span class="sub">${esc(l.det)}</span></div>`).join('')}</div>` : '<p class="sub">Nenhum hábito do grupo ligado.</p>'}</section>
   </div></div>`;
@@ -473,7 +477,15 @@ function carteiraHTML(P){
   if(!T) return '';
   const ext = T.extrato.map(e => `<div class="tn-ex"><span>${esc(e.motivo)} <small>${esc(e.chave.split(':').slice(1).join(':'))}</small></span><b class="ok">+${e.valor}</b></div>`).join('');
   return `<section class="card" style="margin-bottom:16px"><h2><span class="c">~/</span>carteira <span class="r">os preços da loja saem depois</span></h2>
-    <div class="tn-cart"><div class="tn-saldo">${T.saldo}<small>Trick Coin</small></div><div class="tn-exs">${ext || '<p class="sub" style="margin:0">Nada ainda. A Trick Coin entra quando a semana, o dia ou o mês fecham: marca da semana batida, tabela do dia e chefão derrotado. Posição no placar não paga.</p>'}</div></div></section>`;
+    <div class="tn-cart"><div class="tn-saldo">${T.saldo}<small>Trick Coin</small></div><div class="tn-exs">${ext || '<p class="sub" style="margin:0">Nada ainda: entra quando a semana, o dia ou o mês fecham.</p>'}</div></div></section>`;
+}
+
+/* a loja abre quando o grupo derrota o 1º chefão; até lá, só o aviso (as compras chegam depois da 1.0) */
+function lojaFechada(P){
+  const C = P.torre.chefao, vivo = C ? Math.max(0, C.vida - C.dano) : null;
+  return `<section class="card tn-fechada"><div class="tn-cad" aria-hidden="true">🔒</div><h3>A loja abre quando o grupo derrotar o primeiro chefão</h3>
+    <p>Juntem forças contra o chefão do mês: quando ele cair, a Loja da Associação abre para todos, e a Trick Coin que vocês estão juntando passa a ter onde ser gasta.</p>
+    ${C ? `<div class="tn-hpb"><i style="width:${vivo / C.vida * 100}%"></i></div><p class="sub">faltam ${andaresTxt(vivo)} de ${andaresTxt(C.vida)} de vida · <button type="button" class="tt-lk" data-ttsub="desafios">ver o chefão</button></p>` : ''}</section>`;
 }
 
 function torreNova(g){
@@ -483,7 +495,7 @@ function torreNova(g){
   const aviso = r.offline ? `<p class="gp-aviso">O servidor do grupo está fora do ar. Mostrando o placar de ${esc(quando(P.recebido))}.</p>` : r.sem_acesso ? `<p class="gp-aviso">${esc(r.erro)}</p>` : '';
   const sub = NOVAS.includes(TT.sub) ? TT.sub : 'semana';
   TT.habNomes = P.torre.semanal.habitos || {};
-  const corpo = sub === 'desafios' ? subDesafios(P) : sub === 'temporada' ? subTemporada(P) : sub === 'hunters' ? subHunters(P) : sub === 'loja' ? carteiraHTML(P) + subLoja(P) : subSemana(P);
+  const corpo = sub === 'desafios' ? subDesafios(P) : sub === 'temporada' ? subTemporada(P) : sub === 'hunters' ? subHunters(P) : sub === 'loja' ? carteiraHTML(P) + ((P.torre.loja || {}).aberta ? subLoja(P) : lojaFechada(P)) : subSemana(P);
   return `${aviso}<div class="tt">${corpo}</div>
     <p class="sub" style="margin:4px 0 0">O seu XP e as suas tarefas não aparecem aqui: o grupo vê só os blocos, de 0 a 100. Última sincronização: ${G.ultima ? esc(quando(G.ultima / 1000)) : 'ainda não'} <button type="button" class="btn" data-gpsinc style="margin-left:6px">sincronizar agora</button></p>`;
 }
@@ -575,7 +587,10 @@ document.addEventListener('click', async e => {
   if((b = q('[data-ttjog]'))){ vaiPara({sub: 'hunters', jog: +b.dataset.ttjog}); return; }
   if((b = q('[data-tnaj]'))){ TT.aj[b.dataset.tnaj] = !TT.aj[b.dataset.tnaj]; render(); return; }
   if((b = q('[data-tnpod]'))){ TT.pod = b.dataset.tnpod; render(); return; }
-  if((b = q('[data-tnmod]'))){ toast(`${md(b.dataset.tnmod)[0]} <small>prévia: a escolha da modalidade ainda não vai para o servidor do grupo</small>`); return; }
+  if((b = q('[data-tnmod]'))){ try { await post('/api/grupo/modalidade', {chave: grupoSel().chave, mod: b.dataset.tnmod}); await sincroniza(); toast(`${md(b.dataset.tnmod)[0]} <small>vale se você fechar a semana em 1º</small>`); } catch(err){ toast('Não deu: ' + esc(err.message)); } return; }
+  if(q('[data-ttrel]')){ try { const j = await admin('relatorio'), a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(j, null, 1)], {type:'application/json'})); a.download = `relatorio-${j.grupo.id}-${(placarDe(grupoSel()) || {}).hoje || 'hoje'}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch(err){ toast('Não deu: ' + esc(err.message)); } return; }
   if((b = q('[data-ttesp]'))){ TT.esp = b.dataset.ttesp; try { localStorage.setItem('gb-tt-esp', TT.esp); } catch(err){} render(); return; }
   if((b = q('[data-ttvirar]'))){ b.classList.toggle('virada'); return; }
   if((b = q('[data-ttprova]'))){ const it = LOJA_TT.find(x => x[0] === b.dataset.ttprova);
@@ -890,9 +905,14 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-marca{display:grid;gap:6px;border:1px solid var(--hair);border-radius:3px;padding:10px 12px} .tn-marca p{margin:0;font-size:12px}
 .tn-mt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font:13px var(--f-mono)} .tn-mt b{color:var(--ink)} .ok{color:var(--grn)!important}
 .tn-pb{height:8px;background:var(--track)} .tn-pb i{display:block;height:100%;background:var(--volt)}
+.tn-ops .btn[aria-pressed="true"]{background:var(--volt);color:var(--bg);border-color:var(--volt)}
 .tn-esc{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair);font-size:13.5px} .tn-ops{display:flex;gap:6px;flex-wrap:wrap}
+.tn-fechada{text-align:center;padding:40px 24px;display:grid;gap:12px;justify-items:center} .tn-fechada h3{margin:0;font:700 26px/1.2 var(--f-hud)}
+.tn-fechada p{margin:0;max-width:560px;font-size:14px} .tn-fechada .tn-hpb{width:min(420px,100%)} .tn-cad{font-size:44px;line-height:1}
+.tn-mods{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:5px;font:500 10.5px var(--f-mono);color:var(--faint)} .tn-mods b{color:var(--soft);font-weight:700}
+.tn-mods .on{color:var(--aura)} .tn-mods .on b{color:var(--aura)}
 .tn-bl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;min-width:180px}
-.tn-bl.c5{grid-template-columns:repeat(5,minmax(0,1fr))} .tn-bl .b{display:grid;gap:2px} .tn-bl i{display:block;height:6px;background:linear-gradient(90deg,var(--volt) var(--v),var(--track) var(--v))}
+.tn-bl .b{display:grid;gap:2px} .tn-bl i{display:block;height:6px;background:linear-gradient(90deg,var(--volt) var(--v),var(--track) var(--v))}
 .tn-bl .x2 i{height:9px;background:linear-gradient(90deg,var(--aura) var(--v),var(--track) var(--v))} .tn-bl .nd i{background:none;border:1px dashed var(--hair);box-sizing:border-box}
 .tn-bl small{font:600 9.5px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.04em} .tn-bl .x2 small{color:var(--aura)}
 .tn-prov{margin:12px 0 0;font-size:12px}
