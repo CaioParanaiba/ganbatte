@@ -4,7 +4,8 @@
  *   data-cursor, data-hp, data-heat, data-trans) do <html> (aplicaTema no index.html)
  *   e pelas classes do preview da loja (.fxd.X, .tex-X, .fr-X, .ft-X).
  * - Efeitos com laço (poeira, rastro, gyo): GB_FX.aplica() liga e desliga conforme o que está equipado.
- * - Efeitos de evento: GB_FX.tarefa(retângulo do botão) ao concluir uma tarefa; GB_FX.festa() no andar novo ou chefão derrotado.
+ * - Efeitos de evento: GB_FX.tarefa(retângulo do botão, botão) ao concluir uma tarefa; GB_FX.festa() no andar novo ou chefão
+ *   derrotado. Os que têm versão em código (web/arte/) passam pelo GB_FX.novo, que o arte.js põe.
  * - Sons: Web Audio sintetizado, sem arquivos. Desligáveis por computador em Configurações (localStorage gb-somoff).
  * - Na loja, o botão ▶ (data-fxver) mostra o efeito ou toca o som antes de comprar.
  * Carregado depois do index.html: usa UI, COS (via GBx), toast.
@@ -283,20 +284,20 @@ const toca = (k, ev) => { const s = SONS[k]; if(s && s[ev]) try { s[ev](); } cat
 
 /* ---------- interface usada pelo index.html ---------- */
 window.GB_FX = {
-  EV: ['godspeed', 'baralho', 'jajanken'], FESTA: ['fogos'],
+  EV: ['godspeed', 'baralho', 'jajanken', 'costura'], FESTA: ['fogos', 'confete', 'soco', 'dragao'],
   aplica(){ ligaPoeira(temFx('estrelas') && !calmo()); },
   aba(){ const r = document.documentElement;
     if(vista().trans){ r.classList.remove('gb-troca'); void r.offsetWidth; r.classList.add('gb-troca'); clearTimeout(this._tr); this._tr = setTimeout(() => r.classList.remove('gb-troca'), 450); }
     if(!temFx('digita')) return; r.classList.add('gb-entra'); clearTimeout(this._aba); this._aba = setTimeout(() => r.classList.remove('gb-entra'), 900); },
-  tarefa(r){
+  tarefa(r, el){
     if(UI.som && !somOff()) toca(UI.som, 'tarefa');
     if(UI.fxOff || calmo()) return;
-    for(const f of this.EV) if(UI.fx.includes(f)) EV[f](r);
+    for(const f of this.EV) if(UI.fx.includes(f) && !(this.novo && this.novo(f, r, el)) && EV[f]) EV[f](r);
   },
   festa(){
     if(UI.som && !somOff()) toca(UI.som, 'festa');
     if(UI.fxOff || calmo()) return;
-    if(UI.fx.includes('fogos')) EV.fogos();
+    for(const f of this.FESTA) if(UI.fx.includes(f) && !(this.novo && this.novo(f)) && EV[f]) EV[f]();
   },
   /* ▶ na loja: mostra o efeito ou toca o som, comprado ou não */
   ver(id, r){

@@ -1,7 +1,7 @@
 # Fila de arte
 
 Uma linha por imagem. Status: `pendente` → `gerado` (o gerador salvou em `entrada/`) → `gostei` (guardada em `aprovadas/`, para os outros devs verem; não é a decisão final) ou `refazer` (a nota diz o que mudar) ou `pulado` (fica para depois). `ideia` = anotada, ainda não é item da loja nem tem ficha; o `proximo` não pega.
-Nota com **⚠ PROVISÓRIO** = aprovado, mas ainda não 100% fechado (pode ser trocado). O `prepara.py` e o `aprova.py` atualizam esta tabela; a coluna `cor` é a cor de teste na bancada (vazio = cor própria do desenho).
+Nota com **⚠ PROVISÓRIO** = aprovado, mas ainda não 100% fechado (pode ser trocado). **21/10 (#77): o Caio fechou toda a arte que está no jogo; o ⚠ PROVISÓRIO das linhas abaixo não vale mais, e correção vai por issue.** O `prepara.py` e o `aprova.py` atualizam esta tabela; a coluna `cor` é a cor de teste na bancada (vazio = cor própria do desenho).
 
 | id | tipo | cor | status | nota |
 |---|---|---|---|---|

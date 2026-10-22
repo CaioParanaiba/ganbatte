@@ -114,8 +114,8 @@ const COS = [
   {id:'tt-guarda', cat:'title', n:'Título: Guarda Real', d:'Leal ao próprio plano de estudos.', p:600, eq:{title:'Guarda Real'}},
   {id:'tt-ten', cat:'title', n:'Título: Ten Inabalável', d:'Grátis para quem já manteve o Ten por 21 dias.', p:0, eq:{title:'Ten Inabalável'}, lock:S => S.ten.max < 21, why:'Ten de 21 dias'},
   {id:'tt-estrela2', cat:'title', n:'Título: Hunter Duas Estrelas', d:'Grátis para quem derrotou dois chefões na temporada.', p:0, eq:{title:'Hunter ★★'}, lock:S => S.bs.filter(b => b.dead).length < 2, why:'derrote 2 chefões'},
-  {id:'tt-mestre', cat:'title', n:'Título: Mestre de Nen', d:'Grátis para quem chegou ao andar 100.', p:0, eq:{title:'Mestre de Nen'}, lock:S => S.a.n < 100, why:'chegue ao andar 100'},
-  {id:'tt-floor', cat:'title', n:'Título: Floor Master', d:'Grátis para quem chegou ao andar 200.', p:0, eq:{title:'Floor Master'}, lock:S => S.a.n < 200, why:'chegue ao andar 200'},
+  {id:'tt-mestre', cat:'title', n:'Título: Mestre de Nen', d:'Grátis para quem chegou ao andar 100.', p:0, eq:{title:'Mestre de Nen'}, lock:S => S.andarRec < 100, why:'chegue ao andar 100'},
+  {id:'tt-floor', cat:'title', n:'Título: Floor Master', d:'Grátis para quem chegou ao andar 200.', p:0, eq:{title:'Floor Master'}, lock:S => S.andarRec < 200, why:'chegue ao andar 200'},
   {id:'ft-maquina', cat:'font', n:'Máquina de escrever', d:'A página inteira em letra de terminal. Modo hacker.', p:900, eq:{font:'maquina'}},
   {id:'ft-manga', cat:'font', n:'Mangá', d:'Títulos em letra de capa de mangá e números de onomatopeia.', p:1200, eq:{font:'manga'}},
   {id:'ft-pixel', cat:'font', n:'Pixel', d:'Títulos e números em letra de videogame antigo.', p:1500, eq:{font:'pixel'}},
@@ -138,7 +138,7 @@ const COS = [
   {id:'px-gi-joy', cat:'px', arq:1, n:'Greed Island · Joystation', d:'Pele do Book pixel.', p:1500, need:'px-unlock', skin:['p3','joy'], sw:['#2B2346','#0F0E1A','#FF6FB5','#6FE3FF','#FFD166']},
   {id:'px-gi-noite', cat:'px', arq:1, n:'Greed Island · Noite', d:'Pele do Book pixel.', p:1500, need:'px-unlock', skin:['p3','noite'], sw:['#0B1026','#141B3A','#FFB547','#7FD1FF','#C9A2FF']},
   {id:'px-ms-neon', cat:'px', arq:1, n:'Masadora · Neon', d:'Pele da loja pixel.', p:1500, need:'px-unlock', skin:['p3b','neon'], sw:['#0E0B1F','#1D1840','#FF5FA2','#6FE3FF','#E9E6FF']},
-  /* itens novos (#135): só para provar até os preços da #77 */
+  /* itens novos (#135): prova:1 = eram só para provar; desde a #77 se compram pelo preço da faixa (PRECO_FAIXA, mais abaixo) */
   {id:'pal-grafite', cat:'pal', prova:1, n:'Grafite', d:'Cinza puro, sem matiz.', p:0, eq:{theme:'grafite'}},
   {id:'pal-sepia', cat:'pal', prova:1, n:'Sépia', d:'Marrom de fotografia antiga, escuro.', p:0, eq:{theme:'sepia'}},
   {id:'pal-contraste', cat:'pal', prova:1, n:'Alto contraste', d:'Preto, branco e cores puras. Para ler sem esforço.', p:0, eq:{theme:'contraste'}},
@@ -214,6 +214,9 @@ const HXH = new Set(('pal-leorio pal-gon pal-biscuit pal-kurapika pal-netero pal
   'px-gi-joy px-gi-noite th-killua th-hisoka th-meruem th-greed th-zoldyck bd-corrente bd-costura hv-shu hv-vira hv-en hv-bungee cr-ioio cr-carta cr-agulha cr-vara hp-corrente hm-cartas hm-gungi tr-fumaca tr-aspira').split(' '));
 for(const [fa, ids] of Object.entries(FAIXA)) for(const id of ids.split(' ')){ const it = COS.find(i => i.id === id); if(it) it.fa = fa; }
 for(const it of COS){ if(it.cat === 'chefe'){ it.fa = 'raro'; it.hxh = 1; } else if(HXH.has(it.id)) it.hxh = 1; }
+/* os itens novos à venda (#77): o preço é a mediana do que já se vendia em cada faixa; título comum, 500 */
+const PRECO_FAIXA = {comum:1000, raro:2200, epico:3200};
+for(const it of COS) if(it.prova && PRECO_FAIXA[it.fa]){ it.p = it.cat === 'title' ? 500 : PRECO_FAIXA[it.fa]; delete it.prova; }
 const FAIXAS_LOJA = [['comum','Comum'],['raro','Raro'],['epico','Épico'],['lenda','Lendário']];
 /* pacote (ex-tema completo): comprar o pacote dá cada peça (paleta, textura, efeitos) para usar e misturar separado.
    antes = peças que saíram do pacote (foram para a loja do grupo, #43): só quem comprou o pacote antes da #135 continua com
@@ -505,8 +508,11 @@ function discOf(t, C){
   const x = p.slice(4).toUpperCase(); const ds = (C && C.BOSSES || []).map(b => b.d);
   return ds.includes(x) ? x : (ds.find(d => d.startsWith(x) || x.startsWith(d)) || x);
 }
-const custo = (n, dif='normal') => Math.max(1, Math.round((n < 100 ? 8 : n < 200 ? 16 : 40) * DIF[dif]));
-function andar(xp, dif){ let n = 1, r = xp; while(n < 251){ const c = custo(n,dif); if(r < c) return {n, into:r, need:c}; r -= c; n++; } return {n:251, into:1, need:1, topo:true}; }
+/* custo dos andares (#77): dobrou com o Codeforces pela cor (#180), para o topo ficar perto do fim das aulas para quem joga
+   muito (com 8/16/40 os três relatórios de 21/10 já projetavam o 251). TORRE_ANTES é a tabela de antes, só para o acerto */
+const TORRE = [16, 32, 80], TORRE_ANTES = [8, 16, 40], TORRE_MIGRA = 'torre';   // estado.json → migra.torre: {antes, depois, em}
+const custo = (n, dif='normal', t=TORRE) => Math.max(1, Math.round((n < 100 ? t[0] : n < 200 ? t[1] : t[2]) * DIF[dif]));
+function andar(xp, dif, t){ let n = 1, r = xp; while(n < 251){ const c = custo(n,dif,t); if(r < c) return {n, into:r, need:c}; r -= c; n++; } return {n:251, into:1, need:1, topo:true}; }
 const xpAte = (n, dif) => { let s = 0; for(let i=1;i<n;i++) s += custo(i,dif); return s; };
 /* férias (#31): do dia seguinte ao fim das aulas até a véspera da volta (linha temporada do avaliacoes.txt). A temporada só
    fecha na volta; as estatísticas e a projeção do andar vão até o fim das aulas */
@@ -904,6 +910,9 @@ function estado(C){
     const g = +rec.xpDias[d] || 0, x = xpDia[d] || 0;
     if(x > g){ rec.xpDias[d] = x; rec.mudou = true; } else if(g > x){ total += g - x; xpDia[d] = g; somaF(d, 'gravado', g - x); }
   }
+  /* torre mais cara (#77, uma vez): guarda o andar pela tabela de antes. O que ele já tinha liberado (conquistas e títulos de
+     andar) continua liberado: vale o maior entre o andar de hoje e esse */
+  if(!rec.migra[TORRE_MIGRA]){ rec.migra[TORRE_MIGRA] = {antes:andar(total, C.dif, TORRE_ANTES).n, depois:andar(total, C.dif).n, em:HOJE}; rec.mudou = true; }
   const set = new Set(feitas.filter(t => t.done && !isRec(t) && !antesDe(t, ini)).map(t => t.done));   // Ten: só tarefa que não é hábito
   const T = ten(set, first, HOJE, F.zetsu, fer, F.salvoTen); T.max = Math.max(T.max, rec.tenRec);
   const ritmo = first ? total/Math.max(1, dias(first,HOJE)/7) : 0;
@@ -960,7 +969,8 @@ function estado(C){
     (habDias[k] = habDias[k] || {n:t.txt, d:new Set()}).d.add(t.done); }
   const hab = Object.values(habDias).reduce((m,h) => h.d.size > m.max ? {max:h.d.size, nome:h.n} : m, {max:0, nome:''});
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
-  return {total, a:andar(total, C.dif), attr, porDia, xpDia, set, first, ten:T, nv:NV.hoje, duoDe, hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
+  const a = andar(total, C.dif);
+  return {total, a, andarRec: Math.max(a.n, +rec.migra[TORRE_MIGRA].antes || 0), attr, porDia, xpDia, set, first, ten:T, nv:NV.hoje, duoDe, hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
     proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto + retJ)), retJ, rec, jenny: ganho - (EST.spent||0),
     inv, prepBonus, espera, hab, sem, cfHoje, cfXP, cfCor: cfCor && {...cfCor.hoje, xp: cfBase(HOJE)}, usos: F.usos, valeTarefa, grupos: G, gXP, fonteDia, missaoDias, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
@@ -1046,12 +1056,12 @@ function cartas(C, S){
     c('041','F','Missão cumprida','Cumprir uma missão da semana (3 dias no atributo mais fraco).', S.missoes >= 1, 'esp'),
     c('042','C','Preparado','Fechar toda a preparação de uma avaliação antes da data.', S.prepBonus > 0, 'int'),
     c('043','B','Sempre pronto',`Preparação completa em 5 avaliações. Você tem ${S.prepBonus}.`, S.prepBonus >= 5, 'int'),
-    c('045','E','Andar 50','Passar do quinquagésimo andar.', S.a.n >= 50, 'tower'),
+    c('045','E','Andar 50','Passar do quinquagésimo andar.', S.andarRec >= 50, 'tower'),
     c('050','B','Aranha abatida','Derrotar um chefão (média ≥ 6).', S.bs.some(b => b.dead), 'spider'),
     c('051','C','Acima da média',`5 notas de 6 para cima. Você tem ${notas.filter(n => n >= MEDIA).length}.`, notas.filter(n => n >= MEDIA).length >= 5, 'int'),
     c('052','A','Nota 10','Tirar 10 numa avaliação.', notas.some(n => n >= 10), 'crown'),
-    c('055','B','Andar 100','Passar do centésimo andar.', S.a.n >= 100, 'tower'),
-    c('077','A','Floor Master','Chegar ao andar 200.', S.a.n >= 200, 'tower'),
+    c('055','B','Andar 100','Passar do centésimo andar.', S.andarRec >= 100, 'tower'),
+    c('077','A','Floor Master','Chegar ao andar 200.', S.andarRec >= 200, 'tower'),
     c('090','A','Neferpitou',`Torneio: vencer a 1ª guarda (Ten de 14 dias). Recorde: ${S.ten.max}.`, S.ten.max >= 14, 'cat'),
     c('091','A','Shaiapouf','Torneio: vencer a 2ª guarda (14 dias seguidos sem atraso, com pelo menos 3 prazos neles).', semAtraso, 'wing'),
     c('092','A','Menthuthuyoupi',`Torneio: vencer a 3ª guarda (uma semana acima de 300 XP). Melhor semana: ${melhorSem}.`, melhorSem > 300, 'horn'),
@@ -1386,7 +1396,7 @@ function resumoGrupo(C, S, pessoais){
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 
-window.GB = {devolucao, FAIXAS_LOJA, pacote, retratosJ, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, CONTRIB_MIGRA, CF_CORES, CF_COR_N, CF_NA_FAIXA, CF_ACIMA, CF_ABAIXO, CF_CONTEST, cfDias, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.GB = {PRECO_FAIXA, TORRE, TORRE_ANTES, TORRE_MIGRA, devolucao, FAIXAS_LOJA, pacote, retratosJ, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, CONTRIB_MIGRA, CF_CORES, CF_COR_N, CF_NA_FAIXA, CF_ACIMA, CF_ABAIXO, CF_CONTEST, cfDias, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   repRegra, repPasso, repProxima, repSucessora, repAcum, repAntes, repVisivel, repEntra, repFrase, SEM_REP,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,
