@@ -60,7 +60,7 @@ function guardaCaixa(g, j){
   G.off = j.agora - Date.now() / 1000;
   G.caixa[g.chave] = j;
   for(const c of j.convites) if(c.para === j.eu && !G.vistos.has(c.id)){ G.vistos.add(c.id);
-    toast(`${nome(c.de)} te desafiou para um duelo de Codeforces <small>aceite em ${esc(ABA.tt.n)} → desafios: o convite vale ${Math.round(j.regras.convite / 60)} minutos</small>`, 8000); }
+    toast(`Convite de duelo · CF: ${nome(c.de)} te desafiou <small>aceite em ${esc(ABA.tt.n)} → desafios: o convite vale ${Math.round(j.regras.convite / 60)} minutos</small>`, 8000); }
   // quem convidou: o outro aceitou
   if(duVivo(j.duelo) && j.duelo.de === j.eu && !(antes && antes.duelo && antes.duelo.id === j.duelo.id)){
     toast(`${nome(j.duelo.para)} aceitou o duelo <small>os problemas saem em instantes</small>`, 6000);
@@ -477,13 +477,15 @@ function convitesHTML(P, C){
   const como = ajTx('cv', `<p><b>Duelo:</b> desafie alguém do grupo que ligou o Codeforces. O convite vale ${Math.round(R.convite / 60)} minutos; depois some e é preciso mandar outro.</p>
     <p>Aceito, saem 3 problemas que nenhum dos dois resolveu, em volta da faixa do mais fraco (uma abaixo, a dele e uma acima), e o duelo começa ${R.conta} s depois. Dura ${R.minutos} minutos ou até alguém resolver os 3.</p>
     <p>Cada problema resolvido paga o mesmo que na tabela do dia, sem piso. Vence quem resolver mais; no empate, quem chegou antes.</p>`);
-  const linha = (id, txt, bts) => `<div class="tn-cvl">${ico(P, id, 26, 0, {semNome:true, nolink:true})}<span>${txt}</span><span class="tn-cvb">${bts}</span></div>`;
+  // cada convite diz o tipo na frente (o pacto entra com a mesma linha na fase 3)
+  const linha = (id, txt, bts, tipo = 'duelo · CF') => `<div class="tn-cvl">${ico(P, id, 26, 0, {semNome:true, nolink:true})}<span><span class="tn-cvtp">${tipo}</span>${txt}</span><span class="tn-cvb">${bts}</span></div>`;
+  const sobre = `3 problemas, ${R.minutos} min`;
   const outro = du ? (du.de === eu ? du.para : du.de) : 0;
   const ativo = vivo ? linha(outro, `Duelo com <b>${esc(nomeDe(P, outro))}</b> · ${du.estado === 'aceito' ? 'sorteando os problemas' : agoraS() < du.ini ? 'vai começar' : 'em andamento'}`, '<button type="button" class="btn v" data-ttsub="duelo">abrir o duelo</button>') : '';
-  const rec = C.convites.filter(c => c.para === eu).map(c => linha(c.de, `<b>${esc(nomeDe(P, c.de))}</b> te desafiou · some em ${relo(c.vence)}`,
+  const rec = C.convites.filter(c => c.para === eu).map(c => linha(c.de, `<b>${esc(nomeDe(P, c.de))}</b> te desafiou · ${sobre} · some em ${relo(c.vence)}`,
     `<button type="button" class="btn v" data-tndu="aceitar" data-id="${c.id}">aceitar</button><button type="button" class="btn" data-tndu="recusar" data-id="${c.id}">recusar</button>`)).join('');
-  const env = C.convites.filter(c => c.de === eu).map(c => linha(c.para, `Você desafiou <b>${esc(nomeDe(P, c.para))}</b> · some em ${relo(c.vence)}`,
-    `<button type="button" class="btn" data-tndu="cancelar" data-id="${c.id}">cancelar</button>`)).join('');
+  const env = C.convites.filter(c => c.de === eu).map(c => linha(c.para, `Você desafiou <b>${esc(nomeDe(P, c.para))}</b> · esperando · some em ${relo(c.vence)}`,
+    `<button type="button" class="btn" data-ttsub="duelo">abrir</button><button type="button" class="btn" data-tndu="cancelar" data-id="${c.id}">cancelar</button>`)).join('');
   const pode = meuCf && !vivo && !C.convites.some(c => c.de === eu);
   const outros = P.membros.filter(m => m.id !== eu);
   const lista = TT.desafiar && pode ? `<div class="tn-cvop">${outros.map(m => `<button type="button" class="btn" data-tndu="convidar" data-para="${m.id}"${m.cf ? '' : ' disabled title="ainda não ligou o Codeforces"'}>${esc(m.nome)}</button>`).join('')}</div>` : '';
@@ -494,30 +496,54 @@ function convitesHTML(P, C){
     <div class="tn-cv">${duelo}${PACTO}</div></section>`;
 }
 
-/* ---------- duelo: os dois lado a lado, o relógio e quem resolveu cada um dos 3 problemas ---------- */
+/* ---------- duelo: você × o outro, o relógio e quem resolveu cada um dos 3 problemas ----------
+   Duas versões em teste, trocadas no próprio card (gb-tt-dv): "espelhada" (os dois lados em volta dos problemas, como uma
+   chave de luta) e "enxuta" (o placar grande e a lista dos problemas embaixo). Cada fase tem a sua tela: esperando o aceite,
+   sorteio, contagem, em andamento, fim. */
+TT.dv = (() => { try { return localStorage.getItem('gb-tt-dv') || 'espelhada'; } catch(e){ return 'espelhada'; } })();
+const meuConvite = C => C ? C.convites.find(c => c.de === C.eu) : null;
+const temDuelo = C => !!C && !!(C.duelo || meuConvite(C));
+const faseDu = du => du.estado === 'convite' ? 'espera' : du.estado === 'aceito' ? 'sorteio' : du.estado === 'andamento' ? (agoraS() < du.ini ? 'conta' : 'vivo') : du.estado;
+const pips = n => `<span class="tn-pips">${[0, 1, 2].map(i => `<i${i < n ? ' class="ok"' : ''}></i>`).join('')}</span>`;
 function subDuelo(P, C){
-  const du = C && C.duelo, eu = P.voce.membro;
+  const eu = P.voce.membro, du = (C && C.duelo) || meuConvite(C);
   if(!du) return `<section class="card"><h2><span class="c">~/</span>duelo</h2><p class="sub" style="margin:0">Nenhum duelo agora. <button type="button" class="tt-lk" data-ttsub="desafios">desafiar alguém</button></p></section>`;
-  const lado = du.de === eu ? [du.de, du.para] : [du.para, du.de];
+  const fase = faseDu(du), outro = du.de === eu ? du.para : du.de;
   const J = id => (du.jogadores || []).find(j => j.membro === id) || {n:0, t:0, pts:0, feitos:{}};
-  const antes = du.estado === 'andamento' && agoraS() < du.ini;
-  const meio = du.estado === 'aceito' ? '<small>sorteando</small><b>…</b>'
-    : antes ? `<small>começa em</small><b>${relo(du.ini)}</b>`
-    : du.estado === 'andamento' ? `<small>restam</small><b>${relo(du.ate)}</b>`
-    : du.estado === 'falhou' ? '<small>não saiu</small><b>—</b>'
-    : `<small>acabou</small><b>${du.venceu == null ? 'empate' : du.venceu === eu ? 'você venceu' : esc(nomeDe(P, du.venceu)) + ' venceu'}</b>`;
-  const jog = id => `<div class="tn-dvj${du.venceu === id ? ' venceu' : ''}">${ico(P, id, 54, 0, {nolink:true})}<b class="tn-dvn">${J(id).n}<small>/3</small></b></div>`;
   const vals = (P.torre.cf_dia || {}).valores || [];
-  const cel = (id, p) => { const t = J(id).feitos[p.id]; return `<span class="tn-dvt${t != null ? ' ok' : ''}">${t != null ? '✓ ' + mmss(t) : '—'}</span>`; };
-  const probs = du.problemas ? du.problemas.map(p => { const [n, c] = corCF(p.rating);
-      return `<div class="tn-dvp">${cel(lado[0], p)}<span class="tn-dvm"><span class="tn-fx" style="--c:${c}" title="${n}">${p.rating}</span><a href="https://codeforces.com/problemset/problem/${p.contest}/${encodeURIComponent(p.index)}" target="_blank" rel="noopener" class="tn-cfn">${esc(p.nome)}<small>${p.contest}${esc(p.index)}</small></a><span class="tn-cfv">+${vals[p.faixa] != null ? vals[p.faixa] : '?'}</span></span>${cel(lado[1], p)}</div>`; }).join('')
-    : du.estado === 'falhou' ? '' : [0, 1, 2].map(() => '<div class="tn-dvp"><span class="tn-dvt">—</span><span class="tn-dvm sub">o problema aparece quando o duelo começar</span><span class="tn-dvt">—</span></div>').join('');
-  const pe = du.estado === 'fim' ? `<p class="sub" style="margin:12px 0 0">Você ganhou <b class="tn-tc">${J(eu).pts} <small>TC</small></b> pelos problemas que resolveu (já na carteira). <button type="button" class="tt-lk" data-ttsub="desafios">voltar aos desafios</button></p>`
-    : du.estado === 'falhou' ? '<p class="sub" style="margin:12px 0 0">A API do Codeforces não respondeu e o sorteio desistiu. Ninguém perde nada: desafie de novo. <button type="button" class="tt-lk" data-ttsub="desafios">voltar aos desafios</button></p>'
-    : '<p class="sub" style="margin:12px 0 0">Resolva no Codeforces: o servidor do grupo confere os envios dos dois a cada 15 s.</p>';
-  return `<section class="card"><h2><span class="c">~/</span>duelo · Codeforces <span class="r">${esc(nomeDe(P, lado[0]))} × ${esc(nomeDe(P, lado[1]))}</span></h2>
-    <div class="tn-dvc">${jog(lado[0])}<div class="tn-dvr">${meio}</div>${jog(lado[1])}</div>
-    <div class="tn-dvps">${probs}</div>${pe}</section>`;
+  const res = du.venceu == null ? 'empate' : du.venceu === eu ? 'você venceu' : esc(nomeDe(P, du.venceu)) + ' venceu';
+  const relogio = fase === 'espera' ? ['o convite some em', relo(du.vence)] : fase === 'sorteio' ? ['sorteando', '…']
+    : fase === 'conta' ? ['duração', `${C.regras.minutos}:00`] : fase === 'vivo' ? ['restam', relo(du.ate)] : fase === 'falhou' ? ['não saiu', '—'] : ['acabou', res];
+  const troca = `<span class="tn-dvsw" role="group" aria-label="versão da tela">${['espelhada', 'enxuta'].map(v => `<button type="button" data-tndv="${v}"${TT.dv === v ? ' aria-pressed="true"' : ''}>${v}</button>`).join('')}</span>`;
+  const link = p => `<a href="https://codeforces.com/problemset/problem/${p.contest}/${encodeURIComponent(p.index)}" target="_blank" rel="noopener" class="tn-dvpn">${esc(p.nome)}</a>`;
+  const chip = p => { const [n, c] = corCF(p.rating); return `<span class="tn-fx" style="--c:${c}" title="${n}">${p.rating}</span>`; };
+  const tc = p => `<span class="tn-dvtc">+${vals[p.faixa] != null ? vals[p.faixa] : '?'} TC</span>`;
+  const tempo = (id, p) => { const t = J(id).feitos[p.id]; return t != null ? `<span class="tn-dvt ok">✓ ${mmss(t)}</span>` : '<span class="tn-dvt">—</span>'; };
+  // antes dos problemas existirem, o meio da tela diz o que está acontecendo
+  const espera = fase === 'espera' ? `<div class="tn-dvx"><p>O convite foi para <b>${esc(nomeDe(P, outro))}</b>. Quando aceitar, saem os 3 problemas e o duelo começa ${C.regras.conta} s depois.</p><button type="button" class="btn" data-tndu="cancelar" data-id="${du.id}">cancelar o convite</button></div>`
+    : fase === 'sorteio' ? '<div class="tn-dvx"><p>Sorteando 3 problemas que nenhum dos dois resolveu…</p></div>'
+    : fase === 'conta' ? `<div class="tn-dvx"><b class="tn-dvbig">${relo(du.ini)}</b><p>Os problemas aparecem quando a contagem acabar: ninguém sai na frente.</p></div>`
+    : fase === 'falhou' ? '<div class="tn-dvx"><p>A API do Codeforces não respondeu e o sorteio desistiu. Ninguém perde nada: desafie de novo.</p></div>' : '';
+  const fim = fase === 'fim' ? `<div class="tn-dvfim${du.venceu === eu ? ' ok' : du.venceu == null ? '' : ' perdeu'}"><b>${res}</b><span>Você ganhou ${TC(J(eu).pts)} pelos problemas que resolveu (já na carteira).</span></div>` : '';
+  const pe = fase === 'vivo' ? '<p class="tn-dvpe">Resolva no Codeforces: o servidor do grupo confere os envios dos dois a cada 15 s.</p>'
+    : fase === 'fim' || fase === 'falhou' ? '<p class="tn-dvpe"><button type="button" class="tt-lk" data-ttsub="desafios">voltar aos desafios</button></p>' : '';
+  const comProbs = du.problemas && (fase === 'vivo' || fase === 'fim');
+  let corpo;
+  if(TT.dv === 'enxuta'){
+    const placar = `<div class="tn-dex"><span class="tn-dexn e">${esc(nomeDe(P, eu))}</span><b class="tn-dexp${du.venceu === eu ? ' ok' : ''}">${J(eu).n}</b><span class="tn-dexx">×</span><b class="tn-dexp${du.venceu === outro ? ' ok' : ''}">${J(outro).n}</b><span class="tn-dexn">${esc(nomeDe(P, outro))}</span></div>
+      <div class="tn-dvr">${fase === 'fim' ? '' : `<small>${relogio[0]}</small><b>${relogio[1]}</b>`}</div>`;
+    const lista = comProbs ? `<div class="tn-dels">${du.problemas.map(p => `<div class="tn-del">
+        <div class="tn-delt">${chip(p)}${link(p)}${tc(p)}</div>
+        <div class="tn-delq"><span>você ${tempo(eu, p)}</span><small>${p.contest}${esc(p.index)}</small><span>${esc(nomeDe(P, outro))} ${tempo(outro, p)}</span></div></div>`).join('')}</div>` : espera;
+    corpo = `<div class="tn-dw">${placar}${fim}${lista}${pe}</div>`;
+  } else {
+    const lado = (id, dir) => `<div class="tn-dvj ${dir}${du.venceu === id ? ' venceu' : ''}${fase === 'espera' && id !== eu ? ' longe' : ''}">${ico(P, id, 58, 0, {nolink:true})}${pips(J(id).n)}<b class="tn-dvn">${J(id).n}<small>/3</small></b></div>`;
+    const meio = `<div class="tn-dvr">${fase === 'fim' ? '<b>×</b>' : `<small>${relogio[0]}</small><b>${relogio[1]}</b>`}</div>`;
+    const probs = comProbs ? `<div class="tn-dvps">${du.problemas.map(p => `<div class="tn-dvp">${tempo(eu, p)}
+        <div class="tn-dvm">${chip(p)}${link(p)}<small>${p.contest}${esc(p.index)} · ${tc(p)}</small></div>${tempo(outro, p)}</div>`).join('')}</div>` : espera;
+    corpo = `<div class="tn-dw"><div class="tn-dvc">${lado(eu, 'e')}${meio}${lado(outro, 'd')}</div>${fim}${probs}${pe}</div>`;
+  }
+  return `<section class="card"><h2><span class="c">~/</span>duelo · Codeforces <span class="r">${troca}</span></h2>${corpo}</section>`;
 }
 function subDesafios(P){
   const S = P.torre.semanal, eu = P.voce.membro;
@@ -609,8 +635,8 @@ function rTT2(S){
   const admBt = adm ? `<button type="button" class="adm" data-gpaba="admin"${G.aba === 'admin' ? ' aria-current="page"' : ''}>administrar</button>` : '';
   if(!NOVAS.includes(TT.sub)) TT.sub = 'semana';
   const C = caixaDe(g), nConv = C ? C.convites.filter(c => c.para === C.eu).length : 0;
-  if(TT.sub === 'duelo' && !(C && C.duelo)) TT.sub = 'desafios';
-  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('semana', 'semana')}${ab('desafios', nConv ? `desafios <b class="tn-bdg">${nConv}</b>` : 'desafios')}${C && C.duelo ? ab('duelo', duVivo(C.duelo) ? '<i class="dot"></i>duelo' : 'duelo') : ''}${ab('temporada', 'temporada')}${ab('hunters', 'hunters')}${ab('loja', 'loja')}${admBt}</nav>`;
+  if(TT.sub === 'duelo' && !temDuelo(C)) TT.sub = 'desafios';
+  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('semana', 'semana')}${ab('desafios', nConv ? `desafios <b class="tn-bdg">${nConv}</b>` : 'desafios')}${temDuelo(C) ? ab('duelo', duVivo(C.duelo) ? '<i class="dot"></i>duelo' : 'duelo') : ''}${ab('temporada', 'temporada')}${ab('hunters', 'hunters')}${ab('loja', 'loja')}${admBt}</nav>`;
   document.getElementById('tt-root').innerHTML = cab + outro + nav + (G.aba === 'admin' ? adminHTML(g) : torreNova(g));
 }
 const RENDER0 = {tt: RENDER.tt, cfg: RENDER.cfg};
@@ -683,11 +709,12 @@ document.addEventListener('click', async e => {
   let b;
   if((b = q('[data-ttsub]'))){ vaiPara({sub: b.dataset.ttsub}); return; }
   if((b = q('[data-ttjog]'))){ vaiPara({sub: 'hunters', jog: +b.dataset.ttjog}); return; }
+  if((b = q('[data-tndv]'))){ TT.dv = b.dataset.tndv; try { localStorage.setItem('gb-tt-dv', TT.dv); } catch(err){} render(); return; }
   if(q('[data-tndesafiar]')){ TT.desafiar = !TT.desafiar; render(); return; }
   if((b = q('[data-tndu]'))){ const g = grupoSel(), acao = b.dataset.tndu; b.disabled = true;
     try { const r = await post('/api/grupo/duelo', {chave: g.chave, acao, id: +b.dataset.id || undefined, para: +b.dataset.para || undefined});
       TT.desafiar = false; guardaCaixa(g, r);
-      if(acao === 'aceitar') vaiPara({sub: 'duelo'}); else render();
+      if(acao === 'aceitar' || acao === 'convidar') vaiPara({sub: 'duelo'}); else render();
       if(acao === 'convidar') toast(`Convite mandado <small>some em ${Math.round(r.regras.convite / 60)} minutos se ninguém aceitar</small>`);
       lacoCaixa(); }
     catch(err){ toast('Não deu: ' + esc(err.message)); lacoCaixa(); }
@@ -1039,15 +1066,36 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-cvl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13.5px;border:1px solid var(--hair);border-radius:3px;padding:8px 10px}
 .tn-cvb{display:flex;gap:6px;flex-wrap:wrap} .tn-cvop{display:flex;gap:6px;flex-wrap:wrap}
 .tn-bdg{font:700 10px var(--f-mono);background:var(--volt);color:var(--bg);border-radius:8px;padding:1px 5px;margin-left:4px}
-.tn-dvc{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;justify-items:center;margin-bottom:14px}
-.tn-dvj{display:grid;justify-items:center;gap:4px} .tn-dvj.venceu .tn-dvn{color:var(--grn)}
+.tn-cvtp{display:inline-block;font:700 10px var(--f-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--volt);border:1px solid color-mix(in srgb,var(--volt) 50%,transparent);border-radius:3px;padding:1px 6px;margin-right:8px;vertical-align:1px}
+.tn-dvsw{display:inline-flex;border:1px solid var(--hair);border-radius:3px;overflow:hidden;text-transform:none;letter-spacing:0}
+.tn-dvsw button{font:500 11px var(--f-mono);padding:3px 8px;border:0;background:none;color:var(--faint);cursor:pointer} .tn-dvsw button[aria-pressed]{background:var(--hair);color:var(--ink)}
+.tn-dw{max-width:720px;margin:0 auto}
+.tn-dvc{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;justify-items:center;margin:6px 0 16px}
+.tn-dvj{display:grid;justify-items:center;gap:6px} .tn-dvj.longe{opacity:.4} .tn-dvj.venceu .tn-dvn{color:var(--grn)}
 .tn-dvn{font:700 28px/1 var(--f-hud)} .tn-dvn small{font-size:.5em;color:var(--faint)}
-.tn-dvr{display:grid;justify-items:center;gap:2px;text-align:center} .tn-dvr small{font:500 11px var(--f-mono);color:var(--soft)} .tn-dvr b{font:700 22px/1.1 var(--f-hud)}
-.tn-dvps{display:grid;border:1px dashed var(--hair);border-radius:3px}
-.tn-dvp{display:grid;grid-template-columns:64px minmax(0,1fr) 64px;gap:10px;align-items:center;padding:8px 12px} .tn-dvp + .tn-dvp{border-top:1px dashed var(--hair)}
-.tn-dvm{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;min-width:0}
-.tn-dvt{font:600 12px var(--f-mono);color:var(--faint);text-align:center} .tn-dvt.ok{color:var(--grn)}
-@media (max-width:560px){.tn-dvp{grid-template-columns:52px minmax(0,1fr) 52px;padding:8px} .tn-dvm{grid-template-columns:minmax(0,1fr)} .tn-dvm .tn-fx,.tn-dvm .tn-cfv{display:none}}
+.tn-pips{display:flex;gap:5px} .tn-pips i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--hair)} .tn-pips i.ok{background:var(--grn);border-color:var(--grn)}
+.tn-dvr{display:grid;justify-items:center;gap:2px;text-align:center;min-width:120px} .tn-dvr small{font:500 11px var(--f-mono);color:var(--soft)} .tn-dvr b{font:700 24px/1.1 var(--f-hud)}
+.tn-dvps{display:grid;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.tn-dvp{display:grid;grid-template-columns:1fr minmax(0,2.4fr) 1fr;gap:12px;align-items:center;padding:12px 4px} .tn-dvp + .tn-dvp{border-top:1px dashed var(--hair)}
+.tn-dvp > .tn-dvt:first-child{justify-self:end} .tn-dvp > .tn-dvt:last-child{justify-self:start}
+.tn-dvm{display:grid;justify-items:center;gap:4px;text-align:center;min-width:0;padding:0 12px;border-left:1px solid var(--hair);border-right:1px solid var(--hair)}
+.tn-dvm small{font:500 11px var(--f-mono);color:var(--faint)}
+.tn-dvpn{font-size:14px;color:var(--ink);text-decoration:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .tn-dvpn:hover{color:var(--volt)}
+.tn-dvtc{font:600 11px var(--f-mono);color:var(--amb)}
+.tn-dvt{font:600 13px var(--f-mono);color:var(--faint)} .tn-dvt.ok{color:var(--grn)}
+.tn-dvx{display:grid;justify-items:center;gap:10px;text-align:center;padding:22px 12px;border:1px dashed var(--hair);border-radius:3px} .tn-dvx p{margin:0;max-width:46ch;color:var(--soft);font-size:13.5px}
+.tn-dvbig{font:700 44px/1 var(--f-hud)}
+.tn-dvfim{display:grid;justify-items:center;gap:4px;text-align:center;padding:12px;margin-bottom:14px;border:1px solid var(--hair);border-radius:3px} .tn-dvfim b{font:700 20px var(--f-hud)}
+.tn-dvfim.ok{border-color:var(--grn)} .tn-dvfim.ok b{color:var(--grn)} .tn-dvfim span{font-size:13px;color:var(--soft)}
+.tn-dvpe{text-align:center;margin:12px 0 0;font-size:12.5px;color:var(--soft)}
+.tn-dex{display:grid;grid-template-columns:1fr auto auto auto 1fr;gap:14px;align-items:center;margin:4px 0 2px}
+.tn-dexn{font:600 14px var(--f-hud)} .tn-dexn.e{justify-self:end} .tn-dexp{font:700 52px/1 var(--f-hud)} .tn-dexp.ok{color:var(--grn)} .tn-dexx{font:500 20px var(--f-hud);color:var(--faint)}
+.tn-dex + .tn-dvr{margin:0 auto 14px}
+.tn-dels{display:grid;gap:8px;max-width:560px;margin:0 auto}
+.tn-del{display:grid;gap:6px;border:1px solid var(--hair);border-radius:3px;padding:10px 12px}
+.tn-delt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.tn-delq{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;font-size:12px;color:var(--soft)} .tn-delq > span:last-child{justify-self:end} .tn-delq small{font:500 11px var(--f-mono);color:var(--faint)}
+@media (max-width:560px){.tn-dvc{gap:8px} .tn-dvr{min-width:0} .tn-dvp{grid-template-columns:52px minmax(0,1fr) 52px;gap:6px;padding:10px 0} .tn-dvm{padding:0 8px} .tn-dexp{font-size:40px} .tn-dex{gap:8px}}
 .tn-cv{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .tn-cv > div{display:grid;gap:6px;align-content:start;border:1px solid var(--hair);border-radius:3px;padding:12px} .tn-cv .btn{justify-self:start}
 .tn-hp{display:grid;gap:6px} .tn-hpt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline} .tn-hpt b{font:700 18px var(--f-hud)}
