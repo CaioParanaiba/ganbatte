@@ -461,13 +461,19 @@ function subHunters(P){
   const menu = P.membros.map(mm => { const t = temp(P, mm.id);
     return `<button type="button" class="tt-jm" data-ttjog="${mm.id}" aria-pressed="${mm.id === id}">${ico(P, mm.id, 36, 0, {semNome:true, nolink:true})}<span class="n">${esc(mm.nome)}${mm.id === P.voce.membro ? ' (você)' : ''}<small>${t.rodadas} ${t.rodadas === 1 ? 'rodada' : 'rodadas'} · ${'★'.repeat(estrelas(t)) || 'sem estrela'}</small></span></button>`; }).join('');
   const habs = P.torre.placares.filter(p => p.habito).map(p => [p, p.linhas.find(l => l.membro === id)]).filter(z => z[1]);
-  const lic = ARTE() ? `<div class="tt-duas"><div><span class="rot">frente</span>${licPeca(P, id, 'frente', 320)}</div><div><span class="rot">verso</span>${licPeca(P, id, 'verso', 320)}</div></div>`
+  const lic = ARTE() ? `<div class="tt-duas"><div><span class="rot">frente</span>${licPeca(P, id, 'frente', 270)}</div><div><span class="rot">verso</span>${licPeca(P, id, 'verso', 270)}</div></div>`
     : `<div class="tt-duas"><div><span class="rot">frente</span><div class="tt-lic grande">${frente(P, id, true)}</div></div><div><span class="rot">verso</span><div class="tt-lic grande">${verso(P, id)}</div></div></div>`;
+  // ao lado da licença: os 4 blocos e as outras modalidades da semana, a marca e os números por hábito, tudo numa tela
+  const lin = (k, v) => `<div class="tn-ml${k === s.modalidade ? ' on' : ''}"><span>${esc(md(k)[0])}${k === s.modalidade ? (dobra(k) ? ' ×2' : ' ★') : ''}</span><i style="--v:${v || 0}%"></i><b>${v == null ? '—' : v}</b></div>`;
+  const lado = x ? `<div class="tn-lado"><span class="tn-k">semana ${s.semana.split('-W')[1]} · ${x.total} pontos</span>
+      ${BLOCOS.map(k => lin(k, x.blocos[k])).join('')}
+      ${Object.keys(x.mods || {}).length ? `<span class="tn-k t">outras modalidades</span>${Object.entries(x.mods).map(([k, v]) => lin(k, v)).join('')}` : ''}
+      <div class="tn-ml marca"><span>marca da semana</span><b>${x.marca == null ? '—' : `${x.mod || 0} / ${x.marca}${x.bateu ? ' ✓' : ''}`}</b></div>
+      ${habs.length ? `<span class="tn-k t">por hábito</span>${habs.map(([p, l]) => `<div class="tn-ml hab" title="${esc(l.det)}"><span>${esc(p.nome)}</span><b>${esc(l.txt)}</b></div>`).join('')}` : ''}</div>`
+    : '<div class="tn-lado"><p class="sub">Ainda sem dias nesta semana.</p></div>';
   return `<div class="tt-jg"><nav class="tt-jmenu" aria-label="hunters">${menu}</nav><div class="tt-stack">
-    <section class="card"><h2><span class="c">~/</span>licença de ${esc(m.nome)} <span class="r">a carteira que cada um monta: personalize na <button type="button" class="tt-lk" data-ttsub="loja">loja</button></span></h2>${lic}</section>
-    <section class="card"><h2><span class="c">~/</span>esta semana</h2>${x ? `<div class="tn-det">${BLOCOS.map(k => `<div><small>${md(k)[0]}</small><b>${x.blocos[k] == null ? '—' : x.blocos[k]}</b></div>`).join('')}${Object.entries(x.mods || {}).map(([k, v]) => `<div><small>${md(k)[0]}${k === s.modalidade ? ' ★' : ''}</small><b>${v == null ? '—' : v}</b></div>`).join('')}<div><small>marca da semana</small><b>${x.marca == null ? '—' : x.bateu ? '✓' : `${x.mod || 0}/${x.marca}`}</b></div></div>` : '<p class="sub">Ainda sem dias nesta semana.</p>'}</section>
-    <section class="card"><h2><span class="c">~/</span>por hábito <span class="r">números do perfil, não placar</span></h2>
-      ${habs.length ? `<div class="tn-det">${habs.map(([p, l]) => `<div><small>${esc(p.nome)}</small><b>${esc(l.txt)}</b><span class="sub">${esc(l.det)}</span></div>`).join('')}</div>` : '<p class="sub">Nenhum hábito do grupo ligado.</p>'}</section>
+    <section class="card"><h2><span class="c">~/</span>licença de ${esc(m.nome)} <span class="r">personalize na <button type="button" class="tt-lk" data-ttsub="loja">loja</button></span></h2>
+      <div class="tn-hl">${lic}${lado}</div></section>
   </div></div>`;
 }
 
@@ -947,6 +953,13 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-q{display:inline-flex;gap:8px;align-items:center} .tn-mm{display:inline-flex;gap:4px}
 .tn-gr th small{display:block;font-weight:500;letter-spacing:0;text-transform:none} .tn-gr td{text-align:center} .tn-gr td:first-child{text-align:left;white-space:nowrap}
 .tn-gr .tt-md{width:auto;min-width:18px;padding:0 4px}
+.tn-hl{display:grid;gap:22px;align-items:start} @container (min-width:900px){.tn-hl{grid-template-columns:auto minmax(240px,1fr)}}
+.tn-lado{display:grid;gap:5px;align-content:start} .tn-lado .tn-k.t{margin-top:10px}
+.tn-ml{display:grid;grid-template-columns:minmax(0,1fr) 90px 34px;gap:10px;align-items:center;font:13px var(--f-mono);padding:3px 0;border-bottom:1px dashed var(--hair)}
+.tn-ml i{height:6px;background:linear-gradient(90deg,var(--volt) var(--v),var(--track) var(--v))} .tn-ml b{text-align:right;font:700 14px var(--f-hud)}
+.tn-ml.on span,.tn-ml.on b{color:var(--aura)} .tn-ml.on i{background:linear-gradient(90deg,var(--aura) var(--v),var(--track) var(--v))}
+.tn-ml.marca,.tn-ml.hab{grid-template-columns:minmax(0,1fr) auto} .tn-ml.marca{margin-top:8px;border:1px solid var(--hair);border-radius:3px;padding:6px 10px}
+.tn-ml.hab span{color:var(--soft)} .tn-ml.hab b{font:600 12.5px var(--f-mono)}
 .tn-det{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
 .tn-det > div{border:1px solid var(--hair);border-radius:3px;padding:8px 10px;display:grid;gap:2px} .tn-det small{font:600 10px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--faint)} .tn-det b{font:700 18px var(--f-hud)}
 </style>`);
