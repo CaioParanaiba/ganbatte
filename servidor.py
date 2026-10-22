@@ -15,6 +15,7 @@ Serve a página do jogo (web/) em http://127.0.0.1:PORTA/ e grava os dados do jo
   ajustes.txt, narradas.json caixa de entrada e cartas narradas (opcionais)
   conquistas.json           conquistas criadas pela IA (200 em diante) e o que foi resgatado
   planos/                   planos de ensino (PDF, HTML...) que a IA lê
+  aulas/                    resumos e transcrições das aulas mandadas pelo chefão (aulas.json é o índice, com as sugestões)
   cf.json                   cache do Codeforces (problemas aceitos por dia e os marcados à mão)
   duo.json                  cache do Duolingo (a última ofensiva lida, os dias já creditados e desde quando está ligado)
   contrib.json              issues do jogador no GitHub que entraram no beta (bug corrigido, ideia feita) e o dia em que o jogo as viu;
@@ -44,6 +45,11 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/ia/rodar {pedido, anexo?, leve?} roda o agente com o pedido da página → {id}; GET /api/ia/rodar?id= até ficar pronto
   POST /api/ia/cancela {id}              para o pedido rodando: encerra o agente e libera a vaga (#115)
   POST /api/ia/plano {nome, base64}       guarda um plano de ensino em planos/
+  GET  /api/aulas                         aulas resumidas (aulas/aulas.json), as que estão rodando e se o Whisper está instalado
+  POST /api/aulas/nova {sigla, data} → {id}; POST /api/aulas/arquivo?id=&nome= (o arquivo cru no corpo: áudio ou slides)
+  POST /api/aulas/processar {id, transcricao?} transcreve (faster-whisper) e a IA ligada resume e sugere tarefas; /cancela {id}
+  POST /api/aulas/decidir {id, i, estado}  não adicionar | adicionar | juntar uma sugestão · /api/aulas/apagar {id}
+  GET  /aulas/SIGLA/ARQUIVO.html|md       o resumo e a transcrição de uma aula
   POST /api/conquistas {acao, ...}        conquistas da IA: criar {itens} | resgatar {no, como, j|k} | descartar {no}
   GET  /api/atualizacao[?agora]           versão instalada e as mais novas publicadas no GitHub (confere a cada 6 h; ?agora = na hora)
   POST /api/atualizar {}                  baixa a versão nova (git pull ou ZIP do GitHub) e reinicia o servidor
@@ -2038,7 +2044,8 @@ def explica_erro(ag, saida):
     return s or "o agente terminou sem responder"
 
 
-def ia_executa(tid, ag, exe, pedido, anexos, leve):
+def ia_executa(tid, ag, exe, pedido, anexos, leve, tempo=IA_TEMPO):
+    """anexos: nomes da pasta planos/ ou caminhos (Path) de outros arquivos, como os da aula"""
     import tempfile
     t = ia_tarefas[tid]
     fim = {"estado": "erro", "erro": "o agente parou sem responder"}   # vale só depois de liberar a vaga (o próximo pedido não leva 409)
@@ -2046,10 +2053,13 @@ def ia_executa(tid, ag, exe, pedido, anexos, leve):
         with tempfile.TemporaryDirectory(prefix="ganbatte-ia-") as pasta:
             if anexos:
                 import shutil
+                nomes = []
                 for a in anexos:
-                    shutil.copy2(DADOS / "planos" / a, Path(pasta) / a)
-                pedido += "\n\n" + (f"O arquivo {anexos[0]} está na pasta atual: leia-o." if len(anexos) == 1
-                                     else "Os arquivos estão na pasta atual: " + ", ".join(anexos) + ". Leia-os.")
+                    src = a if isinstance(a, Path) else DADOS / "planos" / a
+                    shutil.copy2(src, Path(pasta) / src.name)
+                    nomes.append(src.name)
+                pedido += "\n\n" + (f"O arquivo {nomes[0]} está na pasta atual: leia-o." if len(nomes) == 1
+                                     else "Os arquivos estão na pasta atual: " + ", ".join(nomes) + ". Leia-os.")
             saida = str(Path(pasta) / ".resposta.txt")
             if ag == "agy":
                 Path(pasta, PEDIDO_ARQ).write_text(pedido, encoding="utf-8")
@@ -2064,7 +2074,7 @@ def ia_executa(tid, ag, exe, pedido, anexos, leve):
             if t.get("cancelado"):   # cancelado antes de o agente abrir
                 ia_mata(p)
             try:
-                out, err = p.communicate(pedido, timeout=IA_TEMPO)
+                out, err = p.communicate(pedido, timeout=tempo)
             except subprocess.TimeoutExpired:
                 ia_mata(p)
                 raise
@@ -2076,7 +2086,7 @@ def ia_executa(tid, ag, exe, pedido, anexos, leve):
                 raise Erro(explica_erro(ag, (err or "") + " " + (out or "")))
             fim = {"estado": "pronto", "texto": texto.strip()}
     except subprocess.TimeoutExpired:
-        fim = {"estado": "erro", "erro": f"o agente passou de {IA_TEMPO // 60} minutos sem responder"}
+        fim = {"estado": "erro", "erro": f"o agente passou de {tempo // 60} minutos sem responder"}
     except (Erro, OSError) as e:
         fim = {"estado": "erro", "erro": str(e)}
     finally:
@@ -2165,6 +2175,430 @@ def api_ia_plano(d):
     p.mkdir(exist_ok=True)
     (p / nome).write_bytes(corpo)
     return {"ok": True, "nome": nome, "planos": planos()}
+
+
+# ---------- aulas: o jogador manda o áudio e/ou os slides de uma aula pelo chefão; o jogo transcreve aqui mesmo (faster-whisper,
+# opcional, sem gastar a IA) e a IA ligada escreve o resumo e sugere tarefas de estudo. Na pasta de dados:
+#   aulas/aulas.json            índice: [{id, sigla, data, assunto, html, md, criada, sugestoes: [{texto, detalhe, pri, est, due, av,
+#                               motivo, juntar, estado: "" | nao | add | juntar}]}]
+#   aulas/SIGLA/DATA-slug.html  o resumo (página "caderno", web/aulas/modelo.html), aberto pelo chefão em /aulas/SIGLA/...
+#   aulas/SIGLA/DATA-slug.md    a transcrição
+#   aulas/.trabalho/ID/         o que chegou e ainda não virou resumo; o áudio é apagado no fim (não fica guardado)
+AULA_AUDIO = {".m4a", ".mp3", ".ogg", ".opus", ".wav", ".aac", ".flac", ".webm", ".mp4", ".amr", ".3gp", ".mkv"}
+AULA_SLIDE = {".pdf", ".txt", ".md"}
+AULA_MAX = 600_000_000   # bytes por arquivo (1h40 de áudio do celular fica bem abaixo disso)
+AULA_TEMPO = 1500   # segundos para a IA escrever o resumo (é o pedido mais longo do jogo)
+NOME_AULA = re.compile(r"^[\w .()\-]{1,100}$")
+ID_AULA = re.compile(r"^\d{8,16}$")
+aulas_jobs = {}   # id → {sigla, data, etapa: fila|transcrevendo|lendo|resumindo|erro, prog, erro, ini, tid}
+aulas_fila = threading.Lock()   # uma aula por vez (transcrever ocupa a CPU inteira)
+_whisper = {}
+TRANSCREVE = r'''
+import os, sys
+from faster_whisper import WhisperModel
+audio, saida, modelo = sys.argv[1:4]
+m = WhisperModel(modelo, device="cpu", compute_type="int8", cpu_threads=max(1, (os.cpu_count() or 2) - 2))
+segs, info = m.transcribe(audio, language="pt", vad_filter=True, beam_size=2)
+print("DUR", round(info.duration), flush=True)
+prox, n = 0, 0
+with open(saida, "w", encoding="utf-8") as f:
+    for s in segs:
+        t = s.text.strip()
+        if not t:
+            continue
+        b = int(s.start // 120) * 120   # uma marca de tempo a cada 2 min
+        if b >= prox:
+            f.write("\n\n[%02d:%02d:%02d]\n" % (b // 3600, b % 3600 // 60, b % 60))
+            prox = b + 120
+        f.write(t + " ")
+        n += len(t)
+        print("POS", round(s.end), flush=True)
+sys.exit(0 if n else 3)
+'''
+
+
+def whisper_py():
+    """O Python que tem o faster-whisper: o do GANBATTE_WHISPER, o deste servidor ou o venv sugerido na página. Quem não tem
+    é procurado de novo a cada minuto (a pessoa pode instalar com o jogo aberto)."""
+    if _whisper.get("py") or time.time() - _whisper.get("quando", 0) < 60:
+        return _whisper.get("py")
+    base = Path.home() / ".local" / "share" / "ganbatte" / "whisper"
+    cands = [os.environ.get("GANBATTE_WHISPER"), sys.executable, base / "bin" / "python", base / "Scripts" / "python.exe"]
+    _whisper.update(py=None, quando=time.time())
+    for c in cands:
+        if c and Path(c).is_file():
+            try:
+                if subprocess.run([str(c), "-c", "import faster_whisper"], capture_output=True, timeout=30).returncode == 0:
+                    _whisper["py"] = str(c)
+                    break
+            except (OSError, subprocess.SubprocessError):
+                pass
+    return _whisper["py"]
+
+
+def whisper_como():
+    if sistema() == "windows":
+        b = r"%USERPROFILE%\.local\share\ganbatte\whisper"
+        return f"py -m venv {b} && {b}\\Scripts\\pip install faster-whisper"
+    return "python3 -m venv ~/.local/share/ganbatte/whisper && ~/.local/share/ganbatte/whisper/bin/pip install faster-whisper"
+
+
+def aulas_idx():
+    v = ler_json("aulas/aulas.json", [])
+    return v if isinstance(v, list) else []
+
+
+def api_aulas_get():
+    jobs = [{"id": k, **{c: j.get(c) for c in ("sigla", "data", "etapa", "prog", "erro")}, "seg": round(time.time() - j["ini"])}
+            for k, j in sorted(aulas_jobs.items())]
+    py = whisper_py()
+    return {"ok": True, "aulas": aulas_idx(), "jobs": jobs, "whisper": {"ok": bool(py), "como": whisper_como()}}
+
+
+def trabalho(aid):
+    if not ID_AULA.match(str(aid or "")):
+        raise Erro("aula inválida")
+    return DADOS / "aulas" / ".trabalho" / str(aid)
+
+
+def api_aulas_nova(d):
+    """{sigla, data}: abre uma aula; os arquivos chegam depois por /api/aulas/arquivo e /api/aulas/processar começa o trabalho."""
+    sigla, data = str(d.get("sigla") or "").upper(), str(d.get("data") or "")
+    if not re.fullmatch(r"[A-Z0-9]{1,12}", sigla) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", data):
+        raise Erro("disciplina ou data inválida")
+    aid = str(int(time.time() * 1000))
+    pasta = trabalho(aid)
+    pasta.mkdir(parents=True)
+    (pasta / "aula.json").write_text(json.dumps({"sigla": sigla, "data": data}), encoding="utf-8")
+    return {"ok": True, "id": aid}
+
+
+def aula_arquivo(handler, query):
+    """POST /api/aulas/arquivo?id=&nome= com o arquivo cru no corpo (o áudio é grande demais para ir em JSON)."""
+    q = urllib.parse.parse_qs(query)
+    pasta, nome = trabalho((q.get("id") or [""])[0]), Path((q.get("nome") or [""])[0]).name.strip()
+    ext = Path(nome).suffix.lower()
+    if not pasta.is_dir():
+        raise Erro("aula não encontrada", 404)
+    if not NOME_AULA.match(nome) or nome.startswith(".") or nome == "aula.json" or ext not in AULA_AUDIO | AULA_SLIDE:
+        raise Erro("arquivo inválido: mande áudio (m4a, mp3, ogg, opus, wav...) ou slides em PDF")
+    n = int(handler.headers.get("Content-Length") or 0)
+    if not 0 < n <= AULA_MAX:
+        raise Erro(f"arquivo vazio ou maior que {AULA_MAX // 1_000_000} MB", 413)
+    with open(pasta / nome, "wb") as f:
+        while n:
+            bloco = handler.rfile.read(min(n, 1 << 20))
+            if not bloco:
+                raise Erro("o envio parou no meio")
+            f.write(bloco)
+            n -= len(bloco)
+    return {"ok": True}
+
+
+def api_aulas_processar(d):
+    """{id, transcricao?}: com o áudio, transcreve; com a transcrição colada, pula essa parte. Depois a IA resume."""
+    aid = str(d.get("id") or "")
+    pasta = trabalho(aid)
+    if not pasta.is_dir():
+        raise Erro("aula não encontrada", 404)
+    if aid in aulas_jobs and aulas_jobs[aid]["etapa"] != "erro":
+        raise Erro("essa aula já está sendo processada", 409)
+    tr = d.get("transcricao")
+    if isinstance(tr, str) and tr.strip():
+        if len(tr) > 400000:
+            raise Erro("transcrição grande demais")
+        (pasta / ".transcricao.md").write_text(tr.strip() + "\n", encoding="utf-8")
+    arqs = [f for f in pasta.iterdir() if f.suffix.lower() in AULA_AUDIO | AULA_SLIDE]
+    if not arqs and not (pasta / ".transcricao.md").exists():
+        raise Erro("mande o áudio, os slides ou a transcrição")
+    if any(f.suffix.lower() in AULA_AUDIO for f in arqs) and not (pasta / ".transcricao.md").exists() and not whisper_py():
+        raise Erro("para transcrever o áudio, instale o Whisper: " + whisper_como())
+    ag = ia_conf()["agente"]
+    if ag == "chat":
+        raise Erro("a IA não está ligada (aba Configurações → IA)")
+    if not acha_agente(ag):
+        raise Erro(f"não achei o {AGENTES[ag]['nome']} neste computador")
+    meta = json.loads((pasta / "aula.json").read_text(encoding="utf-8"))
+    aulas_jobs[aid] = {"sigla": meta["sigla"], "data": meta["data"], "etapa": "fila", "prog": 0, "erro": "", "ini": time.time()}
+    threading.Thread(target=aula_executa, args=(aid,), daemon=True).start()
+    return {"ok": True}
+
+
+def api_aulas_cancela(d):
+    """Para a aula na fila ou rodando (a transcrição ou o pedido da IA) e apaga o que chegou."""
+    import shutil
+    aid = str(d.get("id") or "")
+    j = aulas_jobs.get(aid)
+    if j:
+        j["cancelado"] = True
+        if j.get("proc"):
+            ia_mata(j["proc"])
+        if j.get("tid"):
+            api_ia_cancela({"id": j["tid"]})
+        if j["etapa"] == "erro":
+            aulas_jobs.pop(aid, None)
+    pasta = trabalho(aid)
+    if pasta.is_dir() and (not j or j["etapa"] == "erro"):
+        shutil.rmtree(pasta, ignore_errors=True)
+    return {"ok": True}
+
+
+def texto_pdf(f):
+    """Texto dos slides (pdftotext, ou o pypdf do Python do Whisper). None: a IA lê o PDF ela mesma."""
+    import shutil
+    try:
+        if shutil.which("pdftotext"):
+            r = subprocess.run(["pdftotext", "-layout", str(f), "-"], capture_output=True, text=True, timeout=120)
+            if r.returncode == 0 and r.stdout.strip():
+                return r.stdout
+        py = whisper_py()
+        if py:
+            r = subprocess.run([py, "-c", "import sys\nfrom pypdf import PdfReader\nfor i, p in enumerate(PdfReader(sys.argv[1]).pages, 1):\n"
+                                "    print(f'--- página {i} ---'); print(p.extract_text() or '')", str(f)],
+                               capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+            if r.returncode == 0 and len(r.stdout.strip()) > 200:
+                return r.stdout
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return None
+
+
+def transcreve(j, audio, saida):
+    p = subprocess.Popen([whisper_py(), "-c", TRANSCREVE, str(audio), str(saida), os.environ.get("GANBATTE_WHISPER_MODELO", "small")],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
+                         **({"creationflags": 0x00000200} if os.name == "nt" else {"start_new_session": True}))
+    j["proc"] = p
+    dur = 0
+    for linha in p.stdout:
+        k, _, v = linha.partition(" ")
+        if k == "DUR":
+            dur = max(1, int(v))
+        elif k == "POS" and dur:
+            j["prog"] = min(99, int(v) * 100 // dur)
+    err = p.stderr.read()
+    p.wait()
+    j.pop("proc", None)
+    if j.get("cancelado"):
+        raise Erro("cancelada")
+    if p.returncode == 3:
+        raise Erro("não achei fala no áudio")
+    if p.returncode != 0:
+        raise Erro("a transcrição falhou: " + " ".join(err.split())[-300:])
+    return dur
+
+
+def bloco_disc(sigla):
+    """As linhas da disciplina no avaliacoes.txt (cabeçalho e avaliações), para a IA saber das provas."""
+    out, dentro = [], False
+    for l in ler_txt("avaliacoes.txt").split("\n"):
+        if re.match(r"^\s*\[\w+\]", l):
+            dentro = re.match(rf"^\s*\[{re.escape(sigla)}\]", l, re.I) is not None
+        if dentro and l.strip():
+            out.append(l)
+    return "\n".join(out)
+
+
+def pedido_aula(sigla, data, nome, arqs, dur):
+    abertas = [l.strip() for l in ler() if re.search(rf"\+fac\.{re.escape(sigla)}(?=\s|$)", l, re.I) and not l.startswith("x ")]
+    antes = [f"{a['data']}: {a['assunto']}" for a in aulas_idx() if a.get("sigla") == sigla][-8:]
+    return f"""Você vai resumir uma aula para um estudante e sugerir tarefas de estudo. Ninguém responde durante o pedido: não pergunte nada,
+não crie arquivos e não rode comandos; só leia os arquivos da pasta atual e responda no formato do fim.
+
+Disciplina: {sigla} ({nome}). Data da aula: {data}. Hoje: {hoje().isoformat()}.{f" Duração do áudio: {dur // 60} min." if dur else ""}
+Arquivos: {", ".join(arqs)}. A transcrição (se houver) foi feita pelo Whisper e tem marcas [HH:MM:SS] a cada 2 min; os slides
+(se houver) são o material da aula: use-os para corrigir termos que o Whisper errou e cite o slide ou a página quando ajudar.
+Leia figuras.html antes de escrever: ele mostra a estrutura e as figuras que você pode usar.
+
+Avaliações da disciplina (chave | nome | peso | data | palavras-chave), para saber o que vem pela frente:
+{bloco_disc(sigla) or "(nenhuma cadastrada)"}
+
+Tarefas já abertas da disciplina (não sugira de novo; se uma sugestão for quase igual a uma delas, ponha o texto dela em "juntar"):
+{chr(10).join(abertas) or "(nenhuma)"}
+
+Aulas anteriores já resumidas: {"; ".join(antes) or "nenhuma"}.
+
+RESUMO (HTML, só o miolo: sem <html>, <head>, <body>, <h1> nem CSS). Use estes <h2>, nesta ordem (sem numerar):
+1. <h2>Resumo</h2>: o conteúdo na ordem em que foi dado, em tópicos <h3> com o minuto ao lado (<span class="t">00:02–00:08</span>), <p> e <ul>.
+2. <h2>Conceitos-chave</h2>: <table> de duas colunas (termo | definição curta).
+3. <h2>Conexão com o material</h2>: o que da aula está em qual slide ou página, e o que foi além deles.
+4. <h2>Avisos do professor</h2>: prazos, provas, trabalhos, o que "vai cair", em <div class="nota"><ul>...</ul></div>, com o minuto.
+5. <h2>Perguntas em aula</h2>: perguntas feitas e a resposta do professor, com o minuto.
+6. <h2>Pontos em aberto</h2>: o que ficou confuso, incompleto ou contraditório, e perguntas sem resposta.
+Seção sem conteúdo: <p>Nada registrado.</p>. Não invente o que não está na transcrição nem nos slides; trecho inaudível ou
+ambíguo: diga isso com o minuto. Figuras: só quando o assunto for visual, de 0 a 4, cada uma um <figure> com <svg viewBox="0 0 640 ALTURA">
+e <figcaption>, usando só as classes de figuras.html (nunca cores fixas). Sem <script>, sem <img>, sem atributos on..., sem links
+para fora. Feche todas as tags e escape &, < e > do texto.
+
+SUGESTÕES de tarefas (no máximo 5; prefira poucas e úteis):
+- texto: verbo no infinitivo + objeto, até 60 caracteres, uma ação ("Refazer exemplo de fragmentação IPv4"). Una itens curtos do mesmo assunto.
+- detalhe: os passos, em uma ou duas frases.
+- est: tempo de trabalho focado: 15m, 30m, 45m, 1h, 1h30 ou 2h (acima de 2h, divida).
+- pri: some os pontos. Avaliação da disciplina em até 7 dias +3, 8 a 14 +2, 15 a 30 +1; o professor disse que cai +2; conteúdo
+  acumulativo ou base das próximas aulas +1; ficou confuso na aula +1; prazo dado pelo professor +3. 5 ou mais = "A", 3 a 4 = "B",
+  2 = "C", menos = "". Prazo em até 2 dias da aula é sempre "A". Com 5 ou mais tarefas abertas na disciplina, no máximo 2
+  sugestões e só com 3 pontos ou mais.
+- motivo: uma frase com o que pesou na prioridade.
+- due: AAAA-MM-DD só se o professor deu prazo; senão "".
+- av: a chave da avaliação que a tarefa prepara (das avaliações acima), ou "".
+- juntar: o texto exato de uma tarefa aberta acima que já cobre a sugestão, ou "".
+- Aviso de prova ou entrega citado na aula vira "Conferir: ..." (ex.: "Conferir: professor citou a P2 em 08/10").
+
+Responda exatamente assim, nada antes nem depois:
+===RESUMO===
+(o HTML)
+===DADOS===
+{{"assunto": "assunto curto da aula, com acentos", "sugestoes": [{{"texto": "", "detalhe": "", "est": "", "pri": "", "motivo": "", "due": "", "av": "", "juntar": ""}}]}}
+"""
+
+
+def limpa_html(h):
+    """O resumo vem da IA: tira o que poderia rodar código ou buscar coisa de fora (a página também abre com CSP sandbox)."""
+    h = re.sub(r"(?is)<(script|style|iframe|object|embed|noscript|template)\b.*?</\1\s*>", "", h)
+    h = re.sub(r"(?is)</?(script|style|iframe|object|embed|link|meta|base|form|input|button|img|image|foreignobject|use|html|head|body)\b[^>]*>", "", h)
+    h = re.sub(r"(?is)\s(on\w+|href|src|xlink:href|formaction|style)\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", "", h)
+    return h.strip()
+
+
+def slug(t):
+    import unicodedata
+    t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", t)[:50].strip("-") or "aula"
+
+
+def aula_executa(aid):
+    import html as H, shutil
+    j, pasta = aulas_jobs[aid], trabalho(aid)
+    with aulas_fila:
+        try:
+            if j.get("cancelado"):
+                raise Erro("cancelada")
+            meta = json.loads((pasta / "aula.json").read_text(encoding="utf-8"))
+            sigla, data = meta["sigla"], meta["data"]
+            nome = next((x.get("n") for x in jogador().get("disciplinas") or [] if str(x.get("d", "")).upper() == sigla), "") or sigla
+            tr, dur = pasta / ".transcricao.md", 0
+            audios = sorted(f for f in pasta.iterdir() if f.suffix.lower() in AULA_AUDIO)
+            if audios and not tr.exists():
+                j["etapa"], j["prog"] = "transcrevendo", 0
+                partes = []
+                for a in audios:
+                    dur += transcreve(j, a, pasta / ".parte.md")
+                    partes.append((pasta / ".parte.md").read_text(encoding="utf-8"))
+                tr.write_text(f"# Transcrição ({os.environ.get('GANBATTE_WHISPER_MODELO', 'small')}, pt)\n" + "\n\n".join(partes), encoding="utf-8")
+            j["etapa"], j["prog"] = "lendo", 0
+            ia = pasta / ".ia"   # o que o agente lê: a transcrição, o texto dos slides (ou o PDF, se não deu para extrair) e as figuras
+            shutil.rmtree(ia, ignore_errors=True)
+            ia.mkdir()
+            if tr.exists():
+                shutil.copy2(tr, ia / "transcricao.md")
+            for f in sorted(f for f in pasta.iterdir() if f.suffix.lower() in AULA_SLIDE and f.is_file()):
+                txt = texto_pdf(f) if f.suffix.lower() == ".pdf" else None
+                if txt:
+                    (ia / f"{f.stem}.txt").write_text(txt, encoding="utf-8")
+                else:
+                    shutil.copy2(f, ia / f.name)
+            copias = sorted(ia.iterdir()) + [WEB / "aulas" / "figuras.html"]
+            j["etapa"] = "resumindo"
+            ag = ia_conf()["agente"]
+            exe = acha_agente(ag)
+            if not exe:
+                raise Erro(f"não achei o {AGENTES[ag]['nome']} neste computador")
+            if not ia_lock.acquire(timeout=1800):
+                raise Erro("a IA ficou ocupada com outro pedido por mais de meia hora")
+            tid = str(int(time.time() * 1000))
+            ia_tarefas[tid] = {"estado": "rodando", "texto": "", "erro": "", "ini": time.time(), "seg": 0, "agente": ag}
+            j["tid"] = tid
+            if j.get("cancelado"):
+                ia_tarefas[tid]["cancelado"] = True
+            ia_executa(tid, ag, exe, pedido_aula(sigla, data, nome, [c.name for c in copias], dur), copias, False, AULA_TEMPO)
+            t = ia_tarefas[tid]
+            if t["estado"] != "pronto":
+                raise Erro("cancelada" if t["estado"] == "cancelado" else t["erro"] or "a IA não respondeu")
+            m = re.search(r"===RESUMO===\s*(.*?)\s*===DADOS===\s*(.*)$", t["texto"], re.S)
+            if not m:
+                raise Erro("a IA respondeu fora do formato combinado; tente de novo")
+            corpo = limpa_html(re.sub(r"^```\w*\s*|\s*```$", "", m.group(1).strip()))
+            js = m.group(2)
+            try:
+                dados = json.loads(js[js.index("{"):js.rindex("}") + 1])
+            except ValueError:
+                raise Erro("a IA mandou as sugestões num JSON inválido; tente de novo")
+            assunto = str(dados.get("assunto") or "Aula")[:120]
+            sug = []
+            for s in (dados.get("sugestoes") or [])[:5]:
+                if isinstance(s, dict) and str(s.get("texto") or "").strip():
+                    sug.append({k: str(s.get(k) or "").strip()[:300] for k in ("texto", "detalhe", "est", "pri", "motivo", "due", "av", "juntar")} | {"estado": ""})
+            for s in sug:
+                s["pri"] = s["pri"].upper() if s["pri"].upper() in ("A", "B", "C") else ""
+                s["due"] = s["due"] if re.fullmatch(r"\d{4}-\d{2}-\d{2}", s["due"]) else ""
+                s["texto"] = s["texto"][:90]
+            base = f"{data}-{slug(assunto)}"
+            dest = DADOS / "aulas" / sigla
+            dest.mkdir(parents=True, exist_ok=True)
+            k = 2
+            while (dest / f"{base}.html").exists():
+                base, k = f"{data}-{slug(assunto)}-{k}", k + 1
+            sub = f"{H.escape(sigla)} · {H.escape(nome)} · {data[8:]}/{data[5:7]}/{data[:4]}" + (f" · {dur // 60} min de áudio" if dur else "")
+            modelo = (WEB / "aulas" / "modelo.html").read_text(encoding="utf-8")
+            pagina = modelo.replace("{{TITULO}}", H.escape(f"{sigla} · {assunto}")).replace("{{ASSUNTO}}", H.escape(assunto)).replace("{{SUB}}", sub).replace("{{CONTEUDO}}", corpo)
+            (dest / f"{base}.html").write_text(pagina, encoding="utf-8")
+            if tr.exists():
+                shutil.copy2(tr, dest / f"{base}.md")
+            with lock:
+                idx = aulas_idx()
+                idx.append({"id": aid, "sigla": sigla, "data": data, "assunto": assunto, "html": f"{sigla}/{base}.html",
+                            "md": f"{sigla}/{base}.md" if tr.exists() else "", "criada": time.strftime("%Y-%m-%d %H:%M"), "sugestoes": sug})
+                gravar_json("aulas/aulas.json", idx)
+            shutil.rmtree(pasta, ignore_errors=True)
+            aulas_jobs.pop(aid, None)
+            log("aula:", sigla, data, assunto, f"{len(sug)} sugestões")
+        except Exception as e:   # a aula fica em .trabalho/ com o erro: dá para tentar de novo (a transcrição pronta é reaproveitada)
+            if j.get("cancelado"):
+                shutil.rmtree(pasta, ignore_errors=True)
+                aulas_jobs.pop(aid, None)
+                return
+            j.update(etapa="erro", erro=str(e) if isinstance(e, Erro) else f"erro interno: {e!r}", tid=None, proc=None)
+            log("aula: erro", aid, j["erro"])
+
+
+def api_aulas_decidir(d):
+    """{id, i, estado: "" | nao | add | juntar}: o que o jogador fez com a sugestão (a tarefa a página cria por /api/add ou /api/act)."""
+    aid, i, est = str(d.get("id") or ""), d.get("i"), d.get("estado")
+    if est not in ("", "nao", "add", "juntar") or not isinstance(i, int):
+        raise Erro("decisão inválida")
+    with lock:
+        idx = aulas_idx()
+        a = next((x for x in idx if x.get("id") == aid), None)
+        if not a or not 0 <= i < len(a.get("sugestoes") or []):
+            raise Erro("sugestão não encontrada", 404)
+        a["sugestoes"][i]["estado"] = est
+        gravar_json("aulas/aulas.json", idx)
+    return {"ok": True}
+
+
+def api_aulas_apagar(d):
+    """{id}: apaga o resumo e a transcrição de uma aula (as tarefas já criadas ficam)."""
+    with lock:
+        idx = aulas_idx()
+        a = next((x for x in idx if x.get("id") == str(d.get("id") or "")), None)
+        if not a:
+            raise Erro("aula não encontrada", 404)
+        for c in ("html", "md"):
+            if a.get(c):
+                (DADOS / "aulas" / a[c]).unlink(missing_ok=True)
+        gravar_json("aulas/aulas.json", [x for x in idx if x is not a])
+    return {"ok": True}
+
+
+def retoma_aulas():
+    """Ao iniciar: as aulas que ficaram em .trabalho/ (servidor fechado no meio) aparecem com erro, para tentar de novo ou apagar."""
+    p = DADOS / "aulas" / ".trabalho"
+    for f in sorted(p.iterdir()) if p.is_dir() else []:
+        try:
+            meta = json.loads((f / "aula.json").read_text(encoding="utf-8"))
+            aulas_jobs[f.name] = {"sigla": meta["sigla"], "data": meta["data"], "etapa": "erro", "prog": 0, "ini": time.time(),
+                                  "erro": "o jogo foi fechado antes de terminar; tente de novo"}
+        except (OSError, ValueError, KeyError):
+            pass
 
 
 # ---------- modo em grupo (0.9, #38–#40): o jogo conversa com o servidor do grupo (grupo/servidor_grupo.py) ----------
@@ -2857,8 +3291,9 @@ ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada, "/api/colecao": api_colecao,
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
          "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
-         "/api/grupo/frase": api_grupo_frase}
-LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000, "/api/grupo/host": 140_000_000}
+         "/api/grupo/frase": api_grupo_frase, "/api/aulas/nova": api_aulas_nova, "/api/aulas/processar": api_aulas_processar,
+         "/api/aulas/cancela": api_aulas_cancela, "/api/aulas/decidir": api_aulas_decidir, "/api/aulas/apagar": api_aulas_apagar}
+LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/aulas/processar": 1_700_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000, "/api/grupo/host": 140_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),
@@ -2866,7 +3301,7 @@ ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("i
              "/novidades.js": ("novidades.js", "text/javascript; charset=utf-8"), "/expedicoes.js": ("expedicoes.js", "text/javascript; charset=utf-8"),
              "/feedback.js": ("feedback.js", "text/javascript; charset=utf-8"), "/temporadas.js": ("temporadas.js", "text/javascript; charset=utf-8"),
              "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8"), "/grupo.js": ("grupo.js", "text/javascript; charset=utf-8"),
-             "/arte.js": ("arte.js", "text/javascript; charset=utf-8")}
+             "/arte.js": ("arte.js", "text/javascript; charset=utf-8"), "/aulas.js": ("aulas.js", "text/javascript; charset=utf-8")}
 
 
 class H(BaseHTTPRequestHandler):
@@ -2923,6 +3358,21 @@ class H(BaseHTTPRequestHandler):
             if (pasta / (m.group(2) + ".png")).is_file():
                 return self._arquivo(pasta / (m.group(2) + ".png"), "image/png", "max-age=3600")
             return self._json(404, {"ok": False, "error": "imagem não encontrada"})
+        m = re.match(r"^/aulas/([A-Z0-9]{1,12})/([\w.-]{1,120})\.(html|md)$", caminho)
+        if m:   # resumo e transcrição de uma aula; o resumo veio da IA, então abre sem poder rodar nada (CSP sandbox)
+            f = DADOS / "aulas" / m.group(1) / f"{m.group(2)}.{m.group(3)}"
+            if m.group(2).startswith(".") or not f.is_file():
+                return self._json(404, {"ok": False, "error": "aula não encontrada"})
+            body = f.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8" if m.group(3) == "html" else "text/plain; charset=utf-8")
+            self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            return self.wfile.write(body)
+        if caminho == "/api/aulas":
+            return self._json(200, api_aulas_get())
         if caminho == "/api/ping":
             return self._json(200, {"ok": True, "app": APP, "versao": VERSAO, "pid": os.getpid(), "canal": canal()})
         if caminho == "/api/backup":
@@ -2976,6 +3426,15 @@ class H(BaseHTTPRequestHandler):
             return self._json(403, {"ok": False, "error": "origem não permitida"})
         if self.headers.get("X-Painel") != "1":
             return self._json(403, {"ok": False, "error": "cabeçalho X-Painel ausente"})
+        if self.path.startswith("/api/aulas/arquivo?"):   # o arquivo da aula vem cru no corpo, não em JSON
+            try:
+                return self._json(200, aula_arquivo(self, self.path.split("?", 1)[1]))
+            except Erro as e:
+                self.close_connection = True   # o resto do corpo não foi lido
+                return self._json(e.code, {"ok": False, "error": str(e)})
+            except OSError as e:
+                log("erro na aula:", repr(e))
+                return self._json(500, {"ok": False, "error": "não consegui gravar o arquivo"})
         fn = ROTAS.get(self.path)
         if not fn:
             return self._json(404, {"ok": False, "error": "não encontrado"})
@@ -3208,6 +3667,7 @@ def main():
         sys.exit(f"A porta {a.porta} está ocupada por outro programa. Rode com outra: python3 servidor.py --porta 8643")
     EXEC["srv"] = srv
     threading.Thread(target=vigia_codigo, daemon=True).start()
+    retoma_aulas()
     threading.Thread(target=vira_dia, daemon=True).start()
     arruma_dia()
     print(f"Ganbatte {VERSAO} ({VERSAO_NOME}) em {url}")

@@ -1,4 +1,4 @@
-/* Ganbatte · editor de um chefão (aba Chefões e Arena): avaliações (provas, trabalhos, listas) e notas lançadas, sem
+/* Ganbatte · editor de um chefão (aba Chefões): avaliações (provas, trabalhos, listas) e notas lançadas, sem
  * abrir arquivo. Carregado depois de guia.js: usa CTX, AVAL, HOJE, render, post, recarrega, esc, toast e o estilo .wz do assistente.
  * Grava por POST /api/jogo/planos {avaliacoes, notas}: o bloco da disciplina no avaliacoes.txt e as linhas dela no notas.txt.
  * O resto dos dois arquivos (outras disciplinas, comentários, cabeçalho do chefão) fica como está.
@@ -250,10 +250,6 @@ document.addEventListener('change', async e => {
 });
 document.addEventListener('keydown', e => { if(E && e.key === 'Escape'){ document.getElementById('ce').remove(); E = null; } });
 
-/* botões "editar" no quadro dos chefões e no chefão aberto da Arena */
-const rB2_0 = RENDER.b2, rB_0 = RENDER.b;
-RENDER.b2 = S => { rB2_0(S); document.querySelectorAll('#b2-cols .col').forEach((c, i) => { const b = S.bs[i]; if(b) c.querySelector('.ch').insertAdjacentHTML('beforeend', `<button type="button" class="btn" data-cedit="${b.d}" style="margin-top:10px">editar avaliações e notas</button>`); }); };
-RENDER.b = S => { rB_0(S); const d = document.querySelector('#b-bosses .bdet'); if(d && UI.bsel) d.insertAdjacentHTML('beforeend', `<p style="margin:10px 0 0"><button type="button" class="btn" data-cedit="${UI.bsel}">editar avaliações e notas</button></p>`); };
 /* "ler todos os planos" (ia.js): abre o editor com a resposta da IA já colada; aoSalvar marca o item como salvo */
 let aoSalvar = null;
 window.GB_CHEFES = {abre, livre, aplicaVarios, cola: (txt, fn) => { if(!E) return; E.lemb = []; aoSalvar = fn || null; cola(txt); }};

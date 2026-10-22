@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{TITULO}}</title>
+<style>
+:root{color-scheme:light;--bg:#f6f1e7;--panel:#fffdf8;--ink:#2b2620;--soft:#7a6f5f;--line:#d8cfbd;--k1:#2f5d9e;--k2:#3f7d4e;--k3:#b06b1e;--k4:#a83a3a;--k5:#7a3f9a;--k6:#207a8a}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.7 Georgia,'Iowan Old Style',serif}
+main{max-width:720px;margin:0 auto;padding:36px 18px 60px}
+h1{font-size:2rem;line-height:1.15;margin:0 0 4px} .sub{color:var(--soft);font-style:italic;margin:0 0 26px;border-bottom:2px solid var(--ink);padding-bottom:14px}
+main{counter-reset:sec}h2{font-size:1.25rem;margin:34px 0 8px;display:flex;gap:10px;align-items:baseline;counter-increment:sec}h2::before{content:counter(sec);font:700 12px ui-monospace,monospace;color:var(--k1);border:1px solid var(--k1);border-radius:4px;padding:0 6px}
+figure{margin:18px -10px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px;box-shadow:3px 3px 0 var(--line)}
+figcaption{font:italic 14px/1.4 Georgia,serif;color:var(--soft);margin-top:8px}
+.nota{border-left:4px solid var(--k3);background:color-mix(in srgb,var(--k3) 10%,transparent);padding:2px 14px;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:15px} td{border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top} td:first-child{font-weight:700;width:28%;color:var(--k1)}
+.chk{list-style:none;padding:0}.chk li{padding:4px 0}.chk li:before{content:'☐  ';color:var(--k4)}
+.t{font:600 11px ui-monospace,monospace;color:var(--soft);white-space:nowrap}
+h3{font-size:1.02rem;margin:22px 0 4px;color:var(--k1)}
+ul ul{margin:2px 0 4px}
+.pend{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:8px 14px;margin:10px 0}
+.pend b.a{color:var(--k4)} .pend b.b{color:var(--k3)} .pend code{font:13px ui-monospace,monospace;color:var(--soft);word-break:break-all}
+.pend p{margin:4px 0 0;font-size:15px;line-height:1.5} .pend p i{color:var(--soft)}
+.sub a{color:var(--soft)}
+
+svg{display:block;width:100%;height:auto}
+.fld{stroke:var(--line);stroke-width:1}
+.c0{fill:none;stroke-dasharray:5 4}
+.c1{fill:color-mix(in srgb,var(--k1) 22%,var(--panel));stroke:var(--k1)}
+.c2{fill:color-mix(in srgb,var(--k2) 22%,var(--panel));stroke:var(--k2)}
+.c3{fill:color-mix(in srgb,var(--k3) 22%,var(--panel));stroke:var(--k3)}
+.c4{fill:color-mix(in srgb,var(--k4) 22%,var(--panel));stroke:var(--k4)}
+.c5{fill:color-mix(in srgb,var(--k5) 30%,var(--panel));stroke:var(--k5)}
+.c6{fill:color-mix(in srgb,var(--k6) 22%,var(--panel));stroke:var(--k6)}
+.lbl{font:600 11px system-ui,sans-serif;fill:var(--ink)} .bits{font-weight:400;fill:var(--soft);font-size:10px}
+.tick{font:10px ui-monospace,monospace;fill:var(--soft)} .cap{font:600 12px system-ui,sans-serif;fill:var(--soft)}
+.kv{font:12px ui-monospace,monospace;fill:var(--ink)} .soft{fill:var(--soft)} .hi{fill:var(--k5);font-weight:700}
+.card{fill:var(--panel);stroke:var(--line)} .dash{stroke:var(--soft);stroke-width:1.5;stroke-dasharray:4 4}
+.edge{stroke:var(--soft);stroke-width:2.5} .edge.dash{stroke-dasharray:6 5;stroke-width:2}
+.node{stroke-width:2.5} .nl{font:700 13px ui-monospace,monospace;fill:var(--ink)}
+</style></head>
+<body><main>
+<h1>{{ASSUNTO}}</h1>
+<p class="sub">{{SUB}}</p>
+{{CONTEUDO}}
+</main></body></html>
