@@ -457,19 +457,18 @@ const md = k => MOD[k] || (n => [n, 'hábito do grupo', `Cumpra ${n} todo dia.`,
 const dobra = k => BLOCOS.includes(k);
 const tcV = P => (P.torre.trick || {}).valores || {marca:50, chefao:80};
 const TC = v => `<b class="tn-tc">${v} <small>TC</small></b>`;
-/* os três sistemas lado a lado, no alto da semana: o que é cada um, contra quem e o que dá */
+/* o "?" de cada card: a explicação fica escondida até a pessoa pedir */
+TT.aj = {};
+const ajBt = (id, t) => `<button type="button" class="tn-aj" data-tnaj="${id}" aria-expanded="${!!TT.aj[id]}" title="${t || 'como funciona'}">?</button>`;
+const ajTx = (id, html) => TT.aj[id] ? `<div class="tn-ajuda">${html}</div>` : '';
+/* os três sistemas (e a tabela do dia), no "?" do card da semana */
 function sistemasHTML(P){
-  const v = tcV(P), s = semAtual(P), x = linhaDe(s, P.voce.membro), C = P.torre.chefao, k = s.geral.findIndex(y => y.membro === P.voce.membro) + 1;
-  const ch = C && C.membros.find(y => y.membro === P.voce.membro), pch = ch ? Math.round(ch.conta / ch.meta * 100) : null;
-  const it = (t, quem, oque, paga, agora, ir) => `<button type="button" class="tn-si" ${ir}><span class="tn-k">${t}</span><b>${quem}</b><span class="sub">${oque}</span><span class="tn-sp">${paga}</span><span class="tn-sa">${agora}</span></button>`;
-  return `<section class="tn-sis" aria-label="como funciona">
-    ${it('placar da semana', 'contra o grupo', `4 blocos + ${md(s.modalidade)[0]}; zera na segunda`, 'medalha, título e a escolha da próxima modalidade · sem moeda', k ? `você: ${k}º` : 'você: —', 'data-tnir="placar"')}
-    ${it('marca da semana', 'contra você', `${md(s.modalidade)[0]}: ${Math.round((P.torre.semanal.marca || .15) * 100)}% acima da sua média`, `${v.marca} TC quando a semana fecha`, x && x.marca != null ? `você: ${x.mod || 0} de ${x.marca}${x.bateu ? ' ✓' : ''}` : 'você: sem marca ainda', 'data-tnir="marca"')}
-    ${it('chefão do mês', 'todos juntos', 'o XP do mês tira a vida dele; cada um tem a sua meta', `${v.chefao} a ${Math.round(v.chefao * 1.5)} TC se ele cair`, pch != null ? `você: ${pch}% da sua meta` : '', 'data-ttsub="desafios"')}
-    ${it('tabela do dia', 'Codeforces', '7 faixas, um problema em cada, todo dia às 6h', 'o valor da faixa em TC quando o dia fecha', P.torre.cf_dia && P.torre.cf_dia.problemas.length ? `hoje: ${P.torre.cf_dia.pontos[P.voce.membro] || 0} TC` : '', 'data-ttsub="desafios"')}
-  </section>`;
-}   // um dos 4 blocos como modalidade = ele conta em dobro
-TT.ajuda = false;
+  const v = tcV(P), s = semAtual(P);
+  return `<p><b>Placar da semana</b> contra o grupo. Os 4 blocos e a modalidade; zera na segunda. Dá medalha, título e a escolha da próxima modalidade, nunca moeda.</p>
+    <p><b>Marca da semana</b> contra você. ${Math.round((P.torre.semanal.marca || .15) * 100)}% acima da sua média em ${md(s.modalidade)[0]}. Bateu: ${v.marca} TC.</p>
+    <p><b>Chefão do mês</b> todos juntos. O XP do mês contra a sua meta do chefão, que não é a marca. Se ele cair: ${v.chefao} a ${Math.round(v.chefao * 1.5)} TC.</p>
+    <p><b>Tabela do dia</b> Codeforces. Um problema por faixa, às 6h; cada um vale de ${Math.min(...(P.torre.cf_dia || {valores:[2]}).valores)} a ${Math.max(...(P.torre.cf_dia || {valores:[8]}).valores)} TC.</p>`;
+}
 const BLOCOS = ['ritmo', 'prazos', 'habitos', 'superacao'];
 const prev = (t = 'prévia') => `<span class="tn-prev" title="ainda não existe no servidor do grupo: mostra como vai ser">${t}</span>`;
 const temSemanal = P => P.torre.semanal && P.torre.semanal.semanas.length;
@@ -478,28 +477,28 @@ const temp = (P, id) => (P.torre.semanal.temporada || {})[id] || {rodadas:0, med
 const linhaDe = (s, id) => s.geral.find(x => x.membro === +id);
 const estrelas = t => t.rodadas >= 4 ? 2 : t.rodadas >= 1 ? 1 : 0;   // prestígio grátis: ★ na 1ª rodada ganha, ★★ na 4ª (★★★ é o lendário)
 
-/* os 4 blocos e o 5º, o da modalidade, numa barra: cada um de 0 a 100; Prazos fica tracejado até o protocolo mandar */
+/* os 4 blocos numa barra, de 0 a 100 cada; o da modalidade aparece ×2, e uma modalidade que não é um dos 4 entra como 5º.
+   Prazos fica tracejado até o protocolo mandar */
 function blocosHTML(x, mod){
-  const b = (k, v, extra) => `<span class="b${extra ? ' x2' : ''}${v == null ? ' nd' : ''}" title="${md(k)[0]}${extra ? ' (modalidade)' : ''}: ${v == null ? (k === 'prazos' ? 'chega com a versão nova do jogo' : 'sem dado') : v + ' de 100'}"><i style="--v:${v || 0}%"></i><small>${md(k)[0].slice(0, 3)}${extra ? ' ★' : ''}</small></span>`;
-  return `<span class="tn-bl">${BLOCOS.map(k => b(k, x.blocos[k])).join('')}${b(mod, x.mod, true)}</span>`;
+  const b = (k, v, x2) => `<span class="b${x2 ? ' x2' : ''}${v == null ? ' nd' : ''}" title="${md(k)[0]}: ${v == null ? (k === 'prazos' ? 'chega com a versão nova do jogo' : 'sem dado') : v + ' de 100'}${x2 ? ' · modalidade da semana' : ''}"><i style="--v:${v || 0}%"></i><small>${md(k)[0].slice(0, 3)}${x2 ? (dobra(k) ? ' ×2' : ' ★') : ''}</small></span>`;
+  return `<span class="tn-bl${dobra(mod) ? '' : ' c5'}">${BLOCOS.map(k => b(k, x.blocos[k], k === mod)).join('')}${dobra(mod) ? '' : b(mod, x.mod, true)}</span>`;
 }
 function cardSemana(P){
   const S = P.torre.semanal, s = semAtual(P), eu = P.voce.membro, x = linhaDe(s, eu), m = md(s.modalidade), tc = (P.torre.trick ? '' : prev());
   const resta = GBx.dias(P.hoje, s.fim), ant = S.semanas[S.semanas.length - 2], quem = ant && ant.geral[0];
   const pc = Math.round((S.marca || .15) * 100), tcM = tcV(P).marca;
-  const marca = x && x.marca != null ? `<div class="tn-marca"><div class="tn-mt"><span><b>marca da semana</b> em ${m[0]}</span><span><b>${x.mod || 0}</b> / ${x.marca}${x.bateu ? ' <b class="ok">✓ batida</b>' : ''}</span></div>
+  const marca = x && x.marca != null ? `<div class="tn-marca"><div class="tn-mt"><span><b>marca da semana</b> ${ajBt('marca')}</span><span><b>${x.mod || 0}</b> / ${x.marca}${x.bateu ? ' <b class="ok">✓</b>' : ''} · ${TC(tcM)}</span></div>
       <div class="tn-pb"><i style="width:${Math.min(100, (x.mod || 0) / x.marca * 100)}%"></i></div>
-      <p class="sub">Você contra você: ${pc}% acima da sua média em ${m[0]} nas últimas semanas. Bateu, ganha <b>${tcM} Trick Coin</b> quando a semana fecha ${tc}</p></div>`
+      ${ajTx('marca', `<p>Você contra você: ${pc}% acima da sua média em ${m[0]} nas últimas semanas. Bateu, ganha ${tcM} Trick Coin quando a semana fecha. ${tc}</p>`)}</div>`
     : x && x.mod == null ? `<p class="sub">Você não tem dado em ${m[0]} (não ligou esse hábito do grupo): nesta semana não há marca para você.</p>` : '<p class="sub">Sua marca aparece quando você tiver uma semana de base.</p>';
   const ops = S.opcoes.map(k => `<button type="button" class="btn" data-tnmod="${k}">${md(k)[0]}</button>`).join('');
-  const prox = S.escolhe === eu ? `<div class="tn-esc"><span>Você está em 1º: se fechar assim, <b>você escolhe a modalidade da semana que vem</b>.</span><span class="tn-ops">${ops}</span>${prev()}</div>`
-    : S.escolhe ? `<div class="tn-esc"><span>Se a semana fechar assim, ${nm(P, S.escolhe)} escolhe a próxima entre ${S.opcoes.map(k => md(k)[0]).join(', ')}.</span></div>` : '';
-  return `<section class="card tn-sem"><h2><span class="c">~/</span>semana ${s.semana.split('-W')[1]} <span class="r">${ddmm(s.ini)} a ${ddmm(s.fim)} · ${resta > 0 ? `faltam ${resta} ${resta === 1 ? 'dia' : 'dias'}` : 'último dia'}</span></h2>
-    <div class="tn-mod"><div><span class="tn-k">modalidade <button type="button" class="tn-aj" data-tnajuda aria-expanded="${TT.ajuda}" title="o que cada modalidade mede">?</button></span><b>Semana de ${m[0]}</b><p>${m[2]} ${dobra(s.modalidade) ? `${m[0]} conta em dobro no Geral.` : `${m[0]} entra no Geral como 5º bloco.`}</p>
-      ${TT.ajuda ? `<div class="tn-ajuda"><p>O Geral tem 4 blocos fixos, de 0 a 100 cada, e um 5º que muda toda semana: a modalidade. Se ela for um dos 4, ele conta em dobro. A marca da semana é medida nela.</p>
-        <p class="t">os 4 blocos</p>${BLOCOS.map(k => `<p${k === s.modalidade ? ' class="on"' : ''}><b>${md(k)[0]}${k === 'prazos' ? ' ' + prev() : ''}</b> ${md(k)[3]}</p>`).join('')}
-        <p class="t">e as outras modalidades</p>${S.modalidades.filter(k => !dobra(k)).map(k => `<p${k === s.modalidade ? ' class="on"' : ''}><b>${md(k)[0]}</b> ${md(k)[3]}</p>`).join('')}</div>` : ''}
-      <span class="sub">${quem ? `escolhida por ${nm(P, quem.membro)}, 1º da semana passada` : 'primeira semana: o sistema escolheu'} ${prev('hoje o sistema rotaciona')}</span></div>${marca}</div>${prox}</section>`;
+  const prox = S.escolhe === eu ? `<div class="tn-esc"><span>Você escolhe a próxima:</span><span class="tn-ops">${ops}</span>${prev()}</div>`
+    : S.escolhe ? `<div class="tn-esc sub"><span>Próxima: ${nm(P, S.escolhe)} escolhe entre ${S.opcoes.map(k => md(k)[0]).join(', ')}.</span></div>` : '';
+  return `<section class="card tn-sem"><h2><span class="c">~/</span>semana ${s.semana.split('-W')[1]} <span class="r">${ddmm(s.ini)} a ${ddmm(s.fim)} · ${resta > 0 ? `faltam ${resta} ${resta === 1 ? 'dia' : 'dias'}` : 'último dia'} ${ajBt('sis', 'os três sistemas')}</span></h2>
+    ${ajTx('sis', sistemasHTML(P))}
+    <div class="tn-mod"><div><span class="tn-k">modalidade ${ajBt('mod', 'o que cada modalidade mede')}</span><b>${m[0]}${dobra(s.modalidade) ? ' <small class="tn-x2">×2</small>' : ''}</b><p class="sub">${m[2]}</p>
+      ${ajTx('mod', `<p>A modalidade muda toda semana. Se é um dos 4 blocos do Geral, ele conta em dobro; se não, entra como 5º bloco. ${quem ? `Escolhida por ${esc(nomeDe(P, quem.membro))}, 1º da semana passada.` : ''} ${prev('hoje o sistema rotaciona')}</p>
+        ${S.modalidades.concat(['prazos']).map(k => `<p${k === s.modalidade ? ' class="on"' : ''}><b>${md(k)[0]}${k === 'prazos' ? ' ' + prev() : ''}</b> ${md(k)[3]}</p>`).join('')}`)}</div>${marca}</div>${prox}</section>`;
 }
 function placarSemana(P){
   const s = semAtual(P), eu = P.voce.membro, sup = TT.pod === 'superacao';
@@ -507,16 +506,16 @@ function placarSemana(P){
   const uni = sup ? 'de superação' : 'pontos';
   const [a, b, c] = linhas;
   const tg = `<span class="tt-esp" role="group" aria-label="pódio">${[['geral', 'Geral'], ['superacao', 'Superação']].map(([v, n]) => `<button type="button" data-tnpod="${v}" aria-pressed="${TT.pod === v}">${n}</button>`).join('')}</span>`;
-  const como = sup ? 'Quem mais evoluiu contra a própria média nesta semana. Desempata o Geral.'
-    : `Ritmo, Prazos, Hábitos e Superação, de 0 a 100 cada, mais ${md(s.modalidade)[0]} (★), a modalidade da semana. Zera toda segunda; posição dá medalha, não moeda.`;
+  const como = (sup ? '<p>Quem mais evoluiu contra a própria média nesta semana. Desempata o Geral.</p>'
+    : `<p>Ritmo, Prazos, Hábitos e Superação, de 0 a 100 cada; ${md(s.modalidade)[0]}, a modalidade, ${dobra(s.modalidade) ? 'conta em dobro' : 'entra como 5º bloco'}. Zera toda segunda; a posição dá medalha, não moeda.</p>`)
+    + `<p>${P.fechado_ate ? `Dias fechados até ${ddmm(P.fechado_ate)}; os seguintes ainda podem mudar.` : 'Nenhum dia fechado ainda.'} Prazos chega com a versão nova do jogo.</p>`;
   const pod = a ? `<div class="tt-pod"><div class="tt-heroi">${ico(P, a.membro, 84, 1)}<div class="txt"><div class="tt-k">1º da semana</div><div class="val">${val(a)}<small>${uni}</small></div>
       <div class="dif">${!b ? '' : val(a) > val(b) ? `${val(a) - val(b)} à frente de ${esc(nomeDe(P, b.membro))}` : `empatado com ${esc(nomeDe(P, b.membro))}: desempata ${sup ? 'o Geral' : 'a Superação'}`}</div>${sup ? '' : `<div style="margin-top:8px">${blocosHTML(a, s.modalidade)}</div>`}</div></div>
     <div class="tt-lado">${[b, c].filter(Boolean).map((x, i) => `<div class="l">${ico(P, x.membro, 52, i + 2)}<div class="val">${val(x)}<small>${uni}</small></div></div>`).join('')}</div></div>` : '<p class="sub">Ninguém jogou nesta semana ainda.</p>';
   const rows = linhas.slice(3).map((x, i) => `<div class="tt-row${x.membro === eu ? ' eu' : ''}"><span class="p">${i + 4}º</span>${ico(P, x.membro, 40)}
       <div class="mid">${sup ? '' : blocosHTML(x, s.modalidade)}</div><div class="v">${val(x)}<small>${uni}</small></div></div>`).join('');
-  return `<section class="card"><h2><span class="c">~/</span>${sup ? 'superação' : 'geral'} da semana <span class="r">${tg}</span></h2><p class="sub" style="margin:-4px 0 12px">${como}</p>
+  return `<section class="card"><h2><span class="c">~/</span>${sup ? 'superação' : 'geral'} da semana <span class="r">${tg} ${ajBt('placar')}</span></h2>${ajTx('placar', como)}
     ${pod}${rows ? `<div class="tt-rows" style="margin-top:10px">${rows}</div>` : ''}
-    <p class="sub tn-prov">${P.fechado_ate ? `Dias fechados até ${ddmm(P.fechado_ate)}; os seguintes ainda podem mudar.` : 'Nenhum dia fechado ainda.'} Prazos chega com a versão nova do jogo: até lá, o Geral soma 3 blocos.</p>
     <div class="tn-frase">${fraseCard(P).replace('<section class="card tt-frase-c">', '<div>').replace(/<\/section>$/, '</div>')}</div></section>`;
 }
 /* a licença com os números do desenho novo: posição na semana, rodadas ganhas, medalhas e as estrelas de prestígio */
@@ -535,10 +534,10 @@ const licVira = (P, id) => ARTE() ? `<div class="tt-flip tn-lic" data-ttvirar ti
 
 function subSemana(P){
   const eu = P.voce.membro, t = temp(P, eu), k = semAtual(P).geral.findIndex(x => x.membro === eu) + 1;
-  return `<div class="tt-lt tn-lt"><div class="tt-lcol">${licVira(P, eu)}<span class="tt-dica">clique na licença para virar · as estrelas são de rodadas ganhas, grátis</span>
+  return `<div class="tt-lt tn-lt"><div class="tt-lcol">${licVira(P, eu)}<span class="tt-dica">clique para virar</span>
       <div class="tn-eu"><div><b>${k ? k + 'º' : '—'}</b><small>na semana</small></div><div><b>${t.rodadas}</b><small>${t.rodadas === 1 ? 'rodada ganha' : 'rodadas ganhas'}</small></div><div><b>${P.torre.trick ? P.torre.trick.saldo : '—'}</b><small>Trick Coin</small></div></div>
       <div class="tt-bt"><button type="button" class="btn" data-ttsub="hunters">minha licença</button><button type="button" class="btn" data-ttsub="desafios">desafios</button></div></div>
-    <div class="tt-stack">${sistemasHTML(P)}${cardSemana(P)}<div id="tn-placar">${placarSemana(P)}</div></div></div>`;
+    <div class="tt-stack">${cardSemana(P)}${placarSemana(P)}</div></div>`;
 }
 
 /* ---------- desafios: o que é de hoje, o chefão do mês e os convites ---------- */
@@ -551,11 +550,13 @@ function chefaoHTML(P){
     return `<div class="tn-ch${x.membro === eu ? ' eu' : ''}">${ico(P, x.membro, 30, 0, {semNome:true})}<span class="n">${esc(nomeDe(P, x.membro))}</span>
       <span class="tn-cb" title="tirou ${andaresTxt(x.conta)} de uma meta de ${andaresTxt(x.meta)} (teto ${Math.round(C.teto * 100)}%)"><i style="width:${Math.min(100, p / C.teto * 100)}%"></i><em style="left:${C.minimo / C.teto * 100}%"></em><em class="m" style="left:${100 / C.teto}%"></em></span>
       <span class="v">${Math.round(p * 100)}%${p >= C.minimo ? ' <b class="ok">✓</b>' : ''}</span></div>`; }).join('');
-  return `<section class="card"><h2><span class="c">~/</span>chefão de ${mes} <span class="r">${morto ? 'derrotado' : `faltam ${resta} dias`}</span></h2>
-    <div class="tn-hp"><div class="tn-hpt"><b>${morto ? 'Derrotado pelo grupo' : `${andaresTxt(vivo)} de ${andaresTxt(C.vida)} de vida`}</b><span class="sub">vida = ${Math.round((C.fator || .8) * 100)}% do que o grupo faz num mês normal</span></div>
+  return `<section class="card"><h2><span class="c">~/</span>chefão de ${mes} <span class="r">${morto ? 'derrotado' : `faltam ${resta} dias`} · ${TC(tcV(P).chefao)} ${ajBt('chefao')}</span></h2>
+    ${ajTx('chefao', `<p>Todos juntos: o XP do mês tira a vida dele. A vida é ${Math.round((C.fator || .8) * 100)}% do que o grupo faz num mês normal.</p>
+      <p>A <b>meta do chefão</b> é sua e não é a marca da semana: o XP com teto de um mês normal seu (1 = um dia no teto do grupo). Cada um tira até ${Math.round(C.teto * 100)}% dela.</p>
+      <p>Se ele cair até o fim do mês, quem passou de ${Math.round(C.minimo * 100)}% da meta ganha ${tcV(P).chefao} TC, até ${Math.round(tcV(P).chefao * 1.5)} TC quem chegou a ${Math.round(C.teto * 100)}%.</p>`)}
+    <div class="tn-hp"><div class="tn-hpt"><b>${morto ? 'Derrotado pelo grupo' : `${andaresTxt(vivo)} de ${andaresTxt(C.vida)} de vida`}</b></div>
       <div class="tn-hpb"><i style="width:${Math.max(0, vivo / C.vida * 100)}%"></i></div></div>
-    <p class="sub" style="margin:10px 0 8px">A <b>meta do chefão</b> é sua e não tem nada a ver com a marca da semana: é o XP com teto de um mês normal seu (1 = um dia no teto do grupo). Cada um tira até ${Math.round(C.teto * 100)}% dela. Se ele cair até o fim do mês, quem passou de ${Math.round(C.minimo * 100)}% ganha ${TC(tcV(P).chefao)}, e até ${TC(Math.round(tcV(P).chefao * 1.5))} quem chegou a ${Math.round(C.teto * 100)}%.</p>
-    <div class="tn-chs">${rows}</div><p class="sub tn-leg"><em></em> mínimo · <em class="m"></em> a sua meta do chefão (100%)</p></section>`;
+    <div class="tn-chs" style="margin-top:12px">${rows}</div><p class="sub tn-leg"><em></em> mínimo · <em class="m"></em> meta do chefão</p></section>`;
 }
 /* a tabela do dia do Codeforces (#171): 7 faixas de rating, um problema sorteado em cada uma às 6h (P.torre.cf_dia) */
 const CF_FX = [800, 1100, 1400, 1700, 2000, 2300, 2700].map((lo, i) => [lo, [1000, 1300, 1600, 1900, 2200, 2600, 3000][i]]);
@@ -564,27 +565,27 @@ const MOTIVO = {primeiro:'1º a resolver', normal:'', piso:'abaixo do seu piso: 
 function tabelaCF(P){
   const T = P.torre.cf_dia, eu = P.voce.membro, L = 'ABCDEFG';
   const fx = (i, txt) => { const [lo, hi] = CF_FX[i], [n, c] = corCF(lo); return `<span class="tn-fx" style="--c:${c}" title="${n}: qualquer problema de ${lo} a ${hi}">${txt || `${lo}–${hi}`}</span>`; };
-  const h2 = r => `<h2><span class="c">~/</span>tabela do dia · Codeforces <span class="r">${r}</span></h2>`;
+  const h2 = r => `<h2><span class="c">~/</span>tabela do dia · Codeforces <span class="r">${r} ${ajBt('cf')}</span></h2>`;
   if(!T) return `<section class="card">${h2(prev('o servidor do grupo precisa atualizar'))}
-      <p class="sub" style="margin:-4px 0 12px">7 faixas de rating, de 800 a 3000. Às 6h sai um problema de cada faixa, sorteado entre os que ninguém do grupo resolveu.</p>
+      ${ajTx('cf', '<p>7 faixas de rating, de 800 a 3000. Às 6h sai um problema de cada faixa, sorteado entre os que ninguém do grupo resolveu.</p>')}
       <div class="tn-cf">${CF_FX.map((_, i) => `<div class="tn-cfp"><b class="l">${L[i]}</b>${fx(i)}<span class="sub">um problema qualquer da faixa</span><span></span></div>`).join('')}</div></section>`;
   const R = T.regras, mf = T.faixa[eu], meus = T.feitos.filter(x => x.membro === eu && x.pts > 0).length;
-  const como = `<p class="sub" style="margin:-4px 0 12px">Às 6h sai um problema de cada faixa (qualquer rating dentro dela), sorteado entre os que ninguém do grupo resolveu. Quem resolve ganha o valor da faixa; o 1º a resolver cada um leva +${R.bonus}. Até ${R.teto} por pessoa por dia${mf != null ? `; você pontua da faixa <b>${L[Math.max(0, mf - R.piso)]}</b> para cima` : ''}.</p>`;
+  const como = ajTx('cf', `<p>Às 6h sai um problema de cada faixa (qualquer rating dentro dela), sorteado entre os que ninguém do grupo resolveu. Quem resolve ganha o valor da faixa em Trick Coin quando o dia fecha; o 1º a resolver cada um leva +${R.bonus}.</p>
+    <p>Até ${R.teto} por pessoa por dia${mf != null ? `; você pontua da faixa <b>${L[Math.max(0, mf - R.piso)]}</b> para cima` : ''}. O servidor do grupo confere a cada 10 minutos.</p>`);
   if(!T.tabela) return `<section class="card">${h2('desligada')}<p class="sub" style="margin:0">Um admin desligou a tabela do dia em administrar.</p></section>`;
   if(!T.problemas.length) return `<section class="card">${h2('ainda não saiu')}${como}
       <p class="sub" style="margin:0">${T.ligado ? 'A tabela de hoje sai na próxima conferência do servidor do grupo (a cada 10 minutos, quando ele está ligado).' : 'Ligue o Codeforces em Configurações (o seu handle) para a tabela aparecer: o servidor do grupo precisa do handle de alguém para sortear.'}</p></section>`;
   const linhas = T.problemas.map(p => { const fs = T.feitos.filter(x => x.id === p.id), meu = fs.find(x => x.membro === eu);
     const quem = fs.map(x => `<span class="tn-qm${x.pts ? '' : ' zero'}" title="${esc(nomeDe(P, x.membro))}: ${x.pts ? '+' + x.pts : '0'}${MOTIVO[x.motivo] ? ' · ' + MOTIVO[x.motivo] : ''}">${ico(P, x.membro, 22, 0, {semNome:true, nolink:true})}</span>`).join('');
-    const vale = mf != null && p.faixa < mf - R.piso ? '<span class="sub">abaixo do seu piso</span>' : `+${T.valores[p.faixa]}${fs.some(x => x.motivo === 'primeiro') ? '' : `<small>+${R.bonus} do 1º</small>`}`;
+    const vale = mf != null && p.faixa < mf - R.piso ? '<span class="sub" title="abaixo do seu piso: não pontua para você">—</span>' : `+${T.valores[p.faixa]}`;
     return `<div class="tn-cfp${meu ? ' feito' : ''}"><b class="l">${p.letra}</b>${fx(p.faixa, p.rating)}<a href="https://codeforces.com/problemset/problem/${p.contest}/${encodeURIComponent(p.index)}" target="_blank" rel="noopener" class="tn-cfn">${esc(p.nome)}<small>${p.contest}${esc(p.index)}</small></a><span class="tn-qs">${quem}</span><span class="tn-cfv">${meu ? `<b class="ok">${meu.pts ? '+' + meu.pts : '✓'}</b>` : vale}</span></div>`; }).join('');
-  return `<section class="card">${h2(`hoje: ${meus} de ${R.teto} · ${T.pontos[eu] || 0} TC · semana ${T.semana[eu] || 0} TC`)}${como}
-      <div class="tn-cf">${linhas}</div><p class="sub" style="margin:8px 0 0">O servidor do grupo confere a cada 10 minutos. Os pontos são Trick Coin: entram na carteira quando o dia fecha.</p></section>`;
+  return `<section class="card">${h2(`hoje ${meus}/${R.teto} · ${T.pontos[eu] || 0} TC`)}${como}
+      <div class="tn-cf">${linhas}</div></section>`;
 }
 function subDesafios(P){
   const S = P.torre.semanal, eu = P.voce.membro;
   const tabela = tabelaCF(P);
   const conv = `<section class="card"><h2><span class="c">~/</span>convites <span class="r">${prev('fases 2 e 3')}</span></h2>
-      <p class="sub" style="margin:-4px 0 12px">O que pede uma escolha chega aqui e só entra se você aceitar.</p>
       <div class="tn-cv"><div><b>Duelo de Codeforces</b><span class="sub">1×1, problema na faixa do mais fraco dos dois; vence quem resolver primeiro.</span><button type="button" class="btn" disabled>desafiar alguém</button></div>
         <div><b>Pacto de hábito</b><span class="sub">Você propõe um hábito; se os dois cumprirem X dias, os dois ganham XP fixo. Até 2 pactos ativos.</span><button type="button" class="btn" disabled>propor um pacto</button></div></div>
       <p class="sub" style="margin:10px 0 0">Nenhum convite aberto.</p></section>`;
@@ -603,8 +604,8 @@ function subTemporada(P){
     return `<tr${id === eu ? ' class="eu"' : ''}><td class="p">${i + 1}º</td><td><span class="tn-q">${ico(P, id, 28, 0, {semNome:true})}${nm(P, id)}</span></td><td class="n"><b>${t.rodadas}</b></td><td class="n"><span class="tn-mm">${t.medalhas.map((v, k) => md(k + 1, v)).join('')}</span></td><td class="n">${t.superacao}</td><td class="n">${t.marcas}</td><td class="n">${'★'.repeat(estrelas(t)) || '—'}</td></tr>`; }).join('');
   const grade = `<div class="tbl-wrap"><table class="tn-gr"><thead><tr><th></th>${S.semanas.map(s => `<th>s${s.semana.split('-W')[1]}<small>${md(s.modalidade)[0].slice(0, 3)}${s.fechada ? '' : ' · agora'}</small></th>`).join('')}</tr></thead>
     <tbody>${ids.map(id => `<tr${id === eu ? ' class="eu"' : ''}><td>${esc(nomeDe(P, id))}</td>${S.semanas.map(s => { const k = s.geral.findIndex(x => x.membro === id) + 1; return `<td>${k ? `<span class="tt-md${k <= 3 ? ' m' + k : ''}">${k}º</span>` : '—'}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
-  return `<div class="tt-stack"><section class="card"><h2><span class="c">~/</span>temporada ${temporadaDe(P)} <span class="r">soma rodadas e medalhas, não pontos</span></h2>
-      <p class="sub" style="margin:-4px 0 12px">Cada semana é uma rodada. Ganhar dá a medalha, o título da semana, a frase do líder e a escolha da próxima modalidade; moeda, nunca. As estrelas da licença vêm das rodadas: ★ na primeira, ★★ na quarta.</p>
+  return `<div class="tt-stack"><section class="card"><h2><span class="c">~/</span>temporada ${temporadaDe(P)} <span class="r">${ajBt('temp')}</span></h2>
+      ${ajTx('temp', '<p>Cada semana é uma rodada: o 1º do Geral ganha a rodada. A temporada soma rodadas e medalhas, não pontos.</p><p>As estrelas da licença vêm das rodadas ganhas, de graça: ★ na primeira, ★★ na quarta.</p>')}
       <div class="tbl-wrap"><table class="tn-tp"><thead><tr><th></th><th>hunter</th><th>rodadas</th><th>medalhas</th><th title="semanas em 1º na superação">superação</th><th>marcas</th><th>licença</th></tr></thead><tbody>${tab}</tbody></table></div></section>
     <section class="card"><h2><span class="c">~/</span>semana a semana <span class="r">posição no Geral e a modalidade de cada semana</span></h2>${grade}</section></div>`;
 }
@@ -740,8 +741,7 @@ document.addEventListener('click', async e => {
   if((b = q('[data-ttplac]'))){ vaiPara({sub: TT.aba2 ? 'hunters' : 'placares', plac: b.dataset.ttplac}); return; }
   if((b = q('[data-ttjog]'))){ vaiPara({sub: TT.aba2 ? 'hunters' : 'jogadores', jog: +b.dataset.ttjog}); return; }
   if(q('[data-tnaba]')){ TT.aba2 = !TT.aba2; try { localStorage.setItem('gb-tt-aba', TT.aba2 ? 'nova' : 'antiga'); } catch(err){} G.aba = 'placar'; render(); return; }
-  if((b = q('[data-tnir]'))){ const alvo = b.dataset.tnir === 'marca' ? document.querySelector('.tn-marca, .tn-sem') : document.getElementById('tn-placar'); if(alvo) alvo.scrollIntoView({behavior:'smooth', block:'center'}); return; }
-  if(q('[data-tnajuda]')){ TT.ajuda = !TT.ajuda; render(); return; }
+  if((b = q('[data-tnaj]'))){ TT.aj[b.dataset.tnaj] = !TT.aj[b.dataset.tnaj]; render(); return; }
   if((b = q('[data-tnpod]'))){ TT.pod = b.dataset.tnpod; render(); return; }
   if((b = q('[data-tnmod]'))){ toast(`${md(b.dataset.tnmod)[0]} <small>prévia: a escolha da modalidade ainda não vai para o servidor do grupo</small>`); return; }
   if((b = q('[data-ttesp]'))){ TT.esp = b.dataset.ttesp; try { localStorage.setItem('gb-tt-esp', TT.esp); } catch(err){} render(); return; }
@@ -1048,6 +1048,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-aj{width:17px;height:17px;border-radius:50%;border:1px solid var(--volt);background:none;color:var(--volt);font:700 10.5px var(--f-mono);padding:0;margin-left:4px;cursor:pointer;vertical-align:1px}
 .tn-aj[aria-expanded="true"]{background:var(--volt);color:var(--bg)}
 .tn-ajuda{display:grid;gap:6px;border:1px solid var(--hair);border-radius:3px;padding:10px 12px;margin:6px 0} .tn-ajuda p{margin:0;font-size:12.5px;color:var(--soft);text-transform:none;letter-spacing:0}
+.tn-x2{font:700 13px var(--f-mono);color:var(--aura);vertical-align:3px}
 .tn-ajuda p b{color:var(--ink);margin-right:4px} .tn-ajuda p.on b{color:var(--aura)} .tn-ajuda p.t{font:700 10px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-top:4px}
 .tn-eu{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
 .tn-eu div{border:1px solid var(--hair);border-radius:3px;padding:8px 10px;display:grid} .tn-eu b{font:700 20px var(--f-hud)} .tn-eu small{font:500 10.5px var(--f-mono);color:var(--soft)}
@@ -1059,17 +1060,14 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-mt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font:13px var(--f-mono)} .tn-mt b{color:var(--ink)} .ok{color:var(--grn)!important}
 .tn-pb{height:8px;background:var(--track)} .tn-pb i{display:block;height:100%;background:var(--volt)}
 .tn-esc{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair);font-size:13.5px} .tn-ops{display:flex;gap:6px;flex-wrap:wrap}
-.tn-bl{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;min-width:180px}
-.tn-bl .b{display:grid;gap:2px} .tn-bl i{display:block;height:6px;background:linear-gradient(90deg,var(--volt) var(--v),var(--track) var(--v))}
+.tn-bl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;min-width:180px}
+.tn-bl.c5{grid-template-columns:repeat(5,minmax(0,1fr))} .tn-bl .b{display:grid;gap:2px} .tn-bl i{display:block;height:6px;background:linear-gradient(90deg,var(--volt) var(--v),var(--track) var(--v))}
 .tn-bl .x2 i{height:9px;background:linear-gradient(90deg,var(--aura) var(--v),var(--track) var(--v))} .tn-bl .nd i{background:none;border:1px dashed var(--hair);box-sizing:border-box}
 .tn-bl small{font:600 9.5px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.04em} .tn-bl .x2 small{color:var(--aura)}
 .tn-prov{margin:12px 0 0;font-size:12px}
 .tn-frase{margin-top:14px;padding-top:12px;border-top:1px solid var(--hair)} .tn-frase h2{font-size:12px;margin-bottom:6px}
 .tn-ds{display:grid;gap:16px;align-items:start}
 @container (min-width:900px){.tn-ds{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
-.tn-sis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
-.tn-si{display:grid;gap:3px;align-content:start;text-align:left;background:var(--card,transparent);border:1px solid var(--hair);border-radius:3px;padding:10px 12px;color:inherit;font:inherit;cursor:pointer}
-.tn-si:hover{border-color:var(--volt)} .tn-si > b{font:700 15px var(--f-hud)} .tn-si .sub{font-size:12px} .tn-sp{font:600 11.5px var(--f-mono);color:var(--amb)} .tn-sa{font:600 11.5px var(--f-mono);color:var(--volt)}
 .tn-tc{color:var(--amb)} .tn-tc small{font-size:.75em}
 .tn-cart{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:start} .tn-saldo{font:700 36px/1 var(--f-hud);color:var(--amb);display:grid} .tn-saldo small{font:500 11px var(--f-mono);color:var(--soft)}
 .tn-exs{display:grid;gap:4px} .tn-ex{display:flex;justify-content:space-between;gap:8px;font:13px var(--f-mono);border-bottom:1px dashed var(--hair);padding:3px 0} .tn-ex small{color:var(--faint)}
