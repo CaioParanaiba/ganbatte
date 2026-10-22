@@ -306,7 +306,7 @@ antes ou depois (o jogo lê a resposta direto). Dúvidas vão dentro do formato 
 Com a IA ligada no jogo (Configurações → IA), os botões mandam estes mesmos pedidos para a IA de terminal, e a resposta cai no
 mesmo lugar. Os pedidos abaixo são os mesmos que o jogo monta (o código está em `web/ia.js` e, o das conquistas, em
 `web/conquistas.js`; ao mudar um, mude o outro). Os trechos
-entre `{chaves}` o jogo preenche com os seus dados. As datas saem no formato escolhido na aba Configurações (dd/mm/aaaa ou
+entre `{chaves}` o jogo preenche com os seus dados. As datas saem no formato escolhido em Sistema → Configurações (dd/mm/aaaa ou
 mm/dd/aaaa); os exemplos abaixo estão em dd/mm/aaaa.
 
 ### 1. Plano de ensino → provas e trabalhos

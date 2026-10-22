@@ -92,7 +92,7 @@ Tudo o que é seu fica numa pasta separada do código:
 | `temporadas/` | cada temporada que acabou (`2026-2/`...): `resumo.json` com os números finais congelados e uma cópia dos arquivos daquele momento |
 | `servidor.log` | o que o servidor anotou quando roda em segundo plano |
 
-Para fazer backup, use o botão **baixar meus dados** na aba Configurações (um ZIP da pasta) ou copie a pasta. Para usar outra pasta: `python3 servidor.py --dados CAMINHO`. Se você já tem um todo.txt em outra pasta (com o todo.sh ou outro app), use `--todo PASTA`: o jogo lê e grava o `todo.txt` e o `done.txt` de lá, e o resto continua na pasta de dados.
+Para fazer backup, use o botão **baixar meus dados** em Sistema → Configurações (um ZIP da pasta) ou copie a pasta. Para usar outra pasta: `python3 servidor.py --dados CAMINHO`. Se você já tem um todo.txt em outra pasta (com o todo.sh ou outro app), use `--todo PASTA`: o jogo lê e grava o `todo.txt` e o `done.txt` de lá, e o resto continua na pasta de dados.
 
 ## Atualizar
 
@@ -140,13 +140,13 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
   `agy`, `gemini`) e clique em **procurar de novo**. O jogo procura no PATH do seu terminal e nas pastas comuns (npm, nvm, ~/.local/bin).
 - **Esqueci de marcar um hábito ontem:** no card "hábitos de hoje", clique em **esqueci de marcar ontem**. Ele conta
   para ontem (XP, nível do hábito e heatmap). Só vale para o dia anterior.
-- **Codeforces não conta:** confira o handle na aba Configurações. A contagem atualiza a cada 10 minutos e precisa de internet.
+- **Codeforces não conta:** confira o handle em Sistema → Configurações. A contagem atualiza a cada 10 minutos e precisa de internet.
   Problema feito onde a API não enxerga (ITMO Academy, contest de grupo privado): clique no ✋ ao lado de "Codeforces" no
   heatmap da Lista e confirme; cada confirmação soma 1 problema hoje. Cada problema vale pela cor dele comparada à sua
   faixa (Book → Regras); problema de contest recente vale por uma estimativa até o Codeforces dar o rating.
 - **Recompensa de bug ou ideia não veio:** confira o usuário do GitHub em Configurações. O jogo confere a cada 6 horas e só
   conta a issue que você abriu e que foi fechada como resolvida (bug corrigido, ideia feita); repetida ou recusada não conta.
-- **Duolingo não conta:** confira o usuário na aba Configurações (o nome do perfil, sem senha). O jogo lê a ofensiva do
+- **Duolingo não conta:** confira o usuário em Sistema → Configurações (o nome do perfil, sem senha). O jogo lê a ofensiva do
   perfil a cada 10 minutos e precisa de internet. O dia salvo pelo bloqueio de ofensiva não conta, de propósito: no jogo,
   quem guarda folga é o Zetsu. Os dias da ofensiva de antes de ligar ficam no heatmap e nas conquistas e sobem o nível do hábito (até os de antes da temporada, pela ofensiva lida; #51), sem XP nem Ten. Com o jogo fechado vários dias e um bloqueio no meio, o Duolingo diz quantos dias você fez,
   não quais: o jogo marca os mais recentes.
