@@ -63,6 +63,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/grupo/vinculo {chave, habito, pessoal} liga um hábito pessoal a um hábito do catálogo do grupo ("" desliga)
   POST /api/grupo/frase {chave, texto}    a frase do líder da semana (#76), repassada ao servidor do grupo
   POST /api/grupo/modalidade {chave, mod} a escolha da modalidade da semana seguinte, repassada ao servidor do grupo
+  POST /api/grupo/duelo {chave, acao, ...} caixa | convidar {para} | aceitar | recusar | cancelar {id}: o duelo 1×1 do CF (#171)
   POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config | habito | calibracao | placar | frase | relatorio
   POST /api/grupo/host {acao, ...}        estado | servidor | funnel | criar {nome, endereco} | restaurar {banco, endereco} |
                                           mudar {endereco}: este computador como servidor do grupo
@@ -2957,6 +2958,15 @@ def api_grupo_admin(d):
     return r
 
 
+def api_grupo_duelo(d):
+    """{chave, acao: caixa | convidar | aceitar | recusar | cancelar, para?, id?}: a caixa de convites e o duelo 1×1 do
+    Codeforces (#171), repassados ao servidor do grupo. A caixa é leve: a tela do duelo pede a cada poucos segundos."""
+    g = grupo_da(d.get("chave"))
+    if d.get("acao") == "caixa":
+        return pede_g(g, "GET", f"/g/{g['id']}/caixa")
+    return pede_g(g, "POST", f"/g/{g['id']}/duelo", {k: d.get(k) for k in ("acao", "para", "id") if k in d})
+
+
 def api_grupo_modalidade(d):
     """{chave, mod}: o 1º da semana escolhe a modalidade da seguinte (#170)."""
     g = grupo_da(d.get("chave"))
@@ -3303,7 +3313,7 @@ ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada, "/api/colecao": api_colecao,
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
          "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
-         "/api/grupo/frase": api_grupo_frase, "/api/grupo/modalidade": api_grupo_modalidade, "/api/aulas/nova": api_aulas_nova, "/api/aulas/processar": api_aulas_processar,
+         "/api/grupo/frase": api_grupo_frase, "/api/grupo/modalidade": api_grupo_modalidade, "/api/grupo/duelo": api_grupo_duelo, "/api/aulas/nova": api_aulas_nova, "/api/aulas/processar": api_aulas_processar,
          "/api/aulas/cancela": api_aulas_cancela, "/api/aulas/decidir": api_aulas_decidir, "/api/aulas/apagar": api_aulas_apagar}
 LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/aulas/processar": 1_700_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000, "/api/grupo/host": 140_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),

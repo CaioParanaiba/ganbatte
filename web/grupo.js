@@ -43,7 +43,46 @@ async function sincroniza(){
   catch(e){ /* o servidor do jogo caiu: a próxima tentativa resolve */ }
   G.ocupado = false; reRender();
 }
-async function inicia(){ await carrega(); await sincroniza(); reRender(); setInterval(sincroniza, SINC_MIN * 60000); }
+async function inicia(){ await carrega(); await sincroniza(); reRender(); setInterval(sincroniza, SINC_MIN * 60000); lacoCaixa(); }
+
+/* a caixa de convites e o duelo 1×1 do Codeforces (#171): pede a caixa a cada 30 s; com duelo ou convite enviado em aberto,
+   a cada 4 s (a tela do duelo mostra quem resolveu cada problema quase na hora) */
+G.caixa = {}; G.caixaK = {}; G.off = 0; G.vistos = new Set();
+const CAIXA_S = 30, CAIXA_RAPIDO = 4;
+const caixaDe = g => G.caixa[g.chave] || ((placarDe(g) || {}).torre || {}).caixa || null;
+const duVivo = du => !!du && (du.estado === 'aceito' || du.estado === 'andamento');
+const rapido = C => !!C && (duVivo(C.duelo) || C.convites.some(c => c.de === C.eu));
+const agoraS = () => Date.now() / 1000 + G.off;
+const mmss = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const relo = ts => `<span class="mono" data-tnate="${ts}">${mmss(ts - agoraS())}</span>`;
+function guardaCaixa(g, j){
+  const antes = G.caixa[g.chave], P = placarDe(g), nome = id => P ? esc(nomeDe(P, id)) : 'alguém';
+  G.off = j.agora - Date.now() / 1000;
+  G.caixa[g.chave] = j;
+  for(const c of j.convites) if(c.para === j.eu && !G.vistos.has(c.id)){ G.vistos.add(c.id);
+    toast(`${nome(c.de)} te desafiou para um duelo de Codeforces <small>aceite em ${esc(ABA.tt.n)} → desafios: o convite vale ${Math.round(j.regras.convite / 60)} minutos</small>`, 8000); }
+  // quem convidou: o outro aceitou
+  if(duVivo(j.duelo) && j.duelo.de === j.eu && !(antes && antes.duelo && antes.duelo.id === j.duelo.id)){
+    toast(`${nome(j.duelo.para)} aceitou o duelo <small>os problemas saem em instantes</small>`, 6000);
+    if(cur === 'tt' && G.aba === 'placar'){ TT.sub = 'duelo'; }
+  }
+  const k = JSON.stringify(Object.assign({}, j, {agora: 0}));
+  if(G.caixaK[g.chave] !== k){ G.caixaK[g.chave] = k; if(cur === 'tt') render(); }
+}
+async function buscaCaixa(){
+  for(const g of G.lista || []){
+    try { guardaCaixa(g, await post('/api/grupo/duelo', {chave: g.chave, acao: 'caixa'})); }
+    catch(e){ /* servidor do grupo fora do ar ou de antes do duelo: fica a caixa do último placar */ }
+  }
+}
+let caixaT = 0;
+async function lacoCaixa(){
+  clearTimeout(caixaT);
+  await buscaCaixa();
+  const g = grupoSel();
+  caixaT = setTimeout(lacoCaixa, (rapido(g && caixaDe(g)) ? CAIXA_RAPIDO : CAIXA_S) * 1000);
+}
+setInterval(() => document.querySelectorAll('[data-tnate]').forEach(el => { el.textContent = mmss(+el.dataset.tnate - agoraS()); }), 1000);
 const espera = setInterval(() => { if(CTX){ clearInterval(espera); inicia(); } }, 300);
 
 /* ---------- administrar ---------- */
@@ -288,7 +327,7 @@ function torreAdminHTML(A){
    O Geral, a Superação, a marca e o chefão vêm do servidor do grupo (P.torre.semanal e P.torre.chefao). O que ainda não
    existe (o duelo e o pacto) aparece como prévia. */
 TT.pod = 'geral';
-const NOVAS = ['semana', 'desafios', 'temporada', 'hunters', 'loja'];
+const NOVAS = ['semana', 'desafios', 'temporada', 'hunters', 'loja', 'duelo'];
 const MOD = {ritmo:['Ritmo', 'XP com teto', 'Jogue todo dia até o teto do grupo.', 'O XP de cada dia, até o teto do grupo. 100 = bateu o teto em todos os dias da semana; o que passa do teto não conta, então jogar todo dia vale mais que um dia enorme.'],
   prazos:['Prazos', 'entregas no prazo', 'Entregue as tarefas com prazo até o dia.', 'As tarefas com prazo que venceram na semana. 100 = todas entregues até o dia.'],
   habitos:['Hábitos', 'constância', 'Cumpra os hábitos do grupo que você ligou.', 'Os hábitos do grupo que você ligou, dia a dia. 100 = todos, todos os dias; o Codeforces conta só como fez ou não fez.'],
@@ -427,13 +466,63 @@ function tabelaCF(P){
   return `<section class="card">${h2(`hoje ${meus}/${R.teto} · ${T.pontos[eu] || 0} TC`)}${como}
       <div class="tn-cf">${linhas}</div></section>`;
 }
+/* a caixa de convites: só entra o que a pessoa aceita (o duelo agora; o pacto na fase 3) */
+const PACTO = `<div><b>Pacto de hábito ${prev('fase 3')}</b><span class="sub">Você propõe um hábito e os dias; se os dois cumprirem, os dois ganham em dobro.</span><button type="button" class="btn" disabled>propor um pacto</button></div>`;
+function convitesHTML(P, C){
+  const eu = P.voce.membro;
+  const h2 = r => `<h2><span class="c">~/</span>convites <span class="r">${r} ${ajBt('cv')}</span></h2>`;
+  if(!C) return `<section class="card">${h2(prev('o servidor do grupo precisa atualizar'))}
+      <div class="tn-cv"><div><b>Duelo de Codeforces</b><span class="sub">1×1, 3 problemas na faixa do mais fraco dos dois.</span><button type="button" class="btn" disabled>desafiar alguém</button></div>${PACTO}</div></section>`;
+  const R = C.regras, du = C.duelo, H = C.historico, vivo = duVivo(du), meuCf = membroDe(P, eu).cf;
+  const como = ajTx('cv', `<p><b>Duelo:</b> desafie alguém do grupo que ligou o Codeforces. O convite vale ${Math.round(R.convite / 60)} minutos; depois some e é preciso mandar outro.</p>
+    <p>Aceito, saem 3 problemas que nenhum dos dois resolveu, em volta da faixa do mais fraco (uma abaixo, a dele e uma acima), e o duelo começa ${R.conta} s depois. Dura ${R.minutos} minutos ou até alguém resolver os 3.</p>
+    <p>Cada problema resolvido paga o mesmo que na tabela do dia, sem piso. Vence quem resolver mais; no empate, quem chegou antes.</p>`);
+  const linha = (id, txt, bts) => `<div class="tn-cvl">${ico(P, id, 26, 0, {semNome:true, nolink:true})}<span>${txt}</span><span class="tn-cvb">${bts}</span></div>`;
+  const outro = du ? (du.de === eu ? du.para : du.de) : 0;
+  const ativo = vivo ? linha(outro, `Duelo com <b>${esc(nomeDe(P, outro))}</b> · ${du.estado === 'aceito' ? 'sorteando os problemas' : agoraS() < du.ini ? 'vai começar' : 'em andamento'}`, '<button type="button" class="btn v" data-ttsub="duelo">abrir o duelo</button>') : '';
+  const rec = C.convites.filter(c => c.para === eu).map(c => linha(c.de, `<b>${esc(nomeDe(P, c.de))}</b> te desafiou · some em ${relo(c.vence)}`,
+    `<button type="button" class="btn v" data-tndu="aceitar" data-id="${c.id}">aceitar</button><button type="button" class="btn" data-tndu="recusar" data-id="${c.id}">recusar</button>`)).join('');
+  const env = C.convites.filter(c => c.de === eu).map(c => linha(c.para, `Você desafiou <b>${esc(nomeDe(P, c.para))}</b> · some em ${relo(c.vence)}`,
+    `<button type="button" class="btn" data-tndu="cancelar" data-id="${c.id}">cancelar</button>`)).join('');
+  const pode = meuCf && !vivo && !C.convites.some(c => c.de === eu);
+  const outros = P.membros.filter(m => m.id !== eu);
+  const lista = TT.desafiar && pode ? `<div class="tn-cvop">${outros.map(m => `<button type="button" class="btn" data-tndu="convidar" data-para="${m.id}"${m.cf ? '' : ' disabled title="ainda não ligou o Codeforces"'}>${esc(m.nome)}</button>`).join('')}</div>` : '';
+  const duelo = `<div><b>Duelo de Codeforces</b><span class="sub">1×1, 3 problemas na faixa do mais fraco, ${R.minutos} minutos.</span>
+    ${meuCf ? `<button type="button" class="btn" data-tndesafiar${pode ? '' : ' disabled'}>${TT.desafiar && pode ? 'fechar' : 'desafiar alguém'}</button>${lista}` : '<span class="sub">Ligue o Codeforces em Configurações (o seu handle) para duelar.</span>'}</div>`;
+  return `<section class="card">${h2(H.duelos ? `${H.vitorias} ${H.vitorias === 1 ? 'vitória' : 'vitórias'} em ${H.duelos} ${H.duelos === 1 ? 'duelo' : 'duelos'}` : '')}${como}
+    ${ativo || rec || env ? `<div class="tn-cvs">${ativo}${rec}${env}</div>` : '<p class="sub" style="margin:0 0 10px">Nenhum convite aberto.</p>'}
+    <div class="tn-cv">${duelo}${PACTO}</div></section>`;
+}
+
+/* ---------- duelo: os dois lado a lado, o relógio e quem resolveu cada um dos 3 problemas ---------- */
+function subDuelo(P, C){
+  const du = C && C.duelo, eu = P.voce.membro;
+  if(!du) return `<section class="card"><h2><span class="c">~/</span>duelo</h2><p class="sub" style="margin:0">Nenhum duelo agora. <button type="button" class="tt-lk" data-ttsub="desafios">desafiar alguém</button></p></section>`;
+  const lado = du.de === eu ? [du.de, du.para] : [du.para, du.de];
+  const J = id => (du.jogadores || []).find(j => j.membro === id) || {n:0, t:0, pts:0, feitos:{}};
+  const antes = du.estado === 'andamento' && agoraS() < du.ini;
+  const meio = du.estado === 'aceito' ? '<small>sorteando</small><b>…</b>'
+    : antes ? `<small>começa em</small><b>${relo(du.ini)}</b>`
+    : du.estado === 'andamento' ? `<small>restam</small><b>${relo(du.ate)}</b>`
+    : du.estado === 'falhou' ? '<small>não saiu</small><b>—</b>'
+    : `<small>acabou</small><b>${du.venceu == null ? 'empate' : du.venceu === eu ? 'você venceu' : esc(nomeDe(P, du.venceu)) + ' venceu'}</b>`;
+  const jog = id => `<div class="tn-dvj${du.venceu === id ? ' venceu' : ''}">${ico(P, id, 54, 0, {nolink:true})}<b class="tn-dvn">${J(id).n}<small>/3</small></b></div>`;
+  const vals = (P.torre.cf_dia || {}).valores || [];
+  const cel = (id, p) => { const t = J(id).feitos[p.id]; return `<span class="tn-dvt${t != null ? ' ok' : ''}">${t != null ? '✓ ' + mmss(t) : '—'}</span>`; };
+  const probs = du.problemas ? du.problemas.map(p => { const [n, c] = corCF(p.rating);
+      return `<div class="tn-dvp">${cel(lado[0], p)}<span class="tn-dvm"><span class="tn-fx" style="--c:${c}" title="${n}">${p.rating}</span><a href="https://codeforces.com/problemset/problem/${p.contest}/${encodeURIComponent(p.index)}" target="_blank" rel="noopener" class="tn-cfn">${esc(p.nome)}<small>${p.contest}${esc(p.index)}</small></a><span class="tn-cfv">+${vals[p.faixa] != null ? vals[p.faixa] : '?'}</span></span>${cel(lado[1], p)}</div>`; }).join('')
+    : du.estado === 'falhou' ? '' : [0, 1, 2].map(() => '<div class="tn-dvp"><span class="tn-dvt">—</span><span class="tn-dvm sub">o problema aparece quando o duelo começar</span><span class="tn-dvt">—</span></div>').join('');
+  const pe = du.estado === 'fim' ? `<p class="sub" style="margin:12px 0 0">Você ganhou <b class="tn-tc">${J(eu).pts} <small>TC</small></b> pelos problemas que resolveu (já na carteira). <button type="button" class="tt-lk" data-ttsub="desafios">voltar aos desafios</button></p>`
+    : du.estado === 'falhou' ? '<p class="sub" style="margin:12px 0 0">A API do Codeforces não respondeu e o sorteio desistiu. Ninguém perde nada: desafie de novo. <button type="button" class="tt-lk" data-ttsub="desafios">voltar aos desafios</button></p>'
+    : '<p class="sub" style="margin:12px 0 0">Resolva no Codeforces: o servidor do grupo confere os envios dos dois a cada 15 s.</p>';
+  return `<section class="card"><h2><span class="c">~/</span>duelo · Codeforces <span class="r">${esc(nomeDe(P, lado[0]))} × ${esc(nomeDe(P, lado[1]))}</span></h2>
+    <div class="tn-dvc">${jog(lado[0])}<div class="tn-dvr">${meio}</div>${jog(lado[1])}</div>
+    <div class="tn-dvps">${probs}</div>${pe}</section>`;
+}
 function subDesafios(P){
   const S = P.torre.semanal, eu = P.voce.membro;
   const tabela = tabelaCF(P);
-  const conv = `<section class="card"><h2><span class="c">~/</span>convites <span class="r">${prev('fases 2 e 3')}</span></h2>
-      <div class="tn-cv"><div><b>Duelo de Codeforces</b><span class="sub">1×1, problema na faixa do mais fraco dos dois; vence quem resolver primeiro.</span><button type="button" class="btn" disabled>desafiar alguém</button></div>
-        <div><b>Pacto de hábito</b><span class="sub">Você propõe um hábito; se os dois cumprirem X dias, os dois ganham XP fixo. Até 2 pactos ativos.</span><button type="button" class="btn" disabled>propor um pacto</button></div></div>
-      <p class="sub" style="margin:10px 0 0">Nenhum convite aberto.</p></section>`;
+  const conv = convitesHTML(P, TT.C);
   const marcas = S.semanas.filter(s => linhaDe(s, eu)).map(s => { const x = linhaDe(s, eu);
     return `<div class="tn-mk${x.bateu ? ' ok' : ''}${s.fechada ? '' : ' agora'}"><small>s${s.semana.split('-W')[1]}</small><b>${md(s.modalidade)[0].slice(0, 3)}</b><span>${x.marca == null ? '—' : x.bateu ? '✓' : `${x.mod || 0}/${x.marca}`}</span></div>`; }).join('');
   return `<div class="tn-ds"><div class="tt-stack">${tabela}${conv}</div><div class="tt-stack">${chefaoHTML(P)}
@@ -501,7 +590,8 @@ function torreNova(g){
   const aviso = r.offline ? `<p class="gp-aviso">O servidor do grupo está fora do ar. Mostrando o placar de ${esc(quando(P.recebido))}.</p>` : r.sem_acesso ? `<p class="gp-aviso">${esc(r.erro)}</p>` : '';
   const sub = NOVAS.includes(TT.sub) ? TT.sub : 'semana';
   TT.habNomes = P.torre.semanal.habitos || {};
-  const corpo = sub === 'desafios' ? subDesafios(P) : sub === 'temporada' ? subTemporada(P) : sub === 'hunters' ? subHunters(P) : sub === 'loja' ? carteiraHTML(P) + ((P.torre.loja || {}).aberta ? subLoja(P) : lojaFechada(P)) : subSemana(P);
+  TT.C = caixaDe(g);
+  const corpo = sub === 'duelo' ? subDuelo(P, TT.C) : sub === 'desafios' ? subDesafios(P) : sub === 'temporada' ? subTemporada(P) : sub === 'hunters' ? subHunters(P) : sub === 'loja' ? carteiraHTML(P) + ((P.torre.loja || {}).aberta ? subLoja(P) : lojaFechada(P)) : subSemana(P);
   return `${aviso}<div class="tt">${corpo}</div>
     <p class="sub" style="margin:4px 0 0">O seu XP e as suas tarefas não aparecem aqui: o grupo vê só os blocos, de 0 a 100. Última sincronização: ${G.ultima ? esc(quando(G.ultima / 1000)) : 'ainda não'} <button type="button" class="btn" data-gpsinc style="margin-left:6px">sincronizar agora</button></p>`;
 }
@@ -518,7 +608,9 @@ function rTT2(S){
   const cab = P ? `<div class="tt-gh"><div><h3>${esc(P.grupo.nome)}</h3><div class="meta"><span><b>${temporadaDe(P)}</b>${fim != null && fim >= 0 ? ` · faltam ${fim} dias` : ''}</span><span>${P.membros.length} ${P.membros.length === 1 ? 'membro' : 'membros'}</span><span><i class="dot"></i>sincronizou ${esc(G.ultima ? quando(G.ultima / 1000) : quando(P.recebido))}</span></div></div>${sel}</div>` : sel;
   const admBt = adm ? `<button type="button" class="adm" data-gpaba="admin"${G.aba === 'admin' ? ' aria-current="page"' : ''}>administrar</button>` : '';
   if(!NOVAS.includes(TT.sub)) TT.sub = 'semana';
-  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('semana', 'semana')}${ab('desafios', 'desafios')}${ab('temporada', 'temporada')}${ab('hunters', 'hunters')}${ab('loja', 'loja')}${admBt}</nav>`;
+  const C = caixaDe(g), nConv = C ? C.convites.filter(c => c.para === C.eu).length : 0;
+  if(TT.sub === 'duelo' && !(C && C.duelo)) TT.sub = 'desafios';
+  const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('semana', 'semana')}${ab('desafios', nConv ? `desafios <b class="tn-bdg">${nConv}</b>` : 'desafios')}${C && C.duelo ? ab('duelo', duVivo(C.duelo) ? '<i class="dot"></i>duelo' : 'duelo') : ''}${ab('temporada', 'temporada')}${ab('hunters', 'hunters')}${ab('loja', 'loja')}${admBt}</nav>`;
   document.getElementById('tt-root').innerHTML = cab + outro + nav + (G.aba === 'admin' ? adminHTML(g) : torreNova(g));
 }
 const RENDER0 = {tt: RENDER.tt, cfg: RENDER.cfg};
@@ -591,6 +683,15 @@ document.addEventListener('click', async e => {
   let b;
   if((b = q('[data-ttsub]'))){ vaiPara({sub: b.dataset.ttsub}); return; }
   if((b = q('[data-ttjog]'))){ vaiPara({sub: 'hunters', jog: +b.dataset.ttjog}); return; }
+  if(q('[data-tndesafiar]')){ TT.desafiar = !TT.desafiar; render(); return; }
+  if((b = q('[data-tndu]'))){ const g = grupoSel(), acao = b.dataset.tndu; b.disabled = true;
+    try { const r = await post('/api/grupo/duelo', {chave: g.chave, acao, id: +b.dataset.id || undefined, para: +b.dataset.para || undefined});
+      TT.desafiar = false; guardaCaixa(g, r);
+      if(acao === 'aceitar') vaiPara({sub: 'duelo'}); else render();
+      if(acao === 'convidar') toast(`Convite mandado <small>some em ${Math.round(r.regras.convite / 60)} minutos se ninguém aceitar</small>`);
+      lacoCaixa(); }
+    catch(err){ toast('Não deu: ' + esc(err.message)); lacoCaixa(); }
+    return; }
   if((b = q('[data-tnaj]'))){ TT.aj[b.dataset.tnaj] = !TT.aj[b.dataset.tnaj]; render(); return; }
   if((b = q('[data-tnpod]'))){ TT.pod = b.dataset.tnpod; render(); return; }
   if((b = q('[data-tnmod]'))){ try { await post('/api/grupo/modalidade', {chave: grupoSel().chave, mod: b.dataset.tnmod}); await sincroniza(); toast(`${md(b.dataset.tnmod)[0]} <small>vale se você fechar a semana em 1º</small>`); } catch(err){ toast('Não deu: ' + esc(err.message)); } return; }
@@ -934,6 +1035,19 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-cfp.feito{background:color-mix(in srgb,var(--grn) 7%,transparent)} .tn-cfn{font-size:13.5px;color:var(--ink);text-decoration:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .tn-cfn:hover{color:var(--volt)}
 .tn-cfn small{font:500 11px var(--f-mono);color:var(--faint);margin-left:8px} .tn-qs{display:flex;gap:2px} .tn-qm.zero{opacity:.4}
 .tn-fx{font:700 11px var(--f-mono);color:var(--c);border:1px solid var(--c);border-radius:3px;padding:2px 6px;text-align:center}
+.tn-cvs{display:grid;gap:6px;margin-bottom:12px}
+.tn-cvl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13.5px;border:1px solid var(--hair);border-radius:3px;padding:8px 10px}
+.tn-cvb{display:flex;gap:6px;flex-wrap:wrap} .tn-cvop{display:flex;gap:6px;flex-wrap:wrap}
+.tn-bdg{font:700 10px var(--f-mono);background:var(--volt);color:var(--bg);border-radius:8px;padding:1px 5px;margin-left:4px}
+.tn-dvc{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;justify-items:center;margin-bottom:14px}
+.tn-dvj{display:grid;justify-items:center;gap:4px} .tn-dvj.venceu .tn-dvn{color:var(--grn)}
+.tn-dvn{font:700 28px/1 var(--f-hud)} .tn-dvn small{font-size:.5em;color:var(--faint)}
+.tn-dvr{display:grid;justify-items:center;gap:2px;text-align:center} .tn-dvr small{font:500 11px var(--f-mono);color:var(--soft)} .tn-dvr b{font:700 22px/1.1 var(--f-hud)}
+.tn-dvps{display:grid;border:1px dashed var(--hair);border-radius:3px}
+.tn-dvp{display:grid;grid-template-columns:64px minmax(0,1fr) 64px;gap:10px;align-items:center;padding:8px 12px} .tn-dvp + .tn-dvp{border-top:1px dashed var(--hair)}
+.tn-dvm{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;min-width:0}
+.tn-dvt{font:600 12px var(--f-mono);color:var(--faint);text-align:center} .tn-dvt.ok{color:var(--grn)}
+@media (max-width:560px){.tn-dvp{grid-template-columns:52px minmax(0,1fr) 52px;padding:8px} .tn-dvm{grid-template-columns:minmax(0,1fr)} .tn-dvm .tn-fx,.tn-dvm .tn-cfv{display:none}}
 .tn-cv{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .tn-cv > div{display:grid;gap:6px;align-content:start;border:1px solid var(--hair);border-radius:3px;padding:12px} .tn-cv .btn{justify-self:start}
 .tn-hp{display:grid;gap:6px} .tn-hpt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline} .tn-hpt b{font:700 18px var(--f-hud)}

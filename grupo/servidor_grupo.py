@@ -50,6 +50,8 @@ Rotas (JSON):
   POST /g/<id>/admin/frase {semana}           apaga a frase de uma semana (o líder não escreve outra)
   POST /g/<id>/admin/relatorio {}             o relatório completo da temporada, para calibrar (semanas, chefões, tabela do dia, Trick Coin)
   POST /g/<id>/modalidade {mod}               o 1º da semana escolhe a modalidade da seguinte (#170)
+  GET  /g/<id>/caixa                          a caixa de convites e o duelo em curso (leve: a tela do duelo pede a cada poucos s)
+  POST /g/<id>/duelo {acao, para?, id?}       duelo 1×1 do Codeforces (#171): convidar {para} | aceitar | recusar | cancelar {id}
 """
 import argparse
 import hashlib
@@ -117,6 +119,10 @@ CREATE TABLE IF NOT EXISTS trick (grupo TEXT NOT NULL, membro INTEGER NOT NULL, 
   criado REAL NOT NULL, PRIMARY KEY (grupo, membro, chave));
 CREATE TABLE IF NOT EXISTS escolhas (grupo TEXT NOT NULL, semana TEXT NOT NULL, membro INTEGER NOT NULL, mod TEXT NOT NULL, criado REAL NOT NULL,
   PRIMARY KEY (grupo, semana));
+CREATE TABLE IF NOT EXISTS duelos (id INTEGER PRIMARY KEY, grupo TEXT NOT NULL, de INTEGER NOT NULL, para INTEGER NOT NULL, criado REAL NOT NULL,
+  vence REAL NOT NULL, aceito REAL, fim REAL, estado TEXT NOT NULL, dados TEXT NOT NULL DEFAULT '{}');
+CREATE TABLE IF NOT EXISTS duelo_feitos (duelo INTEGER NOT NULL, membro INTEGER NOT NULL, prob TEXT NOT NULL, t REAL NOT NULL,
+  PRIMARY KEY (duelo, membro, prob));
 CREATE TABLE IF NOT EXISTS frases (grupo TEXT NOT NULL, semana TEXT NOT NULL, membro INTEGER NOT NULL, texto TEXT NOT NULL, criado REAL NOT NULL,
   apagada REAL, PRIMARY KEY (grupo, semana));
 """
@@ -531,9 +537,13 @@ def handle_ok(h):
     return h or None
 
 
+cf_trava = threading.Lock()   # a tabela do dia e o duelo rodam em linhas separadas: uma chamada por vez à API
+
+
 def cf_api(metodo, **params):
-    time.sleep(CF_PAUSA)
-    return jogo.cf_api(metodo, **params)
+    with cf_trava:
+        time.sleep(CF_PAUSA)
+        return jogo.cf_api(metodo, **params)
 
 
 def dia_cf(fuso, t=None):
@@ -562,8 +572,9 @@ def cf_handle(handle):
     if r:
         feitos = set(json.loads(r["resolvidos"])) | cf_ok(cf_api("user.status", handle=handle, **{"from": 1, "count": CF_RECENTES}))
     else:
-        time.sleep(CF_PAUSA)
-        feitos = cf_ok(jogo.cf_envios(handle, date(2010, 1, 1))[0])
+        with cf_trava:
+            time.sleep(CF_PAUSA)
+            feitos = cf_ok(jogo.cf_envios(handle, date(2010, 1, 1))[0])
     with db_lock:
         CON.execute("INSERT OR REPLACE INTO cf_handles (handle, resolvidos, rating, lido) VALUES (?, ?, ?, ?)",
                     (handle, json.dumps(sorted(feitos)), r["rating"] if r else None, agora()))
@@ -639,6 +650,181 @@ def cf_placar(g, eu):
 
 
 # ---------- grupos, convites e membros ----------
+# ---------- duelo 1×1 do Codeforces (#171) ----------
+# Um convida, o outro aceita em até DUELO_CONVITE segundos (senão o convite some). Aceito, a rotina do duelo sorteia 3
+# problemas em volta da faixa do mais fraco (cf_dia.faixas_duelo), fora os que algum dos dois já resolveu e os da tabela
+# de hoje, e o duelo começa DUELO_CONTA segundos depois. Dura DUELO_MIN minutos ou até alguém resolver os 3. Cada problema
+# resolvido paga o valor da faixa (o mesmo da tabela do dia) quando o duelo acaba. Estados: convite, recusado, cancelado,
+# aceito (sorteando), andamento, fim, falhou (a API não deixou sortear). A aposta fica para quando a loja abrir.
+DUELO_CONVITE = 600
+DUELO_CONTA = 30
+DUELO_MIN = 60
+DUELO_FOLGA = 90      # segundos depois do fim para os envios do último minuto serem julgados
+DUELO_VOLTA = 15      # segundos entre as conferências
+DUELO_RECENTES = 20   # envios lidos de cada um por conferência
+DUELO_VIVO = ("aceito", "andamento")
+
+
+def duelo_json(g, r, todo=False):
+    """O duelo como a página mostra: com os problemas e, para cada um dos dois, o que resolveu, em quanto tempo e os pontos."""
+    d = json.loads(r["dados"] or "{}")
+    out = {"id": r["id"], "de": r["de"], "para": r["para"], "estado": r["estado"], "criado": r["criado"], "vence": r["vence"], "fim": r["fim"]}
+    if d.get("problemas") and r["estado"] == "andamento" and agora() < d["ini"] and not todo:   # na contagem os problemas ainda não aparecem: ninguém sai na frente
+        out.update(ini=d["ini"], ate=d["ate"])
+    elif d.get("problemas"):
+        feitos = [(x["membro"], x["prob"], x["t"]) for x in q("SELECT * FROM duelo_feitos WHERE duelo = ?", (r["id"],))]
+        pl, venceu = cf_dia.duelo(d["problemas"], feitos, [r["de"], r["para"]], d["ini"], cal_de(g))
+        out.update(problemas=d["problemas"], ini=d["ini"], ate=d["ate"], venceu=venceu, jogadores=[dict(pl[m], membro=m) for m in (r["de"], r["para"])])
+    return out
+
+
+def caixa(g, eu):
+    """A caixa de convites de quem pede: os convites abertos (recebidos e enviados), o duelo em curso (ou o último, por meia
+    hora depois do fim, para ver o resultado) e o histórico de duelos dele."""
+    t = agora()
+    rs = q("SELECT * FROM duelos WHERE grupo = ? AND (de = ? OR para = ?) AND (estado IN ('aceito', 'andamento') OR (estado = 'convite' AND vence > ?)"
+           " OR fim > ?) ORDER BY id", (g["id"], eu, eu, t, t - 1800))
+    vivo = [r for r in rs if r["estado"] in DUELO_VIVO] or [r for r in rs if r["estado"] in ("fim", "falhou")][-1:]
+    hist = q("SELECT * FROM duelos WHERE grupo = ? AND (de = ? OR para = ?) AND estado = 'fim' ORDER BY fim DESC LIMIT 30", (g["id"], eu, eu))
+    vit = [json.loads(r["dados"]).get("venceu") for r in hist]
+    return {"agora": t, "eu": eu, "convites": [duelo_json(g, r) for r in rs if r["estado"] == "convite"], "duelo": duelo_json(g, vivo[0]) if vivo else None,
+            "historico": {"duelos": len(vit), "vitorias": vit.count(eu), "empates": vit.count(None)},
+            "regras": {"convite": DUELO_CONVITE, "minutos": DUELO_MIN, "conta": DUELO_CONTA}}
+
+
+def caixa_de(gid, token):
+    g = grupo_ou_404(gid)
+    return {"ok": True, **caixa(g, membro_do(gid, token)["id"])}
+
+
+def ocupado(c, gid, m):
+    return c.execute("SELECT 1 FROM duelos WHERE grupo = ? AND (de = ? OR para = ?) AND estado IN ('aceito', 'andamento')", (gid, m, m)).fetchone()
+
+
+def duelo(gid, token, d):
+    """{acao: convidar, para} | {acao: aceitar | recusar | cancelar, id}."""
+    g = grupo_ou_404(gid)
+    eu = membro_do(gid, token)
+    acao, t = d.get("acao"), agora()
+    with transacao() as c:
+        if acao == "convidar":
+            try:
+                para = c.execute("SELECT * FROM membros WHERE id = ? AND grupo = ? AND saiu IS NULL", (int(d.get("para") or 0), gid)).fetchone()
+            except (TypeError, ValueError):
+                para = None
+            if not para or para["id"] == eu["id"]:
+                raise Erro("escolha alguém do grupo para duelar")
+            if not eu["cf"]:
+                raise Erro("ligue o Codeforces em Configurações (o seu handle) para duelar")
+            if not para["cf"]:
+                raise Erro(f"{para['nome']} ainda não ligou o Codeforces")
+            if ocupado(c, gid, eu["id"]):
+                raise Erro("você já está num duelo", 409)
+            if ocupado(c, gid, para["id"]):
+                raise Erro(f"{para['nome']} está num duelo agora", 409)
+            if c.execute("SELECT 1 FROM duelos WHERE grupo = ? AND de = ? AND estado = 'convite' AND vence > ?", (gid, eu["id"], t)).fetchone():
+                raise Erro("você já tem um convite de duelo aberto: cancele ou espere ele vencer", 409)
+            c.execute("INSERT INTO duelos (grupo, de, para, criado, vence, estado) VALUES (?, ?, ?, ?, ?, 'convite')",
+                      (gid, eu["id"], para["id"], t, t + DUELO_CONVITE))
+        else:
+            try:
+                r = c.execute("SELECT * FROM duelos WHERE id = ? AND grupo = ?", (int(d.get("id") or 0), gid)).fetchone()
+            except (TypeError, ValueError):
+                r = None
+            if not r or eu["id"] not in (r["de"], r["para"]):
+                raise Erro("duelo não encontrado", 404)
+            if r["estado"] != "convite" or r["vence"] <= t:
+                raise Erro("esse convite não está mais aberto", 409)
+            if acao == "cancelar" and eu["id"] == r["de"]:
+                c.execute("UPDATE duelos SET estado = 'cancelado', fim = ? WHERE id = ?", (t, r["id"]))
+            elif acao == "recusar" and eu["id"] == r["para"]:
+                c.execute("UPDATE duelos SET estado = 'recusado', fim = ? WHERE id = ?", (t, r["id"]))
+            elif acao == "aceitar" and eu["id"] == r["para"]:
+                if ocupado(c, gid, r["de"]) or ocupado(c, gid, r["para"]):
+                    raise Erro("um dos dois já está num duelo", 409)
+                c.execute("UPDATE duelos SET estado = 'aceito', aceito = ? WHERE id = ?", (t, r["id"]))
+                # os outros convites dos dois caem: cada um duela com um de cada vez
+                c.execute("UPDATE duelos SET estado = 'cancelado', fim = ? WHERE grupo = ? AND estado = 'convite' AND id != ? AND (de IN (?, ?) OR para IN (?, ?))",
+                          (t, gid, r["id"], r["de"], r["para"], r["de"], r["para"]))
+            else:
+                raise Erro("ação desconhecida")
+    return {"ok": True, **caixa(g, eu["id"])}
+
+
+def duelo_sorteia(g, r):
+    hs = {m["id"]: m["cf"] for m in q("SELECT id, cf FROM membros WHERE id IN (?, ?)", (r["de"], r["para"]))}
+    if not hs.get(r["de"]) or not hs.get(r["para"]):
+        raise Erro("um dos dois desligou o Codeforces")
+    resolvidos = cf_handle(hs[r["de"]]) | cf_handle(hs[r["para"]])
+    dia = dia_cf(g["fuso"]).isoformat()
+    tab = q1("SELECT dados FROM cf_dia WHERE grupo = ? AND dia = ?", (g["id"], dia))
+    if tab:   # um problema da tabela de hoje pagaria duas vezes
+        resolvidos |= {p["id"] for p in json.loads(tab["dados"])["problemas"]}
+    ratings = cf_ratings([hs[r["de"]], hs[r["para"]]])
+    faixas = cf_dia.faixas_duelo([ratings.get(hs[m]) for m in (r["de"], r["para"])])
+    ps = cf_dia.sorteia(cf_problemset(dia), resolvidos, f"duelo:{g['id']}:{r['id']}", faixas)
+    if len(ps) < 3:
+        raise Erro("o sorteio não achou 3 problemas")
+    ini = agora() + DUELO_CONTA
+    dados = {"problemas": ps, "ratings": {str(m): ratings.get(hs[m]) for m in (r["de"], r["para"])}, "ini": ini, "ate": ini + DUELO_MIN * 60}
+    with transacao() as c:
+        c.execute("UPDATE duelos SET estado = 'andamento', dados = ? WHERE id = ? AND estado = 'aceito'", (json.dumps(dados), r["id"]))
+    log("duelo:", g["id"], r["id"], " ".join(p["id"] for p in ps))
+
+
+def duelo_confere(g, r, t):
+    d = json.loads(r["dados"])
+    if t < d["ini"]:
+        return
+    ids = {p["id"] for p in d["problemas"]}
+    for m in q("SELECT id, cf FROM membros WHERE id IN (?, ?)", (r["de"], r["para"])):
+        if not m["cf"]:
+            continue
+        try:
+            env = cf_api("user.status", handle=m["cf"], **{"from": 1, "count": DUELO_RECENTES})
+        except Exception as e:   # handle trocado ou API fora: o duelo acaba na hora mesmo assim
+            log("duelo:", r["id"], m["cf"], repr(e))
+            continue
+        novos = [(cf_dia.chave(x["problem"]), x["creationTimeSeconds"]) for x in env if x.get("verdict") == "OK"
+                 and x.get("problem", {}).get("contestId") and cf_dia.chave(x["problem"]) in ids and d["ini"] <= x.get("creationTimeSeconds", 0) <= d["ate"]]
+        if novos:
+            with transacao() as c:
+                c.executemany("INSERT OR IGNORE INTO duelo_feitos (duelo, membro, prob, t) VALUES (?, ?, ?, ?)", [(r["id"], m["id"], pid, ts) for pid, ts in novos])
+    x = duelo_json(g, r, todo=True)
+    if t > d["ate"] + DUELO_FOLGA or any(j["n"] == len(ids) for j in x["jogadores"]):
+        with transacao() as c:
+            fechou = c.execute("UPDATE duelos SET estado = 'fim', fim = ?, dados = ? WHERE id = ? AND estado = 'andamento'",
+                               (agora(), json.dumps(dict(d, venceu=x["venceu"])), r["id"])).rowcount
+        if fechou:
+            credita(g["id"], {j["membro"]: j["pts"] for j in x["jogadores"]}, f"duelo:{r['id']}", "duelo")
+
+
+def duelo_rodada(t=None):
+    """Uma volta: sorteia os duelos aceitos e confere os que estão em andamento."""
+    t = t or agora()
+    for r in q("SELECT * FROM duelos WHERE estado IN ('aceito', 'andamento') ORDER BY id"):
+        g = grupo_ou_404(r["grupo"])
+        try:
+            if r["estado"] == "aceito":
+                duelo_sorteia(g, r)
+            else:
+                duelo_confere(g, r, t)
+        except Exception as e:   # API fora: tenta na próxima volta; o sorteio desiste depois de 5 minutos
+            log("duelo:", r["id"], repr(e))
+            if r["estado"] == "aceito" and t - r["aceito"] > 300:
+                with transacao() as c:
+                    c.execute("UPDATE duelos SET estado = 'falhou', fim = ? WHERE id = ? AND estado = 'aceito'", (agora(), r["id"]))
+
+
+def rotina_duelo():
+    while True:
+        try:
+            duelo_rodada()
+        except Exception as e:
+            log("duelo:", repr(e))
+        time.sleep(DUELO_VOLTA)
+
+
 def slug(nome):
     import unicodedata
     s = unicodedata.normalize("NFKD", nome).encode("ascii", "ignore").decode().lower()
@@ -887,13 +1073,14 @@ def placar(gid, token):
                 dias[r["dia"]] = f
         com_xp = q1("SELECT COUNT(*) AS n FROM dias WHERE grupo = ? AND membro = ? AND xp > 0", (gid, m["id"]))["n"]
         membros.append({"id": m["id"], "nome": m["nome"], "avatar": m["avatar"], "admin": bool(m["admin"]), "envio": m["envio"],
-                        "sequencia": sequencia(ativos, hoje), "dias_com_xp": com_xp, "dias": dias})
+                        "sequencia": sequencia(ativos, hoje), "dias_com_xp": com_xp, "dias": dias, "cf": bool(m["cf"])})
     fechado = q1("SELECT MAX(periodo) AS p FROM fechados WHERE grupo = ? AND periodo LIKE 'dia:%'", (gid,))["p"]
     G = retrato(g)
     t = torre.calcula(G)
     t.pop("config")
     t["frase"] = frase_da_semana(g, G, eu["id"])
     t["cf_dia"] = cf_placar(g, eu["id"])
+    t["caixa"] = caixa(g, eu["id"])
     cal = cal_de(g)
     t["trick"] = {**carteira(gid, eu["id"]), "valores": {"marca": int(cal["tc_marca"]), "chefao": int(cal["tc_chefao"])}}
     # a loja abre quando o grupo derrota o 1º chefão (o deste mês caindo já vale)
@@ -1186,7 +1373,7 @@ class H(BaseHTTPRequestHandler):
                 return self._json(410, {"ok": False, "error": f"o grupo mudou de servidor: agora fica em {novo}", "mudou": novo})
             gid, resto, tk = p[1], "/".join(p[2:]), self._token()
             if metodo == "GET":
-                fn = {"placar": lambda: placar(gid, tk), "admin": lambda: admin_ver(gid, tk)}.get(resto)
+                fn = {"placar": lambda: placar(gid, tk), "admin": lambda: admin_ver(gid, tk), "caixa": lambda: caixa_de(gid, tk)}.get(resto)
             else:
                 d = self._corpo()
                 fn = {"entrar": lambda: entrar(gid, d), "envio": lambda: envio(gid, tk, d), "sair": lambda: sair(gid, tk), "frase": lambda: frase(gid, tk, d),
@@ -1194,7 +1381,8 @@ class H(BaseHTTPRequestHandler):
                       "admin/membro": lambda: admin_membro(gid, tk, d), "admin/config": lambda: admin_config(gid, tk, d),
                       "admin/habito": lambda: admin_habito(gid, tk, d), "admin/calibracao": lambda: admin_calibracao(gid, tk, d),
                       "admin/placar": lambda: admin_placar(gid, tk, d), "admin/frase": lambda: admin_frase(gid, tk, d),
-                      "admin/relatorio": lambda: admin_relatorio(gid, tk), "modalidade": lambda: escolhe_modalidade(gid, tk, d)}.get(resto)
+                      "admin/relatorio": lambda: admin_relatorio(gid, tk), "modalidade": lambda: escolhe_modalidade(gid, tk, d),
+                      "duelo": lambda: duelo(gid, tk, d)}.get(resto)
             if fn:
                 return self._json(200, fn())
         raise Erro("não encontrado", 404)
@@ -1292,6 +1480,7 @@ def main():
     marca_ligado()
     threading.Thread(target=rotina, daemon=True).start()
     threading.Thread(target=rotina_cf, daemon=True).start()
+    threading.Thread(target=rotina_duelo, daemon=True).start()
     threading.Thread(target=vigia_codigo, args=(srv,), daemon=True).start()
     print(f"Ganbatte · servidor do grupo em http://127.0.0.1:{a.porta}/ (só nesta máquina; o host o expõe pelo Tailscale Funnel)")
     print(f"Dados: {DADOS}")

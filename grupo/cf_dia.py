@@ -5,6 +5,10 @@ resolveu. Cada faixa é um intervalo (o problema da faixa D tem rating de 1700 a
 Quem resolve ganha o valor da faixa; o 1º a resolver cada problema leva um bônus. O piso: quem é forte não pontua nas
 faixas bem abaixo da sua. O teto: a partir do N-ésimo problema que pontua no dia, os outros não pontuam para a pessoa, e o
 bônus do 1º passa, pela metade, ao primeiro que ainda pontua. Os números ficam na calibração do grupo (torre.CALIB, cf_*).
+
+O duelo 1×1 usa as mesmas faixas e os mesmos valores: 3 problemas em volta da faixa do mais fraco dos dois (uma abaixo,
+a dele e uma acima), cada problema resolvido paga o valor da faixa, sem piso (o mais forte aceitou jogar na faixa do outro)
+e sem teto. Vence quem resolver mais; no empate, quem chegou antes ao último que resolveu.
 """
 import random
 
@@ -25,12 +29,14 @@ def faixa_de(rating):
     return f[-1] if f else 0
 
 
-def sorteia(problemas, resolvidos, semente):
+def sorteia(problemas, resolvidos, semente, faixas=None):
     """Um problema por faixa, do problemset do Codeforces (problemset.problems → result.problems), fora os que alguém do
-    grupo já resolveu. A semente (grupo e dia) faz o sorteio sair igual se for refeito."""
+    grupo já resolveu. A semente (grupo e dia) faz o sorteio sair igual se for refeito. faixas: só essas (o duelo)."""
     rnd = random.Random(semente)
     out = []
     for i, (lo, hi) in enumerate(FAIXAS):
+        if faixas is not None and i not in faixas:
+            continue
         cand = sorted((p for p in problemas if isinstance(p.get("rating"), int) and lo <= p["rating"] <= hi
                        and 0 < p.get("contestId", 0) < GYM and chave(p) not in resolvidos and "*special" not in (p.get("tags") or [])), key=chave)
         if cand:
@@ -71,3 +77,31 @@ def pontua(problemas, feitos, ratings, cal):
         pontos[m] = pontos.get(m, 0) + pts
         linhas.append({"membro": m, "id": pid, "t": t, "pts": pts, "motivo": motivo})
     return linhas, pontos
+
+
+# ---------- duelo 1×1 ----------
+def faixas_duelo(ratings):
+    """As 3 faixas do duelo: a do mais fraco (sem rating conta como a A), uma abaixo e uma acima, sem sair da tabela."""
+    f = min(faixa_de(r) or 0 for r in ratings)
+    ini = max(0, min(f - 1, len(FAIXAS) - 3))
+    return list(range(ini, ini + 3))
+
+
+def duelo(problemas, feitos, membros, ini, cal):
+    """feitos: [(membro, id, instante)]. Devolve, para cada membro, os problemas que resolveu (com o tempo desde o início),
+    quantos, o tempo do último e os pontos; e o vencedor (None no empate ou se ninguém resolveu nada)."""
+    fx = {p["id"]: p["faixa"] for p in problemas}
+    out = {m: {"feitos": {}, "n": 0, "t": 0, "pts": 0} for m in membros}
+    for m, pid, t in sorted(feitos, key=lambda x: x[2]):
+        if m in out and pid in fx and pid not in out[m]["feitos"]:
+            x = out[m]
+            x["feitos"][pid] = int(t - ini)
+            x["n"] += 1
+            x["t"] = int(t - ini)
+            x["pts"] += valor(fx[pid], cal)
+    a, b = (out[m] for m in membros)
+    if (a["n"], -a["t"]) == (b["n"], -b["t"]) or not (a["n"] or b["n"]):
+        venceu = None
+    else:
+        venceu = membros[0] if (a["n"], -a["t"]) > (b["n"], -b["t"]) else membros[1]
+    return out, venceu
