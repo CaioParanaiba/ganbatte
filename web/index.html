@@ -991,7 +991,6 @@ a.btn{display:inline-block;text-decoration:none}
 .det7{position:relative} .det7 .pv{height:120px} .det7 .info p{font-size:13px}
 .det7 .x7{all:unset;cursor:pointer;position:absolute;top:6px;right:8px;z-index:2;width:26px;height:26px;display:grid;place-items:center;border-radius:99px;background:var(--panel);border:1px solid var(--hair);font:700 15px var(--f-ui);color:var(--soft)}
 .shopc .nx7{margin:4px 0 18px;font-size:12.5px}
-.ar-det > summary{cursor:pointer;font:700 13px var(--f-mono);color:var(--soft)} .ar-det[open] > summary{margin-bottom:8px}
 .flow7 > summary{cursor:pointer;font:600 12px var(--f-mono);color:var(--soft);margin-top:8px}
 .it7 .sl7{display:flex;gap:5px;flex-wrap:wrap}
 .it7 .sl7 span{font:600 10px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--hair);border-radius:4px;padding:1px 6px;color:var(--soft)}
@@ -1614,16 +1613,15 @@ function salvaUI(){
 /* provar na loja (#29): paleta, tema, fundo, efeito contínuo, moldura ou fonte. UI.prova é o id do item; não grava
    nada, some ao recarregar e, enquanto dura, o jogo fica travado (travaProva) para ninguém jogar com o item emprestado */
 const PROVAVEL = ['pal','full','tex','fx','frame','font','borda','hover','cursor','hp','heat','trans'];
-/* o que já é seu também se prova quando tem arte nova para ver (#134): é a única forma de comparar a nova com a sua */
-const artNova = it => window.GB_ARTE && GB_ARTE.tem(it.id) && !GB_ARTE.ARTE[it.id].sem;
-const provavel = it => (!OWN.has(it.id) && !GBx.padrao(it) || artNova(it)) && !it.lend && !it.ev && !it.grupo && PROVAVEL.includes(it.cat);
+const provavel = it => !OWN.has(it.id) && !GBx.padrao(it) && !it.lend && !it.ev && !it.grupo && PROVAVEL.includes(it.cat);
+/* o que vai para o <html>: o equipado e, provando, o item da loja. Item com arte nova (#134, fechada na #77): o atributo ganha
+   "-nova" (GB_ARTE.oficial), que é o que o CSS e os módulos de web/arte/ pegam */
 function vista(){
   const it = UI.prova && COS.find(i => i.id === UI.prova);
-  if(!it) return UI;
   const v = {theme:UI.theme, fx:UI.fx, bg:UI.bg, frame:UI.frame, font:UI.font, ...Object.fromEntries(SLOTS.map(k => [k, UI[k]]))};
-  if(it.cat === 'fx') v.fx = UI.fx.concat(it.fx);
-  else { Object.assign(v, it.eq); if(it.fxs) v.fx = UI.fx.concat(it.fxs); }
-  if(window.GB_ARTE) GB_ARTE.vista(v, it);   // arte nova (#134): provando com a nova, o atributo do <html> ganha "-nova"
+  if(it && it.cat === 'fx') v.fx = UI.fx.concat(it.fx);
+  else if(it){ Object.assign(v, it.eq); if(it.fxs) v.fx = UI.fx.concat(it.fxs); }
+  if(window.GB_ARTE) GB_ARTE.oficial(v);
   return v;
 }
 const visNen = () => document.documentElement.classList.contains('vis-nen');   // visual Nen (padrão) ou clássico: por computador, como efeitos e sons
@@ -1944,7 +1942,7 @@ function partes(S, it){
   else if(need) btn = `<button class="btn" disabled>abra o mundo pixel</button>`;
   else btn = `<button class="btn" data-cos="${it.id}" ${S.jenny >= preco ? '' : 'disabled'}>${!preco ? 'pegar' : S.jenny >= preco ? 'comprar' : `faltam ${fmt(preco - S.jenny)} J`}</button>`;
   const prova = UI.prova === it.id;
-  const ver = it.dev ? '' : (!own || artNova(it)) && provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
+  const ver = it.dev ? '' : provavel(it) ? `<button class="btn${prova ? ' v' : ''}" data-prova="${prova ? '' : it.id}" title="${prova ? 'voltar ao que é meu' : 'provar no jogo todo, sem comprar (o jogo fica travado enquanto isso)'}">${prova ? 'provando' : 'provar'}</button>`
     : it.ev || it.cat === 'som' ? `<button class="btn gb-ver" data-fxver="${it.id}" title="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}" aria-label="${it.cat === 'som' ? 'ouvir' : 'ver o efeito'}">▶</button>` : '';
   const pr = it.dev ? 'em desenvolvimento' : it.chefao ? 'chefão derrotado' : it.fora ? 'da sua coleção' : it.arq && !own ? 'arquivado' : pk ? (pk.completo ? 'pacote completo' : `${pk.p < it.p ? `<s>${fmt(it.p)}</s> ` : ''}${fmt(pk.p)} J`)
     : GBx.padrao(it) ? 'vem com o jogo' : it.prova ? 'só para provar' : it.grupo ? 'Trick Coin' : it.excl ? 'exclusivo' : it.p ? fmt(it.p)+' J' : 'grátis';
@@ -2005,14 +2003,12 @@ function rMS(S){
   else if(SECS[UI.cat]){
     /* vitrine: o que dá para ter, pelos filtros de uma linha só (busca, faixa, tema, ordem e "esconder o que já tenho", ligado
        de início: o que é seu fica em Comprados). Duas ordens na Aparência: por categoria (as prateleiras) ou por faixa (comum →
-       lendário, e no fim o que não tem faixa; dentro de cada faixa, na ordem das prateleiras). As ideias da fila de arte (#134)
-       só entram como card em desenvolvimento quando pedidas, no quadro da arte nova */
-    const arte = window.GB_ARTE && UI.cat === 'aparencia' ? GB_ARTE : null;   // arte nova em teste (#134): o resumo e o filtro
+       lendário, e no fim o que não tem faixa; dentro de cada faixa, na ordem das prateleiras) */
     const busca = GBx.norm(UI.q7.trim());
-    const filtro = i => (!UI.ffa || i.fa === UI.ffa) && (!UI.fte || (UI.fte === 'hxh') === !!i.hxh) && (!arte || !arte.so || arte.tem(i.id))
+    const filtro = i => (!UI.ffa || i.fa === UI.ffa) && (!UI.fte || (UI.fte === 'hxh') === !!i.hxh)
       && (!busca || GBx.norm(`${i.n} ${i.d || ''} ${prateleira(i) || ''}`).includes(busca));
     const naVitrine = i => !i.fora && !i.chefao && !i.grupo && !(i.arq && !meu(i)) && !(UI.ten7 && meu(i));
-    const todos = arte && UI.dev7 ? COS.concat(arte.ideias) : COS;
+    const todos = COS;
     const nTenho = COS.filter(i => !i.fora && !i.chefao && !i.grupo && meu(i) && SECS[UI.cat].some(([c]) => daSec([i], c).length)).length;
     const opt = (l, v) => l.map(([k,n]) => `<option value="${k}"${v === k ? ' selected' : ''}>${n}</option>`).join('');
     const fil = `<div class="fil7">${UI.cat === 'aparencia' ? `<input type="search" data-q7 placeholder="buscar em todas as famílias" value="${esc(UI.q7)}" aria-label="buscar na vitrine">`
@@ -2034,9 +2030,7 @@ function rMS(S){
       ? [...GBx.FAIXAS_LOJA, ['', 'Sem faixa', 'Pacotes, peças que só vêm num pacote e ideias com a faixa a decidir.']].map(([k, n, d]) => { const v = ordem.filter(i => (i.fa || '') === k);
           return v.length ? sec(n, d, v) : ''; }).join('')
       : cs.map(c => { const [, t, d] = UI.cat === 'aparencia' ? tit(c) : SECS[UI.cat].find(x => x[0] === c), v = vit(c); return v.length ? sec(t, d, v) : ''; }).join('');
-    const quadroArte = arte ? `<details class="sec7 ar-det"${arte.so || UI.dev7 ? ' open' : ''}><summary>arte nova em teste (#134)</summary>${arte.resumo(COS.concat(arte.ideias).filter(naVitrine).map(i => i.id))}
-      <button type="button" class="btn${UI.dev7 ? ' v' : ''}" data-dev7>${UI.dev7 ? 'esconder as ideias em desenvolvimento' : 'mostrar as ideias em desenvolvimento'}</button></details>` : '';
-    main = fil + fams + quadroArte + (secs || `<p class="sub">Nenhum item ${UI.cat === 'aparencia' ? 'nesta família ' : ''}com esses filtros.${UI.cat === 'aparencia' ? ' O número em cada família mostra onde há.' : ''}${UI.ten7 && nTenho ? ' O que já é seu está em Comprados.' : ''}</p>`)
+    main = fil + fams + (secs || `<p class="sub">Nenhum item ${UI.cat === 'aparencia' ? 'nesta família ' : ''}com esses filtros.${UI.cat === 'aparencia' ? ' O número em cada família mostra onde há.' : ''}${UI.ten7 && nTenho ? ' O que já é seu está em Comprados.' : ''}</p>`)
       + (UI.cat==='aparencia' ? '<p class="sub nx7">Na próxima temporada (2027-1): os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p>' : '');
   }
   else if(UI.cat === 'premios') main = UI.pedit ? premiosEditor(S) : premiosHTML(S);
@@ -2787,7 +2781,7 @@ document.addEventListener('click', async e => {
   if(act === 'done'){ const antes = estado(), rr = b.getBoundingClientRect();
     try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
     const depois = estado(), dx = depois.total - antes.total; render();
-    floatAt(rr, `+${dx} XP`); if(dx > 0 && window.GB_FX) GB_FX.tarefa(rr);
+    floatAt(rr, `+${dx} XP`); if(dx > 0 && window.GB_FX) GB_FX.tarefa(rr, b);
     if(depois.prepBonus > antes.prepBonus) toastUndo('Preparação completa! <small>+1 feitiço à escolha</small>');
     else if(depois.a.n > antes.a.n){ toastUndo(`▲ Andar ${depois.a.n} <small>a torre sobe</small>`); confete(); }
     else toastUndo(`+${dx} XP <small>+${fmt(dx*10)} J${GBx.repRegra(t.rep) ? ` · a próxima fica para ${ddmm(GBx.repProxima(GBx.repRegra(t.rep), t.due, HOJE))}` : ''}</small>`);
@@ -2870,8 +2864,8 @@ function tab(t){
 function toast(html, ms = 2600){ const to = document.createElement('div'); to.className = 'toast' + (document.querySelector('#xn,#xc,#repw') ? ' l-aviso' : ''); to.innerHTML = html; document.body.appendChild(to); setTimeout(() => to.remove(), ms); return to; }
 function floatAt(r, txt){ const f = document.createElement('div'); f.className = 'float'; f.textContent = txt; f.style.left = (r.left + r.width/2)+'px'; f.style.top = (r.top - 6)+'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 1200); }
 function confete(forcado){
-  if(!forcado && window.GB_FX) GB_FX.festa();
-  if(!forcado && (UI.fxOff || !UI.fx.includes('confete'))) return;
+  if(!forcado && window.GB_FX) GB_FX.festa();   // o confete em código (#134) vem pela festa
+  if(!forcado && (UI.fxOff || !UI.fx.includes('confete') || window.GB_CONFETE)) return;
   try { if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch(e){}
   const cores = ['var(--volt)','var(--aura)','var(--amb)','var(--grn)','var(--red)'];
   for(let i=0;i<60;i++){ const c = document.createElement('i'); c.className = 'cf8'; c.style.left = Math.random()*100+'vw'; c.style.background = cores[i%5];
@@ -2879,7 +2873,7 @@ function confete(forcado){
 }
 /* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
-const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-arte],[data-arteso],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
 let avisoProvaAtual = null;
 function avisoProva(){
@@ -2921,7 +2915,6 @@ document.addEventListener('click', async e => {
   const te = q('[data-teste]'); if(te){ te.dataset.teste === '1' ? entraTeste() : saiTeste(); return; }
   const pr = q('[data-prova]'); if(pr){ UI.prova = pr.dataset.prova; render(); return; }
   const ct = q('[data-cat]'); if(ct){ UI.cat = ct.dataset.cat; UI.isel = ''; render(); return; }
-  if(q('[data-dev7]')){ UI.dev7 = !UI.dev7; render(); return; }
   const fm = q('[data-fam7]'); if(fm){ UI.fam7 = fm.dataset.fam7; UI.sec7 = ''; render(); return; }
   const sc = q('[data-sec7]'); if(sc){ UI.sec7 = sc.dataset.sec7; render(); return; }
   const co = q('[data-cos]'); if(co){ const it = COS.find(i => i.id === co.dataset.cos), S = estado(), pk = it && it.parts ? GBx.pacote(it, OWN) : null, p = pk ? pk.p : it && it.p;
@@ -2983,7 +2976,7 @@ document.addEventListener('click', async e => {
   try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
   const depois = estado(), dx = depois.total - antes.total;
   render();
-  if(dx > 0){ floatAt(rr, `+${dx} XP`); if(window.GB_FX) GB_FX.tarefa(rr);
+  if(dx > 0){ floatAt(rr, `+${dx} XP`); if(window.GB_FX) GB_FX.tarefa(rr, b);
     if(depois.prepBonus > antes.prepBonus) toast('Preparação completa! <small>+1 feitiço à escolha</small>');
     else if(depois.a.n > antes.a.n){ toast(`▲ Andar ${depois.a.n} <small>a torre sobe</small>`); confete(); } }
 });
