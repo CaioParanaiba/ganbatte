@@ -467,18 +467,18 @@ const TOURS = {
      ['#pn .pn-hab','Meta do dia','Os hábitos de hoje, para marcar daqui mesmo.', 1],
      ['#pn .pn-tt','Semana','Os prazos dos próximos 7 dias e o que você fez há pouco.', 1]],
   b2:[['#cn .cn-b','Um chefão por matéria','A vida é a nota: cada avaliação tira <b>peso × nota/10</b>, e passar de 60 derruba. Nota baixa não pune: o chefão entra em <b>fúria</b> e as tarefas dele valem ×1,5.', 0, null, temChefe],
-      ['#cn .cn-c','Dentro do chefão','As avaliações (registre a nota aqui depois da prova) e as tarefas que preparam cada uma. Terminar todas antes da data dá <b>1 feitiço</b>, seja qual for a nota.', 0, () => { if(BOSSES[0] && !document.querySelector('#cn .cn-c')){ UI.cnab.add(BOSSES[0].d); render(); } }, temChefe],
+      ['#cn .cn-c','Dentro do chefão',`As avaliações (registre a nota aqui depois da prova) e as tarefas que preparam cada uma. Terminar todas antes da data dá <b>${GB.FEIT_J.toLocaleString('pt-BR')} J</b>, seja qual for a nota.`, 0, () => { if(BOSSES[0] && !document.querySelector('#cn .cn-c')){ UI.cnab.add(BOSSES[0].d); render(); } }, temChefe],
       ['#cn .cn-au','Aulas','Mande o áudio e/ou os slides de uma aula: a IA escreve o resumo e sugere o que estudar, e você escolhe o que entra na Lista.', 0, null, temChefe],
       ['#b2-inbox','Anotações do plano','A prova mudou de data ou de peso? Anote aqui e aplique depois no editor da matéria, à mão ou com a IA.', 0, null, temChefe]],
   d2:[['#cal .cl-m','O mês','Cada dia mostra as provas e os prazos pelo nome; os que passaram mostram o XP. Clique num dia para ver o que tem nele.'],
       ['#cal .cl-dia','O dia escolhido','O que tem no dia (ou o que você fez nele). Aperte <b>N</b> para criar uma tarefa já com esse prazo.', 1],
       ['#cal .cl-px','Próximos 14 dias','Um resumo por dia: as provas pelo nome e quantas tarefas vencem.', 1],
       ['#cal .cl-sem','O semestre inteiro','Uma linha por mês: a cor é o quanto você fez, o anel marca as avaliações.']],
-  bk:[['#bk-tabs','Quatro tipos de carta','<b>Conquistas</b>: troféus que o jogo marca sozinho. <b>IA</b>: desafios feitos para você. <b>Narradas</b>: a história da sua semana ou mês. <b>Feitiços</b>: as únicas que se usam.', 0, vai({bk:'slot', bksel:'001'})],
+  bk:[['#bk-tabs','Quatro tipos de carta','<b>Conquistas</b>: troféus que o jogo marca sozinho. <b>IA</b>: desafios feitos para você. <b>Narradas</b>: a história da sua semana ou mês. <b>Feitiços</b>: em pausa até o jogo crescer.', 0, vai({bk:'slot', bksel:'001'})],
       ['#bk-grid','Conquistas','Cada carta pede algo: dias seguidos, tarefas no prazo, uma matéria vencida. Clique numa para ver a regra e quanto falta; as apagadas ainda não são suas.'],
-      ['#bk-grid','Desafios da IA','A IA propõe desafios pelo seu ritmo, e o jogo confere. São 10 vagas, do fácil ao lendário. Conquistou? Resgate em Jenny ou num feitiço. Sem IA ligada, copie o pedido para uma IA de chat e cole a resposta.', 0, vai({bk:'ia', bksel:''})],
-      ['#bk-grid','Feitiços','Cartas de efeito que você usa quando quiser: o <b>Zetsu</b> salva um dia, o <b>Ko</b> dobra a próxima tarefa, o <b>Ken</b> adia um prazo. Vêm da Loja, da preparação completa de uma prova e da missão da semana. Clique e <b>usar agora</b>; expiram na volta às aulas.', 0, vai({bk:'feit', bksel:'F:ko'})]],
-  ms:[['#ms-root .cats','Quatro seções','Aparência, mundo pixel, prêmios reais e feitiços. Tudo se paga com <b>Jenny</b>, e gastar não baixa o seu andar.', 0, vai({cat:'aparencia', pedit:false})],
+      ['#bk-grid','Desafios da IA','A IA propõe desafios pelo seu ritmo, e o jogo confere. São 10 vagas, do fácil ao lendário. Conquistou? Resgate em Jenny. Sem IA ligada, copie o pedido para uma IA de chat e cole a resposta.', 0, vai({bk:'ia', bksel:''})],
+      ['#bk-grid','Feitiços',`Cartas de efeito, em pausa até o jogo passar de ${GB.ATIVOS_MAIS} jogadores ativos. Enquanto isso, a missão da semana e a preparação completa de uma prova dão <b>${GB.FEIT_J.toLocaleString('pt-BR')} J</b> cada; os feitiços que você já tem continuam guardados.`, 0, vai({bk:'feit', bksel:'F:ko'})]],
+  ms:[['#ms-root .cats','Quatro seções','Aparência, mundo pixel, prêmios reais e feitiços (em pausa por enquanto). Tudo se paga com <b>Jenny</b>, e gastar não baixa o seu andar.', 0, vai({cat:'aparencia', pedit:false})],
       ['#ms-root .lay7 > div:first-child','Aparência','Fotos, paletas, fundos e molduras. Comprou, é seu: <b>equipar</b> troca o que está usando sem pagar de novo.'],
       ['#ms-root .lay7 > div:first-child','Prêmios reais','Recompensas da vida real que você se dá com Jenny: um episódio, um jogo, um lanche. Os que vêm com o jogo são exemplos: troque pelos seus.', 0, vai({cat:'premios', pedit:false})],
       ['#ms-root .side7','Carteira','Quanto você tem, de onde veio e o que já resgatou.']],
@@ -744,7 +744,7 @@ function vazioB2(){
   const IA = window.GB_IA, lig = !!(IA && IA.ligada()), nao = (CTX.JOG || {}).materias === 'nao';
   return `<div class="card b2-vazio"><div>
       <p class="cap">chefões · nenhum ainda</p><h3>O Genei Ryodan está esperando</h3>
-      <p>Cada matéria do semestre vira um chefão. A <b>vida dele é a sua nota</b>: cada avaliação tira pontos, e média 6 derruba. As tarefas da matéria preparam cada prova, e terminar a preparação antes da data dá um <b>feitiço</b>.</p>
+      <p>Cada matéria do semestre vira um chefão. A <b>vida dele é a sua nota</b>: cada avaliação tira pontos, e média 6 derruba. As tarefas da matéria preparam cada prova, e terminar a preparação antes da data dá <b>${GB.FEIT_J.toLocaleString('pt-BR')} J</b>.</p>
       ${nao ? '<p>Você disse que não estuda agora. Quando precisar, é só começar por aqui.</p>' : ''}
       <p class="mono" style="font-size:12.5px">semestre: ${GB.brData(TEMP.ini)} a ${GB.brData(TEMP.fim)} · ajuste no cadastro</p>
       <div class="b2-ryo" aria-hidden="true">${RYODAN.map(r => `<i title="${r[0]}">${r[0][0]}</i>`).join('')}</div></div>

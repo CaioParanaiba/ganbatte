@@ -28,6 +28,15 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta10", "nome": "atualização da Torre Trick", "data": "2026-10-22", "aviso": "0.9.2-beta10",
+   "cap": "feitiços em pausa · missão e preparação em Jenny",
+   "resumo": "Os feitiços saíram de cena até o jogo passar de 10 jogadores ativos. Enquanto isso, a missão da semana e a preparação completa de uma prova dão 1.500 J cada.",
+   "itens": [
+     {"ic": "card", "t": "Feitiços em pausa", "d": "Os feitiços vão ser desenvolvidos quando o jogo passar de 10 jogadores ativos. Até lá somem do Book, da Loja e das Regras, e uma placa fica no lugar. Os que você já tinha continuam guardados, sem perder nenhum."},
+     {"ic": "coin", "t": "Missão e preparação dão Jenny", "d": "Cada missão da semana cumprida e cada preparação completa de prova dão 1.500 J, no dia em que saem (o 3º dia da missão e a data da prova). As que você cumpriu antes desta versão continuam como feitiço à escolha."},
+     {"ic": "spider", "t": "Desafios da IA só em Jenny", "d": "Ao conquistar um desafio da IA, o resgate é em Jenny. Os resgatados em feitiço antes continuam seus."},
+     {"ic": "antenna", "t": "Marco de 10 jogadores", "d": "Fontes e sons novos e os avisos de perigo e prazo chegam quando o jogo passar de 10 jogadores ativos (antes, 8), junto com os feitiços."}
+   ]},
   {"versao": "0.9.2-beta9", "nome": "atualização da Torre Trick", "data": "2026-10-22",
    "cap": "loja pausada para o balanceamento",
    "resumo": "As compras da Aparência estão pausadas enquanto os preços são balanceados com a regra nova. Dá para provar tudo, e o que já é seu continua seu.",
@@ -831,6 +840,12 @@ function seuAviso(v){
     if(m && m.xp > 0) partes.push(`a torre ficou com <strong>${m.xp.toLocaleString('pt-BR')} XP a menos</strong> das contribuições antigas, e a carteira ficou igual.`);
     else ok.push('nenhum XP de contribuição saiu da sua torre.');
     if(cf > 0) ok.push(`o Codeforces vale agora <strong>${cf.toLocaleString('pt-BR')} XP</strong> na temporada, pela regra nova.`);
+  }
+  if(v.aviso === '0.9.2-beta10'){   // feitiços em pausa: as de antes ficam feitiço (rec.migra.feiticos), as seguintes viram Jenny
+    const m = (r.migra || {}).feiticos, n = m ? (+m.miss || 0) + (+m.prep || 0) : 0, fj = (() => { try { return +estado().feitJ || 0; } catch(e){ return 0; } })();
+    if(n) ok.push(n === 1 ? 'o feitiço à escolha da missão ou preparação de antes continua guardado.' : `os <strong>${n} feitiços à escolha</strong> das missões e preparações de antes continuam guardados.`);
+    if(fj > 0) ok.push(`a carteira já recebeu <strong>${fj.toLocaleString('pt-BR')} J</strong> de missões e preparações desde esta versão.`);
+    if(!n && !fj) ok.push('você não tinha feitiços de missão nem de preparação, então nada muda por enquanto.');
   }
   const todas = partes.concat(ok); if(!todas.length) return '';
   return `<div class="nv-seu${partes.length ? '' : ' ok'}"><b>No seu jogo</b><span>${todas.map(t => t[0].toUpperCase() + t.slice(1)).join(' ')}</span></div>`;

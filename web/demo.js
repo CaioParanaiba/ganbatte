@@ -181,7 +181,7 @@ function rota(url, body){
       body.itens.forEach((it, i) => { conquistas.push({...it, no:String(prox + i), criada:HOJE}); nos.push(String(prox + i)); }); return {ok:true, nos}; }
     const c = conquistas.find(c => c.no === body.no); if(!c) throw new Error('conquista não encontrada');
     if(body.acao === 'descartar') c.descartada = HOJE;
-    else c.resgate = body.como === 'jenny' ? {como:'jenny', j:body.j, em:HOJE} : {como:'feitico', k:body.k, em:HOJE};
+    else c.resgate = {como:'jenny', j:body.j, em:HOJE};   // feitiços em pausa (GB.FEITICOS_PAUSA): só Jenny
     return {ok:true}; }
   if(url === '/api/jogo/nota'){ notas += `\n${HOJE} | ${body.disc} | ${body.aval} | ${String(body.nota).replace('.', ',')}${body.parcial ? ' | parcial' : ''}`; return {ok:true}; }
   if(url === '/api/jogo/estado'){ estado = JSON.parse(JSON.stringify(body.estado)); return {ok:true}; }

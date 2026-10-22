@@ -392,10 +392,10 @@ recompensa, que saem dos mínimos de esforço conferidos pelo jogo, nunca da IA:
 
 | Rank | Dias de atividade / sequência diária | Hábito semanal | Semanas de XP | Nota / peso mínimo | Recompensa |
 |---|---|---|---|---|---|
-| D · fácil | 7 | 2 semanas | 2, +10% sobre o recorde | 8 / 25% | 800 J ou Zetsu |
-| C · média | 14 | 4 semanas | 4, +20% | 9 / 40% | 1.500 J ou Gyo |
-| B · difícil | 30 | 8 semanas | 6, +35% | 9,5 / 60% | 3.000 J ou Ko |
-| A · lendária | 60 | 12 semanas | 8, +50% | 10 / 80% | 6.000 J ou feitiço à escolha |
+| D · fácil | 7 | 2 semanas | 2, +10% sobre o recorde | 8 / 25% | 800 J |
+| C · média | 14 | 4 semanas | 4, +20% | 9 / 40% | 1.500 J |
+| B · difícil | 30 | 8 semanas | 6, +35% | 9,5 / 60% | 3.000 J |
+| A · lendária | 60 | 12 semanas | 8, +50% | 10 / 80% | 6.000 J |
 
 Contagem exige também pelo menos 14/35/90/180 tarefas (D/C/B/A), ou 25% a mais que o volume do ritmo filtrado em
 7/14/30/60 dias, o que for maior; o ritmo tem piso de uma tarefa por dia. A constância exige tarefa feita em cada dia;
@@ -404,8 +404,8 @@ Para média final, o peso mínimo precisa ainda estar em aberto; para uma prova,
 Histórico curto não aumenta o rank. O prazo estimado precisa caber até o fim da temporada.
 
 Marque as que quiser e clique em *aceitar*. São 10 vagas para abertas (não resgatadas): 4 de rank D, 3 de C, 2 de B e 1 de
-A. Ficam numeradas de 200 em diante. Novas cartas contam atividades a partir do dia seguinte à aceitação; notas podem contar no mesmo dia. Cartas já aceitas conservam suas regras. Ao conquistar, os botões de Jenny e
-do feitiço aparecem embaixo da carta; depois de escolher, ela fica *resgatada*, vai para Book → *Conquistas* e a vaga abre. Dá para descartar uma conquista aberta para liberar a vaga.
+A. Ficam numeradas de 200 em diante. Novas cartas contam atividades a partir do dia seguinte à aceitação; notas podem contar no mesmo dia. Cartas já aceitas conservam suas regras. Ao conquistar, o botão de resgatar a
+Jenny aparece embaixo da carta (os feitiços estão em pausa até o jogo passar de 10 jogadores ativos); depois de resgatar, ela fica *resgatada*, vai para Book → *Conquistas* e a vaga abre. Dá para descartar uma conquista aberta para liberar a vaga.
 
 ```text
 Proponha {N} conquistas (desafios) para o meu jogo de tarefas (Ganbatte, tema Hunter x Hunter), difíceis mas possíveis no meu ritmo, com os mínimos de esforço abaixo. Os dados estão no fim.
