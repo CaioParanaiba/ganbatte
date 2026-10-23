@@ -104,8 +104,8 @@ Só aparece na tela o que não exige decisão ou o que chega por convite.
 | **Card da semana** | automático, 1 por semana | não | Trick Coin fixa pela marca |
 | **Chefão do grupo** | barra mensal | não | base igual + extra por contribuição |
 | **Tabela do dia (CF)** | só para quem tem o hábito | opcional | Trick Coin fixa por faixa + bônus pequeno do primeiro |
-| **Duelo (CF)** | caixa de convites | aceitar | Trick Coin fixa |
-| **Pacto de hábito** | caixa de convites | aceitar | XP fixo e pequeno |
+| **Duelo (CF)** | caixa de convites | aceitar | Trick Coin por problema (o valor da tabela do dia) |
+| **Pacto de hábito** | caixa de convites | aceitar | o dobro se os dois cumprirem (ver o pacto) |
 
 A corrida deixou de ser um tipo separado: é o bônus do primeiro na tabela do dia.
 
@@ -123,9 +123,22 @@ A corrida deixou de ser um tipo separado: é o bônus do primeiro na tabela do d
 
 ### Duelo 1×1 (CF)
 
-- Um convida o outro. O problema é sorteado na faixa do **mais fraco** dos dois (handicap) e vence quem resolver
-  primeiro. Quem perde também resolveu um problema, então também avançou.
-- Recompensa de Trick Coin fixa. ⏳ Aposta e valor.
+Decidido em 22/10/2026 (feito no PR da branch `issue-171-duelo`):
+
+- **Convite de 10 minutos**: se ninguém aceitar, some e é preciso mandar outro. Um convite aberto por vez; aceitar
+  derruba os outros convites dos dois. **Sem limite** de duelos por dia (rever pelo relatório).
+- **Simultâneo**: os dois começam juntos. Aceito, saem **3 problemas** em volta da faixa do mais fraco (uma faixa abaixo,
+  a dele e uma acima), fora os que algum dos dois já resolveu e os da tabela de hoje. O duelo começa 30 s depois (a
+  contagem na tela; os problemas só aparecem no início).
+- **60 minutos ou até alguém resolver os 3.** Vence quem resolver mais; no empate, quem chegou antes ao último.
+- **Pagamento:** cada problema resolvido paga o valor da faixa, igual à tabela do dia (fazer 2 no duelo = fazer 2 da
+  tabela), **sem piso** (o forte aceitou jogar na faixa do outro) e sem teto. Paga quando o duelo acaba.
+- **Tela do duelo** (sub-aba "duelo" enquanto há um): os dois lado a lado, o relógio e quem resolveu cada problema e em
+  quanto tempo. O servidor do grupo confere os envios a cada 15 s; a página pede a caixa a cada 4 s durante o duelo.
+- **Aposta: depois**, quando a loja abrir. Vai ser opcional e de qualquer valor até o saldo; o vencedor leva. Os
+  problemas de cada duelo pagam do mesmo jeito.
+- ⏳ **Equilibrar os problemas**: com forte contra fraco, a faixa do mais fraco pode ser fácil demais para o forte. Rever
+  com o uso (ex.: tempo de vantagem ou faixas diferentes para cada um).
 
 ### Chefão do grupo (mensal)
 
@@ -141,12 +154,16 @@ A corrida deixou de ser um tipo separado: é o bônus do primeiro na tabela do d
 
 ### Pacto de hábito
 
-- Um membro **propõe um hábito**; se os dois seguirem por X dias, os dois ganham **XP fixo e pequeno** (o XP é do jogo
-  pessoal de cada um). É a versão de dois do catálogo de hábitos: sem admin.
+- Um membro **propõe um hábito e os dias**: padrão 7, de 4 para cima; quanto mais dias, mais paga. É a versão de dois do
+  catálogo de hábitos: sem admin.
+- **Regra do Caio (22/10/2026):** os dois cumprem → os dois ganham **o dobro** da base; só o convidado cumpre → ele ganha
+  a **base** ("metade do dobro"); só quem propôs cumpre → ganha **pouco** (sugestão: metade da base), para quem propõe
+  escolher bem com quem; ninguém cumpre → nada.
+- ⏳ Sugerido e não confirmado: base = 2 por dia (7 dias: base 14, dupla 28 cada, só o convidado 14, só quem propôs 7), teto
+  de 30 dias, e pagar em **Trick Coin** em vez de XP (XP mexe no Ritmo do Geral).
 - Limites: **1 ou 2 pactos ativos por pessoa**; XP fixo (senão dois amigos criam "beber água" e inflam o XP).
 - Só **fez / não fez** sai da máquina; o nome do hábito pessoal nunca sai.
-- **Sem punição.** Cada um ganha pelos próprios dias e há um bônus de dupla se os dois completarem.
-- ⏳ X dias e o valor do XP. Mexe em XP: ver "Cuidados".
+- **Sem punição.**
 
 ## Fases
 
@@ -219,12 +236,14 @@ antiga | nova saíram. **Pouco texto na tela:** toda explicação fica no "?" do
 
 ## O que falta (para o próximo chat)
 
-1. **Duelo 1×1 de CF** (fase 2): convite, aceite, problema da faixa do mais fraco dos dois, quem resolve primeiro vence.
-   ⏳ aposta e valor em Trick Coin. Usa a mesma API do CF da tabela do dia (`cf_api`, `cf_handle`).
-2. **Caixa de convites** (fase 2): hoje é prévia em desafios. Só entra o que a pessoa aceita; vai servir para o duelo e o
-   pacto.
-3. **Pacto de hábito** (fase 3): um propõe, os dois cumprem X dias, XP fixo e pequeno, 1–2 ativos por pessoa, sem punição.
-   ⏳ X dias e o valor.
+1. ~~Duelo 1×1 de CF~~ e ~~caixa de convites~~: feitos em 22/10 (PR da branch `issue-171-duelo`). Tabelas `duelos` e
+   `duelo_feitos`, rotina `rotina_duelo`, rotas `GET /g/<id>/caixa` e `POST /g/<id>/duelo`, sub-aba "duelo" (sempre
+   visível: o duelo em curso no alto, o histórico embaixo com o retrospecto contra cada um e os últimos 30 duelos, que
+   abrem pela ação `ver`; o retrospecto também vai no verso da licença). Os convites levam o tipo na frente (DUELO · CF).
+   A tela ficou a espelhada (os dois lados em volta dos problemas; a enxuta saiu em 23/10). Ficam para depois a aposta
+   (com a loja) e equilibrar forte contra fraco (com o uso).
+2. **Pacto de hábito** (fase 3): regra decidida (ver "Pacto de hábito"); falta confirmar a base, o teto de dias e a
+   moeda, e fazer. Usa a mesma caixa de convites (o pacto entra como outro tipo de convite).
 4. **Lançamento:** versão nova (`VERSAO`, `novidades.js`) com a **janela grande** na Novidades (mexe em pontos); o
    servidor do grupo de quem hospeda e o jogo de cada membro precisam atualizar (protocolo 2, handle do CF).
 5. **Calibrar com o uso real** pelo relatório: valores da tabela do dia (2 a 8 TC são estimativa), vida do chefão,
@@ -276,6 +295,6 @@ antiga | nova saíram. **Pouco texto na tela:** toda explicação fica no "?" do
 Decididas em 22/10/2026: marca a 15% e 50 TC; tabela do dia com 7 faixas, teto 2 e bônus 2; chefão 80–120 TC; os andares
 viram o dano do chefão; a escolha da modalidade começa na semana em que o servidor atualizar. Continuam abertas:
 
-1. Aposta e valor do duelo.
-2. X dias e XP do pacto.
+1. Duelo: o valor saiu (o da tabela do dia, por problema); a aposta fica para a loja; equilibrar forte contra fraco.
+2. Pacto: a regra saiu (dobro, base, pouco); falta a base por dia, o teto de dias e se paga em Trick Coin.
 3. Os 4 blocos do Geral e os valores de Trick Coin: **rever com o uso real** (relatório no administrar).

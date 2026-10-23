@@ -689,5 +689,116 @@ class Fase1(Base):
         self.assertEqual(len(r["tabela_do_dia"]["faixas"]), 7)
 
 
+class Duelo(Base):
+    """O duelo 1×1 do Codeforces (#171): convite de 10 minutos, 3 problemas em volta da faixa do mais fraco, pago por problema."""
+    CAL = {**torre.CALIB}
+
+    def setUp(self):
+        super().setUp()
+        self.gid, cod = self.grupo()
+        self.ana = self.entra(self.gid, cod)
+        self.bia = self.entra(self.gid, sg.admin_convite(self.gid, self.ana["token"], {})["codigo"], "Bia")
+        self.cris = self.entra(self.gid, sg.admin_convite(self.gid, self.ana["token"], {})["codigo"], "Cris")
+        for x, h in ((self.ana, "ana_cf"), (self.bia, "bia_cf")):
+            sg.envio(self.gid, x["token"], {"protocolo": sg.PROTOCOLO, "dias": [], "cf": h})
+        self.envios = {"ana_cf": [], "bia_cf": []}
+        ps = [{"contestId": 1000 + r, "index": "A", "rating": r, "name": f"P{r}", "tags": []} for r in range(800, 3100, 100)]
+
+        def api(metodo, **kw):
+            if metodo == "problemset.problems":
+                return {"problems": ps}
+            if metodo == "user.info":
+                return [{"handle": "ana_cf", "rating": 2100}, {"handle": "bia_cf", "rating": 1450}]
+            return self.envios[kw["handle"]]
+        for p in (mock.patch.object(sg, "cf_api", side_effect=api), mock.patch.object(sg.jogo, "cf_envios", return_value=([], True)),
+                  mock.patch.object(sg, "CF_PAUSA", 0)):
+            p.start()
+            self.addCleanup(p.stop)
+
+    def d(self, quem, **kw):
+        return sg.duelo(self.gid, quem["token"], kw)
+
+    def test_faixas_em_volta_do_mais_fraco(self):
+        self.assertEqual(cf_dia.faixas_duelo([2100, 1450]), [1, 2, 3])
+        self.assertEqual(cf_dia.faixas_duelo([None, 1450]), [0, 1, 2])
+        self.assertEqual(cf_dia.faixas_duelo([2900, 2800]), [4, 5, 6])
+
+    def test_vencedor_resolve_mais_e_no_empate_o_mais_rapido(self):
+        ps = [{"id": x, "faixa": f} for x, f in (("a", 1), ("b", 2), ("c", 3))]
+        pl, v = cf_dia.duelo(ps, [(1, "a", 100), (2, "a", 50), (2, "b", 300), (1, "b", 200)], [1, 2], 0, self.CAL)
+        self.assertEqual(v, 1)                                  # 2 a 2: a Ana chegou ao 2º antes
+        self.assertEqual(pl[1]["pts"], cf_dia.valor(1, self.CAL) + cf_dia.valor(2, self.CAL))
+        self.assertEqual(cf_dia.duelo(ps, [], [1, 2], 0, self.CAL)[1], None)
+
+    def test_convite_regras(self):
+        with self.assertRaises(sg.Erro):
+            self.d(self.ana, acao="convidar", para=self.cris["membro"])   # a Cris não ligou o Codeforces
+        r = self.d(self.ana, acao="convidar", para=self.bia["membro"])
+        self.assertEqual(len(r["convites"]), 1)
+        with self.assertRaises(sg.Erro):
+            self.d(self.ana, acao="convidar", para=self.bia["membro"])    # um convite aberto por vez
+        cid = r["convites"][0]["id"]
+        with self.assertRaises(sg.Erro):
+            self.d(self.ana, acao="aceitar", id=cid)                      # só quem foi convidado aceita
+        self.assertEqual(sg.caixa_de(self.gid, self.bia["token"])["convites"][0]["de"], self.ana["membro"])
+        # depois de 10 minutos o convite some
+        with mock.patch.object(sg, "agora", return_value=time.time() + sg.DUELO_CONVITE + 1):
+            self.assertEqual(sg.caixa_de(self.gid, self.bia["token"])["convites"], [])
+            with self.assertRaises(sg.Erro):
+                self.d(self.bia, acao="aceitar", id=cid)
+        self.d(self.bia, acao="recusar", id=cid)
+        self.assertEqual(sg.caixa_de(self.gid, self.ana["token"])["convites"], [])
+
+    def test_duelo_inteiro(self):
+        cid = self.d(self.ana, acao="convidar", para=self.bia["membro"])["convites"][0]["id"]
+        r = self.d(self.bia, acao="aceitar", id=cid)
+        self.assertEqual(r["duelo"]["estado"], "aceito")
+        with self.assertRaises(sg.Erro):
+            self.d(self.ana, acao="convidar", para=self.bia["membro"])    # os dois estão em duelo
+        sg.duelo_rodada()
+        du = sg.caixa_de(self.gid, self.ana["token"])["duelo"]
+        self.assertEqual(du["estado"], "andamento")
+        self.assertNotIn("problemas", du)                    # na contagem, os problemas ficam escondidos
+        with mock.patch.object(sg, "agora", return_value=du["ini"]):
+            du = sg.caixa_de(self.gid, self.ana["token"])["duelo"]
+        self.assertEqual(sorted(p["faixa"] for p in du["problemas"]), [1, 2, 3])   # a Bia (1450) está na faixa C
+        ini = du["ini"]
+        ok = lambda p, t: {"verdict": "OK", "problem": {"contestId": p["contest"], "index": p["index"]}, "creationTimeSeconds": int(ini + t)}
+        a, b, c = du["problemas"]
+        self.envios["bia_cf"] += [ok(a, 60), ok(b, 300)]
+        self.envios["ana_cf"] += [ok(a, -100), ok(a, 120)]   # o envio de antes do início não conta
+        sg.duelo_rodada(ini + 400)
+        with mock.patch.object(sg, "agora", return_value=ini + 400):
+            du = sg.caixa_de(self.gid, self.ana["token"])["duelo"]
+        self.assertEqual(du["estado"], "andamento")
+        self.assertEqual([(j["membro"], j["n"]) for j in du["jogadores"]], [(self.ana["membro"], 1), (self.bia["membro"], 2)])
+        self.envios["bia_cf"].append(ok(c, 900))
+        sg.duelo_rodada(ini + 1000)                          # a Bia resolveu os 3: acaba antes da hora
+        du = sg.caixa_de(self.gid, self.bia["token"])["duelo"]
+        self.assertEqual((du["estado"], du["venceu"]), ("fim", self.bia["membro"]))
+        self.assertEqual(sg.carteira(self.gid, self.bia["membro"])["saldo"], sum(cf_dia.valor(p["faixa"], self.CAL) for p in du["problemas"]))
+        self.assertEqual(sg.carteira(self.gid, self.ana["membro"])["saldo"], cf_dia.valor(a["faixa"], self.CAL))
+        sg.duelo_rodada(ini + 1100)                          # não paga duas vezes
+        self.assertEqual(sg.carteira(self.gid, self.ana["membro"])["extrato"][0]["motivo"], "duelo")
+        self.assertEqual(len(sg.carteira(self.gid, self.ana["membro"])["extrato"]), 1)
+        h = sg.caixa_de(self.gid, self.bia["token"])["historico"]
+        self.assertEqual((h["duelos"], h["vitorias"], h["derrotas"], h["empates"]), (1, 1, 0, 0))
+        self.assertEqual(h["contra"], {str(self.ana["membro"]): {"v": 1, "d": 0, "e": 0}})
+        self.assertEqual([(x["id"], x["venceu"], [j["n"] for j in x["jogadores"]]) for x in h["lista"]], [(cid, self.bia["membro"], [1, 3])])
+        # o duelo inteiro, para abrir pelo histórico; o placar leva o retrospecto de cada um para a licença
+        self.assertEqual(len(self.d(self.ana, acao="ver", id=cid)["duelo"]["problemas"]), 3)
+        with self.assertRaises(sg.Erro):
+            self.d(self.ana, acao="ver", id=cid + 99)
+        ms = {m["id"]: m["duelos"] for m in sg.placar(self.gid, self.ana["token"])["membros"]}
+        self.assertEqual((ms[self.ana["membro"]], ms[self.cris["membro"]]), ({"v": 0, "d": 1, "e": 0}, {"v": 0, "d": 0, "e": 0}))
+
+    def test_aceitar_derruba_os_outros_convites(self):
+        sg.envio(self.gid, self.cris["token"], {"protocolo": sg.PROTOCOLO, "dias": [], "cf": "cris_cf"})
+        c1 = self.d(self.cris, acao="convidar", para=self.bia["membro"])["convites"][0]["id"]
+        c2 = self.d(self.ana, acao="convidar", para=self.bia["membro"])["convites"][0]["id"]
+        self.d(self.bia, acao="aceitar", id=c2)
+        self.assertEqual(sg.q1("SELECT estado FROM duelos WHERE id = ?", (c1,))["estado"], "cancelado")
+
+
 if __name__ == "__main__":
     unittest.main()
