@@ -182,6 +182,7 @@ aceita `hoje`, `amanha` e `+3`; já `15/10` é lido no formato do jogador e pode
   e quem define é o jogador, ao criar ou editar a caçada. Ao sugerir etapas, não passe desse prazo.
   Uma caçada pode ficar **dentro de outra** (`pai` em `estado` → `cacadas`, só dois níveis): a tarefa leva o NOME da
   caçada de dentro, e quem escolhe onde ela fica é o jogador, na página.
+  Caçada com `apagada` (uma data) foi excluída pelo jogador: não use esse NOME em tarefa nova.
 - `+exp.NOME` (opcional): tarefa solta de uma expedição, que não é de nenhum marco.
 - `rep:REGRA` (opcional): **tarefa que repete** (o que tem data, não é hábito). Fixa no calendário: `rep:sem-seg` (toda
   segunda; `ter`, `qua`, `qui`, `sex`, `sab`, `dom`), `rep:mes-1` (todo mês no dia 1), `rep:6mes-1` (a cada 6 meses no
