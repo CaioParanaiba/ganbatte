@@ -516,6 +516,10 @@ Novidades agrupadas por versão grande (`versoes`, `subHTML`) e janela de destaq
   **Bônus:** cada uma fecha com o `bonusMarco` das próprias etapas (a de cima não soma o das de dentro, para nenhuma
   etapa contar duas vezes). **A de cima só fecha depois das de dentro.** Progresso (vida, barra) conta as etapas de todas
   (`tudo`, `tudoFeitas`). Expedição dentro de expedição ficou só como ideia (#93).
+- **Caçada sem etapa e excluir caçada** (#150, #149): a janela C cria a caçada só com o nome (as etapas são opcionais); ela
+  aparece na Lista com "+ etapa" e sem o botão de fechar até ter etapa. Excluir fica na janela de editar, com confirmação:
+  grava `cacadas[NOME].apagada` (o dia) e `grupos()` ignora a caçada, então as etapas viram tarefas soltas (o `+cac.NOME`
+  fica na linha) e as de dentro saem para fora. Marco que já deu bônus não sai, para não mexer no XP.
 
 ## Ideias para depois (sem versão definida)
 

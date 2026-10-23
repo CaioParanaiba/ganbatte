@@ -666,7 +666,9 @@ function chefoes(C, feitas, abertas){
    Fechar um marco (todas as etapas feitas) dá o bônus dele; concluir a expedição dá +10 XP por semana ativa. Os dois ficam
    gravados no estado.json como recibo, com o dia em que fecharam, e entram no XP daquele dia.
    No todo.txt o nome vai em minúsculas e sem espaço (+cac.trabalho-mae); o nome de verdade e o ícone ficam no estado.json.
-   Sem nada no estado.json, a caçada aparece com o nome do arquivo e fica avulsa. */
+   Sem nada no estado.json, a caçada aparece com o nome do arquivo e fica avulsa.
+   Caçada excluída (#149): cacadas[NOME].apagada = o dia; some do jogo e as etapas dela viram tarefas soltas (o +cac.NOME
+   fica na linha, sem efeito). O registro fica para o nome não ser reaproveitado por outra caçada. */
 const MARCO_ETAPA = 5, MARCO_DIA = 6, EXP_SEMANA = 10;   // bônus por etapa (até 12), por dia diferente com etapa feita (até 10) e por semana ativa (até 20): a calibrar
 const slugDe = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 const nomeDeSlug = s => { const t = String(s).replace(/-/g, ' '); return t.charAt(0).toUpperCase() + t.slice(1); };
@@ -680,9 +682,10 @@ function grupos(C, feitas, abertas){
     return cac[s] = {slug:s, n:m.n || nomeDeSlug(s), exp:m.exp || null, criada:m.criada || '', fim:m.fim || null, bonus:+m.bonus || 0, prazo:m.prazo || null, pai:null, filhas:[], etapas:[]}; };
   const ne = s => { if(exp[s]) return exp[s]; const m = ME[s] || {};
     return exp[s] = {slug:s, n:m.n || nomeDeSlug(s), ic:m.ic || 'island', sub:m.sub || '', ini:m.ini || '', fim:m.fim || null, bonus:+m.bonus || 0, marcos:[], soltas:[]}; };
-  for(const s in MC) nc(s);
+  const apagada = s => !!(MC[s] && MC[s].apagada);
+  for(const s in MC) if(!apagada(s)) nc(s);
   for(const s in ME) ne(s);
-  for(const t of feitas.concat(abertas)){ const c = cacDe(t), e = expDe(t); if(c) nc(c).etapas.push(t); else if(e) ne(e).soltas.push(t); }
+  for(const t of feitas.concat(abertas)){ const c = cacDe(t), e = expDe(t); if(c && !apagada(c)) nc(c).etapas.push(t); else if(e) ne(e).soltas.push(t); }
   /* caçada dentro de caçada (#92): só dois níveis. A de dentro aponta para a de cima (cacadas[NOME].pai), fica na expedição
      dela e não é marco: aparece dentro da de cima. Cada uma fecha com o bônus das próprias etapas; a de cima só fecha
      depois das de dentro. Pai que não existe, que é ela mesma ou que já está dentro de outra é ignorado. */
