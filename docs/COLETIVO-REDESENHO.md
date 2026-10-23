@@ -149,8 +149,8 @@ Decidido em 22/10/2026 (feito no PR da branch `issue-171-duelo`):
   Quem contribuiu mais ganha um **extra de 100% a 150%** da base, medido **contra a base de cada um**: o mais fraco que deu
   o máximo dele ganha o mesmo extra que o forte que deu o máximo dele.
 - Título "Carregou o grupo nas costas" (já existe no catálogo) para quem mais contribuiu.
-- ⏳ O que a contribuição mede (XP com teto? o Geral inteiro?) e a recompensa coletiva (item coletivo grátis, como previsto
-  em "Lojas").
+- A contribuição é o XP com teto (feito em 22/10, ver "Como ficou implementado"). ⏳ A recompensa coletiva (item coletivo
+  grátis, como previsto em "Lojas") fica para a loja.
 
 ### Pacto de hábito
 
@@ -159,9 +159,10 @@ Decidido em 22/10/2026 (feito no PR da branch `issue-171-duelo`):
 - **Regra do Caio (22/10/2026):** os dois cumprem → os dois ganham **o dobro** da base; só o convidado cumpre → ele ganha
   a **base** ("metade do dobro"); só quem propôs cumpre → ganha **pouco** (sugestão: metade da base), para quem propõe
   escolher bem com quem; ninguém cumpre → nada.
-- ⏳ Sugerido e não confirmado: base = 2 por dia (7 dias: base 14, dupla 28 cada, só o convidado 14, só quem propôs 7), teto
-  de 30 dias, e pagar em **Trick Coin** em vez de XP (XP mexe no Ritmo do Geral).
-- Limites: **1 ou 2 pactos ativos por pessoa**; XP fixo (senão dois amigos criam "beber água" e inflam o XP).
+- **Confirmado em 23/10/2026:** base = 2 TC por dia (7 dias: base 14, dupla 28 cada, só o convidado 14, só quem propôs 7),
+  teto de 30 dias, e paga em **Trick Coin**, não em XP (XP mexe no Ritmo do Geral; e dois amigos criando "beber água"
+  inflariam o XP).
+- Limites: **2 pactos por pessoa** (contando os convites que ela mandou e ainda estão abertos).
 - Só **fez / não fez** sai da máquina; o nome do hábito pessoal nunca sai.
 - **Sem punição.**
 
@@ -242,15 +243,21 @@ antiga | nova saíram. **Pouco texto na tela:** toda explicação fica no "?" do
    abrem pela ação `ver`; o retrospecto também vai no verso da licença). Os convites levam o tipo na frente (DUELO · CF).
    A tela ficou a espelhada (os dois lados em volta dos problemas; a enxuta saiu em 23/10). Ficam para depois a aposta
    (com a loja) e equilibrar forte contra fraco (com o uso).
-2. **Pacto de hábito** (fase 3): regra decidida (ver "Pacto de hábito"); falta confirmar a base, o teto de dias e a
-   moeda, e fazer. Usa a mesma caixa de convites (o pacto entra como outro tipo de convite).
+2. ~~Pacto de hábito~~: feito em 23/10 (PR da branch `issue-172-pacto`). Tabelas `pactos` e `pacto_dias`, rota
+   `POST /g/<id>/pacto` (propor, aceitar, recusar, cancelar), o fez/não fez no `pac` de cada dia do envio (o jogo guarda o
+   hábito pessoal de cada pacto em `grupo.json` → `pactos` e manda só dos dias depois de ligar). O convite vale 2 dias;
+   aceito, o pacto começa no dia seguinte; cumprir = fazer em todos os dias; fecha e paga (`pacto:<id>`) 2 dias depois do
+   último, na rotina. Na tela: o convite com o tipo PACTO na caixa (o convidado escolhe o hábito dele na linha), o card
+   "propor um pacto" e o card "pactos" em desafios, com os dias de cada um. A base fica na calibração (`pacto_base`).
 4. **Lançamento:** versão nova (`VERSAO`, `novidades.js`) com a **janela grande** na Novidades (mexe em pontos); o
    servidor do grupo de quem hospeda e o jogo de cada membro precisam atualizar (protocolo 2, handle do CF).
 5. **Calibrar com o uso real** pelo relatório: valores da tabela do dia (2 a 8 TC são estimativa), vida do chefão,
-   15% da marca e os 4 blocos (aceitos sem avaliação completa em 21/10). A vida do chefão (`CHEFAO`) ainda é constante no
-   código: levar para o administrar.
-6. **Limpar o administrar:** ainda mostra os números da aba antiga (superação em tetos, os placares específicos por
-   hábito, `specs()` em `torre.py`), que só alimentam a licença e o "por hábito".
+   15% da marca, a base do pacto e os 4 blocos (aceitos sem avaliação completa em 21/10). Desde 23/10 todos esses números
+   estão no administrar (`marca`, `marca_min`, `chefao`, `chefao_teto`, `chefao_min`, `pacto_base` entraram na `CALIB`);
+   o relatório leva os pactos também.
+6. ~~Limpar o administrar~~: feito em 23/10. Saíram da tela os números da aba antiga (superação em tetos, cada hábito
+   em andares) e o card dos placares específicos; eles ficam no padrão e só alimentam o detalhe por hábito na licença.
+   As rotas (`admin/placar`) e o `specs()` continuam, para não quebrar quem ainda não atualizou.
 7. **Loja (depois da v1.0):** preços em Trick Coin e a compra; trocar na `LOJA_TT` os desafios de item que dependiam de
    liderar.
 8. A escolha só vale durante a semana: se os dias da folga do fechamento mudarem o 1º, a modalidade da semana seguinte
@@ -283,18 +290,20 @@ antiga | nova saíram. **Pouco texto na tela:** toda explicação fica no "?" do
 ## Cuidados
 
 - **Mexe em pontos:** a mudança de XP, Jenny ou pontos sai com janela grande na Novidades, como a 0.6 (regra do Caio). O
-  Geral novo e o XP do pacto entram nisso.
+  Geral novo entra nisso (o pacto paga em Trick Coin, não mexe no XP).
 - **Desafios de item que dependem de liderar:** decidido em 21/10 (ver "Licença e prestígio"). Falta trocar, na lista
   da loja (`LOJA_TT` em `web/grupo.js`), os desafios dos itens que sobram pelos do desenho novo.
-- **Andares** (a unidade "andar descido" da Torre Trick, acumulada): ⏳ não foi decidido o que acontece com ela. Hipótese:
-  segue acumulando os pontos semanais do Geral como progressão individual, sem ser pódio.
-- **Trick Coin sem posição:** a fonte passa a ser completar desafios. ⏳ Valores, para não ficar sem moeda nem inflar.
+- **Andares** (a unidade "andar descido" da Torre Trick, acumulada): decidido em 22/10, viram só o dano do chefão.
+- **Trick Coin sem posição:** a fonte passa a ser completar desafios. Valores decididos em 22/10 e 23/10 (marca, tabela,
+  chefão, duelo, pacto); rever com o uso.
 
 ## Pendências (⏳)
 
 Decididas em 22/10/2026: marca a 15% e 50 TC; tabela do dia com 7 faixas, teto 2 e bônus 2; chefão 80–120 TC; os andares
 viram o dano do chefão; a escolha da modalidade começa na semana em que o servidor atualizar. Continuam abertas:
 
-1. Duelo: o valor saiu (o da tabela do dia, por problema); a aposta fica para a loja; equilibrar forte contra fraco.
-2. Pacto: a regra saiu (dobro, base, pouco); falta a base por dia, o teto de dias e se paga em Trick Coin.
-3. Os 4 blocos do Geral e os valores de Trick Coin: **rever com o uso real** (relatório no administrar).
+Decididas em 23/10/2026: tela do duelo espelhada; pacto com base 2 TC/dia, teto de 30 dias, pago em Trick Coin.
+Nada mais espera decisão agora; o que sobra depende de outra coisa:
+
+1. Duelo: a aposta espera a loja; equilibrar forte contra fraco espera duelos reais.
+2. Os 4 blocos do Geral e os valores de Trick Coin: **rever com o uso real** (relatório no administrar).

@@ -52,6 +52,7 @@ Rotas (JSON):
   POST /g/<id>/modalidade {mod}               o 1º da semana escolhe a modalidade da seguinte (#170)
   GET  /g/<id>/caixa                          a caixa de convites e o duelo em curso (leve: a tela do duelo pede a cada poucos s)
   POST /g/<id>/duelo {acao, para?, id?}       duelo 1×1 do Codeforces (#171): convidar {para} | aceitar | recusar | cancelar | ver {id}
+  POST /g/<id>/pacto {acao, ...}              pacto de hábito (#172): propor {para, nome, dias} | aceitar | recusar | cancelar {id}
 """
 import argparse
 import hashlib
@@ -123,6 +124,11 @@ CREATE TABLE IF NOT EXISTS duelos (id INTEGER PRIMARY KEY, grupo TEXT NOT NULL, 
   vence REAL NOT NULL, aceito REAL, fim REAL, estado TEXT NOT NULL, dados TEXT NOT NULL DEFAULT '{}');
 CREATE TABLE IF NOT EXISTS duelo_feitos (duelo INTEGER NOT NULL, membro INTEGER NOT NULL, prob TEXT NOT NULL, t REAL NOT NULL,
   PRIMARY KEY (duelo, membro, prob));
+CREATE TABLE IF NOT EXISTS pactos (id INTEGER PRIMARY KEY, grupo TEXT NOT NULL, de INTEGER NOT NULL, para INTEGER NOT NULL, nome TEXT NOT NULL,
+  dias INTEGER NOT NULL, criado REAL NOT NULL, vence REAL NOT NULL, estado TEXT NOT NULL, ini TEXT, fim TEXT, aceito REAL, fechado REAL,
+  dados TEXT NOT NULL DEFAULT '{}');
+CREATE TABLE IF NOT EXISTS pacto_dias (pacto INTEGER NOT NULL, membro INTEGER NOT NULL, dia TEXT NOT NULL, feito INTEGER NOT NULL,
+  PRIMARY KEY (pacto, membro, dia));
 CREATE TABLE IF NOT EXISTS frases (grupo TEXT NOT NULL, semana TEXT NOT NULL, membro INTEGER NOT NULL, texto TEXT NOT NULL, criado REAL NOT NULL,
   apagada REAL, PRIMARY KEY (grupo, semana));
 """
@@ -404,11 +410,11 @@ def admin_relatorio(gid, token):
     tetos = {torre.chave_mes(a): {"teto": G.teto(a)[0], "provisorio": G.teto(a)[1]} for a in meses}
     esc = [dict(x) for x in q("SELECT semana, membro, mod, criado FROM escolhas WHERE grupo = ? ORDER BY semana", (gid,))]
     return {"ok": True, "gerado": agora(), "versao": jogo.VERSAO, "grupo": {"id": gid, "nome": g["nome"], "fuso": fuso_txt(g["fuso"]), "ini": g["ini"], "fim": g["fim"]},
-            "calibracao": cal, "constantes": {"marca": torre.MARCA, "marca_min": torre.MARCA_MIN, "chefao": torre.CHEFAO, "chefao_teto": torre.CHEFAO_TETO,
-                                              "minimo_chefao": torre.MINIMO_CHEFAO, "opcoes": torre.OPCOES, "faixas_cf": cf_dia.FAIXAS},
+            "calibracao": cal, "constantes": {"opcoes": torre.OPCOES, "faixas_cf": cf_dia.FAIXAS},
             "membros": ms, "tetos": tetos, "modalidades": S["modalidades"], "escolha_desde": G.desde, "escolhas": esc,
             "semanas": S["semanas"], "temporada": S["temporada"], "chefoes": chefoes,
-            "tabela_do_dia": {"faixas": faixas, "dias": tab}, "trick_coin": {"por_membro": soma, "extrato": trick}, "dias": dias}
+            "tabela_do_dia": {"faixas": faixas, "dias": tab}, "trick_coin": {"por_membro": soma, "extrato": trick}, "dias": dias,
+            "pactos": [pacto_json(g, r) for r in q("SELECT * FROM pactos WHERE grupo = ? AND estado IN ('ativo', 'fim') ORDER BY id", (gid,))]}
 
 
 # ---------- cópias do banco ----------
@@ -515,6 +521,8 @@ def rotina():
             if n % 5 == 0:
                 for g, p in fecha_periodos():
                     log("fechado:", g, p)
+                for i in pacto_fecha():
+                    log("pacto fechado:", i)
                 copia_do_dia()
         except Exception as e:   # banco ocupado ou disco cheio: tenta de novo no próximo minuto
             log("rotina:", repr(e))
@@ -720,7 +728,8 @@ def caixa(g, eu):
     return {"agora": t, "eu": eu, "convites": [duelo_json(g, r) for r in rs if r["estado"] == "convite"], "duelo": duelo_json(g, vivo[0]) if vivo else None,
             "historico": {"duelos": sum(meu.values()), "vitorias": meu["v"], "derrotas": meu["d"], "empates": meu["e"],
                           "contra": {str(k): x for k, x in contra.items()}, "lista": [resumo_duelo(g, r, feitos.get(r["id"], [])) for r in hist]},
-            "regras": {"convite": DUELO_CONVITE, "minutos": DUELO_MIN, "conta": DUELO_CONTA}}
+            "regras": {"convite": DUELO_CONVITE, "minutos": DUELO_MIN, "conta": DUELO_CONTA}, "pactos": pactos_de(g, eu),
+            "pacto": {"convite": PACTO_CONVITE, "dias": PACTO_DIAS, "max": PACTO_MAX, "folga": PACTO_FOLGA, "base": int(cal_de(g)["pacto_base"])}}
 
 
 def caixa_de(gid, token):
@@ -864,6 +873,130 @@ def rotina_duelo():
         time.sleep(DUELO_VOLTA)
 
 
+# ---------- pacto de hábito (#172) ----------
+# Um propõe a outro um hábito (o nome que ele escreve) e os dias; cada um liga um hábito pessoal ao pacto no próprio jogo,
+# e só o fez/não fez de cada dia chega aqui (o "pac" do envio). Aceito, o pacto começa no dia seguinte. Cumprir = fazer em
+# todos os dias. Paga em Trick Coin quando o último dia fecha (com PACTO_FOLGA dias para todos sincronizarem): base =
+# pacto_base × dias; os dois cumprem → o dobro para cada um; só o convidado → a base; só quem propôs → metade da base (para
+# quem propõe escolher bem com quem); ninguém → nada. Sem punição. Estados: convite, recusado, cancelado, ativo, fim.
+PACTO_CONVITE = 2 * 86400   # o convite some em 2 dias
+PACTO_DIAS = [4, 7, 30]     # mínimo, padrão e teto de dias (decidido em 23/10)
+PACTO_MAX = 2               # pactos por pessoa, contando os convites abertos que ela mandou
+PACTO_FOLGA = 2             # dias depois do último para fechar
+PACTO_NOME = 40
+
+
+def pacto_paga(r, cumpriu, base):
+    """{membro: TC} de um pacto que fechou, pela regra do Caio (22/10)."""
+    b = base * r["dias"]
+    de, para = cumpriu.get(r["de"]), cumpriu.get(r["para"])
+    if de and para:
+        return {r["de"]: 2 * b, r["para"]: 2 * b}
+    if para:
+        return {r["para"]: b}
+    if de:
+        return {r["de"]: b // 2}
+    return {}
+
+
+def pacto_json(g, r, feitos=None):
+    """O pacto como a página mostra: a regra, os dias de cada um (1 fez, 0 não fez, None ainda não chegou) e o que paga."""
+    out = {k: r[k] for k in ("id", "de", "para", "nome", "dias", "estado", "criado", "vence", "ini", "fim")}
+    base = int(cal_de(g)["pacto_base"])
+    out["valor"] = {"dupla": 2 * base * r["dias"], "convidado": base * r["dias"], "propos": base * r["dias"] // 2}
+    if r["ini"]:
+        if feitos is None:
+            feitos = q("SELECT membro, dia, feito FROM pacto_dias WHERE pacto = ?", (r["id"],))
+        f = {(x["membro"], x["dia"]): x["feito"] for x in feitos}
+        a = date.fromisoformat(r["ini"])
+        dias = [(a + timedelta(days=i)).isoformat() for i in range(r["dias"])]
+        out["feitos"] = {str(m): [f.get((m, d)) for d in dias] for m in (r["de"], r["para"])}
+    if r["estado"] == "fim":
+        out.update(json.loads(r["dados"]))
+    return out
+
+
+def pactos_de(g, eu):
+    """Os pactos de quem pede: convites abertos, os ativos e os que fecharam nos últimos 7 dias."""
+    t = agora()
+    rs = q("SELECT * FROM pactos WHERE grupo = ? AND ? IN (de, para) AND ((estado = 'convite' AND vence > ?) OR estado = 'ativo'"
+           " OR (estado = 'fim' AND fechado > ?)) ORDER BY id", (g["id"], eu, t, t - 7 * 86400))
+    return [pacto_json(g, r) for r in rs]
+
+
+def pactos_abertos(c, gid, m, t):
+    return c.execute("SELECT COUNT(*) FROM pactos WHERE grupo = ? AND (estado = 'ativo' AND ? IN (de, para) OR estado = 'convite' AND de = ? AND vence > ?)",
+                     (gid, m, m, t)).fetchone()[0]
+
+
+def pacto(gid, token, d):
+    """{acao: propor, para, nome, dias} | {acao: aceitar | recusar | cancelar, id}."""
+    g = grupo_ou_404(gid)
+    eu = membro_do(gid, token)
+    acao, t = d.get("acao"), agora()
+    with transacao() as c:
+        if acao == "propor":
+            try:
+                para = c.execute("SELECT * FROM membros WHERE id = ? AND grupo = ? AND saiu IS NULL", (int(d.get("para") or 0), gid)).fetchone()
+                dias = int(d.get("dias") or PACTO_DIAS[1])
+            except (TypeError, ValueError):
+                raise Erro("pacto inválido")
+            if not para or para["id"] == eu["id"]:
+                raise Erro("escolha alguém do grupo para o pacto")
+            nome = " ".join(str(d.get("nome") or "").split())
+            if not 2 <= len(nome) <= PACTO_NOME:
+                raise Erro(f"diga o hábito do pacto (até {PACTO_NOME} letras)")
+            if not PACTO_DIAS[0] <= dias <= PACTO_DIAS[2]:
+                raise Erro(f"o pacto vai de {PACTO_DIAS[0]} a {PACTO_DIAS[2]} dias")
+            if pactos_abertos(c, gid, eu["id"], t) >= PACTO_MAX:
+                raise Erro(f"você já tem {PACTO_MAX} pactos (ou convites de pacto) abertos", 409)
+            i = c.execute("INSERT INTO pactos (grupo, de, para, nome, dias, criado, vence, estado) VALUES (?, ?, ?, ?, ?, ?, ?, 'convite')",
+                          (gid, eu["id"], para["id"], nome, dias, t, t + PACTO_CONVITE)).lastrowid
+        else:
+            try:
+                r = c.execute("SELECT * FROM pactos WHERE id = ? AND grupo = ?", (int(d.get("id") or 0), gid)).fetchone()
+            except (TypeError, ValueError):
+                r = None
+            if not r or eu["id"] not in (r["de"], r["para"]):
+                raise Erro("pacto não encontrado", 404)
+            if r["estado"] != "convite" or r["vence"] <= t:
+                raise Erro("esse convite não está mais aberto", 409)
+            i = r["id"]
+            if acao == "cancelar" and eu["id"] == r["de"]:
+                c.execute("UPDATE pactos SET estado = 'cancelado', fechado = ? WHERE id = ?", (t, i))
+            elif acao == "recusar" and eu["id"] == r["para"]:
+                c.execute("UPDATE pactos SET estado = 'recusado', fechado = ? WHERE id = ?", (t, i))
+            elif acao == "aceitar" and eu["id"] == r["para"]:
+                if c.execute("SELECT COUNT(*) FROM pactos WHERE grupo = ? AND estado = 'ativo' AND ? IN (de, para)", (gid, eu["id"])).fetchone()[0] >= PACTO_MAX:
+                    raise Erro(f"você já está em {PACTO_MAX} pactos", 409)
+                ini = hoje_no(g["fuso"]) + timedelta(days=1)
+                c.execute("UPDATE pactos SET estado = 'ativo', aceito = ?, ini = ?, fim = ? WHERE id = ?",
+                          (t, ini.isoformat(), (ini + timedelta(days=r["dias"] - 1)).isoformat(), i))
+            else:
+                raise Erro("ação desconhecida")
+    return {"ok": True, "id": i, **caixa(g, eu["id"])}
+
+
+def pacto_fecha(t=None):
+    """Fecha e paga os pactos cujo último dia passou há PACTO_FOLGA dias (às 6h no fuso do grupo)."""
+    t = agora() if t is None else t
+    fechou = []
+    for r in q("SELECT * FROM pactos WHERE estado = 'ativo'"):
+        g = grupo_ou_404(r["grupo"])
+        if t < instante(date.fromisoformat(r["fim"]) + timedelta(days=1 + PACTO_FOLGA), g["fuso"]):
+            continue
+        x = pacto_json(g, r)
+        cumpriu = {int(m): all(v == 1 for v in f) for m, f in x["feitos"].items()}
+        paga_ = pacto_paga(r, cumpriu, int(cal_de(g)["pacto_base"]))
+        with transacao() as c:
+            n = c.execute("UPDATE pactos SET estado = 'fim', fechado = ?, dados = ? WHERE id = ? AND estado = 'ativo'",
+                          (t, json.dumps({"cumpriu": {str(m): v for m, v in cumpriu.items()}, "pago": {str(m): v for m, v in paga_.items()}}), r["id"])).rowcount
+        if n:
+            credita(g["id"], paga_, f"pacto:{r['id']}", "pacto de hábito")
+            fechou.append(r["id"])
+    return fechou
+
+
 def slug(nome):
     import unicodedata
     s = unicodedata.normalize("NFKD", nome).encode("ascii", "ignore").decode().lower()
@@ -980,6 +1113,14 @@ def le_dia(x, g, cat):
     return (dia, int(round(xp)), json.dumps(hab, sort_keys=True), int(bool(x.get("missao"))), int(bool(x.get("ferias"))), pz[0], pz[1])
 
 
+def le_pac(x):
+    """{id do pacto: 1 | 0} de um dia do envio: se o hábito pessoal ligado ao pacto foi feito (#172). Só fez/não fez."""
+    pac = x.get("pac") or {}
+    if not isinstance(pac, dict) or len(pac) > 10 or not all(str(k).isdigit() and isinstance(v, (int, float)) for k, v in pac.items()):
+        raise Erro("pactos inválidos no envio")
+    return {int(k): int(bool(v)) for k, v in pac.items()}
+
+
 def envio(gid, token, d):
     g = grupo_ou_404(gid)
     m = membro_do(gid, token)
@@ -990,10 +1131,14 @@ def envio(gid, token, d):
         raise Erro("envio inválido")
     cat = {h["id"]: h for h in catalogo(gid, arquivados=True)}
     linhas = [v for v in (le_dia(x, g, cat) for x in dias) if v]
+    pacs = [(x["dia"], le_pac(x)) for x in dias if x.get("pac")]
+    meus = {r["id"]: r for r in q("SELECT * FROM pactos WHERE grupo = ? AND estado = 'ativo' AND ? IN (de, para)", (gid, m["id"]))}
+    pacs = [(i, m["id"], dia, v) for dia, pac in pacs for i, v in pac.items() if i in meus and meus[i]["ini"] <= dia <= meus[i]["fim"]]
     t = agora()
     with transacao() as c:
         c.executemany("INSERT OR REPLACE INTO dias (grupo, membro, dia, xp, hab, missao, ferias, pz_n, pz_ok, recebido) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                       [(gid, m["id"]) + v + (t,) for v in linhas])
+        c.executemany("INSERT OR REPLACE INTO pacto_dias (pacto, membro, dia, feito) VALUES (?, ?, ?, ?)", pacs)
         c.execute("UPDATE membros SET envio = ? WHERE id = ?", (t, m["id"]))
         if "avatar" in d:   # a foto mudou no jogo depois de entrar (#109)
             c.execute("UPDATE membros SET avatar = ? WHERE id = ?", (avatar_ok(d["avatar"]), m["id"]))
@@ -1231,7 +1376,7 @@ def admin_calibracao(gid, token, d):
         lo, hi = torre.CALIB_LIMITES[k]
         if not isinstance(x, (int, float)) or isinstance(x, bool) or not lo <= x <= hi:
             raise Erro(f"{k} precisa ficar entre {torre.num(lo, 2)} e {torre.num(hi, 2)}")
-        atual[k] = int(x) if k == "frase_max" or k.startswith("cf_") and k != "cf_min" else float(x)
+        atual[k] = int(x) if k in torre.CALIB_INT else float(x)
     with transacao() as c:
         c.execute("UPDATE grupos SET calib = ? WHERE id = ?", (json.dumps(atual, sort_keys=True), gid))
     log("admin", eu["id"], "mudou a calibração do grupo", gid)
@@ -1422,7 +1567,7 @@ class H(BaseHTTPRequestHandler):
                       "admin/habito": lambda: admin_habito(gid, tk, d), "admin/calibracao": lambda: admin_calibracao(gid, tk, d),
                       "admin/placar": lambda: admin_placar(gid, tk, d), "admin/frase": lambda: admin_frase(gid, tk, d),
                       "admin/relatorio": lambda: admin_relatorio(gid, tk), "modalidade": lambda: escolhe_modalidade(gid, tk, d),
-                      "duelo": lambda: duelo(gid, tk, d)}.get(resto)
+                      "duelo": lambda: duelo(gid, tk, d), "pacto": lambda: pacto(gid, tk, d)}.get(resto)
             if fn:
                 return self._json(200, fn())
         raise Erro("não encontrado", 404)
