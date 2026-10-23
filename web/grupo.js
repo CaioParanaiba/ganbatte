@@ -299,26 +299,26 @@ function fraseCard(P){
   return `<section class="card tt-frase-c">${cab}${corpo}</section>`;
 }
 
-/* administrar: os números da Torre Trick, os placares e as frases (#42, #67, #76) */
-const CALIB_NOMES = {sup_xp:['superação do XP (mês)', 'tetos'], sup_hab:['superação dos hábitos (mês)', 'tetos'], sup_cf:['superação do Codeforces (semana)', 'tetos'],
-  hab:['cada hábito cumprido', 'andar'], sup_max:['superação que leva o prêmio inteiro', '(0,5 = +50%)'], cf_min:['base mínima do Codeforces', 'problemas/semana'], frase_max:['limite da frase do líder', 'letras'],
+/* administrar: os números da Torre Trick e as frases (#76). Os da aba antiga (andares, superação em tetos, placares por
+   hábito) saíram daqui: só alimentam o detalhe por hábito na licença e ficam no padrão. */
+const CALIB_NOMES = {marca:['marca da semana', 'acima da sua média (0,15 = 15%)'], marca_min:['marca mínima', 'de 100'], tc_marca:['Trick Coin da marca da semana', 'TC'],
+  chefao:['vida do chefão', 'do mês normal de cada um (1 = 100%)'], chefao_teto:['chefão: o máximo que cada um tira', 'da própria meta (1,5 = 150%)'],
+  chefao_min:['chefão: mínimo para ganhar', 'da própria meta (0,5 = 50%)'], tc_chefao:['Trick Coin do chefão (base)', 'TC, até +50%'],
+  pacto_base:['pacto de hábito: base', 'TC por dia (os dois cumprindo, o dobro)'],
+  sup_max:['superação que leva o bloco inteiro', '(0,5 = +50%)'], cf_min:['base mínima do Codeforces', 'problemas/semana'], frase_max:['limite da frase do líder', 'letras'],
   cf_tabela:['tabela do dia do Codeforces', '1 ligada, 0 desligada'], cf_valor:['tabela: valor da faixa A', 'pontos'], cf_passo:['tabela: a mais por faixa', 'pontos'],
-  cf_bonus:['tabela: bônus do 1º', 'pontos (metade se passar)'], cf_teto:['tabela: problemas que pontuam', 'por pessoa por dia'], cf_piso:['tabela: faixas abaixo da sua que pontuam', 'faixas'],
-  tc_marca:['Trick Coin da marca da semana', 'TC'], tc_chefao:['Trick Coin do chefão (base)', 'TC, até +50%']};
+  cf_bonus:['tabela: bônus do 1º', 'pontos (metade se passar)'], cf_teto:['tabela: problemas que pontuam', 'por pessoa por dia'], cf_piso:['tabela: faixas abaixo da sua que pontuam', 'faixas']};
+const CALIB_FRAC = ['marca', 'chefao', 'chefao_teto', 'chefao_min', 'sup_max', 'cf_min'];   // os outros são inteiros
 function torreAdminHTML(A){
   if(!A.calibracao) return '';
-  const c = A.calibracao, PER = {semana:'semana', mes:'mês', temporada:'temporada', sequencia:'sequência'};
+  const c = A.calibracao;
   return `<div class="card"><h2><span class="c">~/</span>torre trick: números</h2>
-      <p style="margin:0 0 10px;font-size:14px">Tudo em tetos (1 andar = 1 dia com o XP no teto do grupo), então acompanha o XP de vocês sozinho. Mudar um número recalcula o que ainda está aberto; o que já fechou fica como estava.</p>
-      <div class="gp-f">${Object.keys(CALIB_NOMES).map(k => `<label>${CALIB_NOMES[k][0]}<input id="tt-cal-${k}" type="number" step="${k === 'frase_max' || /^(cf|tc)_/.test(k) ? 1 : 0.1}" min="${c.limites[k][0]}" max="${c.limites[k][1]}" value="${c.valores[k]}" class="mono"><span class="sub" style="text-transform:none;letter-spacing:0;font-weight:400">${CALIB_NOMES[k][1]} · padrão ${String(c.padrao[k]).replace('.', ',')}</span></label>`).join('')}</div>
+      <p style="margin:0 0 10px;font-size:14px">Mudar um número recalcula o que ainda está aberto; o que já fechou (e já pagou) fica como estava. Para decidir com dado real, baixe o relatório abaixo.</p>
+      <div class="gp-f">${Object.keys(CALIB_NOMES).map(k => `<label>${CALIB_NOMES[k][0]}<input id="tt-cal-${k}" type="number" step="${CALIB_FRAC.includes(k) ? (k === 'marca' ? 0.01 : 0.1) : 1}" min="${c.limites[k][0]}" max="${c.limites[k][1]}" value="${c.valores[k]}" class="mono"><span class="sub" style="text-transform:none;letter-spacing:0;font-weight:400">${CALIB_NOMES[k][1]} · padrão ${String(c.padrao[k]).replace('.', ',')}</span></label>`).join('')}</div>
       <button type="button" class="btn v" data-ttcal>salvar os números</button></div>
     <div class="card"><h2><span class="c">~/</span>relatório para calibrar</h2>
-      <p style="margin:0 0 10px;font-size:14px">Tudo da temporada num arquivo: cada semana com os blocos e todas as modalidades, as marcas, os chefões, a tabela do dia por faixa, a Trick Coin e os dias de cada um (em andares, sem o XP). Serve para ajustar os números com dado real.</p>
+      <p style="margin:0 0 10px;font-size:14px">Tudo da temporada num arquivo: cada semana com os blocos e todas as modalidades, as marcas, os chefões, a tabela do dia por faixa, a Trick Coin, os pactos e os dias de cada um (em andares, sem o XP). Serve para ajustar os números com dado real.</p>
       <button type="button" class="btn" data-ttrel>baixar o relatório (JSON)</button></div>
-    <div class="card"><h2><span class="c">~/</span>placares específicos</h2>
-      <p style="margin:0 0 10px;font-size:14px">Os placares saem dos hábitos do grupo. Desligue os que ninguém quer ver e escolha o período de cada um.</p>
-      ${A.placares.map(p => `<div class="gp-lin"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-ttplon="${esc(p.id)}"${p.on ? ' checked' : ''}> <b>${esc(p.nome)}</b></label>
-        ${p.pers.length > 1 ? `<select data-ttplper="${esc(p.id)}">${p.pers.map(x => `<option value="${x}"${x === p.per ? ' selected' : ''}>${PER[x]}</option>`).join('')}</select>` : `<span class="sub">${PER[p.per]}</span>`}</div>`).join('')}</div>
     <div class="card"><h2><span class="c">~/</span>frases do líder</h2>
       ${(A.frases || []).length ? A.frases.map(f => `<div class="gp-lin"><span><span class="sub">semana ${esc(f.semana.split('-W')[1] || '')} · ${esc(f.nome)}:</span> ${f.apagada ? '<i class="sub">apagada</i>' : esc(f.texto)}</span>${f.apagada ? '' : `<button type="button" class="btn" data-ttfraseapaga="${esc(f.semana)}">apagar</button>`}</div>`).join('') : '<p class="sub" style="margin:0">Nenhuma frase ainda.</p>'}</div>`;
 }
@@ -326,8 +326,8 @@ function torreAdminHTML(A){
 /* ---------- as sub-abas (redesenho de 21/10, docs/COLETIVO-REDESENHO.md, #170–#173) ----------
    semana (a licença, o card da semana e o Geral ou a Superação da semana) · desafios (tabela do dia do CF, chefão do mês,
    convites) · temporada (rodadas ganhas e medalhas) · hunters (a licença de cada um, com o detalhe por hábito) · loja.
-   O Geral, a Superação, a marca e o chefão vêm do servidor do grupo (P.torre.semanal e P.torre.chefao). O que ainda não
-   existe (o duelo e o pacto) aparece como prévia. */
+   O Geral, a Superação, a marca e o chefão vêm do servidor do grupo (P.torre.semanal e P.torre.chefao); o duelo e
+   o pacto, da caixa de convites (TT.C). Com o servidor do grupo antigo, eles aparecem como prévia. */
 TT.pod = 'geral';
 const NOVAS = ['semana', 'desafios', 'temporada', 'hunters', 'loja', 'duelo'];
 const MOD = {ritmo:['Ritmo', 'XP com teto', 'Jogue todo dia até o teto do grupo.', 'O XP de cada dia, até o teto do grupo. 100 = bateu o teto em todos os dias da semana; o que passa do teto não conta, então jogar todo dia vale mais que um dia enorme.'],
@@ -468,15 +468,17 @@ function tabelaCF(P){
   return `<section class="card">${h2(`hoje ${meus}/${R.teto} · ${T.pontos[eu] || 0} TC`)}${como}
       <div class="tn-cf">${linhas}</div></section>`;
 }
-/* a caixa de convites: só entra o que a pessoa aceita (o duelo agora; o pacto na fase 3) */
-const PACTO = `<div><b>Pacto de hábito ${prev('fase 3')}</b><span class="sub">Você propõe um hábito e os dias; se os dois cumprirem, os dois ganham em dobro.</span><button type="button" class="btn" disabled>propor um pacto</button></div>`;
+/* a caixa de convites: só entra o que a pessoa aceita (o duelo e o pacto de hábito) */
+const PACTO = `<div><b>Pacto de hábito ${prev('o servidor do grupo precisa atualizar')}</b><span class="sub">Você propõe um hábito e os dias; se os dois cumprirem, os dois ganham em dobro.</span><button type="button" class="btn" disabled>propor um pacto</button></div>`;
 function convitesHTML(P, C){
   const eu = P.voce.membro;
   const h2 = r => `<h2><span class="c">~/</span>convites <span class="r">${r} ${ajBt('cv')}</span></h2>`;
   if(!C) return `<section class="card">${h2(prev('o servidor do grupo precisa atualizar'))}
       <div class="tn-cv"><div><b>Duelo de Codeforces</b><span class="sub">1×1, 3 problemas na faixa do mais fraco dos dois.</span><button type="button" class="btn" disabled>desafiar alguém</button></div>${PACTO}</div></section>`;
   const R = C.regras, du = C.duelo, H = C.historico, vivo = duVivo(du), meuCf = membroDe(P, eu).cf;
-  const como = ajTx('cv', `<p><b>Duelo:</b> desafie alguém do grupo que ligou o Codeforces. O convite vale ${Math.round(R.convite / 60)} minutos; depois some e é preciso mandar outro.</p>
+  const PC = C.pacto, pes = pessoais();
+  const como = ajTx('cv', `${PC ? `<p><b>Pacto:</b> proponha a alguém um hábito e os dias (${PC.dias[0]} a ${PC.dias[2]}); cada um liga um hábito seu ao pacto, e o grupo só fica sabendo se foi feito. Começa no dia seguinte ao aceite; cumprir é fazer em todos os dias.</p>
+    <p>Os dois cumprem: ${PC.base * 2} TC por dia para cada um. Só quem foi convidado: ${PC.base} por dia para ele. Só quem propôs: metade disso. Sem punição. Até ${PC.max} pactos por pessoa.</p>` : ''}<p><b>Duelo:</b> desafie alguém do grupo que ligou o Codeforces. O convite vale ${Math.round(R.convite / 60)} minutos; depois some e é preciso mandar outro.</p>
     <p>Aceito, saem 3 problemas que nenhum dos dois resolveu, em volta da faixa do mais fraco (uma abaixo, a dele e uma acima), e o duelo começa ${R.conta} s depois. Dura ${R.minutos} minutos ou até alguém resolver os 3.</p>
     <p>Cada problema resolvido paga o mesmo que na tabela do dia, sem piso. Vence quem resolver mais; no empate, quem chegou antes.</p>`);
   // cada convite diz o tipo na frente (o pacto entra com a mesma linha na fase 3)
@@ -488,14 +490,50 @@ function convitesHTML(P, C){
     `<button type="button" class="btn v" data-tndu="aceitar" data-id="${c.id}">aceitar</button><button type="button" class="btn" data-tndu="recusar" data-id="${c.id}">recusar</button>`)).join('');
   const env = C.convites.filter(c => c.de === eu).map(c => linha(c.para, `Você desafiou <b>${esc(nomeDe(P, c.para))}</b> · esperando · some em ${relo(c.vence)}`,
     `<button type="button" class="btn" data-ttsub="duelo">abrir</button><button type="button" class="btn" data-tndu="cancelar" data-id="${c.id}">cancelar</button>`)).join('');
+  // os convites de pacto: o convidado escolhe o hábito dele na própria linha
+  const pesSel = id => `<select id="tn-pc-pes-${id}" aria-label="o seu hábito no pacto">${pes.map(h => `<option value="${esc(h.id)}">${esc(h.n)}</option>`).join('')}</select>`;
+  const pcs = C.pactos || [], emH = ts => { const h = Math.max(1, Math.round((ts - agoraS()) / 3600)); return h >= 24 ? `${Math.round(h / 24)} d` : `${h} h`; };
+  const pcRec = pcs.filter(p => p.estado === 'convite' && p.para === eu).map(p => linha(p.de, `<b>${esc(nomeDe(P, p.de))}</b> propôs <b>${esc(p.nome)}</b> · ${p.dias} dias · some em ${emH(p.vence)}`,
+    pes.length ? `${pesSel(p.id)}<button type="button" class="btn v" data-tnpc="aceitar" data-id="${p.id}">aceitar</button><button type="button" class="btn" data-tnpc="recusar" data-id="${p.id}">recusar</button>`
+      : `<span class="sub">crie um hábito para aceitar</span><button type="button" class="btn" data-tnpc="recusar" data-id="${p.id}">recusar</button>`, 'pacto')).join('');
+  const pcEnv = pcs.filter(p => p.estado === 'convite' && p.de === eu).map(p => linha(p.para, `Você propôs <b>${esc(p.nome)}</b> a <b>${esc(nomeDe(P, p.para))}</b> · ${p.dias} dias · esperando · some em ${emH(p.vence)}`,
+    `<button type="button" class="btn" data-tnpc="cancelar" data-id="${p.id}">cancelar</button>`, 'pacto')).join('');
+  const pcAbertos = pcs.filter(p => p.estado === 'ativo' || p.estado === 'convite' && p.de === eu).length;
+  const pcPode = PC && pes.length && pcAbertos < PC.max;
+  const pcForm = TT.pacto && pcPode ? `<div class="tn-pcf">
+      <label>com<select id="tn-pc-para">${P.membros.filter(m => m.id !== eu).map(m => `<option value="${m.id}">${esc(m.nome)}</option>`).join('')}</select></label>
+      <label>o hábito<input id="tn-pc-nome" maxlength="40" placeholder="ex.: ler 20 minutos"></label>
+      <label>dias<input id="tn-pc-dias" type="number" min="${PC.dias[0]}" max="${PC.dias[2]}" value="${PC.dias[1]}" class="mono"></label>
+      <label>o seu hábito${pesSel('novo')}</label>
+      <button type="button" class="btn v" data-tnpc="propor">mandar o convite</button></div>` : '';
+  const pacto = !PC ? PACTO : `<div><b>Pacto de hábito</b><span class="sub">Os dois cumprindo, ${PC.base * 2} TC por dia para cada um.</span>
+    ${!pes.length ? '<span class="sub">Crie um hábito na aba Hábitos para fazer pactos.</span>' : `<button type="button" class="btn" data-tnpcnovo${pcPode ? '' : ` disabled title="até ${PC.max} pactos por pessoa"`}>${TT.pacto && pcPode ? 'fechar' : 'propor um pacto'}</button>${pcForm}`}</div>`;
   const pode = meuCf && !vivo && !C.convites.some(c => c.de === eu);
   const outros = P.membros.filter(m => m.id !== eu);
   const lista = TT.desafiar && pode ? `<div class="tn-cvop">${outros.map(m => `<button type="button" class="btn" data-tndu="convidar" data-para="${m.id}"${m.cf ? '' : ' disabled title="ainda não ligou o Codeforces"'}>${esc(m.nome)}</button>`).join('')}</div>` : '';
   const duelo = `<div><b>Duelo de Codeforces</b><span class="sub">1×1, 3 problemas na faixa do mais fraco, ${R.minutos} minutos.</span>
     ${meuCf ? `<button type="button" class="btn" data-tndesafiar${pode ? '' : ' disabled'}>${TT.desafiar && pode ? 'fechar' : 'desafiar alguém'}</button>${lista}` : '<span class="sub">Ligue o Codeforces em Configurações (o seu handle) para duelar.</span>'}</div>`;
   return `<section class="card">${h2(H.duelos ? `<button type="button" class="tt-lk" data-ttsub="duelo">${vde({v:H.vitorias, d:H.derrotas || 0, e:H.empates})} · ver histórico</button>` : '')}${como}
-    ${ativo || rec || env ? `<div class="tn-cvs">${ativo}${rec}${env}</div>` : '<p class="sub" style="margin:0 0 10px">Nenhum convite aberto.</p>'}
-    <div class="tn-cv">${duelo}${PACTO}</div></section>`;
+    ${ativo || rec || env || pcRec || pcEnv ? `<div class="tn-cvs">${ativo}${rec}${pcRec}${env}${pcEnv}</div>` : '<p class="sub" style="margin:0 0 10px">Nenhum convite aberto.</p>'}
+    <div class="tn-cv">${duelo}${pacto}</div></section>`;
+}
+
+/* os pactos em andamento (e os que fecharam nos últimos 7 dias): os dias de cada um e o que paga */
+function pactosHTML(P, C){
+  const ps = ((C && C.pactos) || []).filter(p => p.estado === 'ativo' || p.estado === 'fim');
+  if(!ps.length) return '';
+  const eu = P.voce.membro, g = grupoSel(), meus = (g && g.pactos) || {}, nomePes = id => (pessoais().find(h => h.id === id) || {}).n;
+  const bolas = v => `<span class="tn-pcd">${v.map(x => `<i class="${x === 1 ? 'ok' : x === 0 ? 'no' : ''}"></i>`).join('')}</span>`;
+  const linhas = ps.map(p => { const o = p.de === eu ? p.para : p.de, f = p.feitos || {};
+    const ok = id => (f[id] || []).filter(x => x === 1).length;
+    const pago = p.estado === 'fim' ? (p.pago || {})[eu] : null;
+    const pe = p.estado === 'fim' ? (pago ? `Pago: ${TC(pago)}` : `<span class="sub">${p.cumpriu && p.cumpriu[eu] ? 'Você cumpriu, mas pela regra não rendeu desta vez.' : 'Não deu desta vez: sem punição.'}</span>`)
+      : `<span class="sub">os dois cumprindo: ${TC(p.valor.dupla)} cada · ${p.para === eu ? `só você: ${p.valor.convidado}` : `só você: ${p.valor.propos}`} TC</span>`;
+    const lig = meus[p.id] ? `<span class="sub">seu hábito: ${esc(nomePes(meus[p.id]) || '?')}</span>` : '<span class="sub" style="color:var(--amb)">nenhum hábito seu ligado neste computador</span>';
+    return `<div class="tn-pc"><div class="tn-pct"><span><span class="tn-cvtp">pacto</span><b>${esc(p.nome)}</b> com ${esc(nomeDe(P, o))}</span><span class="sub mono">${ddmm(p.ini)} a ${ddmm(p.fim)}${p.estado === 'fim' ? ' · fechado' : ''}</span></div>
+      ${[eu, o].map(id => `<div class="tn-pcl">${ico(P, id, 22, 0, {semNome:true, nolink:true})}<span>${id === eu ? 'você' : esc(nomeDe(P, id))}</span>${bolas(f[id] || [])}<b class="mono">${ok(id)}/${p.dias}</b></div>`).join('')}
+      <div class="tn-pcp">${pe}${p.estado === 'ativo' ? lig : ''}</div></div>`; }).join('');
+  return `<section class="card"><h2><span class="c">~/</span>pactos <span class="r">fecham ${C.pacto.folga} dias depois do último</span></h2><div class="tn-pcs">${linhas}</div></section>`;
 }
 
 /* ---------- duelo: você × o outro, o relógio e quem resolveu cada um dos 3 problemas ----------
@@ -562,7 +600,7 @@ function subDesafios(P){
   const conv = convitesHTML(P, TT.C);
   const marcas = S.semanas.filter(s => linhaDe(s, eu)).map(s => { const x = linhaDe(s, eu);
     return `<div class="tn-mk${x.bateu ? ' ok' : ''}${s.fechada ? '' : ' agora'}"><small>s${s.semana.split('-W')[1]}</small><b>${md(s.modalidade)[0].slice(0, 3)}</b><span>${x.marca == null ? '—' : x.bateu ? '✓' : `${x.mod || 0}/${x.marca}`}</span></div>`; }).join('');
-  return `<div class="tn-ds"><div class="tt-stack">${tabela}${conv}</div><div class="tt-stack">${chefaoHTML(P)}
+  return `<div class="tn-ds"><div class="tt-stack">${tabela}${conv}${pactosHTML(P, TT.C)}</div><div class="tt-stack">${chefaoHTML(P)}
     <section class="card"><h2><span class="c">~/</span>suas marcas <span class="r">uma por semana, na modalidade · ${tcV(P).marca} TC cada</span></h2><div class="tn-mks">${marcas}</div></section></div></div>`;
 }
 
@@ -645,7 +683,7 @@ function rTT2(S){
   const cab = P ? `<div class="tt-gh"><div><h3>${esc(P.grupo.nome)}</h3><div class="meta"><span><b>${temporadaDe(P)}</b>${fim != null && fim >= 0 ? ` · faltam ${fim} dias` : ''}</span><span>${P.membros.length} ${P.membros.length === 1 ? 'membro' : 'membros'}</span><span><i class="dot"></i>sincronizou ${esc(G.ultima ? quando(G.ultima / 1000) : quando(P.recebido))}</span></div></div>${sel}</div>` : sel;
   const admBt = adm ? `<button type="button" class="adm" data-gpaba="admin"${G.aba === 'admin' ? ' aria-current="page"' : ''}>administrar</button>` : '';
   if(!NOVAS.includes(TT.sub)) TT.sub = 'semana';
-  const C = caixaDe(g), nConv = C ? C.convites.filter(c => c.para === C.eu).length : 0;
+  const C = caixaDe(g), nConv = C ? C.convites.filter(c => c.para === C.eu).length + (C.pactos || []).filter(p => p.estado === 'convite' && p.para === C.eu).length : 0;
   if(TT.sub === 'duelo' && !C) TT.sub = 'desafios';
   const nav = `<nav class="tt-sub" aria-label="Torre Trick">${ab('semana', 'semana')}${ab('desafios', nConv ? `desafios <b class="tn-bdg">${nConv}</b>` : 'desafios')}${C ? ab('duelo', duVivo(C.duelo) ? '<i class="dot"></i>duelo' : 'duelo') : ''}${ab('temporada', 'temporada')}${ab('hunters', 'hunters')}${ab('loja', 'loja')}${admBt}</nav>`;
   document.getElementById('tt-root').innerHTML = cab + outro + nav + (G.aba === 'admin' ? adminHTML(g) : torreNova(g));
@@ -722,6 +760,16 @@ document.addEventListener('click', async e => {
   if((b = q('[data-ttjog]'))){ vaiPara({sub: 'hunters', jog: +b.dataset.ttjog}); return; }
   if((b = q('[data-tndver]'))){ try { TT.dvDet = (await post('/api/grupo/duelo', {chave: grupoSel().chave, acao: 'ver', id: +b.dataset.tndver})).duelo; vaiPara({sub: 'duelo'}); } catch(err){ toast('Não deu: ' + esc(err.message)); } return; }
   if(q('[data-tndvvolta]')){ TT.dvDet = null; render(); return; }
+  if(q('[data-tnpcnovo]')){ TT.pacto = !TT.pacto; render(); return; }
+  if((b = q('[data-tnpc]'))){ const g = grupoSel(), acao = b.dataset.tnpc, id = +b.dataset.id || undefined, v = x => (document.getElementById(x) || {}).value;
+    const corpo = acao === 'propor' ? {para: +v('tn-pc-para'), nome: (v('tn-pc-nome') || '').trim(), dias: +v('tn-pc-dias'), pessoal: v('tn-pc-pes-novo')}
+      : acao === 'aceitar' ? {id, pessoal: v('tn-pc-pes-' + id)} : {id};
+    b.disabled = true;
+    try { const r = await post('/api/grupo/pacto', {chave: g.chave, acao, ...corpo}); TT.pacto = false; guardaCaixa(g, r);
+      if(acao === 'propor' || acao === 'aceitar') await carrega();
+      render(); toast(acao === 'propor' ? 'Convite de pacto mandado <small>some em 2 dias se ninguém aceitar</small>' : acao === 'aceitar' ? 'Pacto aceito <small>começa amanhã</small>' : 'Feito'); }
+    catch(err){ b.disabled = false; toast('Não deu: ' + esc(err.message)); }
+    return; }
   if(q('[data-tndesafiar]')){ TT.desafiar = !TT.desafiar; render(); return; }
   if((b = q('[data-tndu]'))){ const g = grupoSel(), acao = b.dataset.tndu; b.disabled = true;
     try { const r = await post('/api/grupo/duelo', {chave: g.chave, acao, id: +b.dataset.id || undefined, para: +b.dataset.para || undefined});
@@ -795,9 +843,6 @@ document.addEventListener('click', async e => {
 });
 
 document.addEventListener('change', async e => {
-  const pl = e.target.closest('[data-ttplon],[data-ttplper]');
-  if(pl){ try { G.adm = await admin('placar', pl.dataset.ttplon ? {id: pl.dataset.ttplon, on: pl.checked} : {id: pl.dataset.ttplper, per: pl.value}); render(); sincroniza(); }
-    catch(err){ toast('Não deu: ' + esc(err.message)); render(); } return; }
   const s = e.target.closest('[data-gpvinc]');
   if(!s) return;
   try { await post('/api/grupo/vinculo', {chave: s.dataset.chave, habito: s.dataset.gpvinc, pessoal: s.value}); await carrega(); render();
@@ -1107,6 +1152,13 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-dhp{font:700 15px var(--f-hud)} .tn-dhd{font:500 11px var(--f-mono);color:var(--faint)}
 @media (max-width:560px){.tn-dhl{grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px} .tn-dhl .tn-dhd,.tn-dhl .tn-tc{display:none}}
 @media (max-width:560px){.tn-dvc{gap:8px} .tn-dvr{min-width:0} .tn-dvp{grid-template-columns:52px minmax(0,1fr) 52px;gap:6px;padding:10px 0} .tn-dvm{padding:0 8px}}
+.tn-pcf{display:grid;gap:8px;margin-top:4px} .tn-pcf label{display:grid;gap:3px;font-size:12px;color:var(--soft)} .tn-pcf .btn{justify-self:start}
+.tn-pcs{display:grid;gap:10px}
+.tn-pc{display:grid;gap:6px;border:1px solid var(--hair);border-radius:3px;padding:10px 12px}
+.tn-pct{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline;font-size:13.5px}
+.tn-pcl{display:grid;grid-template-columns:auto 70px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px}
+.tn-pcd{display:flex;flex-wrap:wrap;gap:3px} .tn-pcd i{width:9px;height:9px;border-radius:2px;border:1.5px solid var(--hair)} .tn-pcd i.ok{background:var(--grn);border-color:var(--grn)} .tn-pcd i.no{border-color:var(--red)}
+.tn-pcp{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px}
 .tn-cv{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .tn-cv > div{display:grid;gap:6px;align-content:start;border:1px solid var(--hair);border-radius:3px;padding:12px} .tn-cv .btn{justify-self:start}
 .tn-hp{display:grid;gap:6px} .tn-hpt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline} .tn-hpt b{font:700 18px var(--f-hud)}

@@ -800,5 +800,85 @@ class Duelo(Base):
         self.assertEqual(sg.q1("SELECT estado FROM duelos WHERE id = ?", (c1,))["estado"], "cancelado")
 
 
+class Pacto(Base):
+    """O pacto de hábito (#172): convite de 2 dias, começa no dia seguinte, só fez/não fez, paga em Trick Coin no fim."""
+    def setUp(self):
+        super().setUp()
+        self.gid, cod = self.grupo()
+        self.ana = self.entra(self.gid, cod)
+        self.bia = self.entra(self.gid, sg.admin_convite(self.gid, self.ana["token"], {})["codigo"], "Bia")
+        self.cris = self.entra(self.gid, sg.admin_convite(self.gid, self.ana["token"], {})["codigo"], "Cris")
+
+    def p(self, quem, **kw):
+        return sg.pacto(self.gid, quem["token"], kw)
+
+    def manda(self, quem, pid, feitos):
+        """feitos: um 0/1 por dia, a partir do início do pacto."""
+        r = sg.q1("SELECT ini FROM pactos WHERE id = ?", (pid,))
+        a = date.fromisoformat(r["ini"])
+        sg.envio(self.gid, quem["token"], {"protocolo": sg.PROTOCOLO, "dias": [{"dia": (a + timedelta(days=i)).isoformat(), "xp": 10, "pac": {str(pid): v}}
+                                                                              for i, v in enumerate(feitos)]})
+
+    def fecha(self, pid):
+        r = sg.q1("SELECT fim FROM pactos WHERE id = ?", (pid,))
+        return sg.pacto_fecha(sg.instante(date.fromisoformat(r["fim"]) + timedelta(days=1 + sg.PACTO_FOLGA), -180) + 1)
+
+    def test_regras_do_convite(self):
+        for ruim in ({"para": self.ana["membro"], "nome": "ler"}, {"para": self.bia["membro"], "nome": ""},
+                     {"para": self.bia["membro"], "nome": "ler", "dias": 3}, {"para": self.bia["membro"], "nome": "ler", "dias": 31}):
+            with self.assertRaises(sg.Erro):
+                self.p(self.ana, acao="propor", **ruim)
+        r = self.p(self.ana, acao="propor", para=self.bia["membro"], nome="  ler   20 min ")
+        pid = r["id"]
+        self.assertEqual((r["pactos"][0]["nome"], r["pactos"][0]["dias"], r["pactos"][0]["valor"]["dupla"]), ("ler 20 min", 7, 28))
+        with self.assertRaises(sg.Erro):
+            self.p(self.ana, acao="aceitar", id=pid)                     # só quem foi convidado aceita
+        self.p(self.ana, acao="propor", para=self.cris["membro"], nome="correr")
+        with self.assertRaises(sg.Erro):
+            self.p(self.ana, acao="propor", para=self.cris["membro"], nome="água")   # no máximo 2
+        with mock.patch.object(sg, "agora", return_value=time.time() + sg.PACTO_CONVITE + 1):
+            with self.assertRaises(sg.Erro):
+                self.p(self.bia, acao="aceitar", id=pid)                 # o convite venceu
+        r = self.p(self.bia, acao="aceitar", id=pid)
+        x = r["pactos"][0]
+        self.assertEqual((x["estado"], x["ini"]), ("ativo", (sg.hoje_no(-180) + timedelta(days=1)).isoformat()))
+        self.assertEqual(x["feitos"], {str(self.ana["membro"]): [None] * 7, str(self.bia["membro"]): [None] * 7})
+
+    def test_paga_pela_regra(self):
+        casos = [((1,) * 7, (1,) * 7, 28, 28), ((1,) * 7, (1,) * 6 + (0,), 7, 0), ((1,) * 6, (1,) * 7, 0, 14), ((0,), (0,), 0, 0)]
+        for i, (a, b, ta, tb) in enumerate(casos):
+            pid = self.p(self.ana, acao="propor", para=self.bia["membro"], nome=f"hábito {i}")["id"]
+            self.p(self.bia, acao="aceitar", id=pid)
+            self.manda(self.ana, pid, a)
+            self.manda(self.bia, pid, b)
+            self.assertEqual(self.fecha(pid), [pid])
+            self.assertEqual(self.fecha(pid), [])                     # não paga duas vezes
+            pago = {int(k): v for k, v in json.loads(sg.q1("SELECT dados FROM pactos WHERE id = ?", (pid,))["dados"])["pago"].items()}
+            self.assertEqual((pago.get(self.ana["membro"], 0), pago.get(self.bia["membro"], 0)), (ta, tb), i)
+        self.assertEqual(sg.carteira(self.gid, self.ana["membro"])["saldo"], 35)
+        self.assertEqual(sg.carteira(self.gid, self.bia["membro"])["extrato"][0]["motivo"], "pacto de hábito")
+
+    def test_so_dias_do_pacto_e_de_quem_esta_nele(self):
+        pid = self.p(self.ana, acao="propor", para=self.bia["membro"], nome="ler", dias=4)["id"]
+        self.p(self.bia, acao="aceitar", id=pid)
+        ini = date.fromisoformat(sg.q1("SELECT ini FROM pactos WHERE id = ?", (pid,))["ini"])
+        dias = [{"dia": (ini + timedelta(days=i)).isoformat(), "xp": 0, "pac": {str(pid): 1}} for i in range(-1, 6)]
+        sg.envio(self.gid, self.ana["token"], {"protocolo": sg.PROTOCOLO, "dias": dias})
+        sg.envio(self.gid, self.cris["token"], {"protocolo": sg.PROTOCOLO, "dias": dias})   # a Cris não está no pacto
+        self.assertEqual(sg.q("SELECT membro, COUNT(*) AS n FROM pacto_dias GROUP BY membro")[0]["n"], 4)
+        self.assertEqual(len(sg.q("SELECT 1 FROM pacto_dias")), 4)
+        with self.assertRaises(sg.Erro):
+            sg.envio(self.gid, self.ana["token"], {"protocolo": sg.PROTOCOLO, "dias": [{"dia": ini.isoformat(), "pac": {"x": 1}}]})
+
+    def test_jogo_manda_so_o_fez_e_depois_de_ligar(self):
+        pac = {"7": {"pes": "h1", "desde": "2026-10-23"}}
+        dia = lambda d, feito: s.envio_do_grupo({"dia": d, "xp": 5, "pes": {"h1": 1} if feito else {}}, [], {}, pac)
+        self.assertNotIn("pac", dia("2026-10-23", True))              # o pacto começa no dia seguinte ao aceite
+        self.assertEqual(dia("2026-10-24", True)["pac"], {"7": 1})
+        self.assertEqual(dia("2026-10-25", False)["pac"], {"7": 0})
+        self.assertNotIn("pes", dia("2026-10-25", True))              # o hábito pessoal não sai
+        self.assertNotIn("pac", dia("2026-12-01", True))
+
+
 if __name__ == "__main__":
     unittest.main()

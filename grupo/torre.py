@@ -20,22 +20,23 @@ CALIB = {"sup_xp": 5.0, "sup_cf": 1.0, "sup_hab": 3.0, "hab": 0.2, "sup_max": 0.
          "cf_tabela": 1, "cf_valor": 2, "cf_passo": 1, "cf_bonus": 2, "cf_teto": 2, "cf_piso": 1,
          # Trick Coin (#43, 22/10): a marca da semana batida e o chefão do mês (base para quem passa do mínimo, até +50%
          # para quem chega ao teto); a tabela do dia paga os próprios pontos (cf_*). A posição no placar não paga moeda.
-         "tc_marca": 50, "tc_chefao": 80}
+         "tc_marca": 50, "tc_chefao": 80,
+         # redesenho de 21/10 (#170, #172): a marca da semana (15% sobre a média das últimas semanas, ou +5 pontos, nunca
+         # abaixo de 20 de 100), o chefão (vida = 100% de um mês normal de cada um, que tira até 150% da própria meta e ganha
+         # a base passando de 50% dela) e o pacto de hábito (TC por dia; os dois cumprindo, o dobro para cada um)
+         "marca": 0.15, "marca_min": 20, "chefao": 1.0, "chefao_teto": 1.5, "chefao_min": 0.5, "pacto_base": 2}
 CALIB_LIMITES = {"sup_xp": (0, 50), "sup_cf": (0, 20), "sup_hab": (0, 30), "hab": (0, 2), "sup_max": (0.1, 2), "cf_min": (0, 50),
                  "frase_max": (20, 200), "cf_tabela": (0, 1), "cf_valor": (0, 100), "cf_passo": (0, 50), "cf_bonus": (0, 50),
-                 "cf_teto": (1, 7), "cf_piso": (0, 6), "tc_marca": (0, 500), "tc_chefao": (0, 1000)}
+                 "cf_teto": (1, 7), "cf_piso": (0, 6), "tc_marca": (0, 500), "tc_chefao": (0, 1000),
+                 "marca": (0, 1), "marca_min": (0, 100), "chefao": (0.2, 3), "chefao_teto": (1.1, 3), "chefao_min": (0, 1), "pacto_base": (0, 50)}
+CALIB_INT = {"frase_max", "cf_tabela", "cf_valor", "cf_passo", "cf_bonus", "cf_teto", "cf_piso", "tc_marca", "tc_chefao", "marca_min", "pacto_base"}
 SEMANAS_EVOLUCAO = 6
-# redesenho de 21/10 (#170, #172): números a calibrar, que vão para o administrar quando as fases entrarem de verdade
+# redesenho de 21/10 (#170, #172); os números a calibrar ficam em CALIB, no administrar
 BLOCOS = ["ritmo", "prazos", "habitos", "superacao"]   # os 4 blocos fixos do Geral
 # a modalidade é um 5º bloco que só existe naquela semana (22/10): um dos 4 (conta em dobro) ou outro sinal que o grupo já
 # mede; "hab:<id>" é um hábito do grupo específico. Prazos fica de fora até o protocolo mandar as entregas no prazo.
 MODALIDADES = BLOCOS + ["constancia", "cf", "missao"]
 OPCOES = 3             # quantas o 1º da semana vê para escolher a próxima
-MARCA = 0.15           # a marca da semana: 15% sobre a média das últimas semanas (ou +5 pontos, o que for maior)
-MARCA_MIN = 20         # e nunca abaixo de 20 de 100, para uma semana zerada não virar marca de graça
-CHEFAO = 1.0           # a vida do chefão: 100% do que cada um faz num mês normal (80% morria no dia 21 de outubro)
-CHEFAO_TETO = 1.5      # ninguém tira mais que 150% da própria meta
-MINIMO_CHEFAO = 0.5    # quem passa de 50% da própria meta ganha a recompensa base
 
 
 # ---------- datas ----------
@@ -507,7 +508,7 @@ class Grupo:
                             "escolhida_por": quem, "geral": linhas, "superacao": [x["membro"] for x in sup], "escolhe": escolhe,
                             "opcoes": random.Random(chave).sample(resto, min(OPCOES, len(resto))),
                             "escolha": (self.escolhas.get(chave) or {}).get("mod") if (self.escolhas.get(chave) or {}).get("membro") == escolhe else None})
-        # marca da semana: MARCA sobre a média das últimas 4 semanas da pessoa na modalidade desta semana (até 100)
+        # marca da semana: calib["marca"] sobre a média das últimas 4 semanas da pessoa na modalidade desta semana (até 100)
         for i, s in enumerate(semanas):
             for x in s["geral"]:
                 if x["mod"] is None:
@@ -517,7 +518,7 @@ class Grupo:
                 base = [v for v in base if v is not None]
                 if base:
                     med = sum(base) / len(base)
-                    x["marca"] = min(100, max(round(med * (1 + MARCA)), round(med) + 5, MARCA_MIN))
+                    x["marca"] = min(100, max(round(med * (1 + self.calib["marca"])), round(med) + 5, self.calib["marca_min"]))
                     x["bateu"] = x["mod"] >= x["marca"]
             if s["fechada"]:
                 for k, x in enumerate(s["geral"][:3]):
@@ -530,12 +531,13 @@ class Grupo:
                     temporada[x["membro"]]["marcas"] += bool(x.get("bateu"))
         ult = semanas[-1] if semanas else {}
         return {"semanas": semanas, "temporada": temporada, "escolhe": ult.get("escolhe"), "opcoes": ult.get("opcoes", []),
-                "escolha": ult.get("escolha"), "modalidades": rot, "marca": MARCA, "habitos": {h["id"]: h["nome"] for h in self.catalogo}}
+                "escolha": ult.get("escolha"), "modalidades": rot, "marca": self.calib["marca"], "habitos": {h["id"]: h["nome"] for h in self.catalogo}}
 
     def chefao(self, ref=None):
-        """O chefão do mês de ref (padrão: o de hoje): vida = a soma das metas (CHEFAO × o XP com teto de um mês normal de
+        """O chefão do mês de ref (padrão: o de hoje): vida = a soma das metas (calib["chefao"] × o XP com teto de um mês normal de
         cada um, pelas 4 semanas com XP antes, ou pelas 2 últimas se for maior; sem histórico, a mediana das metas dos outros; nunca menos de 2 dias cheios).
-        O dano é em andares (1 = um dia com o XP no teto do grupo), e cada um tira até CHEFAO_TETO × a própria meta."""
+        O dano é em andares (1 = um dia com o XP no teto do grupo), e cada um tira até calib["chefao_teto"] × a própria meta."""
+        c = self.calib
         a, b = mes_de(ref or self.fim)
         fim = min(b, self.fim)
         n = (b - a).days + 1
@@ -544,16 +546,16 @@ class Grupo:
         for m in self.ids:
             v = [sum(self.dia_andares(m, d)[0] for d in dias_entre(max(p[0], self.ini), p[1])) for p in sems if self.tem_xp(m)(p[0], p[1])]
             if v:   # a média das 4 semanas ou a das 2 últimas, a maior: quem acabou de pegar ritmo não fica com a meta das semanas paradas
-                metas[m] = max(max(sum(v) / len(v), sum(v[-2:]) / len(v[-2:])) * n / 7 * CHEFAO, 2.0)
+                metas[m] = max(max(sum(v) / len(v), sum(v[-2:]) / len(v[-2:])) * n / 7 * c["chefao"], 2.0)
         med = mediana(list(metas.values())) or 10.0
         out = []
         for m in self.ids:
             meta = metas.get(m, med)
             feito = sum(self.dia_andares(m, d)[0] for d in dias_entre(max(a, self.ini), fim))
-            out.append({"membro": m, "meta": round(meta, 1), "feito": round(feito, 1), "conta": round(min(feito, meta * CHEFAO_TETO), 1)})
+            out.append({"membro": m, "meta": round(meta, 1), "feito": round(feito, 1), "conta": round(min(feito, meta * c["chefao_teto"]), 1)})
         vida = sum(x["meta"] for x in out)
         return {"mes": a.strftime("%Y-%m"), "fim": b.isoformat(), "vida": round(vida, 1), "dano": round(min(vida, sum(x["conta"] for x in out)), 1),
-                "minimo": MINIMO_CHEFAO, "teto": CHEFAO_TETO, "fator": CHEFAO, "membros": out}
+                "minimo": c["chefao_min"], "teto": c["chefao_teto"], "fator": c["chefao"], "membros": out}
 
     @staticmethod
     def chefao_paga(ch, base):

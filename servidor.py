@@ -64,6 +64,8 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/grupo/frase {chave, texto}    a frase do líder da semana (#76), repassada ao servidor do grupo
   POST /api/grupo/modalidade {chave, mod} a escolha da modalidade da semana seguinte, repassada ao servidor do grupo
   POST /api/grupo/duelo {chave, acao, ...} caixa | convidar {para} | aceitar | recusar | cancelar {id}: o duelo 1×1 do CF (#171)
+  POST /api/grupo/pacto {chave, acao, ...} propor {para, nome, dias, pessoal} | aceitar {id, pessoal} | recusar | cancelar {id}:
+                                          o pacto de hábito (#172); o hábito pessoal ligado fica só aqui
   POST /api/grupo/admin {chave, acao, ...} ver | convite | cancelar | membro | config | habito | calibracao | placar | frase | relatorio
   POST /api/grupo/host {acao, ...}        estado | servidor | funnel | criar {nome, endereco} | restaurar {banco, endereco} |
                                           mudar {endereco}: este computador como servidor do grupo
@@ -2608,6 +2610,7 @@ def retoma_aulas():
 # grupo só os dias novos ou que mudaram. O token fica aqui, nunca na página. Na pasta de dados (só acrescenta):
 #   grupo.json    lista dos grupos em que o jogador está: {url, id, nome, membro, token, admin, publico?, entrou, vinculos?}
 #                 vinculos = {hábito do grupo: id do hábito pessoal} (#41): o nome do pessoal nunca sai daqui
+#                 pactos = {id do pacto: {pes, desde}} (#172): o hábito pessoal de cada pacto; só o fez/não fez sai
 #   enviado.json  {"url|id": {dia: assinatura}}: o que já chegou ao servidor (o resto vai na próxima sincronização)
 #   grupo/        o último placar de cada grupo, para a aba continuar mostrando quando o servidor está fora do ar
 GRUPO_PORTA = 8643
@@ -2736,7 +2739,8 @@ def api_grupo_get():
     for g in grupos():
         p = ler_json_arquivo(arquivo_placar(g))
         lista.append({"chave": chave_grupo(g), "id": g["id"], "nome": g.get("nome") or g["id"], "admin": bool(g.get("admin")),
-                      "convite": (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}", "placar": p, "vinculos": vinculos_de(g)})
+                      "convite": (g.get("publico") or g["url"]).rstrip("/") + f"/g/{g['id']}", "placar": p, "vinculos": vinculos_de(g),
+                      "pactos": {k: v["pes"] for k, v in pactos_de(g).items()}})
     return {"ok": True, "grupos": lista, "host": (grupo_pasta_servidor() / "dono.token").is_file()}
 
 
@@ -2827,9 +2831,18 @@ def vinculos_de(g):
     return {k: p for k, p in v.items() if isinstance(p, str) and p} if isinstance(v, dict) else {}
 
 
-def envio_do_grupo(x, cat, vinc):
+PACTO_JANELA = 32   # dias depois de ligar um pacto em que o fez/não fez dele vai no envio (o pacto dura até 30, e começa no dia seguinte)
+
+
+def pactos_de(g):
+    v = g.get("pactos")
+    return {k: p for k, p in v.items() if isinstance(p, dict) and p.get("pes") and p.get("desde")} if isinstance(v, dict) else {}
+
+
+def envio_do_grupo(x, cat, vinc, pactos=None):
     """Um dia do resumo como este grupo o recebe (#41): o Codeforces se está no catálogo e, de cada hábito de vínculo, 1 se o
-    pessoal ligado a ele foi feito no dia. O `pes` (os ids dos hábitos pessoais) fica aqui."""
+    pessoal ligado a ele foi feito no dia. O `pes` (os ids dos hábitos pessoais) fica aqui. Os pactos (#172) vão no `pac`,
+    só nos dias depois de cada um ser ligado."""
     hab, pes, out = x.get("hab") or {}, x.get("pes") or {}, {}
     for h in cat:
         if h.get("fonte") == "automatico":
@@ -2837,7 +2850,11 @@ def envio_do_grupo(x, cat, vinc):
                 out[h["id"]] = hab[h["id"]]
         elif vinc.get(h["id"]):
             out[h["id"]] = 1 if pes.get(vinc[h["id"]]) else 0
-    return {**{k: v for k, v in x.items() if k != "pes"}, "hab": out}
+    dia, pac = str(x.get("dia", "")), {}
+    for k, p in (pactos or {}).items():
+        if p["desde"] < dia <= (date.fromisoformat(p["desde"]) + timedelta(days=PACTO_JANELA)).isoformat():
+            pac[k] = 1 if pes.get(p["pes"]) else 0
+    return {**{k: v for k, v in x.items() if k != "pes"}, "hab": out, **({"pac": pac} if pac else {})}
 
 
 def assinatura(dia):
@@ -2880,8 +2897,8 @@ def sincroniza_grupo(g, dias, avatar=None):
     p = ler_json_arquivo(arquivo_placar(g))
     if not p or "habitos" not in p:   # sem o catálogo ainda (grupo novo ou placar da 0.9.0-beta1): busca antes
         p = grupo_pede(g["url"], "GET", f"/g/{g['id']}/placar", token=g["token"])
-    cat, vinc = p.get("habitos") or [], vinculos_de(g)
-    dias_g = [envio_do_grupo(x, cat, vinc) for x in dias if isinstance(x, dict)]
+    cat, vinc, pac = p.get("habitos") or [], vinculos_de(g), pactos_de(g)
+    dias_g = [envio_do_grupo(x, cat, vinc, pac) for x in dias if isinstance(x, dict)]
     novos = [x for x in dias_g if feito.get(x.get("dia")) != assinatura(x)]
     eu = next((m for m in p.get("membros") or [] if m.get("id") == (p.get("voce") or {}).get("membro")), None)
     foto = {} if avatar is None or (eu and eu.get("avatar", "") == avatar) else {"avatar": avatar}
@@ -2965,6 +2982,30 @@ def api_grupo_duelo(d):
     if d.get("acao") == "caixa":
         return pede_g(g, "GET", f"/g/{g['id']}/caixa")
     return pede_g(g, "POST", f"/g/{g['id']}/duelo", {k: d.get(k) for k in ("acao", "para", "id") if k in d})
+
+
+def api_grupo_pacto(d):
+    """{chave, acao: propor {para, nome, dias, pessoal} | aceitar {id, pessoal} | recusar | cancelar {id}}: o pacto de hábito
+    (#172), repassado ao servidor do grupo. O hábito pessoal de quem propõe ou aceita fica no grupo.json (pactos); o grupo
+    recebe só o fez/não fez de cada dia, na próxima sincronização."""
+    g = grupo_da(d.get("chave"))
+    acao, pes = d.get("acao"), str(d.get("pessoal") or "")
+    if acao in ("propor", "aceitar"):
+        j = jogador()
+        if pes not in [h["id"] for h in habitos(j)] + (["duo"] if duo_conf(j) else []):
+            raise Erro("escolha um hábito seu para o pacto")
+    r = pede_g(g, "POST", f"/g/{g['id']}/pacto", {k: d.get(k) for k in ("acao", "para", "nome", "dias", "id") if k in d})
+    if acao in ("propor", "aceitar"):
+        hoje = date.today()
+        with lock:
+            lista = grupos()
+            for x in lista:
+                if chave_grupo(x) == chave_grupo(g):
+                    v = {k: p for k, p in pactos_de(x).items() if date.fromisoformat(p["desde"]) > hoje - timedelta(days=PACTO_JANELA + 7)}
+                    v[str(r["id"])] = {"pes": pes, "desde": hoje.isoformat()}
+                    x["pactos"] = v
+            gravar_json("grupo.json", lista)
+    return r
 
 
 def api_grupo_modalidade(d):
@@ -3313,7 +3354,7 @@ ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/
          "/api/conquistas": api_conquistas, "/api/atualizar": api_atualizar, "/api/canal": api_canal, "/api/temporada": api_temporada, "/api/colecao": api_colecao,
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
          "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
-         "/api/grupo/frase": api_grupo_frase, "/api/grupo/modalidade": api_grupo_modalidade, "/api/grupo/duelo": api_grupo_duelo, "/api/aulas/nova": api_aulas_nova, "/api/aulas/processar": api_aulas_processar,
+         "/api/grupo/frase": api_grupo_frase, "/api/grupo/modalidade": api_grupo_modalidade, "/api/grupo/duelo": api_grupo_duelo, "/api/grupo/pacto": api_grupo_pacto, "/api/aulas/nova": api_aulas_nova, "/api/aulas/processar": api_aulas_processar,
          "/api/aulas/cancela": api_aulas_cancela, "/api/aulas/decidir": api_aulas_decidir, "/api/aulas/apagar": api_aulas_apagar}
 LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/aulas/processar": 1_700_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000, "/api/grupo/host": 140_000_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
