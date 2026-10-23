@@ -73,18 +73,18 @@ const ARTE = {
   'fx-confete':    {st:'fechado', tx:'Aprovado (21/10), agora comum. Feito em código: dois canhões estouram dos cantos de baixo e o papel desce flutuando, girando, virando de face e balançando. O ▶ da nova mostra.'},
   'fx-fogos':      {st:'fechado', tx:'Aprovados (21/10). Feitos em código: foguetes sobem com rastro e estouram com clarão em cinco tipos (peônia, anel, salgueiro, crisântemo, palmeira), com um trio no final. O ▶ da nova mostra.'},
   'fx-shake':      {st:'fechado', tx:'Aprovada (21/10), agora rara. Feita em código: o chefão em fúria solta o Ren, fogo em duas camadas preso ao retrato, línguas que se soltam e brasas; a cada ~2,8 s um acesso com a onda de choque, a veia 💢 e um tranco. Provando, "enfurecer" põe todos os chefões em fúria para ver na aba Chefões.'},
-  'fx-zap':        {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (21/10): fica como está. A ideia de virar o aviso de perigo (fúria, prazo, Ten apagando) foi arquivada junto com as marcas de prazo: volta quando o jogo passar de 8 jogadores ativos.'},
+  'fx-zap':        {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revisto (21/10): fica como está. A ideia de virar o aviso de perigo (fúria, prazo, Ten apagando) foi arquivada junto com as marcas de prazo: volta quando o jogo passar de ' + GB.ATIVOS_MAIS + ' jogadores ativos.'},
   'bd-dupla':      {st:'fechado', sem:true, fixo:'fica a de hoje', tx:'Revista (21/10): fica como está.'},
   'tx-ceu':        {st:'fechado', sem:true, tx:'Fica para depois (21/10): vai ser refeito junto com os temas, no futuro.'},
   'bd-costura':    {st:'fechado', tx:'Nova (21/10), só em código: o fio de nen da Machi dá a volta no card em zigue-zague, faz a curva nos cantos e dá um nó em cada um. Parada; o card não muda de tamanho. Aprovada pelo Caio; falta o outro dev ver.'},
   'tt-medico':     {st:'fechado', sem:true, fixo:'já no jogo', tx:'Novo (21/10): o título Futuro Médico, do Leorio, para quem estuda. É só o texto embaixo do seu andar, como os outros títulos. Falta o Caio aprovar.'},
   'emb-naipe':     {st:'fechado', tx:'Aprovados (20/10): os quatro naipes com os traços do cursor da carta e o Coringa com a estrela e a lágrima.'},
 };
-/* revisão de 21/10: paletas, fontes, títulos e sons ficam como estão (fontes e sons novos só quando o jogo passar de 8 jogadores
+/* revisão de 21/10: paletas, fontes, títulos e sons ficam como estão (fontes e sons novos só quando o jogo passar de 10 (GB.ATIVOS_MAIS) jogadores
    ativos); o mundo pixel foi arquivado (arq no motor.js) */
 const FICA = {pal:'Revista (21/10): fica como está.', title:'Revisto (21/10): fica como está.',
-  font:'Revista (21/10): fica como está. Fontes novas chegam quando o jogo passar de 8 jogadores ativos.',
-  som:'Revisto (21/10): fica como está. Sons novos chegam quando o jogo passar de 8 jogadores ativos.',
+  font:'Revista (21/10): fica como está. Fontes novas chegam quando o jogo passar de ' + GB.ATIVOS_MAIS + ' jogadores ativos.',
+  som:'Revisto (21/10): fica como está. Sons novos chegam quando o jogo passar de ' + GB.ATIVOS_MAIS + ' jogadores ativos.',
   px:'Arquivado (21/10): o mundo pixel saiu da loja. Quem tem continua com ele; ninguém mais compra.',
   full:'Revisto (21/10): inteiro, todas as peças existem e estão à venda; a arte de cada peça é revista no próprio item.'};
 /* as molduras do avatar ficam como estão */
@@ -92,7 +92,7 @@ for(const it of GB.COS) if(it.cat === 'frame' && !ARTE[it.id]) ARTE[it.id] = {st
 for(const it of GB.COS) if(FICA[it.cat] && !ARTE[it.id]) ARTE[it.id] = {st:'fechado', sem:true, fixo: it.arq ? 'arquivado' : it.cat === 'full' ? 'peças revistas' : 'fica a de hoje', tx: FICA[it.cat]};
 /* ideias da fila ainda sem arte: [id, prateleira (cat; ev = na hora da conquista), faixa decidida ('' = a decidir), de quem,
    nome, descrição, status, o que falta]. A Marca de prazo (at-*, fx-hakoware) foi arquivada em 21/10 com o aviso de perigo do
-   Raio: volta quando o jogo passar de 8 jogadores ativos (FILA.md, status pulado) */
+   Raio: volta quando o jogo passar de 10 (GB.ATIVOS_MAIS) jogadores ativos (FILA.md, status pulado) */
 const IDEIAS = [
 ];
 const ITENS_DEV = IDEIAS.map(([id, c, fa, quem, n, d, st, tx]) => {

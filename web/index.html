@@ -872,6 +872,8 @@ a.btn{display:inline-block;text-decoration:none}
 .gnav button[aria-current="page"]{color:var(--ink);background:color-mix(in srgb,var(--volt) 12%,var(--panel2));border-color:color-mix(in srgb,var(--volt) 45%,var(--hair))}
 .gnav .back{color:var(--prompt)}
 .gnav .sp{flex:1}
+.placa-f{grid-column:1/-1;display:flex;gap:14px;align-items:center;border:1px dashed var(--hair);border-radius:12px;padding:18px;color:var(--soft);font-size:13.5px}
+.placa-f>.ic{font-size:26px;color:var(--faint);flex:none} .placa-f>div{display:grid;gap:4px} .placa-f b{color:var(--ink)}
 .gnav .px{border:1px dashed color-mix(in srgb,var(--grn) 55%,var(--hair));color:var(--grn)}
 .gnav .sis{border-color:var(--hair)}
 .gsub{display:flex;gap:4px;flex-wrap:wrap;margin:-8px 0 16px;padding:0 8px}
@@ -1791,6 +1793,8 @@ const tenTxt = T => `${T.cur} ${T.cur===1?'dia':'dias'}`;
 const semana = () => ({n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)});
 const spell = k => SPELLS.find(s => s.k === k);
 const invN = S => Object.values(S.inv).reduce((a,b) => a+b, 0);
+/* feitiços em pausa (GBx.FEITICOS_PAUSA): a placa no lugar deles no Book, na Loja e nas Regras */
+const placaFeit = () => `<div class="placa-f">${ic('card')}<div><b>Feitiços em pausa</b><span>${esc(GBx.FEITICOS_PAUSA)}. Enquanto isso, a missão da semana e a preparação completa dão <b>${fmt(GBx.FEIT_J)} J</b> cada. Os que você já tem continuam guardados.</span></div></div>`;
 const ring = (b,s) => `<span class="ring${b.dead?' dead':''}${b.fury?' fury':''}" style="--p:${pct(b.rest,b.tot)};--s:${s||38}px"><span>${ic(b.ic)}</span></span>`;
 const hpBar = b => `<div class="hp4${b.dead?' dead':''}"><b style="width:${pct(b.rest,b.tot)}%"></b><i style="left:40%"></i></div>`;
 const prepBar = a => a.tot ? `<span class="prep" style="width:90px">${Array.from({length:a.tot},(_,i)=>`<i class="${i<a.ok?'on':''}"></i>`).join('')}</span>` : '';
@@ -1830,7 +1834,7 @@ function buyable(S, kind, k){
 
 /* ---------- B ---------- */
 function linksB(S){
-  return [['b2','spider',ABA.b2.n,`${S.bs.filter(b=>b.dead).length}/5 derrotados · ${S.espera.length} nota aguardando`,'var(--red)'],['bk','card',ABA.bk.n,`${cartas(S).filter(c=>c.on).length} cartas · ${invN(S)} feitiços`,'var(--amb)'],['ms','coin',ABA.ms.n,`${fmt(S.jenny)} J na carteira`,'var(--amb)'],['d2','tower',ABA.d2.n,`semana ${semana().n} de ${semana().tot}`,'var(--volt)'],['px','island','Mundo pixel','mapa, ficha, ilha, loja','var(--grn)']]
+  return [['b2','spider',ABA.b2.n,`${S.bs.filter(b=>b.dead).length}/5 derrotados · ${S.espera.length} nota aguardando`,'var(--red)'],['bk','card',ABA.bk.n,`${cartas(S).filter(c=>c.on).length} cartas`,'var(--amb)'],['ms','coin',ABA.ms.n,`${fmt(S.jenny)} J na carteira`,'var(--amb)'],['d2','tower',ABA.d2.n,`semana ${semana().n} de ${semana().tot}`,'var(--volt)'],['px','island','Mundo pixel','mapa, ficha, ilha, loja','var(--grn)']]
     .map(([t,i,n,s,c]) => `<button class="lk" data-go="${t}"><span class="av" style="--c:${c}">${ic(i)}</span><span>${n}<small>${s}</small></span></button>`).join('');
 }
 /* ---------- Progresso: faixa da Lista, torre detalhada | Nen e chefões | meta do dia e semana ---------- */
@@ -1868,7 +1872,7 @@ function torreN(S){
 }
 function rB(S){
   const fr = S.fraco, mx = Math.max(...S.attr, 1), forte = S.attr.indexOf(Math.max(...S.attr));
-  const nen = NEN.map((l,i) => `<div class="pn-a" style="--c:${NC(i)}" title="${esc(l.s)}">${avNen(i)}<span class="nm">${esc(l.n)}<small>${esc(l.c)}</small>${i === fr && !S.pausa ? `<span class="mi" title="missão da semana: ${esc(l.c)} rende ×1,5 até domingo · ${S.missDias}/3 dias → 1 feitiço">missão ×1,5 ${[0,1,2].map(k => `<i class="${k < S.missDias ? 'on' : ''}"></i>`).join('')}</span>` : ''}</span><span class="lv">nv ${lvA(S.attr[i])}</span><span class="bar"><b style="width:${pct(S.attr[i], mx)}%"></b></span></div>`).join('');
+  const nen = NEN.map((l,i) => `<div class="pn-a" style="--c:${NC(i)}" title="${esc(l.s)}">${avNen(i)}<span class="nm">${esc(l.n)}<small>${esc(l.c)}</small>${i === fr && !S.pausa ? `<span class="mi" title="missão da semana: ${esc(l.c)} rende ×1,5 até domingo · ${S.missDias}/3 dias → ${fmt(GBx.FEIT_J)} J">missão ×1,5 ${[0,1,2].map(k => `<i class="${k < S.missDias ? 'on' : ''}"></i>`).join('')}</span>` : ''}</span><span class="lv">nv ${lvA(S.attr[i])}</span><span class="bar"><b style="width:${pct(S.attr[i], mx)}%"></b></span></div>`).join('');
   const prox = b => b.avs.filter(a => a.st !== 'ok' && a.st !== 'low').sort((p,q) => p.dt.localeCompare(q.dt))[0];
   const bs = S.bs.map(b => { const av = prox(b);
     return `<button class="pn-b${b.dead ? ' dead' : ''}" data-go="b2" title="abrir em ${ABA.b2.n}">${avB(b,38)}<span><span class="nm">${b.n}<small>${b.d}</small></span><span class="pt">${nf(b.pts)}/100 pts${b.fury ? ' · 🔥 fúria' : ''}</span></span>${hpBar(b)}
@@ -1904,7 +1908,7 @@ function rB2(S){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="sub mono">grava em ajustes.txt</span><button class="btn v" data-inbox>enviar</button></div>
     <div class="log">${INBOX.map((m,i) => [m,i]).reverse().map(([m,i]) => `<div class="${m.st==='ok'?'':'p'}"><small>${GBx.brDatas(m.d)} · ${m.st==='ok'?'aplicado':'pendente'} <button class="go" data-aplic="${i}">${m.st==='ok'?'voltar a pendente':'marcar aplicado'}</button></small>${esc(m.t)}${m.r?`<small>→ ${esc(m.r)}</small>`:''}</div>`).join('')}</div>`;
   /* nos Chefões novos, o "como ler" fica fechado numa linha */
-  const leg = `<p style="margin:0;font-size:13.5px">A barra é a <b>vida</b> do chefão e só cai com nota: cada avaliação tira peso × nota. Passou da linha verde (média 6), ele cai. As tarefas enchem a <b>preparação</b> e dão XP. Preparação completa antes da data vale um feitiço, seja qual for a nota.</p><p style="margin:8px 0 0;font-size:13.5px">O <span class="mono">→ P2</span> ao lado de cada tarefa é a avaliação que ela prepara (passe o mouse para ver por quê). Para trocar, edite a tarefa na Lista e escreva <span class="mono">av:P1</span>.</p>`;
+  const leg = `<p style="margin:0;font-size:13.5px">A barra é a <b>vida</b> do chefão e só cai com nota: cada avaliação tira peso × nota. Passou da linha verde (média 6), ele cai. As tarefas enchem a <b>preparação</b> e dão XP. Preparação completa antes da data vale ${fmt(GBx.FEIT_J)} J, seja qual for a nota.</p><p style="margin:8px 0 0;font-size:13.5px">O <span class="mono">→ P2</span> ao lado de cada tarefa é a avaliação que ela prepara (passe o mouse para ver por quê). Para trocar, edite a tarefa na Lista e escreva <span class="mono">av:P1</span>.</p>`;
   document.getElementById('b2-leg').innerHTML = (nova ? `<button type="button" class="cn-leg" data-cnleg aria-expanded="${!!UI.cnleg}"><span class="c">~/</span>como ler<span style="margin-left:auto">${UI.cnleg ? '▾' : '▸'}</span></button>${UI.cnleg ? leg : ''}` : `<h2><span class="c">~/</span>como ler</h2>${leg}`)
     + (SIM.size||Object.keys(NOTAS).length?'<button class="reset" data-reset style="margin-top:10px">desfazer simulação</button>':'');
 }
@@ -1934,7 +1938,7 @@ function avRowCN(b, a){
 function corpoCN(b){
   return `<div class="cn-c"><div class="cn-s"><h4>avaliações</h4>${b.avs.length ? b.avs.map(a => avRowCN(b, a)).join('') : '<p class="sub">Nenhuma avaliação ainda: use "editar avaliações e notas".</p>'}</div>
     <div class="cn-s"><h4>tarefas pendentes<small>${b.open.length}</small></h4>${b.open.length > 6 ? `<button class="go" data-go="l" style="float:right;margin-top:-18px">+ ${b.open.length - 6} na Lista →</button>` : ''}${b.open.length ? b.open.slice(0, 6).map(t => `<button class="tk" data-hit="${t.n}">${avTask(t,22)}<span class="t">${esc(t.txt)}${ligTxt(b,t)}</span><span class="v" style="color:var(--volt)">+${xpDe({...t,done:HOJE})}</span></button>`).join('') : '<p class="sub">nada pendente</p>'}
-      <div class="drop">${ic('card')} preparação completa antes da data: 1 feitiço à escolha</div></div>
+      <div class="drop">${ic('card')} preparação completa antes da data: ${fmt(GBx.FEIT_J)} J</div></div>
     <div class="cn-op"><button type="button" class="btn" data-cedit="${b.d}">editar avaliações e notas</button>${iconeHTML(b)}</div></div>`;
 }
 /* ---------- D2 ---------- */
@@ -2054,13 +2058,13 @@ function zetsuOps(S){
 }
 function rBK(S){
   const C = cartas(S), narr = C.filter(c => c.o === 'claude'), cia = C.filter(c => c.o === 'ia');
-  document.getElementById('bk-prog').innerHTML = [['conquistas',`${C.filter(c=>c.o==='slot'&&c.on).length + cia.filter(c=>c.resgate).length}/${C.filter(c=>c.o==='slot').length + cia.filter(c=>c.resgate).length}`,'gerais, Ten, hábitos, chefões e os desafios da IA conquistados'],['desafios da IA',`${cia.filter(c=>!c.resgate).length}/${GBx.CONQ_MAX}`,'4 fáceis, 3 médias, 2 difíceis e 1 lendária'],['narradas',`${narr.length}`,'semanais, mensais, semestrais e anuais'],['feitiços',`${invN(S)}`,`expiram em ${ddmm(TEMP.volta)} (volta às aulas)`]]
+  document.getElementById('bk-prog').innerHTML = [['conquistas',`${C.filter(c=>c.o==='slot'&&c.on).length + cia.filter(c=>c.resgate).length}/${C.filter(c=>c.o==='slot').length + cia.filter(c=>c.resgate).length}`,'gerais, Ten, hábitos, chefões e os desafios da IA conquistados'],['desafios da IA',`${cia.filter(c=>!c.resgate).length}/${GBx.CONQ_MAX}`,'4 fáceis, 3 médias, 2 difíceis e 1 lendária'],['narradas',`${narr.length}`,'semanais, mensais, semestrais e anuais']]
     .map(([s,b,m]) => `<div class="k"><span>${s}</span><b>${b}</b><small>${m}</small></div>`).join('');
   document.getElementById('bk-tabs').innerHTML = [['slot','Conquistas'],['ia','Desafios da IA'],['claude','Narradas'],['feit','Feitiços']].map(([k,n]) => `<button data-bk="${k}" aria-pressed="${UI.bk===k}">${n}</button>`).join('');
   const carta = c => `<button class="gc claude" data-bksel="${esc(c.no)}" aria-pressed="${UI.bksel===c.no}"><span class="no">${esc(c.periodo||'')}</span><span class="rk">${c.rk}</span><span class="big">${ic(c.ic)}</span><div><div class="og">${({semana:'semanal',mes:'mensal',semestre:'semestral',ano:'anual'})[c.tipo]||'narrada'}</div><div class="gn">${esc(c.n)}</div></div></button>`;
   if(UI.bk === 'ia' && window.GB_CONQ){ window.GB_CONQ.book(S, cia); return; }
   let items;
-  if(UI.bk === 'feit') items = SPELLS.map(s => { const q = S.inv[s.k]||0; return `<button class="gc sp" data-bksel="F:${s.k}" aria-pressed="${UI.bksel==='F:'+s.k}" style="${q?'':'opacity:.55'}"><span class="no">×${q}</span><span class="big">${ic(s.ic)}</span><div><div class="og">feitiço</div><div class="gn">${s.n}</div></div></button>`; }).join('');
+  if(UI.bk === 'feit') items = placaFeit();
   else if(UI.bk === 'claude') items = TIERS.map(([t,n,d]) => { const cs = narr.filter(c => c.tipo === t).sort((p,q) => String(q.periodo).localeCompare(String(p.periodo)));
       return `<div style="grid-column:1/-1;margin-top:6px"><p class="cap" style="margin:6px 0 0">${n} · ${d}</p></div>${cs.map(carta).join('')}<div class="gc empty" style="font-size:12px;text-align:center;padding:10px">${espera(t)}</div>`; }).join('');
   else { /* a coleção (0.6.4): só as cartas que existem no seu jogo, sem casas vazias (conquistadas primeiro), e os desafios da IA já resgatados */
@@ -2070,9 +2074,7 @@ function rBK(S){
     items = sec('conquistadas', feitas) + sec('desafios da IA conquistados', iaOk) + sec('ainda não', falta); }
   document.getElementById('bk-grid').innerHTML = items;
   let det;
-  if(UI.bksel.startsWith('F:')){ const s = spell(UI.bksel.slice(2)), q = S.inv[s.k]||0;
-    det = `<div class="face" style="color:var(--aura);border-color:var(--aura)">${ic(s.ic)}</div><p class="cap">feitiço · na bolsa: ${q}</p><h3>${s.n}</h3><p>${s.e}</p><p class="sub">${s.noshop ? 'Vem da preparação completa antes de uma avaliação e de cada missão da semana cumprida.' : `Loja: ${fmt(s.p)} J (1 por semana). Também vem da preparação completa ou da missão da semana, como "à escolha".`} Expira em ${ddmm(TEMP.volta)}.</p>${q ? usoHTML(S, s) : ''}
-      ${S.usos.length ? `<p class="cap" style="margin-top:14px">usados</p>${S.usos.slice(-5).reverse().map(u => `<div class="sub">${ddmm(u.d)} · ${spell(u.ef||u.k).n}${u.k==='escolha'?' (à escolha)':''}${u.ef==='gyo'?' → '+NEN[+u.alvo].n:''}${u.ef==='ken'?' → '+esc(String(u.alvo).slice(0,40)):''}${u.ef==='zetsu'&&u.zalvo?' → '+(u.zalvo==='ten'?'Ten':esc(((CTX.JOG.habitos||[]).find(h => h.id===u.zalvo)||{n:u.zalvo==='duo'?'Duolingo':u.zalvo}).n))+' de '+ddmm(u.zdia):''}</div>`).join('')}` : ''}`; }
+  if(UI.bk === 'feit') det = `<div class="face" style="color:var(--faint);border-color:var(--hair)">${ic('card')}</div><p class="cap">feitiços</p><h3>Em pausa</h3><p>${esc(GBx.FEITICOS_PAUSA)}.</p><p class="sub">A missão da semana e a preparação completa dão Jenny no lugar.</p>`;
   else if(UI.bk === 'slot' && cia.some(c => c.resgate && c.no === UI.bksel) && window.GB_CONQ) det = window.GB_CONQ.det(cia.find(c => c.no === UI.bksel));
   else { const c = C.find(c => c.no === UI.bksel) || (UI.bk === 'claude' ? narr[0] : C[0]);
     det = !c ? `<p class="sub">Nenhuma carta narrada ainda. ${espera('semana')}.</p>` : `<div class="face"${c.o==='claude'?' style="color:var(--volt);border-color:var(--volt)"':''}>${ic(c.ic)}</div><p class="cap">${c.o==='claude' ? `${({semana:'semanal · comum',mes:'mensal',semestre:'semestral · rara',ano:'anual · lendária'})[c.tipo]||'narrada'} · ${esc(c.periodo||'')}` : `Nº ${c.no} · rank ${c.rk} · ${OG[c.o]}`}</p><h3>${esc(c.n)}</h3>${c.cron ? `<p class="cron" style="white-space:pre-line">${esc(c.cron)}</p><p class="cap" style="margin:14px 0 4px">o que aconteceu</p>` : ''}<p style="white-space:pre-line">${esc(c.d)}</p><p class="sub">${c.o==='slot' ? (c.on ? 'No livro.' : 'Ainda não.') : 'Narrada com IA a partir do que aconteceu de verdade' + (c.escrita ? ` · ${ddmm(c.escrita)}` : '') + '.'}</p>`; }
@@ -2179,9 +2181,9 @@ function detHTML(S, it){
   return `<div class="it7 det7${p.cls}"><button type="button" class="x7" data-isel="" aria-label="fechar">×</button>${pvHTML(it)}<div class="info">${sl ? `<div class="sl7">${sl}</div>` : ''}<b>${esc(it.n)}</b><p>${esc(it.d)}</p>${p.tem}${window.GB_ARTE ? GB_ARTE.aviso(it.id) : ''}<div class="buy7">${p.pr}<span style="display:flex;gap:6px">${p.ver}${p.btn}</span></div></div></div>`;
 }
 /* fontes e sons novos só entram na loja quando o jogo tiver mais gente: evita horas de arte para quase ninguém */
-const MAIS_ITENS = 'Quando o jogo passar de 8 jogadores ativos, chegam mais.';
+const MAIS_ITENS = `Quando o jogo passar de ${GBx.ATIVOS_MAIS} jogadores ativos, chegam mais.`;
 const SECS = {
-  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma. Quando o jogo passar de 8 jogadores ativos, chegam os efeitos de aviso: perigo, prazo e tarefa atrasada.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez. ' + MAIS_ITENS],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações. ' + MAIS_ITENS],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
+  aparencia:[['avatar','Fotos de perfil','O rosto das páginas do jogo. No painel fica sempre o símbolo da Associação. Fotos novas chegam com as atualizações do jogo.'],['pal','Paletas','Só as cores. A Simples vem com o jogo.'],['tex','Texturas de fundo','Um padrão atrás de todas as telas. Um por vez.'],['fx','Efeitos na tela','Animações compradas uma a uma. Dá para ligar e desligar cada uma. Quando o jogo passar de ' + GBx.ATIVOS_MAIS + ' jogadores ativos, chegam os efeitos de aviso: perigo, prazo e tarefa atrasada.'],['fxev','Na hora da conquista','Disparam quando você conclui uma tarefa ou sobe de andar. O ▶ mostra antes de comprar.'],['hover','Hover nos cards','O que acontece quando o mouse passa por um card. Um por vez, fora o Gyo.'],['borda','Bordas dos cards','A borda de todos os cards do jogo. Uma por vez.'],['cursor','Cursores','O ponteiro do mouse. Um por vez.'],['hp','Barra de HP dos chefões','A vida dos chefões nas abas Progresso e Chefões. Uma por vez.'],['heat','Heatmap da constância','Os quadradinhos da constância, na Lista. Um por vez.'],['trans','Troca de aba','O que acontece ao trocar de aba. Uma por vez.'],['frame','Molduras do avatar',''],['title','Títulos','Aparecem embaixo do andar, no card e na ficha.'],['font','Fontes','A letra dos títulos e dos números. Uma por vez. ' + MAIS_ITENS],['som','Sons','Tocam ao concluir uma tarefa e no andar novo. Um por vez; o ▶ toca antes de comprar. Dá para desligar em Configurações. ' + MAIS_ITENS],['full','Pacotes','Paleta, fundo e efeitos juntos. O preço desconta as peças que você já tem; com tudo seu, o pacote equipa tudo de uma vez.']],
   pixel:[['px','Mundo pixel','Arquivado: o mundo pixel saiu da loja. O que você tem continua seu, mas ninguém mais compra.']],
 };
 /* as famílias da Aparência: [chave, nome, descrição, prateleiras na ordem em que aparecem] */
@@ -2251,8 +2253,7 @@ function rMS(S){
       + (UI.cat==='aparencia' ? '<p class="sub nx7">Na próxima temporada (2027-1): os rostos das Formigas Quimera, uma paleta nova e itens com o tema dos novos chefões.</p>' : '');
   }
   else if(UI.cat === 'premios') main = UI.pedit ? premiosEditor(S) : premiosHTML(S);
-  else main = `<div class="sec7"><h3>Feitiços</h3><p>Também vêm da preparação completa e da missão da semana. Limite de 1 de cada por semana na loja. Expiram em ${ddmm(TEMP.volta)}.</p><div class="items">${SPELLS.filter(s => !s.noshop).map(s => { const [ok,why] = buyable(S,'s',s.k);
-      return `<div class="it7"><div class="pv real" style="${palStyle(UI.theme)}"><span class="av" style="--c:var(--aura)">${ic(s.ic)}</span><span>na bolsa: ${S.inv[s.k]||0}</span></div><div class="info"><b>${s.n}</b><p>${s.e}</p><div class="buy7"><span class="pr">${fmt(s.p)} J</span><button class="btn" data-buy="s:${s.k}" ${ok?'':'disabled'}>${ok?'comprar':why}</button></div></div></div>`; }).join('')}</div></div>`;
+  else main = `<div class="sec7"><h3>Feitiços</h3><div class="items">${placaFeit()}</div></div>`;
   const selIt = UI.isel && (window.GB_ARTE ? COS.concat(GB_ARTE.ideias) : COS).find(i => i.id === UI.isel);
   const eqs = [['Paleta', (THEMES.find(t => t[0]===UI.theme)||[0,UI.theme])[1]], ['Foto', (COS.find(i => i.id === 'av-' + UI.avatar) || GBx.catalogo([UI.avatar]).slice(-1)[0]).n], ['Fundo', UI.bg || '—'], ['Efeitos', UI.fxOff ? 'desligados' : (UI.fx.join(', ') || 'nenhum')], ['Moldura', UI.frame || '—'], ['Título', UI.title || '—'], ['Fonte', UI.font || 'padrão'], ['Som', !UI.som ? 'nenhum' : somOff() ? UI.som + ' (desligado)' : UI.som], ['Chefões', (n => n ? `${n} com retrato` : 'ícones padrão')(S.bs.filter(retratoDe).length)], ...SLOTS.filter(k => UI[k]).map(k => [{borda:'Borda', hover:'Hover', cursor:'Cursor', hp:'HP', heat:'Constância', trans:'Troca de aba'}[k], UI[k]])]
     .filter(([, v]) => !['—', 'nenhum', 'padrão', 'ícones padrão'].includes(v));
@@ -2261,7 +2262,7 @@ function rMS(S){
     <div class="lay7"><div>${main}</div>
       <div class="side7">${selIt ? detHTML(S, selIt) : ''}
         <div class="card"><h2><span class="c">~/</span>carteira</h2><div class="wal7">${fmt(S.jenny)} J<small>${TESTE ? 'modo teste: nada fica guardado' : 'disponível'}</small></div>${podeTeste() ? `<button type="button" class="btn${TESTE ? '' : ' v'}" data-teste="${TESTE ? 0 : 1}" style="margin:8px 0 2px">${TESTE ? 'sair do modo teste' : 'modo teste: Jenny infinita'}</button><p class="sub" style="margin:4px 0 0">${TESTE ? 'Feitiços e prêmios reais ficam fora do teste.' : 'Só nas versões de teste (beta e grupo). Experimente os itens sem gastar; ao sair, tudo volta como estava.'}</p>` : ''}
-          <details class="flow7"><summary>de onde veio a Jenny</summary><div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.contribJ ? `<div style="display:flex;justify-content:space-between" title="bugs corrigidos e ideias feitas que você abriu no GitHub (o XP delas já está no XP × 10)"><span>contribuições (${S.contrib.length})</span><b style="color:var(--ink)">+${fmt(S.contribJ)}</b></div>` : ''}${S.retJ ? `<div style="display:flex;justify-content:space-between" title="os retratos de chefão ficaram grátis: a Jenny que você pagou por eles voltou, e os retratos continuam seus"><span>retratos devolvidos</span><b style="color:var(--ink)">+${fmt(S.retJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></details></div>
+          <details class="flow7"><summary>de onde veio a Jenny</summary><div class="flow4" style="display:grid;gap:4px;font:12.5px var(--f-mono);color:var(--soft);margin:10px 0"><div style="display:flex;justify-content:space-between"><span>XP × 10</span><b style="color:var(--ink)">+${fmt(S.total*10)}</b></div><div style="display:flex;justify-content:space-between"><span>bônus de notas</span><b style="color:var(--ink)">+${fmt(S.bonusNotas)}</b></div>${S.conqJ ? `<div style="display:flex;justify-content:space-between"><span>conquistas da IA</span><b style="color:var(--ink)">+${fmt(S.conqJ)}</b></div>` : ''}${S.contribJ ? `<div style="display:flex;justify-content:space-between" title="bugs corrigidos e ideias feitas que você abriu no GitHub (o XP delas já está no XP × 10)"><span>contribuições (${S.contrib.length})</span><b style="color:var(--ink)">+${fmt(S.contribJ)}</b></div>` : ''}${S.feitJ ? `<div style="display:flex;justify-content:space-between" title="com os feitiços em pausa, cada missão da semana e cada preparação completa valem ${fmt(GBx.FEIT_J)} J"><span>missões e preparações</span><b style="color:var(--ink)">+${fmt(S.feitJ)}</b></div>` : ''}${S.retJ ? `<div style="display:flex;justify-content:space-between" title="os retratos de chefão ficaram grátis: a Jenny que você pagou por eles voltou, e os retratos continuam seus"><span>retratos devolvidos</span><b style="color:var(--ink)">+${fmt(S.retJ)}</b></div>` : ''}${S.acerto ? `<div style="display:flex;justify-content:space-between" title="a carteira nunca fica negativa por uma conta refeita: peso de prova mudado depois do gasto (0.5.2) ou nota corrigida para menos (0.5.3)"><span>acertos</span><b style="color:var(--ink)">+${fmt(S.acerto)}</b></div>` : ''}<div style="display:flex;justify-content:space-between"><span>gasto</span><b style="color:var(--ink)">−${fmt(SPENT)}</b></div></div></details></div>
         ${cofreOn() ? `<div class="card"><h2><span class="c">~/</span>cofre do mês</h2><div class="wal7" style="font-size:22px">R$ ${fmt(cofreTotal() - COFRE_USADO)}<small>R$ ${fmt(GBx.cofreMes(EST))} por mês, acumula · usado R$ ${fmt(COFRE_USADO)}</small></div><div class="cofre"><b style="width:${pct(cofreTotal()-COFRE_USADO, cofreTotal())}%"></b></div></div>` : ''}
         <div class="card"><h2><span class="c">~/</span>usando agora</h2><div class="eqlist">${eqs.map(([a,b]) => `<div><span>${a}</span><span>${esc(b)}</span></div>`).join('')}</div></div>
         ${RESG.length ? `<div class="card"><h2><span class="c">~/</span>resgatados</h2><ul class="got">${RESG.map(r => `<li style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:13px"><span>${esc(r)}</span><span class="sub">${ddmm(HOJE)}</span></li>`).join('')}</ul></div>` : ''}
@@ -2319,7 +2320,7 @@ function rMAP(S){
       <span class="node lock" style="left:88%;top:12%"><span class="ico">${ic('crown')}</span><span>TORNEIO · 251</span></span>
     </div>
     <div class="side">
-      <div class="win"><h4>${pxNome(1)}</h4><dl><dt>Andar</dt><dd>${S.a.n}</dd><dt>XP</dt><dd>${S.a.into}/${S.a.need}</dd><dt>Ten</dt><dd>${tenTxt(S.ten)}</dd><dt>Jenny</dt><dd>${fmt(S.jenny)}</dd><dt>Feitiços</dt><dd>${invN(S)}</dd></dl></div>
+      <div class="win"><h4>${pxNome(1)}</h4><dl><dt>Andar</dt><dd>${S.a.n}</dd><dt>XP</dt><dd>${S.a.into}/${S.a.need}</dd><dt>Ten</dt><dd>${tenTxt(S.ten)}</dd><dt>Jenny</dt><dd>${fmt(S.jenny)}</dd></dl></div>
       ${sel ? `<div class="win"><h4>MASMORRA · ${sel.d}</h4><div style="display:flex;gap:10px;align-items:center"><span style="font-size:34px;color:var(--r)">${ic(sel.ic)}</span><b style="font:700 16px var(--f-px)">${sel.n}</b></div>
         <div class="leg">${sel.avs.map(a => `<div>${a.k} · ${a.w}% · ${stTxt(a)}</div>`).join('')}</div><div style="font-size:13px;color:#AFC3FF">${needTxt(sel).replace(/<\/?b>/g,'')}</div></div>` : ''}
       <div class="win"><h4>LUGARES</h4><div class="leg"><div>${ic('tower')} Arena → ficha</div><div>${ic('coin')} Masadora → loja</div><div>${ic('island')} Greed Island → Book</div><div>${ic('crown')} Torneio: trancado até o 251</div></div></div>
@@ -2342,7 +2343,7 @@ function rP1(S){
       <div class="px" style="--h:var(--but)"><h3><i>3</i>GANHE XP</h3><div class="bd"><table><tr><td>★ Entrega</td><td>+25</td></tr><tr><td>★ Estudo</td><td>+15</td></tr><tr><td>★ Outra</td><td>+10</td></tr><tr><td>★ Rotina</td><td>+5</td></tr><tr><td>★ No prazo</td><td>×1,5</td></tr><tr><td>★ Missão / fúria</td><td>×1,5</td></tr></table></div></div>
       <div class="px w2" style="--h:var(--pink)"><h3><i>4</i>CHEFÕES: A VIDA É A NOTA</h3><div class="bd">
         ${S.bs.map(b => `<div style="display:grid;grid-template-columns:22px 92px minmax(0,1fr) 92px;gap:8px;align-items:center;font-size:13px"><span style="color:var(--red8)">${ic(b.ic)}</span><span>${b.n}</span><span class="hp8"><b style="width:${pct(b.rest,b.tot)}%"></b></span><span style="font:700 10px var(--f-pxl);text-align:right">${b.d} ${nf(b.pts)}/100</span></div>`).join('')}
-        <div class="tip">MÉDIA ${MEDIA} DERRUBA. PREPARAÇÃO COMPLETA = 1 FEITIÇO.</div></div></div>
+        <div class="tip">MÉDIA ${MEDIA} DERRUBA. PREPARAÇÃO COMPLETA = ${fmt(GBx.FEIT_J)} J.</div></div></div>
       <div class="px" style="--h:var(--teal)"><h3><i>5</i>META DO DIA</h3><div class="bd"><div>Codeforces</div><div class="cf8">${[0,1,2].map(()=>`<i class="${cf&&cf.ok?'on':''}"></i>`).join('')}<i class="bn"></i><i class="bn"></i><i class="bn"></i></div>
         <div style="font-size:12.5px;color:var(--ps)">+5 XP por questão (até 6 no dia). Bater 3: bônus +10.</div>${S.rot.filter(t => t !== cf).map(t => `<div>${t.ok?'■':'□'} ${esc(t.txt)}</div>`).join('')}</div></div>
       <div class="px" style="--h:var(--lav)"><h3><i>6</i>BOLSA</h3><div class="bd">${Object.entries(S.inv).filter(([,q])=>q).map(([k,q]) => `<div>${ic(spell(k).ic)} ${spell(k).n} ×${q}</div>`).join('') || '<div>vazia</div>'}<div class="tip">${fmt(S.jenny)} J · EXPIRAM ${ddmm(TEMP.volta)}</div></div></div>
@@ -2355,19 +2356,18 @@ function rP1(S){
 function rP3(S){
   const el = document.getElementById('p3-root');
   const C = cartas(S), by = Object.fromEntries(C.map(c => [c.no,c]));
-  const pages = [[0,19],[20,39],[40,59],[60,79],[80,99],['narr'],['feit']], pg = pages[UI.page];
+  const pages = [[0,19],[20,39],[40,59],[60,79],[80,99],['narr']], pg = pages[Math.min(UI.page, 5)];
   let slots;
-  if(pg[0] === 'feit') slots = SPELLS.map(s => `<button class="sl has feitico" data-card="F:${s.k}" aria-pressed="${UI.sel==='F:'+s.k}"><span>${(S.inv[s.k]||0)?'×'+S.inv[s.k]:'—'}</span>${ic(s.ic)}<span>${esc(s.n.split(' ')[0])}</span></button>`).join('');
-  else if(pg[0] === 'narr') slots = ['117','118','119','120','121'].map(no => { const c = by[no]; return `<button class="sl${c?' has claude':''}" data-card="${no}" aria-pressed="${no===UI.sel}"><span>${no}</span>${c?ic(c.ic)+`<span>${esc(c.n.split(' ')[0])}</span>`:'<span></span><span></span>'}</button>`; }).join('');
+  if(pg[0] === 'narr') slots = ['117','118','119','120','121'].map(no => { const c = by[no]; return `<button class="sl${c?' has claude':''}" data-card="${no}" aria-pressed="${no===UI.sel}"><span>${no}</span>${c?ic(c.ic)+`<span>${esc(c.n.split(' ')[0])}</span>`:'<span></span><span></span>'}</button>`; }).join('');
   else slots = Array.from({length:20},(_,i) => String(pg[0]+i).padStart(3,'0')).map(no => { const c = by[no]; return `<button class="sl${c?' has '+(c.on?'on':''):''}" data-card="${no}" aria-pressed="${no===UI.sel}"><span>${no}</span>${c?`<span class="rk">${c.rk}</span>${ic(c.ic)}<span>${esc(c.n.split(' ')[0])}</span>`:'<span class="rk">?</span><span></span><span></span>'}</button>`; }).join('');
   let det;
   if(UI.sel.startsWith('F:')){ const s = spell(UI.sel.slice(2)); det = `<div class="big" style="color:var(--a);border-color:var(--a)">${ic(s.ic)}</div><span class="og">FEITIÇO · NA BOLSA: ${S.inv[s.k]||0}</span><h4>${s.n}</h4><p>${s.e}</p><p style="color:var(--dim)">${s.noshop?'Vem da preparação completa.':`Loja ${fmt(s.p)} J, preparação completa ou missão.`} Expira em ${ddmm(TEMP.volta)}.</p>`; }
   else { const c = by[UI.sel]; det = c ? `<div class="big">${ic(c.ic)}</div><span class="og">Nº ${c.no} · RANK ${c.rk} · ${OG[c.o].toUpperCase()}</span><h4>${esc(c.n)}</h4><p>${esc(c.d)}</p><p style="color:${c.on?'var(--gold)':'var(--dim)'}">${c.o==='slot'?(c.on?'■ NO LIVRO':'□ AINDA NÃO'):'EXEMPLO'}</p>` : '<p>Espaço vazio.</p>'; }
   el.innerHTML = `
-    <div class="top"><h2>${ic('island')} GREED ISLAND · BOOK</h2><span>CONQUISTAS ${C.filter(c=>c.o==='slot'&&c.on).length}/${C.filter(c=>c.o==='slot').length} · FEITIÇOS ${invN(S)}</span></div>
+    <div class="top"><h2>${ic('island')} GREED ISLAND · BOOK</h2><span>CONQUISTAS ${C.filter(c=>c.o==='slot'&&c.on).length}/${C.filter(c=>c.o==='slot').length}</span></div>
     <div class="lay">
       <div class="bx lic8"><h3>LICENÇA</h3><div class="fr" style="background-image:url(${pxFoto()})"></div><b>${pxNome(1)}</b><dl class="kv"><dt>Andar</dt><dd>${S.a.n}</dd><dt>Jenny</dt><dd>${fmt(S.jenny)}</dd><dt>Ten</dt><dd>${tenTxt(S.ten)}</dd><dt>Modo</dt><dd>Arena</dd></dl></div>
-      <div class="bx"><div class="pages">${pages.map((p,i) => `<button data-page="${i}" aria-pressed="${i===UI.page}">${p[0]==='narr'?'NARRADAS':p[0]==='feit'?'FEITIÇOS':String(p[0]).padStart(3,'0')+'-'+String(p[1]).padStart(3,'0')}</button>`).join('')}</div><div class="slots8">${slots}</div></div>
+      <div class="bx"><div class="pages">${pages.map((p,i) => `<button data-page="${i}" aria-pressed="${i===UI.page}">${p[0]==='narr'?'NARRADAS':String(p[0]).padStart(3,'0')+'-'+String(p[1]).padStart(3,'0')}</button>`).join('')}</div><div class="slots8">${slots}</div></div>
       <div class="bx det"><h3>CARTA</h3>${det}</div></div>
     <div class="how"><div class="bx"><b style="color:var(--gold)">000–099 · CONQUISTAS</b><p>Regras fixas, conferidas pelo jogo: gerais e quatro por disciplina.</p></div><div class="bx"><b style="color:var(--v)">100+ · NARRADAS</b><p>Com IA (opcional): o jogo monta o pedido com os seus fatos reais e você cola a carta de volta.</p></div><div class="bx"><b style="color:var(--a)">FEITIÇOS</b><p>Loja, preparação completa e missão. Expiram na volta às aulas.</p></div></div>`;
 }
@@ -2380,12 +2380,12 @@ function rP3b(S){
     <div class="sign"><h2>MASADORA · LOJA DE CARTAS</h2><p>CARTEIRA: ${fmt(S.jenny)} J · CLIQUE PARA COMPRAR</p></div>
     <div class="lay">
       <div class="shelf8"><h3>PRATELEIRA 1 · PRÊMIOS REAIS</h3>${meusPremios().map((x,k) => { const ok = podeResgatar(S, x); return `<button class="it" data-real="${k}" aria-disabled="${!ok}" title="${ok?'resgatar':'jenny ou cofre insuficiente'}">${ic(x.ic || (x.rs ? 'coin' : 'card'))}<span><b>${esc(x.n)}</b><small>${GBx.esforcoTxt(x.p, GBx.esforco(S.xpDia, HOJE))}${x.rs?` · até R$ ${fmt(x.rs)}${cofreOn() ? ' do cofre' : ''}`:''}</small></span><span class="pr">${fmt(x.p)} J</span></button>`; }).join('')}</div>
-      <div class="shelf8"><h3>PRATELEIRA 2 · FEITIÇOS</h3>${SPELLS.filter(s => !s.noshop).map(s => it('s',s.k,s.ic,s.n,s.e,s.p,true)).join('')}</div>
+      
       <div class="bag"><h3>BOLSA</h3><div class="coin">${fmt(S.jenny)} J</div>
         <div class="slot9">${Array.from({length:9},(_,i) => { const x = bag[i]; return x ? `<div class="f" title="${spell(x[0]).n}">${ic(spell(x[0]).ic)}<em>×${x[1]}</em></div>` : '<div></div>'; }).join('')}</div>
         <div class="got8">${RESG.length ? RESG.map(r => `<div>■ ${esc(r)}</div>`).join('') : 'Nenhum prêmio resgatado.'}</div>${SPENT?'<button class="reset" data-reset>desfazer compras</button>':''}</div>
     </div>
-    <div class="how8"><div><b>DE ONDE VEM A JENNY</b>Cada XP vale 10 J. Nota ≥ ${MEDIA} dá bônus: nota × peso × 5.</div><div><b>FEITIÇO SEM COMPRAR</b>Preparação completa antes da avaliação, ou a missão da semana.</div><div><b>VALIDADE</b>Feitiços expiram na volta às aulas (${ddmm(TEMP.volta)}). Nas férias, use à vontade.</div></div>`;
+    <div class="how8"><div><b>DE ONDE VEM A JENNY</b>Cada XP vale 10 J. Nota ≥ ${MEDIA} dá bônus: nota × peso × 5.</div><div><b>FEITIÇOS</b>${esc(GBx.FEITICOS_PAUSA)}. Missão da semana e preparação completa: ${fmt(GBx.FEIT_J)} J cada.</div></div>`;
 }
 /* ---------- atalhos das páginas limpas ---------- */
 /* nome base de cada aba (fixo, #15) e o do tema desta temporada, que aparece ao passar o mouse */
@@ -2465,7 +2465,7 @@ function rSys(S){
   const conta = (titulo, partes, total) => `<div class="rg-conta"><span class="rg-ct">${titulo}</span><span class="rg-f">${partes.map(p => `<i>${p}</i>`).join('<em>×</em>')}<em>=</em><b>${total}</b></span></div>`;
   const nvs = Array.from({length:H.HAB_NV_MAX}, (_, i) => i + 1), tempo = nv => { let d = 0; for(let k = 1; k < nv; k++) d += H.habPede(k, 0); return d; };
   const sec = (id, icn, t, sub) => `<div class="rg-sec" id="rg-${id}"><span class="av" style="--s:30px">${ic(icn)}</span><div><h2>${t}</h2>${sub ? `<p>${sub}</p>` : ''}</div></div>`;
-  const ind = [['xp','XP'],['mult','multiplicadores'],['hab','hábitos'],['ten','Ten'],['torre','torre'],['jenny','Jenny'],['chefao','chefões'],['cartas','cartas e feitiços']];
+  const ind = [['xp','XP'],['mult','multiplicadores'],['hab','hábitos'],['ten','Ten'],['torre','torre'],['jenny','Jenny'],['chefao','chefões'],['cartas','cartas e missão']];
   const RK = H.CONQ_RK;
   document.getElementById('sys-root').innerHTML = `
     <div class="card rg-hero"><p class="cap">como o jogo conta</p><p class="rg-frase">Tarefa feita vira <b>XP</b>. XP sobe a <b>torre</b> e vira <b>Jenny</b> (×10). Dia com tarefa acende o <b>Ten</b>. Nota tira vida do <b>chefão</b>.</p>
@@ -2494,7 +2494,6 @@ function rSys(S){
         linha('feita até o prazo (<span class="mono">due:</span>)', `<b>${x15}</b>`, 'não vale para hábitos'),
         linha('missão da semana: tarefa do atributo mais fraco', `<b>${x15}</b>`, 'o atributo é escolhido na segunda; pausa nas férias'),
         linha('chefão em fúria: tarefa da disciplina', `<b>${x15}</b>`, 'até a próxima avaliação'),
-        linha('feitiço Ko (próxima tarefa) · Acompanhar (próxima entrega)', '<b>×2</b>', ''),
         linha('hábito semanal feito acima da meta', `<b>×${H.HAB_EXTRA}</b>`, '"fiz de novo"')])}
       <div class="rg-contas">
         ${conta('entrega no prazo (25 × 1,5, arredondado)', ['25', '1,5'], '38 XP')}
@@ -2509,7 +2508,6 @@ function rSys(S){
         <p><b>Falhar:</b> um dia sem o hábito derruba <b>um</b> nível, nunca zera, e a contagem recomeça. Hoje só conta depois que acaba. Nas férias não cai.</p>
         <p><b>Semanal</b> (ex.: academia 2× por semana): o mesmo, contando semanas com a meta batida.</p>
         <p><b>Duolingo</b> é um hábito como os outros; os dias de antes de você ligar não dão XP. <b>Codeforces</b> tem a conta própria (acima).</p>
-        <p><b>Carta Zetsu</b> num hábito: o dia conta como feito, para o nível não cair (sem dar XP).</p>
         <p><b>Cartas:</b> cada hábito tem três no Book, pelos níveis 3, 6 e 10.</p></div>
     </div>
 
@@ -2517,7 +2515,7 @@ function rSys(S){
     <div class="three">
       <div class="card rg-txt"><p><b>Acende:</b> uma tarefa concluída no dia (entrega, estudo, treino, projeto ou vida). Hábito, Duolingo e Codeforces sozinhos não acendem.</p><p>Agora: <b>${S.ten.cur}</b> · recorde <b>${S.ten.max}</b>.</p></div>
       <div class="card rg-txt"><p><b>Zetsu (folga automática):</b> você começa com 1 e ganha outra a cada 7 dias acesos, até 2. Um dia vazio gasta uma sozinho, e o Ten segue.</p><p>Guardadas agora: <b>${S.ten.zet}</b>.</p></div>
-      <div class="card rg-txt"><p><b>Carta Zetsu:</b> salva hoje ou ontem (só se ontem quebrou). Nas <b>férias</b>, dia vazio não derruba e não gasta folga.</p><p>Cartas do Ten no Book: 7, 14, 30 e 60 dias.</p></div>
+      <div class="card rg-txt"><p>Nas <b>férias</b>, dia vazio não derruba e não gasta folga.</p><p>Cartas do Ten no Book: 7, 14, 30 e 60 dias.</p></div>
     </div>
 
     ${sec('torre', 'tower', 'Torre (Arena Celestial)', 'Todo XP sobe a torre. Os andares ficam mais caros lá em cima.')}
@@ -2531,7 +2529,7 @@ function rSys(S){
         linha('cada XP', '<b>10 J</b>', 'inclui todo bônus de XP'),
         linha(`nota ${MEDIA} ou mais`, '<b>nota × peso × 5</b>', 'peso = % da avaliação na nota final'),
         linha('bug seu corrigido · ideia sua no jogo', `<b>${n(H.CONTRIB.bug.j)} J · ${n(H.CONTRIB.ideia.j)} J</b>`, 'não dá XP: a torre é do seu esforço'),
-        ...RK.map(r => linha(`desafio da IA rank ${r.rk} (${r.n})`, `<b>${n(r.j)} J</b>`, r.f === 'escolha' ? 'ou um feitiço à escolha' : `ou o feitiço ${esc(spell(r.f).n)}`))])}</div>
+        ...RK.map(r => linha(`desafio da IA rank ${r.rk} (${r.n})`, `<b>${n(r.j)} J</b>`, ''))])}</div>
       <div class="card">
         ${conta('7,5 numa prova que vale 25%', ['7,5', '25', '5'], fmt(7.5 * 25 * 5) + ' J')}
         ${conta('10 numa lista que vale 10%', ['10', '10', '5'], fmt(10 * 10 * 5) + ' J')}
@@ -2542,18 +2540,17 @@ function rSys(S){
     ${sec('chefao', 'spider', 'Chefões: a nota tira vida, a tarefa prepara', 'Um chefão por disciplina, com 100 pontos de vida.')}
     <div class="three">
       <div class="card rg-txt"><p><b>Vida = nota.</b> Cada avaliação tira peso × nota/10. Passou de 60 pontos (média ${MEDIA}), o chefão cai: é passar na matéria. Tarefa nenhuma derruba chefão sozinha.</p></div>
-      <div class="card rg-txt"><p><b>Tarefa = preparação.</b> A tarefa da disciplina se liga a uma avaliação (<span class="mono">av:P1</span>, <span class="mono">prova:</span>, palavra-chave ou a próxima depois do prazo) e enche a barra dela. Barra cheia antes da data: <b>1 feitiço à escolha</b>.</p></div>
+      <div class="card rg-txt"><p><b>Tarefa = preparação.</b> A tarefa da disciplina se liga a uma avaliação (<span class="mono">av:P1</span>, <span class="mono">prova:</span>, palavra-chave ou a próxima depois do prazo) e enche a barra dela. Barra cheia antes da data: <b>${fmt(GBx.FEIT_J)} J</b>.</p></div>
       <div class="card rg-txt"><p><b>Nota baixa = fúria.</b> Sem castigo: o chefão mostra quanto falta e as tarefas dele rendem ${x15} até a próxima avaliação.</p></div>
     </div>
 
-    ${sec('cartas', 'card', 'Cartas, missão e feitiços', '')}
+    ${sec('cartas', 'card', 'Cartas e missão', '')}
     <div class="two">
-      <div class="card rg-txt"><p><b>Missão da semana:</b> o atributo (tipo de Nen) mais fraco antes da segunda vira a missão. Tarefa dele vale ${x15}; 3 dias com ele na semana dão <b>1 feitiço à escolha</b>.</p>
+      <div class="card rg-txt"><p><b>Missão da semana:</b> o atributo (tipo de Nen) mais fraco antes da segunda vira a missão. Tarefa dele vale ${x15}; 3 dias com ele na semana dão <b>${fmt(GBx.FEIT_J)} J</b>.</p>
         <p><b>Book:</b> conquistas com regra fixa (gerais, Ten, hábitos, chefões), os desafios da IA (10 vagas: 4 fáceis, 3 médias, 2 difíceis, 1 lendária) e as cartas narradas.</p>
         <p><b>Novos desafios da IA:</b> o rank exige volume e dias de atividade, sequências, semanas completas de XP ou nota com peso mínimo na disciplina. Histórico curto não aumenta a recompensa. A regra de cada carta mostra os critérios; cartas antigas mantêm os seus.</p>
         <p><b>Plano de ensino:</b> em Chefões → editar avaliações e notas, à mão ou com a IA (Configurações → IA).</p></div>
-      <div class="card">${tab(['feitiço', 'faz', 'loja'], SPELLS.filter(x => !x.noshop).map(x => linha(`${ic(x.ic)} ${esc(x.n)}`, esc(x.e), `${n(x.p)} J`)))}
-        <p class="sub" style="margin:10px 0 0">Um feitiço de cada por semana na loja. Expiram na volta às aulas (${ddmm(TEMP.volta)}).</p></div>
+      <div class="card">${placaFeit()}</div>
     </div>
     <p class="sub" style="text-align:center;margin:4px 0 0">As contas vêm do <span class="mono">web/motor.js</span>; mudou algo lá, esta página muda junto.</p>`;
 }
@@ -2726,7 +2723,7 @@ function rowL(t, S, x, jan){   // jan: a linha está na janela ↻ recorrentes (
 function faixaN(S){
   const a = S.a, fr = NEN[S.fraco];
   const mis = S.pausa ? `<span class="nl-k" style="color:var(--grn)">férias até <b>${ddmm(addD(TEMP.volta, -1))}</b></span>`
-    : `<span class="nl-k nl-mis" style="--c:${NC(S.fraco)}" title="missão da semana: ${esc(fr.c)} ×1,5 · ${S.missDias}/3 dias → 1 feitiço">missão <b>${esc(fr.n)}</b>${[0,1,2].map(i => `<i class="${i < S.missDias ? 'on' : ''}"></i>`).join('')}</span>`;
+    : `<span class="nl-k nl-mis" style="--c:${NC(S.fraco)}" title="missão da semana: ${esc(fr.c)} ×1,5 · ${S.missDias}/3 dias → ${fmt(GBx.FEIT_J)} J">missão <b>${esc(fr.n)}</b>${[0,1,2].map(i => `<i class="${i < S.missDias ? 'on' : ''}"></i>`).join('')}</span>`;
   return `<div class="card nl-hud">${avMe(34)}
     <span class="nl-and" title="${esc(CTX.JOG.nome)}${UI.title ? ' · ' + esc(UI.title) : ''} · faltam ${a.need - a.into} XP para o andar ${a.n + 1} · ${fmt(S.total)} XP na temporada"><span class="n"><small>ANDAR</small>${a.n}</span><span class="nl-pb"><i style="width:${pct(a.into, a.need)}%"></i></span><span>faltam ${a.need - a.into}</span></span>
     <span class="nl-k${S.hojeXP >= S.metaDia ? ' ok' : ''}" title="XP de hoje e a meta do dia">hoje <b>+${S.hojeXP}</b>/${S.metaDia}</span>
@@ -3014,7 +3011,7 @@ document.addEventListener('click', async e => {
     try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
     const depois = estado(), dx = depois.total - antes.total; render();
     floatAt(rr, `+${dx} XP`); if(dx > 0 && window.GB_FX) GB_FX.tarefa(rr, b);
-    if(depois.prepBonus > antes.prepBonus) toastUndo('Preparação completa! <small>+1 feitiço à escolha</small>');
+    if(depois.prepBonus > antes.prepBonus) toastUndo(`Preparação completa! <small>+${fmt(GBx.FEIT_J)} J</small>`);
     else if(depois.a.n > antes.a.n){ toastUndo(`▲ Andar ${depois.a.n} <small>a torre sobe</small>`); confete(); }
     else toastUndo(`+${dx} XP <small>+${fmt(dx*10)} J${GBx.repRegra(t.rep) ? ` · a próxima fica para ${ddmm(GBx.repProxima(GBx.repRegra(t.rep), t.due, HOJE))}` : ''}</small>`);
     return; }
@@ -3209,7 +3206,7 @@ document.addEventListener('click', async e => {
   const depois = estado(), dx = depois.total - antes.total;
   render();
   if(dx > 0){ floatAt(rr, `+${dx} XP`); if(window.GB_FX) GB_FX.tarefa(rr, b);
-    if(depois.prepBonus > antes.prepBonus) toast('Preparação completa! <small>+1 feitiço à escolha</small>');
+    if(depois.prepBonus > antes.prepBonus) toast(`Preparação completa! <small>+${fmt(GBx.FEIT_J)} J</small>`);
     else if(depois.a.n > antes.a.n){ toast(`▲ Andar ${depois.a.n} <small>a torre sobe</small>`); confete(); } }
 });
 document.addEventListener('visibilitychange', () => { if(!document.hidden) recarrega().then(render).catch(() => {}); });

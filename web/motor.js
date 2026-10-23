@@ -31,6 +31,11 @@ const SPELLS = [
   {k:'ken',     n:'Ken',         e:'Adia um due: em 1 dia sem perder o ×1,5.',       p:1600, ic:'con'},
   {k:'escolha', n:'Feitiço à escolha', e:'Vira qualquer feitiço quando você usar. Vem da preparação completa.', p:0, ic:'card', noshop:1},
 ];
+/* feitiços em pausa até o jogo passar de 10 jogadores ativos: somem do Book, da Loja e das Regras, e a missão da semana e a
+   preparação completa passam a dar Jenny. Os que já estavam na bolsa continuam guardados (estado.json não muda).
+   estado.json → migra.feiticos: {miss, prep, em}, quantos já tinham virado feitiço; os seguintes valem FEIT_J cada */
+const FEITICOS_PAUSA = 'Os feitiços vão ser desenvolvidos quando o jogo passar de 10 jogadores ativos', FEIT_MIGRA = 'feiticos', FEIT_J = 1500;
+const ATIVOS_MAIS = 10;   // o marco dos itens e efeitos guardados para depois (fontes, sons, avisos de perigo e prazo, feitiços)
 
 /* ---------- aparência (loja) ---------- */
 const TK = 'bg panel panel2 ink soft faint hair track prompt red amb grn volt aura n1 n2 n3 n4 n5 n6'.split(' ');
@@ -922,8 +927,8 @@ function estado(C){
   const fraco = fracoSem(HOJE), pausa = fer(HOJE);   // nas férias nenhum atributo rende ×1,5
   const ws = addD(HOJE,-dow(HOJE)); let missDias = 0; for(let i=0;i<7;i++){ const d = addD(ws,i); if(!fer(d) && feitas.some(t => t.done === d && naMissao(t))) missDias++; }
   // recompensa da missão: cada semana com 3+ dias do atributo da semana dá 1 feitiço à escolha
-  let missoes = 0; const missaoDias = new Set();   // missaoDias: os dias que contaram para a missão da sua semana (resumo do grupo)
-  if(first) for(let w = addD(first,-dow(first)); w <= HOJE; w = addD(w,7)){ const fr = fracoSem(w); let k = 0; for(let i=0;i<7;i++){ const d = addD(w,i); if(d <= HOJE && !fer(d) && feitas.some(t => t.done === d && naMissao(t))){ k++; missaoDias.add(d); } } if(k >= 3) missoes++; }
+  let missoes = 0; const missaoDias = new Set(), missaoEm = [];   // missaoDias: os dias que contaram para a missão da sua semana (resumo do grupo); missaoEm: o 3º dia de cada missão cumprida
+  if(first) for(let w = addD(first,-dow(first)); w <= HOJE; w = addD(w,7)){ const fr = fracoSem(w); let k = 0; for(let i=0;i<7;i++){ const d = addD(w,i); if(d <= HOJE && !fer(d) && feitas.some(t => t.done === d && naMissao(t))){ k++; missaoDias.add(d); if(k === 3) missaoEm.push(d); } } if(k >= 3) missoes++; }
   const cfHoje = cfDia[HOJE] || 0;
   const rot = abertas.filter(isRec).map(t => ({...t, ok:false})).concat(feitas.filter(t => isRec(t) && t.done === HOJE && t.raw).map(t => ({...t, ok:true})));
   const golpes = abertas.filter(t => !isRec(t)).map(t => {
@@ -936,6 +941,11 @@ function estado(C){
     let x = xpBase({...t, done:HOJE}); if(mis) x *= 1.5; if(fu) x *= 1.5;
     return {t, sc, x: Math.round(x), b, av, bonus: mis, fury: fu};
   }).sort((a,b) => b.sc - a.sc);
+  // feitiços em pausa: as missões e preparações de antes continuam como feitiço à escolha; as seguintes viram FEIT_J, no dia em que saíram
+  const prepEm = bs.flatMap(b => b.avs.filter(a => a.prepOk).map(a => a.dt)).sort();
+  if(!rec.migra[FEIT_MIGRA]){ rec.migra[FEIT_MIGRA] = {miss:missaoEm.length, prep:prepEm.length, em:HOJE}; rec.mudou = true; }
+  const fm = rec.migra[FEIT_MIGRA], feitJDias = [...missaoEm.slice(+fm.miss || 0), ...prepEm.slice(+fm.prep || 0)];
+  const feitJ = feitJDias.length * FEIT_J;
   const bonusNotas = Object.values(rec.notasJ).reduce((s, r) => s + (+r.j || 0), 0);   // pelos recibos: o peso do dia em que a nota entrou
   const resg = (C.CONQ || []).filter(c => c && c.resgate && !c.descartada);   // conquistas da IA resgatadas: Jenny ou um feitiço
   const conqJ = resg.reduce((s, c) => s + (c.resgate.como === 'jenny' ? +c.resgate.j || 0 : 0), 0);
@@ -953,15 +963,16 @@ function estado(C){
   const retJ = +rec.acertos[RETRATOS_K] || 0;
   // devolução (#51): os itens do dia voltaram para a loja sem tirar do gasto; a carteira recebe o que passou do perdão da 0.6.4
   const acerto = Object.entries(rec.acertos).reduce((s, [k, j]) => s + (k === RETRATOS_K ? 0 : +j || 0), 0) + (EST.devolve && +EST.devolve.j || 0);
-  let ganho = total*10 + bonusNotas + conqJ + contribJ + acerto + retJ;
+  let ganho = total*10 + bonusNotas + conqJ + contribJ + acerto + retJ + feitJ;
   // nota corrigida para menos (0.5.3): tira no máximo o que há na carteira; o resto fica perdoado em acertos
   const corte = rec.cortes.reduce((s, c) => s + c.j, 0), falta = (EST.spent||0) - ganho;
   if(corte && falta > 0){ const p = Math.min(corte, falta), k = 'nota:' + rec.cortes.map(c => c.k).join(',') + ':' + HOJE;
     rec.acertos[k] = (rec.acertos[k] || 0) + p; ganho += p; }
-  const prepBonus = bs.reduce((s,b) => s + b.avs.filter(a => a.prepOk).length, 0);
-  // bolsa: comprados + preparação completa + missões − usados
+  const prepBonus = prepEm.length;
+  // bolsa: comprados + preparação completa e missões de antes da pausa − usados
   const inv = {}; for(const w in EST.bought) for(const k of EST.bought[w]) inv[k] = (inv[k]||0) + 1;
-  if(prepBonus + missoes) inv.escolha = (inv.escolha||0) + prepBonus + missoes;
+  const feitAntes = Math.min(+fm.miss || 0, missaoEm.length) + Math.min(+fm.prep || 0, prepEm.length);
+  if(feitAntes) inv.escolha = (inv.escolha||0) + feitAntes;
   for(const c of resg) if(c.resgate.como === 'feitico' && SPELLS.some(s => s.k === c.resgate.k)) inv[c.resgate.k] = (inv[c.resgate.k]||0) + 1;
   for(const k in (EST.usados||{})) inv[k] = (inv[k]||0) - EST.usados[k];
   for(const u of F.usos) inv[u.k] = (inv[u.k]||0) - 1;
@@ -974,7 +985,7 @@ function estado(C){
   const sem = {n: Math.floor(dias(TEMP.ini,HOJE)/7)+1, tot: Math.ceil(dias(TEMP.ini,TEMP.fim)/7)};
   const a = andar(total, C.dif);
   return {total, a, andarRec: Math.max(a.n, +rec.migra[TORRE_MIGRA].antes || 0), attr, porDia, xpDia, set, first, ten:T, nv:NV.hoje, duoDe, hojeXP: xpDia[HOJE]||0, xs, n:D.feitas.length, ritmo,
-    proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto + retJ)), retJ, rec, jenny: ganho - (EST.spent||0),
+    proj: andar(Math.round(total + ritmo*Math.max(0,dias(HOJE,TEMP.fim))/7), C.dif), bs, fraco, pausa, missDias, missoes, rot, golpes, ganho, bonusNotas, conqJ, contrib, contribXP, contribJ, acerto: acerto + Math.max(0, ganho - (total*10 + bonusNotas + conqJ + contribJ + acerto + retJ + feitJ)), retJ, feitJ, feitJDias, rec, jenny: ganho - (EST.spent||0),
     inv, prepBonus, espera, hab, sem, cfHoje, cfXP, cfCor: cfCor && {...cfCor.hoje, xp: cfBase(HOJE)}, usos: F.usos, valeTarefa, grupos: G, gXP, fonteDia, missaoDias, metaDia: Math.max(20, Math.round(ritmo/5/5)*5),
     cofre: cofreMes(EST)*(Math.floor(Math.max(0,dias(TEMP.ini,HOJE))/30)+1) - (EST.cofreUsado||0)};
 }
@@ -1285,12 +1296,13 @@ function relatorio(C, S){
   const {HOJE, TEMP, EST} = C, E = esforco(S.xpDia, HOJE), r1 = x => Math.round(x*10)/10;
   const ini = [TEMP.ini, S.first].filter(d => d && d <= HOJE).sort()[0] || HOJE;
   // a Jenny ganha por origem (#180): o XP do dia ×10, as notas, as conquistas e as contribuições; o acerto entra sem data
-  const ganhoDia = {}, gastoDia = {}, origemJ = {xp:0, notas:0, conquistas:0, contrib:0, acerto:S.acerto || 0};
+  const ganhoDia = {}, gastoDia = {}, origemJ = {xp:0, notas:0, conquistas:0, contrib:0, missao:0, acerto:S.acerto || 0};
   const soma = (o, d, x, k) => { if(d && x){ o[d] = (o[d]||0) + x; if(k) origemJ[k] += x; } };
   for(const d in S.xpDia) soma(ganhoDia, d, S.xpDia[d]*10, 'xp');
   for(const r of Object.values(S.rec.notasJ || {})) soma(ganhoDia, r.em, +r.j || 0, 'notas');
   for(const c of C.CONQ || []) if(c && c.resgate && !c.descartada && c.resgate.como === 'jenny') soma(ganhoDia, c.resgate.em || c.criada, +c.resgate.j || 0, 'conquistas');
   for(const i of S.contrib) soma(ganhoDia, i.dia, CONTRIB[i.tipo].j, 'contrib');
+  for(const d of S.feitJDias) soma(ganhoDia, d, FEIT_J, 'missao');   // missão da semana e preparação completa, com os feitiços em pausa
   const compras = (EST.compras || []).filter(c => c && /^\d{4}-\d\d-\d\d$/.test(c.d) && c.j > 0);
   for(const c of compras) soma(gastoDia, c.d, c.j);
   const gastoReg = compras.reduce((s, c) => s + c.j, 0), gastoSemData = Math.max(0, (EST.spent||0) - gastoReg);
@@ -1405,7 +1417,7 @@ function resumoGrupo(C, S, pessoais){
     temporada:{nome:nomeTemporada(TEMP), ini:TEMP.ini, fim:TEMP.fim, volta:TEMP.volta || ''}, habitos, dias:linhas};
 }
 
-window.GB = {LOJA_TRAVADA, PRECO_FAIXA, TORRE, TORRE_ANTES, TORRE_MIGRA, devolucao, FAIXAS_LOJA, pacote, retratosJ, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, CONTRIB_MIGRA, CF_CORES, CF_COR_N, CF_NA_FAIXA, CF_ACIMA, CF_ABAIXO, CF_CONTEST, cfDias, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
+window.GB = {FEITICOS_PAUSA, FEIT_J, ATIVOS_MAIS, LOJA_TRAVADA, PRECO_FAIXA, TORRE, TORRE_ANTES, TORRE_MIGRA, devolucao, FAIXAS_LOJA, pacote, retratosJ, HAB_DESDE, HAB_NV_MAX, habPede, habXP, MIGRA, CONTRIB_ANTES, CONTRIB_MIGRA, CF_CORES, CF_COR_N, CF_NA_FAIXA, CF_ACIMA, CF_ABAIXO, CF_CONTEST, cfDias, duoAntes, TAGS, configura, isTre, MEDIA, DIF, COFRE_MES, ALLFX, NEN, GUARDA, SPELLS, TK, PALS, palStyle, COS, catalogo, RETRATOS, padrao, travaChave, itemColecao, imgDe, REAIS, PREMIOS_PADRAO, premios, cofreMes, esforco, esforcoTxt, faixaDe, FAIXAS,
   repRegra, repPasso, repProxima, repSucessora, repAcum, repAntes, repVisivel, repEntra, repFrase, SEM_REP,
   mins, has, isRec, isFac, isEst, isEnt, norm, addD, dias, dow, semanaISO, numBR, nota10, brData, brDatas, isoData, semanalDe, fmtData, fmtTxt, curta, dataRuim,
   expandeOwn, marca, cfExtra, efeitos, parseLinha, parseAvaliacoes, parseNotas, carregar, xpDe, nenDe, discOf, custo, andar, xpAte, ten, liga, ligaCom, refDe, sugerePri, HAB_EXTRA, sugereTipo, chefoes, estado, cartas,

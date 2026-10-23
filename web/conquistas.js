@@ -1,7 +1,7 @@
 /* Ganbatte · conquistas criadas pela IA (aba Book → Conquistas da IA, 200 em diante).
  * A IA só propõe: preenche um molde da lista fechada do motor (GB.avaliaConq confere cada uma, calcula o rank e recusa
  * o que não dá); o jogador aceita as que quiser, e o motor marca sozinho quando cumpre. A recompensa sai do rank, nunca da
- * IA: ao conquistar, o jogador escolhe Jenny ou o feitiço embaixo da carta, e ela fica "resgatada". Grava em
+ * IA: ao conquistar, o jogador resgata a Jenny embaixo da carta (o feitiço volta quando os feitiços saírem da pausa), e ela fica "resgatada". Grava em
  * conquistas.json por POST /api/conquistas. O pedido é o mesmo no copiar e colar e com a IA ligada (texto igual no IA.md).
  * Carregado depois de ia.js: usa CTX, D, HOJE, TEMP, BOSSES, UI, estado, render, post, recarrega, esc, ic, fmt, toast, spell, confete.
  */
@@ -46,7 +46,7 @@ const vagasRk = cia => Object.fromEntries(Object.entries(GB.CONQ_VAGAS).map(([rk
 const vagas = cia => Object.values(vagasRk(cia)).reduce((a, b) => a + b, 0);
 const RKS = [['D', 'fáceis', 'fácil'], ['C', 'médias', 'média'], ['B', 'difíceis', 'difícil'], ['A', 'lendária', 'lendária']];
 const nomeF = k => spell(k).n;
-const recTxt = c => `${fmt(c.j)} J ou o feitiço ${nomeF(c.f)}`;
+const recTxt = c => `${fmt(c.j)} J`;   // feitiços em pausa (GB.FEITICOS_PAUSA): a recompensa é só a Jenny
 const progTxt = c => { const at = Math.min(c.at, c.meta);
   if(c.diasMin) return `${fmt(at)} de ${fmt(c.meta)} tarefas · ${fmt(c.diasFeitos)} de ${fmt(c.diasMin)} dias`;
   return c.rg === 'nota' ? `${GB.numBR(at).toFixed(1).replace('.', ',')} de ${String(c.meta).replace('.', ',')}` : `${fmt(at)} de ${fmt(c.meta)}`; };
@@ -62,19 +62,19 @@ function book(S, ciaTodas){
   const carta = c => `<button class="gc cq${c.on ? ' on' : ''}" data-bksel="${esc(c.no)}" aria-pressed="${UI.bksel === c.no}"><span class="no">Nº ${esc(c.no)}</span><span class="rk">${c.rk}</span><span class="big">${ic(c.ic)}</span>
     ${c.resgate ? '<span class="selo">resgatada</span>' : c.on ? '<span class="selo pega">resgatar</span>' : ''}
     <div><div class="og">${esc(c.dif)}</div><div class="gn">${esc(c.n)}</div><div class="cqbar" style="margin-top:6px"><i style="width:${c.on ? 100 : pct(c)}%"></i></div></div></button>`;
-  document.getElementById('bk-grid').innerHTML = RKS.map(([rk, nome, um]) => `<div style="grid-column:1/-1;margin-top:6px"><p class="cap" style="margin:6px 0 0">rank ${rk} · ${GB.CONQ_VAGAS[rk]} ${nome} · ${fmt(GB.conqRk(rk).j)} J ou ${esc(nomeF(GB.conqRk(rk).f))}</p></div>`
+  document.getElementById('bk-grid').innerHTML = RKS.map(([rk, nome, um]) => `<div style="grid-column:1/-1;margin-top:6px"><p class="cap" style="margin:6px 0 0">rank ${rk} · ${GB.CONQ_VAGAS[rk]} ${nome} · ${fmt(GB.conqRk(rk).j)} J</p></div>`
       + cia.filter(c => c.rk === rk).map(carta).join('')
       + Array.from({length:vr[rk]}, () => `<div class="gc empty" style="font-size:12px;text-align:center;padding:10px">vaga ${um}</div>`).join('')).join('')
     + `<div style="grid-column:1/-1">${novasHTML(ciaTodas, vg)}</div>`;
   const c = cia.find(c => c.no === UI.bksel);
   document.getElementById('bk-det').innerHTML = c ? detHTML(c) : `<div class="face" style="color:var(--grn);border-color:var(--grn)">${ic('card')}</div><p class="cap">conquistas da IA · 200+</p><h3>Desafios feitos para você</h3>
-    <p>A IA olha as suas disciplinas, hábitos e tarefas e propõe desafios <b>difíceis, mas possíveis</b>. Você aceita os que quiser; o jogo confere sozinho e, quando você conquista, dá para escolher <b>Jenny ou um feitiço</b>.</p>
+    <p>A IA olha as suas disciplinas, hábitos e tarefas e propõe desafios <b>difíceis, mas possíveis</b>. Você aceita os que quiser; o jogo confere sozinho e, quando você conquista, a recompensa vai em <b>Jenny</b>.</p>
     <p class="sub">${GB.CONQ_MAX} vagas: 4 fáceis, 3 médias, 2 difíceis e 1 lendária. Resgatada, a carta vai para Book → Conquistas e a vaga abre. Peça as primeiras em <b>Propor conquistas com IA</b>.</p>`;
 }
 function detHTML(c){
   const rec = c.resgate ? `<div class="cq-ok">✓ resgatada · ${c.resgate.como === 'jenny' ? `+${fmt(c.resgate.j)} J` : `feitiço ${esc(nomeF(c.resgate.k))}`}${c.resgate.em ? ` · ${ddmm(c.resgate.em)}` : ''}</div>`
-    : c.on ? `<p style="margin-top:12px"><b>Conquistada!</b> Escolha a recompensa:</p><div class="cq-rec"><button data-cqres="${esc(c.no)}:jenny">+${fmt(c.j)} J<small>vai para a carteira</small></button><button class="f" data-cqres="${esc(c.no)}:feitico">${esc(nomeF(c.f))}<small>${esc(spell(c.f).e)}</small></button></div>`
-    : `<p class="sub" style="margin-top:10px">Ao conquistar: ${recTxt(c)}, à sua escolha.</p>
+    : c.on ? `<p style="margin-top:12px"><b>Conquistada!</b> Resgate a recompensa:</p><div class="cq-rec"><button data-cqres="${esc(c.no)}:jenny">+${fmt(c.j)} J<small>vai para a carteira</small></button></div>`
+    : `<p class="sub" style="margin-top:10px">Ao conquistar: ${recTxt(c)}.</p>
       <p style="margin-top:10px">${UI.cqdesc === c.no ? `<button class="btn" data-cqdesc="${esc(c.no)}" style="border-color:var(--red)">confirmar: descartar</button> <button class="go" data-cqdesc="">cancelar</button>` : `<button class="go" data-cqdesc="${esc(c.no)}">descartar esta conquista</button>`}</p>`;
   return `<div class="face cq-face${c.on ? ' on' : ''}" style="color:var(--grn);border-color:${c.on ? 'var(--amb)' : 'var(--grn)'}">${ic(c.ic)}</div>
     <p class="cap">Nº ${esc(c.no)} · rank ${c.rk} · ${esc(c.dif)} · criada pela IA${c.criada ? ` em ${ddmm(c.criada)}` : ''}</p><h3>${esc(c.n)}</h3>
