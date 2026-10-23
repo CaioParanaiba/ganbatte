@@ -499,10 +499,8 @@ function convitesHTML(P, C){
 }
 
 /* ---------- duelo: você × o outro, o relógio e quem resolveu cada um dos 3 problemas ----------
-   Duas versões em teste, trocadas no próprio card (gb-tt-dv): "espelhada" (os dois lados em volta dos problemas, como uma
-   chave de luta) e "enxuta" (o placar grande e a lista dos problemas embaixo). Cada fase tem a sua tela: esperando o aceite,
-   sorteio, contagem, em andamento, fim. */
-TT.dv = (() => { try { return localStorage.getItem('gb-tt-dv') || 'espelhada'; } catch(e){ return 'espelhada'; } })();
+   Os dois lados em volta dos problemas, como uma chave de luta. Cada fase tem a sua tela: esperando o aceite, sorteio,
+   contagem, em andamento, fim. */
 const meuConvite = C => C ? C.convites.find(c => c.de === C.eu) : null;
 const faseDu = du => du.estado === 'convite' ? 'espera' : du.estado === 'aceito' ? 'sorteio' : du.estado === 'andamento' ? (agoraS() < du.ini ? 'conta' : 'vivo') : du.estado;
 const pips = n => `<span class="tn-pips">${[0, 1, 2].map(i => `<i${i < n ? ' class="ok"' : ''}></i>`).join('')}</span>`;
@@ -537,7 +535,6 @@ function cardDuelo(P, C, du, antigo){
   const res = du.venceu == null ? 'empate' : du.venceu === eu ? 'você venceu' : esc(nomeDe(P, du.venceu)) + ' venceu';
   const relogio = fase === 'espera' ? ['o convite some em', relo(du.vence)] : fase === 'sorteio' ? ['sorteando', '…']
     : fase === 'conta' ? ['duração', `${C.regras.minutos}:00`] : fase === 'vivo' ? ['restam', relo(du.ate)] : fase === 'falhou' ? ['não saiu', '—'] : ['acabou', res];
-  const troca = `<span class="tn-dvsw" role="group" aria-label="versão da tela">${['espelhada', 'enxuta'].map(v => `<button type="button" data-tndv="${v}"${TT.dv === v ? ' aria-pressed="true"' : ''}>${v}</button>`).join('')}</span>`;
   const link = p => `<a href="https://codeforces.com/problemset/problem/${p.contest}/${encodeURIComponent(p.index)}" target="_blank" rel="noopener" class="tn-dvpn">${esc(p.nome)}</a>`;
   const chip = p => { const [n, c] = corCF(p.rating); return `<span class="tn-fx" style="--c:${c}" title="${n}">${p.rating}</span>`; };
   const tc = p => `<span class="tn-dvtc">+${vals[p.faixa] != null ? vals[p.faixa] : '?'} TC</span>`;
@@ -552,22 +549,12 @@ function cardDuelo(P, C, du, antigo){
     : fase === 'vivo' ? '<p class="tn-dvpe">Resolva no Codeforces: o servidor do grupo confere os envios dos dois a cada 15 s.</p>'
     : fase === 'fim' || fase === 'falhou' ? '<p class="tn-dvpe"><button type="button" class="tt-lk" data-ttsub="desafios">voltar aos desafios</button></p>' : '';
   const comProbs = du.problemas && (fase === 'vivo' || fase === 'fim');
-  let corpo;
-  if(TT.dv === 'enxuta'){
-    const placar = `<div class="tn-dex"><span class="tn-dexn e">${esc(nomeDe(P, eu))}</span><b class="tn-dexp${du.venceu === eu ? ' ok' : ''}">${J(eu).n}</b><span class="tn-dexx">×</span><b class="tn-dexp${du.venceu === outro ? ' ok' : ''}">${J(outro).n}</b><span class="tn-dexn">${esc(nomeDe(P, outro))}</span></div>
-      <div class="tn-dvr">${fase === 'fim' ? '' : `<small>${relogio[0]}</small><b>${relogio[1]}</b>`}</div>`;
-    const lista = comProbs ? `<div class="tn-dels">${du.problemas.map(p => `<div class="tn-del">
-        <div class="tn-delt">${chip(p)}${link(p)}${tc(p)}</div>
-        <div class="tn-delq"><span>você ${tempo(eu, p)}</span><small>${p.contest}${esc(p.index)}</small><span>${esc(nomeDe(P, outro))} ${tempo(outro, p)}</span></div></div>`).join('')}</div>` : espera;
-    corpo = `<div class="tn-dw">${placar}${fim}${lista}${pe}</div>`;
-  } else {
-    const lado = (id, dir) => `<div class="tn-dvj ${dir}${du.venceu === id ? ' venceu' : ''}${fase === 'espera' && id !== eu ? ' longe' : ''}">${ico(P, id, 58, 0, {nolink:true})}${pips(J(id).n)}<b class="tn-dvn">${J(id).n}<small>/3</small></b></div>`;
-    const meio = `<div class="tn-dvr">${fase === 'fim' ? '<b>×</b>' : `<small>${relogio[0]}</small><b>${relogio[1]}</b>`}</div>`;
-    const probs = comProbs ? `<div class="tn-dvps">${du.problemas.map(p => `<div class="tn-dvp">${tempo(eu, p)}
-        <div class="tn-dvm">${chip(p)}${link(p)}<small>${p.contest}${esc(p.index)} · ${tc(p)}</small></div>${tempo(outro, p)}</div>`).join('')}</div>` : espera;
-    corpo = `<div class="tn-dw"><div class="tn-dvc">${lado(eu, 'e')}${meio}${lado(outro, 'd')}</div>${fim}${probs}${pe}</div>`;
-  }
-  return `<section class="card"><h2><span class="c">~/</span>duelo · Codeforces${antigo ? ` · ${diaDe(du.fim)}` : ''} <span class="r">${troca}</span></h2>${corpo}</section>`;
+  const lado = (id, dir) => `<div class="tn-dvj ${dir}${du.venceu === id ? ' venceu' : ''}${fase === 'espera' && id !== eu ? ' longe' : ''}">${ico(P, id, 58, 0, {nolink:true})}${pips(J(id).n)}<b class="tn-dvn">${J(id).n}<small>/3</small></b></div>`;
+  const meio = `<div class="tn-dvr">${fase === 'fim' ? '<b>×</b>' : `<small>${relogio[0]}</small><b>${relogio[1]}</b>`}</div>`;
+  const probs = comProbs ? `<div class="tn-dvps">${du.problemas.map(p => `<div class="tn-dvp">${tempo(eu, p)}
+      <div class="tn-dvm">${chip(p)}${link(p)}<small>${p.contest}${esc(p.index)} · ${tc(p)}</small></div>${tempo(outro, p)}</div>`).join('')}</div>` : espera;
+  return `<section class="card"><h2><span class="c">~/</span>duelo · Codeforces${antigo ? ` · ${diaDe(du.fim)}` : ''}</h2>
+    <div class="tn-dw"><div class="tn-dvc">${lado(eu, 'e')}${meio}${lado(outro, 'd')}</div>${fim}${probs}${pe}</div></section>`;
 }
 function subDesafios(P){
   const S = P.torre.semanal, eu = P.voce.membro;
@@ -735,7 +722,6 @@ document.addEventListener('click', async e => {
   if((b = q('[data-ttjog]'))){ vaiPara({sub: 'hunters', jog: +b.dataset.ttjog}); return; }
   if((b = q('[data-tndver]'))){ try { TT.dvDet = (await post('/api/grupo/duelo', {chave: grupoSel().chave, acao: 'ver', id: +b.dataset.tndver})).duelo; vaiPara({sub: 'duelo'}); } catch(err){ toast('Não deu: ' + esc(err.message)); } return; }
   if(q('[data-tndvvolta]')){ TT.dvDet = null; render(); return; }
-  if((b = q('[data-tndv]'))){ TT.dv = b.dataset.tndv; try { localStorage.setItem('gb-tt-dv', TT.dv); } catch(err){} render(); return; }
   if(q('[data-tndesafiar]')){ TT.desafiar = !TT.desafiar; render(); return; }
   if((b = q('[data-tndu]'))){ const g = grupoSel(), acao = b.dataset.tndu; b.disabled = true;
     try { const r = await post('/api/grupo/duelo', {chave: g.chave, acao, id: +b.dataset.id || undefined, para: +b.dataset.para || undefined});
@@ -1093,8 +1079,6 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-cvb{display:flex;gap:6px;flex-wrap:wrap} .tn-cvop{display:flex;gap:6px;flex-wrap:wrap}
 .tn-bdg{font:700 10px var(--f-mono);background:var(--volt);color:var(--bg);border-radius:8px;padding:1px 5px;margin-left:4px}
 .tn-cvtp{display:inline-block;font:700 10px var(--f-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--volt);border:1px solid color-mix(in srgb,var(--volt) 50%,transparent);border-radius:3px;padding:1px 6px;margin-right:8px;vertical-align:1px}
-.tn-dvsw{display:inline-flex;border:1px solid var(--hair);border-radius:3px;overflow:hidden;text-transform:none;letter-spacing:0}
-.tn-dvsw button{font:500 11px var(--f-mono);padding:3px 8px;border:0;background:none;color:var(--faint);cursor:pointer} .tn-dvsw button[aria-pressed]{background:var(--hair);color:var(--ink)}
 .tn-dw{max-width:720px;margin:0 auto}
 .tn-dvc{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;justify-items:center;margin:6px 0 16px}
 .tn-dvj{display:grid;justify-items:center;gap:6px} .tn-dvj.longe{opacity:.4} .tn-dvj.venceu .tn-dvn{color:var(--grn)}
@@ -1122,14 +1106,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tn-dhr{font:700 11px var(--f-mono);width:20px;text-align:center;border:1px solid var(--hair);border-radius:3px;padding:1px 0;color:var(--faint)} .tn-dhr.v{color:var(--grn);border-color:var(--grn)} .tn-dhr.d{color:var(--red);border-color:color-mix(in srgb,var(--red) 60%,transparent)}
 .tn-dhp{font:700 15px var(--f-hud)} .tn-dhd{font:500 11px var(--f-mono);color:var(--faint)}
 @media (max-width:560px){.tn-dhl{grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px} .tn-dhl .tn-dhd,.tn-dhl .tn-tc{display:none}}
-.tn-dex{display:grid;grid-template-columns:1fr auto auto auto 1fr;gap:14px;align-items:center;margin:4px 0 2px}
-.tn-dexn{font:600 14px var(--f-hud)} .tn-dexn.e{justify-self:end} .tn-dexp{font:700 52px/1 var(--f-hud)} .tn-dexp.ok{color:var(--grn)} .tn-dexx{font:500 20px var(--f-hud);color:var(--faint)}
-.tn-dex + .tn-dvr{margin:0 auto 14px}
-.tn-dels{display:grid;gap:8px;max-width:560px;margin:0 auto}
-.tn-del{display:grid;gap:6px;border:1px solid var(--hair);border-radius:3px;padding:10px 12px}
-.tn-delt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
-.tn-delq{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;font-size:12px;color:var(--soft)} .tn-delq > span:last-child{justify-self:end} .tn-delq small{font:500 11px var(--f-mono);color:var(--faint)}
-@media (max-width:560px){.tn-dvc{gap:8px} .tn-dvr{min-width:0} .tn-dvp{grid-template-columns:52px minmax(0,1fr) 52px;gap:6px;padding:10px 0} .tn-dvm{padding:0 8px} .tn-dexp{font-size:40px} .tn-dex{gap:8px}}
+@media (max-width:560px){.tn-dvc{gap:8px} .tn-dvr{min-width:0} .tn-dvp{grid-template-columns:52px minmax(0,1fr) 52px;gap:6px;padding:10px 0} .tn-dvm{padding:0 8px}}
 .tn-cv{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .tn-cv > div{display:grid;gap:6px;align-content:start;border:1px solid var(--hair);border-radius:3px;padding:12px} .tn-cv .btn{justify-self:start}
 .tn-hp{display:grid;gap:6px} .tn-hpt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline} .tn-hpt b{font:700 18px var(--f-hud)}
