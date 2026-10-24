@@ -190,7 +190,8 @@ aceita `hoje`, `amanha` e `+3`; já `15/10` é lido no formato do jogador e pode
   uma aberta por vez: ao concluir (`done`), o servidor cria a próxima sozinho; **não crie a próxima à mão**. Sem `due:`, o
   servidor põe a primeira data. Dia que o mês não tem vai para o último dia (31 → 30). Quem está longe do prazo não aparece
   na Lista (fica na janela ↻ recorrentes) até alguns dias antes. Para "não vai acontecer desta vez", use a ação `pular`
-  (vira a próxima, sem atraso); `delete` para de repetir.
+  (vira a próxima, sem atraso); `delete` para de repetir. Não ponha a tag de hábito numa recorrente: com `rep:`, o jogo a trata como tarefa
+  comum (do tipo das outras tags dela), nunca como hábito.
 - **não crie nem edite** linhas com `rec:` (hábitos, Codeforces e Duolingo: o servidor cria todo dia).
 - **não crie nem edite** linhas com `gh:` (tarefas de dev do GitHub: o servidor cria e conclui sozinho).
 - texto curto, começando por verbo (Revisar, Fazer, Ler, Entregar).
