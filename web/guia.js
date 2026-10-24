@@ -153,10 +153,8 @@ const slug = n => 'h-' + (norm(n).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, 
 const HANDLE = /^[A-Za-z0-9_.-]{3,24}$/, DUO_US = /^[A-Za-z0-9_.-]{1,40}$/;
 function chefaoDe(d, i){
   const b = (BOSSES || []).find(b => b.d === d.d);
-  if(b && W.editar) return [b.n, b.ic, b.why];
-  const usados = new Set((W.editar ? BOSSES : []).map(b => b.n)), livres = RYODAN.filter(r => !usados.has(r[0]));
-  const novos = W.disc.slice(0, i + 1).filter(x => !(W.editar && (BOSSES || []).some(b => b.d === x.d))).length - 1;
-  return livres[Math.max(0, novos) % livres.length] || RYODAN[i % RYODAN.length];
+  if(b && W.editar) return [b.semNome ? '' : b.n0 ?? b.n, b.ic, b.why0 ?? b.why];   // o que está no arquivo, não o nome do retrato
+  return ['', 'spider', ''];   // chefão novo sem nome (#203): o jogador escolhe o personagem pelo retrato, na aba Chefões
 }
 /* blocos do avaliacoes.txt por disciplina: do "# comentário" logo acima do [SIGLA] até o próximo bloco */
 function blocos(txt){
@@ -313,7 +311,7 @@ function discHTML(){
         : `<label>Data da N1<input class="dt" inputmode="numeric" maxlength="10" placeholder="${GB.fmtTxt()}" id="wz-n1-${i}" value="${GB.brData(d.n1)}"></label>
       <label>Data da N2<input class="dt" inputmode="numeric" maxlength="10" placeholder="${GB.fmtTxt()}" id="wz-n2-${i}" value="${GB.brData(d.n2)}"></label>`}
       <button type="button" class="wz-x" data-wzdel="${i}" title="remover" aria-label="remover disciplina">✕</button>
-      <span class="boss">chefão: ${r[0]} · ${esc(r[2])}${d.notas ? ` · <b style="color:var(--amb)">${d.notas} nota(s) registrada(s)</b>` : ''}</span></div>`; }).join('')}</div>
+      <span class="boss">chefão: ${r[0] ? `${esc(r[0])}${r[2] ? ' · ' + esc(r[2]) : ''}` : 'você escolhe o personagem na aba Chefões'}${d.notas ? ` · <b style="color:var(--amb)">${d.notas} nota(s) registrada(s)</b>` : ''}</span></div>`; }).join('')}</div>
     <div><button type="button" class="btn" data-wzadd>+ disciplina</button></div>
     <p class="wz-sm">A sigla vira a tag da disciplina: <span class="mono">+fac.SIGLA</span>. Não sabe a data da prova ainda? Deixe a sugerida e ajuste quando souber.</p>`;
 }

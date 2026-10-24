@@ -289,10 +289,10 @@ window.GB_FX = {
   aba(){ const r = document.documentElement;
     if(vista().trans){ r.classList.remove('gb-troca'); void r.offsetWidth; r.classList.add('gb-troca'); clearTimeout(this._tr); this._tr = setTimeout(() => r.classList.remove('gb-troca'), 450); }
     if(!temFx('digita')) return; r.classList.add('gb-entra'); clearTimeout(this._aba); this._aba = setTimeout(() => r.classList.remove('gb-entra'), 900); },
-  tarefa(r, el){
+  tarefa(r, el, rc){   // rc: o retângulo de el medido antes do render() (el pode já ter saído da tela)
     if(UI.som && !somOff()) toca(UI.som, 'tarefa');
     if(UI.fxOff || calmo()) return;
-    for(const f of this.EV) if(UI.fx.includes(f) && !(this.novo && this.novo(f, r, el)) && EV[f]) EV[f](r);
+    for(const f of this.EV) if(UI.fx.includes(f) && !(this.novo && this.novo(f, r, el, rc)) && EV[f]) EV[f](r);
   },
   festa(){
     if(UI.som && !somOff()) toca(UI.som, 'festa');
