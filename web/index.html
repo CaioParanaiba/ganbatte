@@ -1780,6 +1780,12 @@ const travaDe = d => EST.travas ? EST.travas[GBx.travaChave(TEMP, d)] : undefine
 const retratoDe = b => { const t = travaDe(b.d), id = t !== undefined ? t : UI.chefes[b.d], it = id && COS.find(i => i.id === id); return it && (OWN.has(id) || GBx.padrao(it)) ? COS.find(i => i.id === id && i.cat === 'chefe') || null : null; };
 /* cada retrato tem um dono: o chefão derrotado com ele (nesta temporada) ou o último escolhido */
 const presoEm = id => BOSSES.find(b => travaDe(b.d) === id) || null;
+/* o nome na tela (#203): com retrato, o do personagem da foto e sem a frase (que falava de outro); sem retrato, o do
+   avaliacoes.txt; sem nome no arquivo, "Chefão de SIGLA" até o jogador escolher o personagem. O arquivo fica em n0/why0 */
+function nomeiaChefes(){
+  for(const b of BOSSES){ if(b.n0 === undefined){ b.n0 = b.n; b.why0 = b.why; }
+    const r = retratoDe(b); b.n = r ? r.alvo || r.n : b.semNome ? 'Chefão de ' + b.d : b.n0; b.why = r ? '' : b.why0; }
+}
 function poeRetrato(d, id){
   if(travaDe(d) !== undefined || (id && presoEm(id))) return false;
   const c = {}; for(const [k, v] of Object.entries(UI.chefes)) if(v !== id) c[k] = v;
@@ -1923,7 +1929,7 @@ function proxTxt(a){
 }
 function rowCN(b){
   const ab = UI.cnab.has(b.d), a = proxAv(b);
-  return `<div class="cn-b${b.dead ? ' dead' : ''}${ab ? ' ab' : ''}" data-cnd="${b.d}"><button type="button" class="cn-h" data-cnab="${b.d}" aria-expanded="${ab}">${avB(b,44)}<span class="nm">${esc(b.n)}<small>${b.d} · ${nf(b.pts)}/100 pts</small>${b.why ? `<i>${esc(b.why)}</i>` : ''}</span>
+  return `<div class="cn-b${b.dead ? ' dead' : ''}${ab ? ' ab' : ''}" data-cnd="${b.d}"><button type="button" class="cn-h" data-cnab="${b.d}" aria-expanded="${ab}">${avB(b,44)}<span class="nm">${esc(b.n)}<small>${b.d} · ${nf(b.pts)}/100 pts</small>${b.why ? `<i>${esc(b.why)}</i>` : b.semNome && !retratoDe(b) ? '<i>abra e escolha o personagem</i>' : ''}</span>
       <span class="vd">${hpBar(b)}<div class="need">${needTxt(b)}</div></span><span class="nx">${proxTxt(a)}${b.fury ? '<span class="fury">🔥 fúria: tarefas ×1,5</span>' : ''}</span><span class="cv">${ab ? '▾' : '▸'}</span></button>${ab ? corpoCN(b) : ''}</div>`;
 }
 function avRowCN(b, a){
@@ -2204,7 +2210,8 @@ function iconeHTML(b){
   if(t !== undefined) return `<p class="sub">Derrotado: a imagem fica assim${t ? ', e o retrato virou foto de perfil' : ''}.</p>`;
   const op = (id, dentro, nome) => { const on = (retratoDe(b) || {id:''}).id === id, preso = id && presoEm(id), dono = !on && id && BOSSES.find(x => x.d !== b.d && (retratoDe(x) || {}).id === id);
     return `<button type="button" class="ret7${on ? ' on' : ''}" data-chefe="${b.d}:${id}" aria-pressed="${on}"${preso ? ' disabled' : ''} title="${esc(nome)}${preso ? ` · preso no ${esc(preso.n)}, derrotado` : dono ? ` · sai do ${esc(dono.n)}` : ''}">${dentro}</button>`; };
-  return `<button type="button" class="go" data-icone="${b.d}" aria-expanded="${aberto}">${aberto ? 'fechar' : 'trocar o ícone'}</button>`
+  const escolhe = b.semNome && !retratoDe(b);
+  return `<button type="button" class="${escolhe && !aberto ? 'btn' : 'go'}" data-icone="${b.d}" aria-expanded="${aberto}">${aberto ? 'fechar' : escolhe ? 'escolher o personagem' : 'trocar o ícone'}</button>`
     + (aberto ? `<div class="ch7-op">${op('', `<span class="av bs" style="--s:34px">${ic(b.ic)}</span>`, 'ícone padrão')
       + COS.filter(i => i.cat === 'chefe' && meu(i)).map(r => op(r.id, `<span class="av bs ret" style="--s:34px"><img src="${retSrc(r)}" alt=""></span>`, r.n)).join('')}</div>` : '');
 }
@@ -3007,10 +3014,10 @@ document.addEventListener('click', async e => {
     const nova = LE.cac === '+nova' ? (LE.cacn.trim() || LE.txt.replace(/(^|\s)[+@]\S+|(^|\s)\S+:\S+/g, '').trim()) : '';   // nome da caçada nova: o digitado ou o texto, sem tags
     acaoL(async () => { if(nova) LE.cac = await GB_EXP.criaCac(nova); return post('/api/act', {raw:t.raw, action:'edit', value:linhaEd(), pri:LE.pri}); },
       nova ? `Virou caçada <small>${esc(nova)} · adicione as outras etapas com "+ etapa"</small>` : 'Tarefa editada'); return; }
-  if(act === 'done'){ const antes = estado(), rr = b.getBoundingClientRect();
+  if(act === 'done'){ const antes = estado(), rr = b.getBoundingClientRect(), lin = b.closest('.l-task,.l-hb') || b, rl = lin.getBoundingClientRect();   // a linha sai no render(): o efeito usa a medida de agora
     try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
     const depois = estado(), dx = depois.total - antes.total; render();
-    floatAt(rr, `+${dx} XP`); if(dx > 0 && window.GB_FX) GB_FX.tarefa(rr, b);
+    floatAt(rr, `+${dx} XP`); if(dx > 0 && window.GB_FX) GB_FX.tarefa(rr, lin, rl);
     if(depois.prepBonus > antes.prepBonus) toastUndo(`Preparação completa! <small>+${fmt(GBx.FEIT_J)} J</small>`);
     else if(depois.a.n > antes.a.n){ toastUndo(`▲ Andar ${depois.a.n} <small>a torre sobe</small>`); confete(); }
     else toastUndo(`+${dx} XP <small>+${fmt(dx*10)} J${GBx.repRegra(t.rep) ? ` · a próxima fica para ${ddmm(GBx.repProxima(GBx.repRegra(t.rep), t.due, HOJE))}` : ''}</small>`);
@@ -3076,7 +3083,7 @@ const RENDER = {l:rL, b:rB, b2:rB2, x:S => window.GB_EXP && GB_EXP.aba(S), d2:rD
 let cur = 'l';
 function render(){
   if(!CTX) return;
-  const S = estado(); aplicaTema(); document.documentElement.style.setProperty('--nen-forte', NC(S.attr.indexOf(Math.max(...S.attr))));   // a Borda de aura viva usa a cor do tipo forte
+  nomeiaChefes(); const S = estado(); aplicaTema(); document.documentElement.style.setProperty('--nen-forte', NC(S.attr.indexOf(Math.max(...S.attr))));   // a Borda de aura viva usa a cor do tipo forte
   if(window.GB_ARTE) GB_ARTE.aura(S);   // a Aura do dia nova (#134) acompanha o XP de hoje
   RENDER[cur](S); faixaTeste(); faixaProva();
   const gn = document.getElementById('gnav-'+cur); if(gn) gn.innerHTML = gnav(cur);
@@ -3205,7 +3212,7 @@ document.addEventListener('click', async e => {
   try { await post('/api/act', {raw:t.raw, action:'done'}); await recarrega(); } catch(err){ toast('Não concluiu: ' + esc(err.message)); return; }
   const depois = estado(), dx = depois.total - antes.total;
   render();
-  if(dx > 0){ floatAt(rr, `+${dx} XP`); if(window.GB_FX) GB_FX.tarefa(rr, b);
+  if(dx > 0){ floatAt(rr, `+${dx} XP`); if(window.GB_FX) GB_FX.tarefa(rr, b, rr);
     if(depois.prepBonus > antes.prepBonus) toast(`Preparação completa! <small>+${fmt(GBx.FEIT_J)} J</small>`);
     else if(depois.a.n > antes.a.n){ toast(`▲ Andar ${depois.a.n} <small>a torre sobe</small>`); confete(); } }
 });

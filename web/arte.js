@@ -249,7 +249,9 @@ function fonte(){
     const l = document.createElement('link'); l.rel = 'stylesheet';
     l.href = 'https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap&text=' + encodeURIComponent(txt); document.head.append(l);
   }
-  fonteOk = new Promise(ok => setTimeout(ok, 1500)).then(() => document.fonts.load('20px "Dela Gothic One"', txt)).catch(() => {});
+  const l = document.querySelector('link[href*="Dela+Gothic+One"]');   // espera a folha chegar (no máximo 1,5 s), não 1,5 s sempre
+  fonteOk = new Promise(ok => { if(l.sheet) ok(); else { l.addEventListener('load', ok); l.addEventListener('error', ok); } setTimeout(ok, 1500); })
+    .then(() => document.fonts.load('20px "Dela Gothic One"', txt)).catch(() => {});
   return fonteOk;
 }
 
@@ -326,7 +328,9 @@ function aba(fn){
 }
 if(window.GB_FX){
   const aplica = GB_FX.aplica, ver = GB_FX.ver;
-  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); gyoNovo(); rastro(); fundo(); furiaNova(); };
+  const GRITO = ['godspeed', 'jajanken', 'costura', 'dragao'];   // os que escrevem com a fonte japonesa
+  GB_FX.aplica = function(){ aplica.apply(this, arguments); cursor(); hover(); gyoNovo(); rastro(); fundo(); furiaNova();
+    if((document.documentElement.getAttribute('data-fx') || '').split(' ').some(f => GRITO.includes(f.replace(/-nova$/, '')))) fonte(); };   // a fonte já vem antes da 1ª tarefa
   /* o Terminal vivo novo: digita os títulos da aba que acabou de abrir (depois do render, que reescreve a aba) */
   const aba = GB_FX.aba;
   GB_FX.aba = function(){ aba.apply(this, arguments);
@@ -335,21 +339,35 @@ if(window.GB_FX){
      fogos, soco, dragao) e no ▶ da loja. r é o retângulo onde cai, el o card que leva o tranco. Devolve true quando tratou;
      o que não tem versão em código (baralho) fica com o efeitos.js */
   let mao = 0, ultimoR = null;
+  /* a tarefa concluída sai da Lista no render(): o efeito cai numa cópia dela, parada onde estava, que some quando ele acaba */
+  const fantasma = (el, r) => {
+    const g = el.cloneNode(true); g.removeAttribute('id'); g.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+    g.setAttribute('aria-hidden', 'true'); g.classList.add('gb-fantasma', g.classList.contains('l-hb') ? 'ok' : 'done');   // já como concluída
+    const ck = g.querySelector('.l-ck'); if(ck) ck.textContent = '✓';
+    Object.assign(g.style, {position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', margin: '0', boxSizing: 'border-box', pointerEvents: 'none', zIndex: '5', background: 'var(--panel)', borderRadius: '8px', listStyle: 'none'});
+    document.body.appendChild(g); return g;
+  };
+  const tiraFantasma = (g, fx) => { if(!fx || fx.acabou) return g.remove(); requestAnimationFrame(() => tiraFantasma(g, fx)); };
   /* o card no ponto onde a tarefa foi concluída (o render() já trocou o botão, então vale o retângulo) */
   const cardEm = r => { const e = r && document.elementFromPoint(r.left + r.width/2, r.top + r.height/2); return e && e.closest('.card,li,.l-row'); };
-  const ev = (k, r, el) => {
+  const ev = (k, r, el, rc) => {
     if(k === 'confete' && window.GB_CONFETE){ GB_CONFETE.dispara({}); return true; }
     if(k === 'fogos' && window.GB_FOGOS){ GB_FOGOS.dispara({}); return true; }
     if(!['godspeed', 'jajanken', 'costura', 'soco', 'dragao'].includes(k) || !window.CURSORES || !CURSORES[k]) return false;
+    let g = null;
+    if(el && !el.isConnected && rc) el = g = fantasma(el, rc);   // a linha da tarefa, medida antes de sair da tela
     if(!el || !el.isConnected) el = cardEm(r) || document.querySelector('.card');   // o andar novo sem card de tarefa (caçada, marco): o primeiro da tela
-    const rr = el ? el.getBoundingClientRect() : r;
+    const rr = g ? rc : el ? el.getBoundingClientRect() : r;
     if(!rr) return false;
-    if(k === 'soco') CURSORES.soco.dispara(rr, {el});
-    else if(k === 'jajanken'){ const m = ['pedra', 'papel', 'tesoura'][mao++ % 3]; fonte().then(() => CURSORES.jajanken.dispara(rr, {el, mao: m})); }
-    else fonte().then(() => CURSORES[k].dispara(rr, {el}));
+    /* a fonte espera no máximo 250 ms: depois disso o grito sai com a letra que houver, mas o efeito não atrasa */
+    const vai = f => GRITO.includes(k) ? Promise.race([fonte(), new Promise(ok => setTimeout(ok, 250))]).then(f) : Promise.resolve().then(f);
+    vai(() => {
+      const fx = k === 'jajanken' ? CURSORES.jajanken.dispara(rr, {el, mao: ['pedra', 'papel', 'tesoura'][mao++ % 3]}) : CURSORES[k].dispara(rr, {el});
+      if(g) tiraFantasma(g, fx);
+    });
     return true;
   };
-  GB_FX.novo = (k, r, el) => { if(r) ultimoR = r; return ev(k, r || ultimoR, el); };   // a festa (sem r) cai onde foi a última tarefa
+  GB_FX.novo = (k, r, el, rc) => { if(r) ultimoR = r; return ev(k, r || ultimoR, el, rc); };   // a festa (sem r) cai onde foi a última tarefa
   GB_FX.ver = function(id, r){
     const it = GB.COS.find(i => i.id === id), b = document.querySelector(`[data-fxver="${id}"]`), card = b && b.closest('.it7');
     if(it && it.fx && ev(it.fx, r, card)) return;

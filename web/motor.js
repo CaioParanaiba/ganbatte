@@ -432,7 +432,7 @@ function parseAvaliacoes(txt){
     if(/^temporada\s*\|/i.test(l)){ const p = l.split('|').map(x => x.trim()); const est = p.slice(2).some(x => x.includes('?')); const c = x => (x||'').replace('?','');
       out.temp = {nome:'Temporada ' + p[1], ini:c(p[2]), fim:c(p[3]), volta:c(p[4]), est}; continue; }
     const h = l.match(/^\[(\w+)\]\s*(.*)$/);
-    if(h){ const p = h[2].split('|').map(x => x.trim()); cur = h[1].toUpperCase(); out.bosses.push({d:cur, n:p[0]||cur, ic:p[1]||'spider', why:p[2]||''}); out.aval[cur] = []; continue; }
+    if(h){ const p = h[2].split('|').map(x => x.trim()); cur = h[1].toUpperCase(); out.bosses.push({d:cur, n:p[0]||cur, ic:p[1]||'spider', why:p[2]||'', ...(p[0] ? {} : {semNome:true})}); out.aval[cur] = []; continue; }   // sem nome (#203): o jogador escolhe o personagem pelo retrato
     if(!cur) continue;
     const p = l.split('|').map(x => x.trim());
     if(p.length < 4) continue;
