@@ -322,7 +322,7 @@ function configura(extra){
 }
 configura();
 const tem = (t,k) => ['ctx','proj'].some(w => (TAGS[k][w]||[]).some(v => has(t,w,v)));
-const isRec = t => !!t.rec || tem(t,'hab');
+const isRec = t => !!t.rec || (tem(t,'hab') && !repRegra(t.rep));   // recorrente (rep:) tem dia certo: não é hábito, mesmo com a tag
 const isFac = t => (t.proj||[]).some(p => p.startsWith('fac.'));
 const isEst = t => tem(t,'est');
 const isEnt = t => tem(t,'ent');

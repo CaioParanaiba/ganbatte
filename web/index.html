@@ -1668,7 +1668,7 @@ function devolve(){
   EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.9.2-beta9';
+const VERSAO_PAGINA = '0.9.2-beta10';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -2579,7 +2579,7 @@ const LTIPOS = [
   {k:'est', n:'estudo', c:0, d:'tempo de aprender: ninguém cobra, mas prepara a prova. Tarefa da disciplina que não é entrega é estudo', ex:'Revisar integrais · Fazer a lista 2 · Exercício de programação de POO'},
   {k:'tre', n:'treino', c:1, d:'prática de programação fora da matéria', ex:'Contest no Codeforces · Upsolve · LeetCode'},
   {k:'pro', n:'projeto', c:2, d:'criar algo seu, fora da matéria', ex:'Meu site · Um bot · Ajudar no desenvolvimento do Ganbatte'},
-  {k:'hab', n:'hábito', c:4, d:'o que se repete: vale pelo nível do hábito (3 a 12 XP), mas sozinho não acende o Ten (os fixos ficam em Configurações)', ex:'Treino de digitação · 30 min de leitura'},
+  {k:'hab', n:'hábito', c:4, d:'o que se repete sem dia certo (com dia certo, use repete): vale pelo nível do hábito (3 a 12 XP), mas sozinho não acende o Ten (os fixos ficam em Configurações)', ex:'Treino de digitação · 30 min de leitura'},
   {k:'vid', n:'vida', c:3, d:'todo o resto: casa, saúde, família, documentos, trabalho ou estágio (por enquanto)', ex:'Renovar a carteirinha · Consulta no dentista · Pagar o boleto'}];
 const LA = {tipo:'est', due:'', rep:'', repN:10, repU:'d', pri:'jogo', auto:true, por:'', salvando:false, adicionada:false};   // auto: o tipo segue a sugestão do texto até o jogador escolher um   // rascunho do formulário (pri: 'jogo' = o jogo decide, '' = sem, ou a letra)
 const LPRI = [['jogo','o jogo decide'], ['A','A'], ['B','B'], ['C','C'], ['','sem']], PRI_COR = {A:'var(--red)', B:'var(--amb)', C:'var(--soft)'};
@@ -2970,6 +2970,7 @@ document.addEventListener('click', async e => {
   if(q('[data-lajuda]')){ const a = document.getElementById('l-ajuda'), b = q('[data-lajuda]'); a.hidden = !a.hidden; b.setAttribute('aria-expanded', !a.hidden); if(!a.hidden) a.innerHTML = ajudaL(); return; }
   if(q('[data-ltipoia]')){ tipoIA(q('[data-ltipoia]')); return; }
   const tp = q('[data-ltipo]'); if(tp){ LA.tipo = tp.dataset.ltipo; LA.auto = false; LA.por = 'escolhido por você'; marcaTipo();
+    if(LA.tipo === 'hab') LA.rep = '';   // hábito não tem dia certo: o repete volta para "não repete"
     prevL(); return; }
   const pr = q('[data-lpri]'); if(pr){ LA.pri = pr.dataset.lpri; document.querySelectorAll('[data-lpri]').forEach(b => b.setAttribute('aria-pressed', b === pr)); prevL(); return; }
   const cm = q('[data-cmes]'); if(cm){ if(cm.dataset.cmes === 'hoje'){ UI.cdia = HOJE; UI.cmes = ''; } else UI.cmes = cm.dataset.cmes; render(); return; }
@@ -2997,7 +2998,7 @@ document.addEventListener('click', async e => {
   if(q('[data-lundo]')){ q('[data-lundo]').closest('.toast').remove(); acaoL(() => post('/api/undo', {}), ''); return; }
   if(q('#l-feitas summary')){ UI.ldone = !document.getElementById('l-feitas').open; return; }
   const le = q('[data-le]'); if(le){ const [k, v] = le.dataset.le.split(/:(.*)/);
-    if(k === 'tipo'){ LE.tipo = v; if(v === 'vid') LE.disc = ''; }
+    if(k === 'tipo'){ LE.tipo = v; if(v === 'vid') LE.disc = ''; if(v === 'hab') LE.rep = ''; }
     else LE[k] = v;
     redesenhaEd(); return; }
   const b = q('[data-l]'); if(!b) return;
@@ -3045,9 +3046,11 @@ document.addEventListener('change', e => {
   if(e.target.matches('[data-ten7]')){ UI.ten7 = e.target.checked; render(); }
   if(e.target.matches('[data-cofrev]')){ const v = numIn(e.target.value); if(isNaN(v) || v < 0){ toast('Valor do cofre inválido'); return; } EST.cofreMes = Math.round(v*100)/100; salvaUI(); render(); toast(v > 0 ? `Cofre do mês: R$ ${fmt(EST.cofreMes)} por mês` : 'Cofre do mês desligado'); }
   if(e.target.id === 'l-edcac'){ LE.cac = e.target.value; redesenhaEd(); }
-  if(e.target.id === 'l-edrep'){ LE.rep = e.target.value; redesenhaEd(); }
+  if(e.target.id === 'l-edrep'){ LE.rep = e.target.value; if(LE.rep && LE.tipo === 'hab') LE.tipo = 'vid'; redesenhaEd(); }
   if(e.target.id === 'l-edrepn' || e.target.id === 'l-edrepu'){ LE[e.target.id === 'l-edrepn' ? 'repN' : 'repU'] = e.target.value; dataEd(); }
-  if(e.target.id === 'l-reps'){ LA.rep = e.target.value; prevL(); }
+  if(e.target.id === 'l-reps'){ LA.rep = e.target.value;
+    if(LA.rep && LA.tipo === 'hab'){ LA.tipo = 'vid'; LA.auto = false; LA.por = 'tarefa que repete não é hábito'; marcaTipo(); }
+    prevL(); }
   if(e.target.id === 'l-repn' || e.target.id === 'l-repu'){ LA[e.target.id === 'l-repn' ? 'repN' : 'repU'] = e.target.value; prevL(); }
   if(e.target.id === 'l-eddisc'){ LE.disc = e.target.value; if(LE.disc && LE.tipo === 'vid') LE.tipo = 'est'; redesenhaEd(); }
   if(e.target.id === 'l-eddate'){ const iso = GBx.isoData(e.target.value, HOJE); if(e.target.value.trim() && !iso){ toast(GBx.dataRuim('')); return; }

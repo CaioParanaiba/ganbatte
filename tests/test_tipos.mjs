@@ -26,6 +26,14 @@ ok('tipo pela tag e pela disciplina', () => {
   assert.equal(tipo('Pagar o boleto'), 'vid');
 });
 
+ok('recorrente com a tag de hábito não é hábito', () => {
+  assert.equal(GB.isRec(L('2026-10-20 Treino de digitação +rotina')), true);
+  assert.equal(GB.isRec(L('2026-10-20 Revisão semanal +rotina due:2026-10-25 rep:sem-dom')), false);   // tem dia certo: tarefa comum
+  assert.equal(GB.nenDe(L('2026-10-20 Revisão semanal +rotina due:2026-10-25 rep:sem-dom')), 3);
+  assert.equal(GB.tipoDe(L('2026-10-20 Revisão de BD +fac.BD +rotina due:2026-10-25 rep:sem-dom')), 'est');
+  assert.equal(GB.isRec(L('2026-10-20 Leitura +rotina rep:qualquer')), true);   // rep: inválido não conta
+});
+
 ok('sugestão do tipo pelo texto', () => {
   const s = (txt, disc = false) => { const r = GB.sugereTipo(txt, disc); return r && r.k; };
   assert.equal(s('Fazer lista 2 BD', true), 'est');               // lista é estudo, com ou sem prazo
