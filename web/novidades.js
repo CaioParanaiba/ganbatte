@@ -28,6 +28,20 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta10", "nome": "atualização da Torre Trick", "data": "2026-10-24", "aviso": "0.9.2-beta10",
+   "cap": "Torre Trick nova · feitiços em pausa · abas novas",
+   "resumo": "A Torre Trick ganhou a semana com o Geral e a Superação, a Trick Coin, a tabela do dia do Codeforces, o duelo e o pacto de hábito. Os feitiços saíram de cena até o jogo passar de 10 jogadores ativos: a missão da semana e a preparação completa de uma prova dão 1.500 J cada. Lista, Progresso, Chefões e Calendário ficaram só com o desenho novo.",
+   "itens": [
+     {"ic": "tower", "t": "Torre Trick nova", "d": "Uma aba só: o Geral e a Superação da semana, que zeram toda segunda, o card da semana com a modalidade e a sua marca, o chefão do mês do grupo e a licença de cada um. Quem fecha a semana em 1º escolhe a modalidade da seguinte. Os desafios pagam Trick Coin: bater a marca da semana, resolver os problemas da tabela do dia do Codeforces (um por faixa, sorteados às 6h) e derrotar o chefão. A posição no placar não paga moeda. Quem hospeda o grupo precisa atualizar o servidor do grupo também (#170, #171, #43)."},
+     {"ic": "flame", "t": "Duelo e pacto", "d": "Em Grupo → desafios, desafie alguém para um duelo de Codeforces: 3 problemas na faixa do mais fraco, 60 minutos, ao vivo, com o retrospecto contra cada um. Ou chame alguém para um pacto de hábito, de 4 a 30 dias: o grupo só fica sabendo se foi feito, e os dois cumprindo, cada um ganha Trick Coin por dia (#171, #172)."},
+     {"ic": "coin", "t": "Feitiços em pausa, missão e preparação em Jenny", "d": "Os feitiços vão ser desenvolvidos quando o jogo passar de 10 jogadores ativos. Até lá somem do Book, da Loja e das Regras, e uma placa fica no lugar. Cada missão da semana cumprida e cada preparação completa de prova dão 1.500 J, no dia em que saem. As que você cumpriu antes desta versão continuam como feitiço à escolha, guardados. Desafios da IA resgatam em Jenny."},
+     {"ic": "card", "t": "Lista, Progresso e Chefões só no desenho novo", "d": "O botão antiga | nova saiu: a Lista com os hábitos em cima, a Progresso com a torre detalhada, a sua projeção e a meta do dia, e os Chefões numa linha por disciplina, com o retrato, a vida, o que falta de média e a próxima avaliação (#178)."},
+     {"ic": "spider", "t": "Aulas no chefão", "d": "No chefão aberto, mande o áudio ou os slides de uma aula (ou cole a transcrição). O áudio é transcrito no seu computador, a IA ligada escreve um resumo e sugere até 5 tarefas, e você escolhe: adicionar, juntar com uma que já existe ou deixar de fora."},
+     {"ic": "alvo", "t": "Calendário novo", "d": "O mês grande com as provas e os prazos escritos em cada dia, os próximos 14 dias ao lado e o semestre numa faixa embaixo. Clique num dia e aperte N para criar uma tarefa já com aquele prazo."},
+     {"ic": "antenna", "t": "Barra mais limpa", "d": "Novidades, Configurações e Regras agora ficam juntas no botão Sistema, no canto direito da barra. O ponto de novidade aparece nele."},
+     {"ic": "island", "t": "Caçadas mais livres", "d": "Dá para criar uma caçada (ou um marco de expedição) só com o nome e pôr as etapas depois, e uma caçada que não vai mais acontecer pode ser excluída no ✎: as etapas ficam na Lista como tarefas soltas (#149, #150)."},
+     {"ic": "card", "t": "Ajustes", "d": "Tarefa que repete deixou de aparecer como hábito: com dia certo, ela vale o XP do tipo dela e só entra na Lista perto do prazo, e o formulário não deixa mais marcar hábito junto com repete. A Constância separa os quadradinhos por mês (#186). O chefão leva o nome do personagem do retrato, e o novo nasce sem nome até você escolher (#203). Os efeitos de concluir caem na tarefa certa e sem atraso. Fontes, sons e avisos novos chegam com 10 jogadores ativos (antes, 8)."}
+   ]},
   {"versao": "0.9.2-beta9", "nome": "atualização da Torre Trick", "data": "2026-10-22",
    "cap": "loja pausada para o balanceamento",
    "resumo": "As compras da Aparência estão pausadas enquanto os preços são balanceados com a regra nova. Dá para provar tudo, e o que já é seu continua seu.",
@@ -831,6 +845,12 @@ function seuAviso(v){
     if(m && m.xp > 0) partes.push(`a torre ficou com <strong>${m.xp.toLocaleString('pt-BR')} XP a menos</strong> das contribuições antigas, e a carteira ficou igual.`);
     else ok.push('nenhum XP de contribuição saiu da sua torre.');
     if(cf > 0) ok.push(`o Codeforces vale agora <strong>${cf.toLocaleString('pt-BR')} XP</strong> na temporada, pela regra nova.`);
+  }
+  if(v.aviso === '0.9.2-beta10'){   // feitiços em pausa: as de antes ficam feitiço (rec.migra.feiticos), as seguintes viram Jenny
+    const m = (r.migra || {}).feiticos, n = m ? (+m.miss || 0) + (+m.prep || 0) : 0, fj = (() => { try { return +estado().feitJ || 0; } catch(e){ return 0; } })();
+    if(n) ok.push(n === 1 ? 'o feitiço à escolha da missão ou preparação de antes continua guardado.' : `os <strong>${n} feitiços à escolha</strong> das missões e preparações de antes continuam guardados.`);
+    if(fj > 0) ok.push(`a carteira já recebeu <strong>${fj.toLocaleString('pt-BR')} J</strong> de missões e preparações desde esta versão.`);
+    if(!n && !fj) ok.push('você não tinha feitiços de missão nem de preparação, então nada muda por enquanto.');
   }
   const todas = partes.concat(ok); if(!todas.length) return '';
   return `<div class="nv-seu${partes.length ? '' : ' ok'}"><b>No seu jogo</b><span>${todas.map(t => t[0].toUpperCase() + t.slice(1)).join(' ')}</span></div>`;
