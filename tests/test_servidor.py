@@ -863,3 +863,63 @@ class ArteNova(Base):
         self.assertEqual(get("/arte/lic-exame.png"), (200, "image/png"))
         for c in ("/arte/nada.js", "/arte/..%2Fservidor.py", "/arte/carta.css", "/arte/Carta.js"):
             self.assertEqual(get(c)[0], 404, c)
+
+
+class Aulas(Base):
+    """#210, #211: o jogo confere as sugestões da IA e o pedido leva o plano de ensino (hoje = 12/10/2026)."""
+
+    def setUp(self):
+        super().setUp()
+        s.gravar_txt("avaliacoes.txt", TEMPORADA + "[REDES2] Pakunoda | bullet | x\nA2 | Avaliação 2 | 20 | 2026-10-16\n"
+                     "A3 | Avaliação 3 | 27 | 18/11/2026?\nA1 | Avaliação 1 | 20 | 2026-09-18\nTR | Trabalho | 10 | ?\n")
+
+    def sug(self, **k):
+        base = {"texto": "Resolver a lista de sub-redes", "resultado": "lista resolvida", "min": "00:42:10", "fatos": {}}
+        return {**base, **k}
+
+    def test_prazo_vencido_cai_e_avisa(self):
+        """O caso da aula de Redes: "revisar para sexta" com a sexta já passada não entra como prazo nem como A."""
+        r = s.confere_sugestoes([self.sug(due="2026-10-09", fatos={"entrega": True})], "REDES2", 0)[0]
+        self.assertEqual((r["due"], r["pri"]), ("", ""))
+        self.assertIn("09/10, já passou", r["aviso"])
+
+    def test_prazo_so_de_entrega(self):
+        self.assertEqual(s.confere_sugestoes([self.sug(due="2026-10-20")], "REDES2", 0)[0]["due"], "")
+        r = s.confere_sugestoes([self.sug(due="2026-10-13", fatos={"entrega": True})], "REDES2", 0)[0]
+        self.assertEqual((r["due"], r["pri"]), ("2026-10-13", "A"))   # entrega em até 2 dias é sempre A
+
+    def test_prioridade_pelos_fatos(self):
+        r = s.confere_sugestoes([self.sug(av="a2", fatos={"cai": True}, pri="C")], "REDES2", 0)[0]
+        self.assertEqual((r["av"], r["pri"]), ("A2", "A"))   # A2 em 4 dias (+3) e cai (+2); a letra da IA não vale
+        self.assertIn("A2 em 4 dias", r["motivo"])
+        self.assertEqual(s.confere_sugestoes([self.sug(av="A3", fatos={"base": True})], "REDES2", 0)[0]["pri"], "")
+        self.assertEqual(s.confere_sugestoes([self.sug(fatos={"base": "sim", "confuso": True})], "REDES2", 0)[0]["pri"], "C")
+
+    def test_av_precisa_de_evidencia_e_de_estar_por_vir(self):
+        f = lambda **k: s.confere_sugestoes([self.sug(**k)], "REDES2", 0)[0]["av"]
+        self.assertEqual(f(av="A2", min=""), "")
+        self.assertEqual(f(av="A1"), "")   # já passou
+        self.assertEqual(f(av="P9"), "")   # não é da disciplina
+        self.assertEqual(f(av="TR", min="slide 12"), "TR")   # sem data: fica, mas não soma pontos
+
+    def test_sem_resultado_fica_de_fora(self):
+        r = s.confere_sugestoes([self.sug(resultado=""), self.sug(texto="Conferir: professor citou a A3", resultado="")], "REDES2", 0)
+        self.assertEqual([x["texto"] for x in r], ["Conferir: professor citou a A3"])
+
+    def test_muitas_abertas_deixa_duas(self):
+        ss = [self.sug(texto=f"T{i}", fatos={"entrega": True} if i else {}, due="2026-10-30") for i in range(4)]
+        r = s.confere_sugestoes(ss, "REDES2", 5)
+        self.assertEqual([x["texto"] for x in r], ["T1", "T2"])
+        ss.append(self.sug(texto="Junta", juntar="Instalar a VM"))
+        self.assertEqual([x["texto"] for x in s.confere_sugestoes(ss, "REDES2", 5)], ["T1", "T2", "Junta"])
+
+    def test_plano_da_disciplina_e_pedido(self):
+        p = s.DADOS / "planos"
+        p.mkdir()
+        for f in ("REDES2-plano-de-ensino.html", "ARQ1-plano.html", "redes de computadores 2.pdf", "BDados.html"):
+            (p / f).write_text("x")
+        self.assertEqual(s.planos_disc("REDES2", "Redes de Computadores 2"), ["REDES2-plano-de-ensino.html", "redes de computadores 2.pdf"])
+        self.assertEqual(s.planos_disc("BD", "Banco"), [])
+        t = s.pedido_aula("REDES2", "2026-09-20", "Redes", ["transcricao.md"], 0, 10000, ["plano-REDES2.html"], "o trabalho pede NAT")
+        for trecho in ("plano-REDES2.html", "o trabalho pede NAT", "até 2000 palavras", "foi há 22 dias", "Fora do plano"):
+            self.assertIn(trecho, t)

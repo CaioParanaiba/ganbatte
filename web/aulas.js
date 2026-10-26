@@ -20,7 +20,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .au-s .pri{font:700 12px var(--f-mono);color:var(--soft)} .au-s .pri.A{color:var(--red)} .au-s .pri.B{color:var(--amb)}
 .au-s input{width:100%;font:13.5px var(--f-ui);color:var(--ink);background:none;border:1px solid transparent;border-radius:7px;padding:3px 6px;margin-left:-7px}
 .au-s input:hover,.au-s input:focus{border-color:var(--hair);background:var(--panel2)}
-.au-s small{grid-column:2/-1;font:11.5px var(--f-mono);color:var(--soft)}
+.au-s small{grid-column:2/-1;font:11.5px var(--f-mono);color:var(--soft)} .au-s small .av{color:var(--amb)}
 .au-s .ac{display:flex;gap:6px;align-items:center}
 .au-s select{max-width:190px;font:12px var(--f-ui);background:var(--panel2);color:var(--ink);border:1px solid var(--hair);border-radius:6px;padding:2px 4px}
 .au-ok{margin:6px 0 0 52px;font:11.5px var(--f-mono);color:var(--faint)} .au-ok .go{font-size:11.5px}
@@ -29,6 +29,8 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .au-j.erro{color:var(--red)} .au-j .ac{margin-left:auto;display:flex;gap:12px}
 .au-bd{display:inline-block;margin-left:8px;font:600 10.5px var(--f-mono);color:var(--volt);border:1px solid color-mix(in srgb,var(--volt) 50%,var(--hair));border-radius:99px;padding:0 7px;vertical-align:2px}
 #au .wz{max-width:620px} #au code{font:12px var(--f-mono);background:var(--panel2);border:1px solid var(--hair);border-radius:6px;padding:4px 8px;display:block;white-space:pre-wrap;word-break:break-all;margin-top:6px}
+#au .au-trb{display:grid;gap:4px} #au .au-trb .lb{display:flex;align-items:center;gap:6px;font:600 11px var(--f-mono);color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
+#au .au-trb .lb .ac{margin-left:auto;display:flex;gap:6px} #au .au-trb .lb .btn{text-transform:none;letter-spacing:0} #au .au-trb small.grande{color:var(--red)}
 #au textarea{min-height:110px;background:var(--panel2);border:1px solid var(--hair);border-radius:9px;padding:8px 10px;font:13px var(--f-ui);color:var(--ink);width:100%}
 #au .au-av{border-left:3px solid var(--amb);background:var(--panel2);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--soft)}
 #au .au-pb{height:5px;border-radius:99px;background:var(--track);overflow:hidden;flex:1;min-width:80px} #au .au-pb b{display:block;height:100%;background:var(--volt)}
@@ -38,6 +40,7 @@ let AU = {aulas:[], jobs:[], whisper:{ok:true, como:''}};
 const ETAPA = {fila:'na fila', transcrevendo:'transcrevendo', lendo:'lendo os slides', resumindo:'a IA está resumindo'};
 const rodando = () => AU.jobs.some(j => j.etapa !== 'erro');
 const pendentes = d => AU.aulas.filter(a => a.sigla === d).reduce((n, a) => n + a.sugestoes.filter(s => !s.estado).length, 0);
+const TR_MAX = 400000;   // o mesmo AULA_TR_MAX do servidor
 const norm = t => GBx.norm(String(t || '')).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 async function carrega(){ try { const r = await fetch('/api/aulas', {cache:'no-store'}); const j = await r.json(); if(j.ok) AU = j; } catch(e){} }
 const editando = () => document.activeElement && document.activeElement.closest && document.activeElement.closest('.cn-au,#au');
@@ -66,7 +69,7 @@ function sugRow(a, s, i, b){
   return `<div class="au-s"><span class="pri ${s.pri}">${s.pri ? `(${s.pri})` : ''}</span><input data-autxt="${k}" value="${esc(s.texto)}" aria-label="texto da tarefa" title="dá para editar antes de adicionar">
     <span class="ac"><button type="button" class="go" data-audec="${k}:nao" title="não adicionar">✕</button><button type="button" class="btn" data-audec="${k}:add">+ adicionar</button>
       ${b.open.length ? `<select data-aualvo="${k}" aria-label="juntar com qual tarefa"><option value="">juntar com…</option>${b.open.map(o => `<option value="${o.n}"${t === o ? ' selected' : ''}>${esc(o.txt.slice(0, 60))}</option>`).join('')}</select><button type="button" class="btn" data-audec="${k}:juntar">⇄ juntar</button>` : ''}</span>
-    <small title="${esc(s.detalhe)}">${[s.est, s.due ? 'prazo ' + ddmm(s.due) : '', s.av ? 'prepara ' + s.av : '', s.motivo].filter(Boolean).map(esc).join(' · ')}</small></div>`;
+    <small title="${esc(s.detalhe)}">${[s.resultado ? '→ ' + s.resultado : '', s.est, s.due ? 'prazo ' + ddmm(s.due) : '', s.av ? 'prepara ' + s.av : '', s.motivo, s.min ? 'na aula: ' + s.min : ''].filter(Boolean).map(esc).join(' · ')}${s.aviso ? ` · <span class="av">${esc(s.aviso)}</span>` : ''}</small></div>`;
 }
 function aulaRow(a, b){
   const pend = a.sugestoes.map((s, i) => [s, i]).filter(([s]) => !s.estado), feitas = a.sugestoes.filter(s => s.estado);
@@ -123,7 +126,40 @@ async function decide(aid, i, estado){
 
 /* ---------- mandar aula ---------- */
 let M = null;
-function abre(d){ M = {d, data:HOJE, audio:null, slides:[], err:'', env:null}; desenha(); }
+function abre(d){ M = {d, data:HOJE, audio:null, slides:[], tr:'', fo:foco(d), err:'', env:null}; desenha(); }
+/* o "o que pesa" da última aula da disciplina, para não digitar de novo */
+const foco = d => (AU.aulas.filter(a => a.sigla === d && a.foco).sort((p, q) => q.data.localeCompare(p.data))[0] || {}).foco || '';
+/* guarda o que está no formulário antes de redesenhar */
+function le(){ const v = id => (document.getElementById(id) || {}).value; M.d = v('au-d') || M.d; M.data = v('au-dt') || M.data; M.tr = v('au-tr') ?? M.tr; M.fo = v('au-fo') ?? M.fo; }
+/* tamanho e duração da transcrição (pela maior marca de tempo), para conferir que entrou inteira */
+function trInfo(t){
+  if(!t.trim()) return 'cole o texto, use o botão colar ou escolha o arquivo (.md, .txt, .srt, .vtt)';
+  let seg = 0; for(const m of t.matchAll(/(?<![\d:])(\d{1,2}):([0-5]\d):([0-5]\d)(?![\d:])/g)) seg = Math.max(seg, m[1] * 3600 + m[2] * 60 + +m[3]);
+  const kb = new Blob([t]).size / 1024, h = Math.floor(seg / 3600), min = Math.floor(seg % 3600 / 60);
+  return [`${kb < 1 ? 'menos de 1' : Math.round(kb)} KB`, seg ? `${h ? h + ' h ' : ''}${min} min de marcas de tempo` : 'sem marcas de tempo',
+    t.length > TR_MAX ? `grande demais: o limite é ${TR_MAX / 1000} mil caracteres (umas 8 h de aula)` : ''].filter(Boolean).join(', ');
+}
+/* legenda .srt/.vtt → texto com uma marca [HH:MM:SS] a cada 2 min, como o Whisper do jogo (sem a numeração e os tempos de cada fala) */
+function legenda(txt){
+  const ls = txt.replace(/\r/g, '').split('\n'), tempo = /^(?:(\d{1,2}):)?(\d{2}):(\d{2})[.,]\d{3}\s*-->/, out = [];
+  let prox = 0, dentro = false;
+  ls.forEach((l, i) => {
+    const s = l.trim(), m = s.match(tempo);
+    if(m){ dentro = true; const b = Math.floor(((+m[1] || 0) * 3600 + +m[2] * 60 + +m[3]) / 120) * 120;
+      if(b >= prox){ out.push(`\n\n[${[b / 3600, b % 3600 / 60, b % 60].map(x => String(Math.floor(x)).padStart(2, '0')).join(':')}]\n`); prox = b + 120; } return; }
+    if(!s){ dentro = false; return; }
+    if(/^\d+$/.test(s) && tempo.test((ls[i + 1] || '').trim())) return;   // o número da fala no .srt
+    if(!dentro) return;   // WEBVTT, NOTE, STYLE...
+    out.push(s.replace(/<[^>]+>/g, '') + ' ');
+  });
+  return out.join('').trim();
+}
+async function colar(){
+  le();
+  try { const t = await navigator.clipboard.readText(); if(t.trim()){ M.tr = t; M.err = ''; } else M.err = 'A área de transferência está vazia.'; }
+  catch(e){ M.err = 'O navegador não deixou ler a área de transferência: clique no campo e aperte Ctrl+V.'; }
+  desenha(); if(M.err) document.getElementById('au-tr').focus();
+}
 function fecha(){ const el = document.getElementById('au'); if(el) el.remove(); M = null; }
 function desenha(){
   let bg = document.getElementById('au'); if(!bg){ bg = document.createElement('div'); bg.id = 'au'; bg.className = 'wz-bg'; document.body.appendChild(bg); }
@@ -139,7 +175,11 @@ function desenha(){
       ${AU.whisper.ok ? '' : `<div class="au-av">Para transcrever o áudio aqui mesmo (sem gastar a IA), instale o Whisper uma vez, no terminal:<code>${esc(AU.whisper.como)}</code>Sem ele, mande só os slides ou cole a transcrição abaixo.</div>`}
       <label>Slides (PDF)<input type="file" id="au-s" accept=".pdf,.txt,.md" multiple>
         <small class="h">${M.slides.length ? M.slides.map(f => esc(f.name)).join(' · ') : 'opcional: ajudam a IA a acertar os termos e a ligar a aula ao material'}</small></label>
-      <details${M.tr ? ' open' : ''}><summary class="sub" style="cursor:pointer">já tenho a transcrição (Teams, Zoom, legenda...)</summary><textarea id="au-tr" placeholder="cole aqui o texto da aula">${esc(M.tr || '')}</textarea></details>
+      <div class="au-trb"><span class="lb">Já tenho a transcrição<span class="ac"><button type="button" class="btn" data-aucola title="lê a área de transferência">colar</button><button type="button" class="btn" data-auarq title=".md, .txt, .srt ou .vtt">escolher arquivo</button></span></span>
+        <input type="file" id="au-tf" accept=".md,.txt,.srt,.vtt,text/plain,text/markdown" hidden>
+        <textarea id="au-tr" placeholder="cole aqui o texto da aula (Teams, Zoom, legenda, Whisper...)">${esc(M.tr)}</textarea><small class="h${M.tr.length > TR_MAX ? ' grande' : ''}" id="au-tri">${esc(trInfo(M.tr))}</small></div>
+      <label>O que pesa nesta disciplina<input id="au-fo" maxlength="600" value="${esc(M.fo)}" placeholder="opcional: o trabalho pede X, Y e Z; a prova é só de exercícios...">
+        <small class="h">a IA dá mais espaço no resumo ao que a disciplina cobra (o plano de ensino da pasta planos entra sozinho)</small></label>
       <p class="sub">Roda em segundo plano: a transcrição leva de 15 min a 1 h por hora de aula, e a IA mais alguns minutos (uns 20 a 30 mil tokens por aula). Pode fechar e continuar jogando.</p>
     </div>
     <div class="wz-foot"><span class="err" role="alert">${esc(M.err)}</span>${env ? `<span class="au-pb" title="enviando ${env.p}%"><b style="width:${env.p}%"></b></span><small class="sub">${esc(env.t)}</small>` : ''}
@@ -157,7 +197,8 @@ function sobe(aid, f, i, n){
   });
 }
 async function envia(){
-  M.d = document.getElementById('au-d').value; M.data = document.getElementById('au-dt').value; M.tr = document.getElementById('au-tr').value;
+  le();
+  if(M.tr.length > TR_MAX){ M.err = `A transcrição é grande demais (${Math.round(M.tr.length / 1000)} mil caracteres; o limite é ${TR_MAX / 1000} mil).`; desenha(); return; }
   if(!M.audio && !M.slides.length && !M.tr.trim()){ M.err = 'Escolha o áudio, os slides ou cole a transcrição.'; desenha(); return; }
   if(M.audio && !AU.whisper.ok && !M.tr.trim()){ M.err = 'Sem o Whisper não dá para transcrever o áudio: instale (comando acima) ou cole a transcrição.'; desenha(); return; }
   if(!/^\d{4}-\d{2}-\d{2}$/.test(M.data)){ M.err = 'Escolha a data da aula.'; desenha(); return; }
@@ -166,7 +207,7 @@ async function envia(){
     const {id} = await post('/api/aulas/nova', {sigla:M.d, data:M.data});
     const fs = [M.audio, ...M.slides].filter(Boolean);
     for(let i = 0; i < fs.length; i++) await sobe(id, fs[i], i + 1, fs.length);
-    await post('/api/aulas/processar', {id, transcricao: M.tr.trim() || undefined});
+    await post('/api/aulas/processar', {id, transcricao: M.tr.trim() || undefined, foco: M.fo.trim()});
     const d = M.d; fecha(); UI.cnab.add(d);
     await carrega(); render(); vigia();
     toast('Aula enviada <small>roda em segundo plano; o andamento aparece no chefão</small>');
@@ -175,15 +216,23 @@ async function envia(){
 
 document.addEventListener('change', e => {
   if(!M) return;
-  if(e.target.id === 'au-a'){ M.audio = e.target.files[0] || null; M.d = document.getElementById('au-d').value; M.tr = document.getElementById('au-tr').value; desenha(); }
-  if(e.target.id === 'au-s'){ M.slides = [...e.target.files]; M.d = document.getElementById('au-d').value; M.tr = document.getElementById('au-tr').value; desenha(); }
-  if(e.target.id === 'au-d'){ M.d = e.target.value; M.tr = document.getElementById('au-tr').value; desenha(); }
+  if(e.target.id === 'au-a'){ le(); M.audio = e.target.files[0] || null; desenha(); }
+  if(e.target.id === 'au-s'){ le(); M.slides = [...e.target.files]; desenha(); }
+  if(e.target.id === 'au-d'){ const fo = foco(M.d); le(); if(!M.fo.trim() || M.fo === fo) M.fo = foco(M.d); desenha(); }
+  if(e.target.id === 'au-tf' && e.target.files[0]){ const f = e.target.files[0]; le();
+    f.text().then(t => { if(!M) return; M.tr = /\.(srt|vtt)$/i.test(f.name) ? legenda(t) : t; M.err = ''; desenha(); }, () => { if(M){ M.err = 'Não consegui ler o arquivo.'; desenha(); } }); }
+});
+document.addEventListener('input', e => {
+  if(!M || e.target.id !== 'au-tr') return;
+  const i = document.getElementById('au-tri'); if(i){ i.textContent = trInfo(e.target.value); i.classList.toggle('grande', e.target.value.length > TR_MAX); }
 });
 document.addEventListener('click', async e => {
   const q = s => e.target.closest(s);
   const nv = q('[data-aunova]'); if(nv){ abre(nv.dataset.aunova); return; }
   if(q('[data-aufecha]')){ fecha(); return; }
   if(q('[data-auenvia]')){ envia(); return; }
+  if(q('[data-aucola]')){ colar(); return; }
+  if(q('[data-auarq]')){ document.getElementById('au-tf').click(); return; }
   const dc = q('[data-audec]'); if(dc){ const [aid, i, est] = dc.dataset.audec.split(':'); dc.disabled = true; await decide(aid, +i, est); return; }
   const vt = q('[data-auvolta]'); if(vt){ const a = AU.aulas.find(x => x.id === vt.dataset.auvolta); if(!a) return;
     for(const [i, s] of a.sugestoes.entries()) if(s.estado === 'nao'){ await post('/api/aulas/decidir', {id:a.id, i, estado:''}).catch(() => {}); s.estado = ''; }
