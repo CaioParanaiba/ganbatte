@@ -49,6 +49,7 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/aulas/nova {sigla, data} → {id}; POST /api/aulas/arquivo?id=&nome= (o arquivo cru no corpo: áudio ou slides)
   POST /api/aulas/processar {id, transcricao?} transcreve (faster-whisper) e a IA ligada resume e sugere tarefas; /cancela {id}
   POST /api/aulas/decidir {id, i, estado}  não adicionar | adicionar | juntar uma sugestão · /api/aulas/apagar {id}
+  POST /api/ementa {sigla, itens?, faixas?} ementa da disciplina e a faixa de cada avaliação (#214), em ementas.json
   GET  /aulas/SIGLA/ARQUIVO.html|md       o resumo e a transcrição de uma aula
   POST /api/conquistas {acao, ...}        conquistas da IA: criar {itens} | resgatar {no, como, j|k} | descartar {no}
   GET  /api/atualizacao[?agora]           versão instalada e as mais novas publicadas no GitHub (confere a cada 6 h; ?agora = na hora)
@@ -103,7 +104,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.9.2-beta11"
+VERSAO = "0.9.2-beta12"
 VERSAO_NOME = "atualização da Torre Trick"   # nome da série 0.9 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -2183,8 +2184,9 @@ def api_ia_plano(d):
 
 # ---------- aulas: o jogador manda o áudio e/ou os slides de uma aula pelo chefão; o jogo transcreve aqui mesmo (faster-whisper,
 # opcional, sem gastar a IA) e a IA ligada escreve o resumo e sugere tarefas de estudo. Na pasta de dados:
-#   aulas/aulas.json            índice: [{id, sigla, data, assunto, html, md, criada, foco, sugestoes: [{texto, resultado, detalhe, pri, est,
-#                               due, av, min, motivo, aviso, juntar, estado: "" | nao | add | juntar}]}]
+#   aulas/aulas.json            índice: [{id, sigla, data, assunto, html, md, criada, foco, sugestoes: [{tipo: entrega | estudo, texto,
+#                               resultado, detalhe, pri, est, due, av, item, min, motivo, aviso, juntar, marcada, estado: "" | nao | add
+#                               | juntar}], faixas: [{av, fim, min}]}]   (aula de antes da #214: sugestão sem tipo = entrega)
 #   aulas/SIGLA/DATA-slug.html  o resumo (página "caderno", web/aulas/modelo.html), aberto pelo chefão em /aulas/SIGLA/...
 #   aulas/SIGLA/DATA-slug.md    a transcrição
 #   aulas/.trabalho/ID/         o que chegou e ainda não virou resumo; o áudio é apagado no fim (não fica guardado)
@@ -2253,11 +2255,66 @@ def aulas_idx():
     return v if isinstance(v, list) else []
 
 
+# ementa (#214): ementas.json = {SIGLA: {itens: [{k, u, t, orig, av, alias}], faixas: {AV: {ini, fim}}}}
+#   k: a chave do item (vai na tarefa como top:k; não muda depois que uma tarefa usa), u: a unidade, t: o texto, orig: de qual plano
+#   veio (teoria, prática...), av: a avaliação que o plano liga ao item, alias: as chaves dos itens unidos a este.
+#   faixas: o item onde a matéria de cada avaliação começa e termina ("" = o padrão: começa depois da anterior; fim ainda sem definir)
+CHAVE_ITEM = re.compile(r"^[\w.\-]{1,12}$")
+
+
+def ementas():
+    v = ler_json("ementas.json", {})
+    return v if isinstance(v, dict) else {}
+
+
+def api_ementa(d):
+    """{sigla, itens?, faixas?}: grava a ementa e/ou as faixas de uma disciplina; o que não veio fica como estava."""
+    sigla = str(d.get("sigla") or "").upper()
+    if not re.fullmatch(r"[A-Z0-9]{1,12}", sigla):
+        raise Erro("disciplina inválida")
+    with lock:
+        tudo = ementas()
+        e = tudo.get(sigla) if isinstance(tudo.get(sigla), dict) else {}
+        if "itens" in d:
+            its = d["itens"]
+            if not isinstance(its, list) or len(its) > 300:
+                raise Erro("lista de itens inválida")
+            novos, vistas = [], set()
+            for x in its:
+                x = x if isinstance(x, dict) else {}
+                k, t = str(x.get("k") or "").strip(), " ".join(str(x.get("t") or "").split())
+                if not CHAVE_ITEM.match(k) or not t:
+                    raise Erro(f"item inválido: {k or t or '(vazio)'} (a chave tem até 12 letras, números, ponto ou hífen, sem espaço)")
+                alias = [a for a in (x.get("alias") or []) if isinstance(a, str) and CHAVE_ITEM.match(a)][:20]
+                if any(c.lower() in vistas for c in [k] + alias):
+                    raise Erro(f"a chave {k} aparece duas vezes")
+                vistas.update(c.lower() for c in [k] + alias)
+                novos.append({"k": k, "u": " ".join(str(x.get("u") or "").split())[:120], "t": t[:240],
+                              "orig": " ".join(str(x.get("orig") or "").split())[:40], "av": str(x.get("av") or "").strip().upper()[:8], "alias": alias})
+            e["itens"] = novos
+        if "faixas" in d:
+            fx = d["faixas"]
+            if not isinstance(fx, dict) or len(fx) > 30:
+                raise Erro("faixas inválidas")
+            chaves = {i["k"] for i in e.get("itens") or []}
+            e["faixas"] = {}
+            for av, f in fx.items():
+                f = f if isinstance(f, dict) else {}
+                ini, fim = str(f.get("ini") or ""), str(f.get("fim") or "")
+                if not re.fullmatch(r"[A-Za-z0-9]{1,8}", str(av)) or any(c and c not in chaves for c in (ini, fim)):
+                    raise Erro(f"faixa inválida em {av}")
+                if ini or fim:
+                    e["faixas"][str(av).upper()] = {"ini": ini, "fim": fim}
+        tudo[sigla] = e
+        gravar_json("ementas.json", tudo)
+    return {"ok": True, "ementas": tudo}
+
+
 def api_aulas_get():
     jobs = [{"id": k, **{c: j.get(c) for c in ("sigla", "data", "etapa", "prog", "erro")}, "seg": round(time.time() - j["ini"])}
             for k, j in sorted(aulas_jobs.items())]
     py = whisper_py()
-    return {"ok": True, "aulas": aulas_idx(), "jobs": jobs, "whisper": {"ok": bool(py), "como": whisper_como()}}
+    return {"ok": True, "aulas": aulas_idx(), "jobs": jobs, "whisper": {"ok": bool(py), "como": whisper_como()}, "ementas": ementas()}
 
 
 def trabalho(aid):
@@ -2438,6 +2495,14 @@ def pedido_aula(sigla, data, nome, arqs, dur, palavras=0, planos_ia=(), foco="")
     antes = [f"{a['data']}: {a['assunto']}" for a in aulas_idx() if a.get("sigla") == sigla][-8:]
     atraso = (hoje() - date.fromisoformat(data)).days
     alvo = max(500, palavras // 5) if palavras else 0
+    itens = (ementas().get(sigla) or {}).get("itens") or []
+    ementa = "\n".join(f"{i['k']} | {i['t']}" + (f" ({i['u']})" if i.get("u") else "") for i in itens)
+    if ementa:
+        e_qtd, e_item = "um por item da ementa que a aula cobriu (o mesmo item duas vezes, não)", 'a chave do item da ementa que ele cobre, só uma das chaves da lista acima; assunto fora da ementa, ""'
+        e_fx = ('se o professor disse até onde vai a matéria de uma avaliação ("cai até X", "a prova vai até Y"), um objeto por avaliação: '
+                'av = a chave dela, fim = a chave do último item da ementa que cai, min = o minuto. Sem esse aviso, []')
+    else:
+        e_qtd, e_item, e_fx = "um por tema (<h3>) do Resumo", 'deixe ""', "[] (sem ementa)"
     return f"""Você vai resumir uma aula para um estudante e sugerir tarefas de estudo. Ninguém responde durante o pedido: não pergunte nada,
 não crie arquivos e não rode comandos; só leia os arquivos da pasta atual e responda no formato do fim.
 
@@ -2456,6 +2521,9 @@ Tarefas já abertas da disciplina:
 {chr(10).join(abertas) or "(nenhuma)"}
 
 Aulas anteriores já resumidas: {"; ".join(antes) or "nenhuma"}.
+
+Ementa da disciplina (chave | item), na ordem do plano:
+{ementa or "(sem ementa cadastrada)"}
 
 RESUMO (HTML, só o miolo: sem <html>, <head>, <body>, <h1> nem CSS). Use estes <h2>, nesta ordem (sem numerar):
 1. <h2>Resumo</h2>: o conteúdo da disciplina organizado por tema (do plano de ensino, se houver), não pela ordem da aula: um <h3>
@@ -2479,7 +2547,9 @@ algo que ele não disse. Figuras: só quando o assunto for visual, de 0 a 4, cad
 e <figcaption>, usando só as classes de figuras.html (nunca cores fixas). Sem <script>, sem <img>, sem atributos on..., sem links
 para fora. Feche todas as tags e escape &, < e > do texto.
 
-SUGESTÕES de tarefas (no máximo 5; prefira poucas e úteis). O jogo confere cada uma e calcula a prioridade com os fatos abaixo:
+ENTREGAS: tudo o que o professor passou para fazer (lista, trabalho, atividade, algo para trazer pronto), sem limite: se ele
+passou cinco, mande as cinco; se não passou nada, []. Estudo do conteúdo não entra aqui (vai em ESTUDOS). O jogo confere cada uma
+e calcula a prioridade com os fatos abaixo:
 - texto: verbo no infinitivo + objeto + o que fica pronto, até 60 caracteres, uma ação ("Resolver a lista 3 de sub-redes",
   "Montar a topologia do trabalho no VirtualBox"). "Revisar", "mapear", "esquematizar" ou "estudar" sozinhos não dizem o que entregar.
 - resultado: o que existe no fim (exercícios resolvidos, um desenho, uma tabela, a VM instalada...). Sem resultado claro, não sugira.
@@ -2495,30 +2565,50 @@ SUGESTÕES de tarefas (no máximo 5; prefira poucas e úteis). O jogo confere ca
 - juntar: compare cada sugestão com TODAS as tarefas abertas acima, não só as de assunto igual: se uma delas já cobre a sugestão,
   mesmo em parte (instalar a VM cobre montar o laboratório nela), ponha o texto exato dela aqui; senão "".
 - Aviso de prova ou entrega citado na aula vira "Conferir: ..." (ex.: "Conferir: professor citou a P2 em 08/10"), com resultado "".
-- Com 5 ou mais tarefas abertas na disciplina, sugira só o essencial (o jogo deixa no máximo 2).
+
+ESTUDOS: o que estudar do conteúdo desta aula, {e_qtd}.
+O estudo termina quando acaba a fonte, que é este resumo: não é "estudar o assunto inteiro".
+- texto: "Estudar " + o assunto como a aula tratou, até 60 caracteres (o jogo acrescenta "(resumo DD/MM)").
+- item: {e_item}.
+- min: o minuto da transcrição ou o slide que mostra que a aula tratou do assunto. Sempre.
+- detalhe: o que estudar, em uma frase.
+- fatos: "cai", "base" e "confuso", com as mesmas regras das entregas.
+- av e juntar: com as mesmas regras das entregas.
+
+FAIXAS: {e_fx}.
 
 Responda exatamente assim, nada antes nem depois:
 ===RESUMO===
 (o HTML)
 ===DADOS===
-{{"assunto": "assunto curto da aula, com acentos", "sugestoes": [{{"texto": "", "resultado": "", "detalhe": "", "est": "", "min": "", "fatos": {{"entrega": false, "cai": false, "base": false, "confuso": false}}, "due": "", "av": "", "juntar": ""}}]}}
+{{"assunto": "assunto curto da aula, com acentos", "entregas": [{{"texto": "", "resultado": "", "detalhe": "", "est": "", "min": "", "fatos": {{"entrega": false, "cai": false, "base": false, "confuso": false}}, "due": "", "av": "", "juntar": ""}}],
+ "estudos": [{{"texto": "Estudar ", "item": "", "detalhe": "", "min": "", "fatos": {{"cai": false, "base": false, "confuso": false}}, "av": "", "juntar": ""}}], "faixas": []}}
 """
 
 
-def confere_sugestoes(brutas, sigla, n_abertas):
+def confere_sugestoes(entregas, sigla, estudos=(), data=""):
     """O jogo confere o que a IA sugeriu em vez de confiar nela (#210): prazo só de entrega e ainda por vir, av só da disciplina,
-    com evidência e ainda por vir, e a prioridade sai dos fatos (a IA não manda a letra). Sem resultado, a sugestão fica de fora."""
+    com evidência e ainda por vir, e a prioridade sai dos fatos (a IA não manda a letra). Entrega sem resultado fica de fora.
+    Os pontos só ordenam, não escondem nada (#214): as entregas vêm todas e marcadas; os estudos (um por item da ementa que a aula
+    cobriu, com o item conferido na ementa) vêm do mais ao menos pontuado, com os 3 primeiros marcados e o resto em "ver mais"."""
     hj, avs = hoje(), avals_disc(sigla)
+    itens = {}
+    for i in (ementas().get(sigla) or {}).get("itens") or []:
+        for k in [i["k"]] + list(i.get("alias") or []):
+            itens[k.lower()] = i["k"]
     sim = lambda f, k: f.get(k) is True or str(f.get(k)).strip().lower() in ("true", "sim", "1")
-    out = []
-    for s in brutas[:5] if isinstance(brutas, list) else []:
+    resumo = f" (resumo {data[8:10]}/{data[5:7]})" if re.fullmatch(r"\d{4}-\d{2}-\d{2}", data or "") else ""
+
+    def confere(s, estudo):
         if not isinstance(s, dict) or not str(s.get("texto") or "").strip():
-            continue
-        c = {k: str(s.get(k) or "").strip()[:300] for k in ("texto", "resultado", "detalhe", "est", "min", "due", "av", "juntar")}
+            return None
+        c = {k: str(s.get(k) or "").strip()[:300] for k in ("texto", "resultado", "detalhe", "est", "min", "due", "av", "juntar", "item")}
         c["texto"] = c["texto"][:90]
         conf = c["texto"].lower().startswith("conferir")
-        if not c["resultado"] and not conf:
-            continue
+        if not estudo and not c["resultado"] and not conf:
+            return None
+        if estudo and resumo and "(resumo" not in c["texto"].lower():
+            c["texto"] = c["texto"].rstrip(" .") + resumo
         f = s.get("fatos") if isinstance(s.get("fatos"), dict) else {}
         ev = bool(re.search(r"\d{1,2}:\d{2}|slide|p[aá]g", c["min"], re.I))
         razoes, aviso, pts = [], "", 0
@@ -2529,7 +2619,7 @@ def confere_sugestoes(brutas, sigla, n_abertas):
             pts += 3 if dias <= 7 else 2 if dias <= 14 else 1 if dias <= 30 else 0
             razoes.append(f"{c['av']} em {dias} dia{'s' if dias != 1 else ''}")
         try:
-            due = date.fromisoformat(c["due"]) if sim(f, "entrega") and ev else None
+            due = date.fromisoformat(c["due"]) if not estudo and sim(f, "entrega") and ev else None
         except ValueError:
             due = None
         if due and due < hj:
@@ -2543,13 +2633,32 @@ def confere_sugestoes(brutas, sigla, n_abertas):
                 pts += p
                 razoes.append(r)
         c["pri"] = "A" if pts >= 5 or (due and (due - hj).days <= 2) else "B" if pts >= 3 else "C" if pts == 2 else ""
-        c.update(motivo=", ".join(razoes), aviso=aviso, estado="", pts=pts)
-        out.append(c)
-    if n_abertas >= 5:   # disciplina cheia: no máximo 2 tarefas novas, só com 3 pontos ou mais (juntar não cria tarefa)
-        novas = sorted((s for s in out if not s["juntar"] and s["pts"] >= 3), key=lambda s: -s["pts"])[:2]
-        out = [s for s in out if s["juntar"] or s in novas]
-    for s in out:
-        s.pop("pts")
+        c["item"] = itens.get(c["item"].lower(), "") if estudo else ""
+        c.update(motivo=", ".join(razoes), aviso=aviso, estado="", tipo="estudo" if estudo else "entrega", marcada=not estudo, pts=pts)
+        if estudo:
+            c.pop("resultado")
+        return c
+
+    ents = [c for c in (confere(s, False) for s in (entregas if isinstance(entregas, list) else [])[:20]) if c]
+    ests = sorted((c for c in (confere(s, True) for s in (estudos if isinstance(estudos, list) else [])[:20]) if c), key=lambda c: -c["pts"])
+    for i, c in enumerate(ests):
+        c["marcada"] = i < 3
+    for c in ents + ests:
+        c.pop("pts")
+    return ents + ests
+
+
+def confere_faixas(brutas, sigla):
+    """O fim da matéria de cada avaliação que o professor avisou na aula (#214): avaliação da disciplina, item da ementa e o minuto.
+    Fica na aula como sugestão; quem grava a faixa é o jogador."""
+    avs, itens = avals_disc(sigla), {i["k"].lower(): i["k"] for i in (ementas().get(sigla) or {}).get("itens") or []}
+    out = []
+    for f in brutas if isinstance(brutas, list) else []:
+        if not isinstance(f, dict):
+            continue
+        av, fim, mn = str(f.get("av") or "").strip().upper(), itens.get(str(f.get("fim") or "").strip().lower()), str(f.get("min") or "").strip()[:40]
+        if av in avs and fim and re.search(r"\d{1,2}:\d{2}|slide|p[aá]g", mn, re.I) and not any(x["av"] == av for x in out):
+            out.append({"av": av, "fim": fim, "min": mn})
     return out
 
 
@@ -2638,9 +2747,9 @@ def aula_executa(aid):
             except ValueError:
                 raise Erro("a IA mandou as sugestões num JSON inválido; tente de novo")
             assunto = str(dados.get("assunto") or "Aula")[:120]
-            abertas = sum(1 for l in ler() if re.search(rf"\+fac\.{re.escape(sigla)}(?=\s|$)", l, re.I) and not l.startswith("x "))
-            sug = confere_sugestoes(dados.get("sugestoes"), sigla, abertas)
-            fora = len(dados.get("sugestoes") or []) - len(sug) if isinstance(dados.get("sugestoes"), list) else 0
+            ents = dados.get("entregas") if isinstance(dados.get("entregas"), list) else dados.get("sugestoes")   # "sugestoes": o formato de antes da #214
+            sug = confere_sugestoes(ents, sigla, dados.get("estudos"), data)
+            fora = sum(len(x) for x in (ents, dados.get("estudos")) if isinstance(x, list)) - len(sug)
             base = f"{data}-{slug(assunto)}"
             dest = DADOS / "aulas" / sigla
             dest.mkdir(parents=True, exist_ok=True)
@@ -2656,7 +2765,8 @@ def aula_executa(aid):
             with lock:
                 idx = aulas_idx()
                 idx.append({"id": aid, "sigla": sigla, "data": data, "assunto": assunto, "html": f"{sigla}/{base}.html",
-                            "md": f"{sigla}/{base}.md" if tr.exists() else "", "criada": time.strftime("%Y-%m-%d %H:%M"), "foco": meta.get("foco") or "", "sugestoes": sug})
+                            "md": f"{sigla}/{base}.md" if tr.exists() else "", "criada": time.strftime("%Y-%m-%d %H:%M"), "foco": meta.get("foco") or "", "sugestoes": sug,
+                            "faixas": confere_faixas(dados.get("faixas"), sigla)})
                 gravar_json("aulas/aulas.json", idx)
             shutil.rmtree(pasta, ignore_errors=True)
             aulas_jobs.pop(aid, None)
@@ -3461,8 +3571,9 @@ ROTAS = {"/api/act": api_act, "/api/add": api_add, "/api/undo": api_undo, "/api/
          "/api/grupo/entrar": api_grupo_entrar, "/api/grupo/sair": api_grupo_sair, "/api/grupo/sincronizar": api_grupo_sincronizar,
          "/api/grupo/admin": api_grupo_admin, "/api/grupo/host": api_grupo_host, "/api/grupo/vinculo": api_grupo_vinculo,
          "/api/grupo/frase": api_grupo_frase, "/api/grupo/modalidade": api_grupo_modalidade, "/api/grupo/duelo": api_grupo_duelo, "/api/grupo/pacto": api_grupo_pacto, "/api/aulas/nova": api_aulas_nova, "/api/aulas/processar": api_aulas_processar,
-         "/api/aulas/cancela": api_aulas_cancela, "/api/aulas/decidir": api_aulas_decidir, "/api/aulas/apagar": api_aulas_apagar}
-LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/aulas/processar": 1_700_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000, "/api/grupo/host": 140_000_000}
+         "/api/aulas/cancela": api_aulas_cancela, "/api/aulas/decidir": api_aulas_decidir, "/api/aulas/apagar": api_aulas_apagar,
+         "/api/ementa": api_ementa}
+LIMITE = {"/api/temporada": 3_000_000, "/api/colecao": 600000, "/api/conquistas": 20000, "/api/ia/rodar": 300000, "/api/ia/plano": 21_000_000, "/api/aulas/processar": 1_700_000, "/api/jogo/narrada": 40000, "/api/config": 90000, "/api/jogo/estado": 520000, "/api/jogo/planos": 130000, "/api/grupo/sincronizar": 1_000_000, "/api/grupo/host": 140_000_000, "/api/ementa": 200_000}
 ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("index.html", "text/html; charset=utf-8"),
              "/motor.js": ("motor.js", "text/javascript; charset=utf-8"), "/guia.js": ("guia.js", "text/javascript; charset=utf-8"),
              "/demo.js": ("demo.js", "text/javascript; charset=utf-8"), "/chefes.js": ("chefes.js", "text/javascript; charset=utf-8"),
@@ -3470,7 +3581,8 @@ ESTATICOS = {"/": ("index.html", "text/html; charset=utf-8"), "/index.html": ("i
              "/novidades.js": ("novidades.js", "text/javascript; charset=utf-8"), "/expedicoes.js": ("expedicoes.js", "text/javascript; charset=utf-8"),
              "/feedback.js": ("feedback.js", "text/javascript; charset=utf-8"), "/temporadas.js": ("temporadas.js", "text/javascript; charset=utf-8"),
              "/efeitos.js": ("efeitos.js", "text/javascript; charset=utf-8"), "/grupo.js": ("grupo.js", "text/javascript; charset=utf-8"),
-             "/arte.js": ("arte.js", "text/javascript; charset=utf-8"), "/aulas.js": ("aulas.js", "text/javascript; charset=utf-8")}
+             "/arte.js": ("arte.js", "text/javascript; charset=utf-8"), "/aulas.js": ("aulas.js", "text/javascript; charset=utf-8"),
+             "/ementa.js": ("ementa.js", "text/javascript; charset=utf-8")}
 
 
 class H(BaseHTTPRequestHandler):

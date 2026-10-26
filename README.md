@@ -160,7 +160,9 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 - `web/index.html`: a página do jogo. `web/motor.js`: todas as regras e contas. `web/guia.js`: assistente e tutorial.
   Na Lista, `habitosL()` mostra a Constância em blocos mensais, com rolagem horizontal quando necessário. Os resumos
   continuam sendo da temporada; hábitos semanais conservam a semana inteira no mês em que ela começa (#186).
-  `web/chefes.js`: editor de avaliações e notas. `web/ia.js`: pedidos para a IA e a IA ligada. `web/conquistas.js`:
+  `web/chefes.js`: editor de avaliações e notas. `web/aulas.js`: aulas no chefão (resumo e o cartão de sugestões: entregas e
+  estudos, com o item da ementa e a união de estudos). `web/ementa.js`: ementa da disciplina (`ementas.json`), a faixa de cada avaliação
+  e a caçada da prova (#214); os estudos são tarefas com `top:ITEM`. `web/ia.js`: pedidos para a IA e a IA ligada. `web/conquistas.js`:
   conquistas criadas pela IA (as regras ficam no motor). Novas cartas exigem mínimos de volume e dias de atividade,
   sequências, semanas completas de XP e nota com peso mínimo, sem promover o rank pela falta de histórico (#75).
   `node tests/test_conquistas.mjs` confere as regras; `node ferramentas/simulador-conquistas.mjs --antes REF`
@@ -196,6 +198,7 @@ Entra um jogador de exemplo, com histórico, e nada é gravado: recarregar a pá
 
 | Versão | Nome | O que trouxe |
 |---|---|---|
+| 0.9.2-beta12 | atualização da Torre Trick | Chefão por abas (avaliações, ementa, aulas, tarefas). Ementa da disciplina (`ementas.json`, `POST /api/ementa`), montada pela IA a partir dos planos (dois planos viram uma lista só, com a origem), com unir e apagar. Aula sugere entregas (todas, marcadas) e estudos (um por item da ementa, `top:ITEM`; os 3 de mais pontos marcados), sem o corte por atraso; juntar estudos de aulas diferentes numa tarefa só. Faixa da matéria de cada avaliação e o botão "ativar caçada da prova" (revisões, pendentes e itens sem estudo, só na faixa; `cacadas[NOME].prova`) (#214). |
 | 0.9.2-beta11 | atualização da Torre Trick | Aulas: colar e escolher arquivo da transcrição (`.srt`/`.vtt` viram marcas a cada 2 min), com tamanho e duração, e o campo "o que pesa" (#209). O jogo confere as sugestões (`confere_sugestoes`): prazo só de entrega e ainda por vir, `av:` com evidência, prioridade pelos fatos, sem resultado fica de fora (#210). O resumo leva o plano de ensino (`planos_disc`), sai por tema com orçamento de ~20% da transcrição, "Fora do plano" em um parágrafo e o que a IA acrescentou marcado (#211). |
 | 0.9.2-beta10 | atualização da Torre Trick | Torre Trick nova, aba única (#170, PR #196): Geral e Superação semanais, card da semana com marca e modalidade, chefão do mês, Trick Coin com extrato (#43), tabela do dia do Codeforces (`grupo/cf_dia.py`, #171); duelo (PR #200) e pacto de hábito (#172, PR #204). Feitiços em pausa até 10 jogadores ativos, missão e preparação em 1.500 J (`migra.feiticos`, PR #201), com o aviso grande. Lista, Progresso e Chefões só no desenho novo, com as aulas no chefão (PRs #193, #195); Calendário novo (PR #197); barra com o Sistema (PR #198); Constância por mês (#186, PR #194); caçada sem etapa e excluir caçada (#149, #150, PR #205); chefão com o nome do retrato (#203, PR #206). Recorrente (`rep:`) com a tag de hábito deixa de ser hábito (`isRec`). |
 | 0.9.2-beta9 | atualização da Torre Trick | Compras da Aparência pausadas até o balanceamento dos preços (`LOJA_TRAVADA` no motor; provar, o que é seu, feitiços e prêmios reais seguem normais) (#77). |

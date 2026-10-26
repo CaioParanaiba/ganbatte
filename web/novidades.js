@@ -28,6 +28,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta12", "nome": "atualização da Torre Trick", "data": "2026-10-26",
+   "cap": "estudos pela ementa · caçada da prova",
+   "resumo": "Cada chefão ganhou abas e uma ementa: os estudos que vêm das aulas ficam no item certo, você vê o que ainda não teve aula e, perto da prova, um botão monta a caçada com o que já existe.",
+   "itens": [
+     {"ic": "scroll", "t": "Ementa da disciplina", "d": "Na aba ementa do chefão, a IA lê o plano de ensino (teoria e prática viram uma lista só, sem repetir) e você aprova, edita, une ou apaga os itens. Cada item mostra os estudos feitos e pendentes; os que ainda não tiveram aula aparecem como \"ainda sem aula\" (#214)."},
+     {"ic": "spider", "t": "Entregas e estudos de cada aula", "d": "A aula sugere todas as entregas que o professor passou e um estudo por item da ementa que ela cobriu, no formato \"Estudar X (resumo DD/MM)\". As entregas vêm marcadas, dos estudos os 3 mais importantes, e o resto fica em \"ver mais\". Dá para trocar o item e juntar dois estudos, da mesma aula ou de outra, numa tarefa só. Nada some mais por a disciplina estar atrasada: o número de abertas aparece só como aviso."},
+     {"ic": "card", "t": "Caçada da prova quando você quiser", "d": "Cada avaliação tem a faixa da matéria (de qual item até qual) e o botão \"ativar caçada da prova\": os estudos já feitos viram revisões, os pendentes entram como estão e os itens sem estudo viram uma etapa para estudar pelos slides ou pelo livro. Você vê a lista antes de gravar, e o botão também atualiza a caçada sem duplicar."}
+   ]},
   {"versao": "0.9.2-beta11", "nome": "atualização da Torre Trick", "data": "2026-10-26",
    "cap": "aulas mais certeiras",
    "resumo": "Mandar aula ficou mais fácil com a transcrição pronta, e o resumo e as sugestões de tarefa passaram a seguir o plano de ensino e o que a aula disse de fato.",
