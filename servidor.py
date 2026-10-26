@@ -103,7 +103,7 @@ from io import BytesIO
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSAO = "0.9.2-beta10"
+VERSAO = "0.9.2-beta11"
 VERSAO_NOME = "atualização da Torre Trick"   # nome da série 0.9 (aparece em Configurações → servidor)
 REPO = Path(__file__).resolve().parent
 WEB = REPO / "web"
@@ -2183,8 +2183,8 @@ def api_ia_plano(d):
 
 # ---------- aulas: o jogador manda o áudio e/ou os slides de uma aula pelo chefão; o jogo transcreve aqui mesmo (faster-whisper,
 # opcional, sem gastar a IA) e a IA ligada escreve o resumo e sugere tarefas de estudo. Na pasta de dados:
-#   aulas/aulas.json            índice: [{id, sigla, data, assunto, html, md, criada, sugestoes: [{texto, detalhe, pri, est, due, av,
-#                               motivo, juntar, estado: "" | nao | add | juntar}]}]
+#   aulas/aulas.json            índice: [{id, sigla, data, assunto, html, md, criada, foco, sugestoes: [{texto, resultado, detalhe, pri, est,
+#                               due, av, min, motivo, aviso, juntar, estado: "" | nao | add | juntar}]}]
 #   aulas/SIGLA/DATA-slug.html  o resumo (página "caderno", web/aulas/modelo.html), aberto pelo chefão em /aulas/SIGLA/...
 #   aulas/SIGLA/DATA-slug.md    a transcrição
 #   aulas/.trabalho/ID/         o que chegou e ainda não virou resumo; o áudio é apagado no fim (não fica guardado)
@@ -2192,6 +2192,7 @@ AULA_AUDIO = {".m4a", ".mp3", ".ogg", ".opus", ".wav", ".aac", ".flac", ".webm",
 AULA_SLIDE = {".pdf", ".txt", ".md"}
 AULA_MAX = 600_000_000   # bytes por arquivo (1h40 de áudio do celular fica bem abaixo disso)
 AULA_TEMPO = 1500   # segundos para a IA escrever o resumo (é o pedido mais longo do jogo)
+AULA_TR_MAX = 400_000   # caracteres de transcrição colada (1h30 de aula dá uns 70 mil)
 NOME_AULA = re.compile(r"^[\w .()\-]{1,100}$")
 ID_AULA = re.compile(r"^\d{8,16}$")
 aulas_jobs = {}   # id → {sigla, data, etapa: fila|transcrevendo|lendo|resumindo|erro, prog, erro, ini, tid}
@@ -2309,8 +2310,8 @@ def api_aulas_processar(d):
         raise Erro("essa aula já está sendo processada", 409)
     tr = d.get("transcricao")
     if isinstance(tr, str) and tr.strip():
-        if len(tr) > 400000:
-            raise Erro("transcrição grande demais")
+        if len(tr) > AULA_TR_MAX:
+            raise Erro(f"transcrição grande demais ({len(tr) // 1000} mil caracteres; o limite é {AULA_TR_MAX // 1000} mil, umas 8 h de aula)", 413)
         (pasta / ".transcricao.md").write_text(tr.strip() + "\n", encoding="utf-8")
     arqs = [f for f in pasta.iterdir() if f.suffix.lower() in AULA_AUDIO | AULA_SLIDE]
     if not arqs and not (pasta / ".transcricao.md").exists():
@@ -2323,6 +2324,9 @@ def api_aulas_processar(d):
     if not acha_agente(ag):
         raise Erro(f"não achei o {AGENTES[ag]['nome']} neste computador")
     meta = json.loads((pasta / "aula.json").read_text(encoding="utf-8"))
+    if isinstance(d.get("foco"), str):   # o que pesa na disciplina, nas palavras do jogador (#211); "tentar de novo" mantém o de antes
+        meta["foco"] = " ".join(d["foco"].split())[:600]
+        (pasta / "aula.json").write_text(json.dumps(meta), encoding="utf-8")
     aulas_jobs[aid] = {"sigla": meta["sigla"], "data": meta["data"], "etapa": "fila", "prog": 0, "erro": "", "ini": time.time()}
     threading.Thread(target=aula_executa, args=(aid,), daemon=True).start()
     return {"ok": True}
@@ -2402,57 +2406,151 @@ def bloco_disc(sigla):
     return "\n".join(out)
 
 
-def pedido_aula(sigla, data, nome, arqs, dur):
+def avals_disc(sigla):
+    """{CHAVE: data} das avaliações da disciplina com data (AAAA-MM-DD ou dd/mm/aaaa; o "?" de estimada não atrapalha)."""
+    out = {}
+    for l in bloco_disc(sigla).split("\n")[1:]:
+        p = [x.strip() for x in l.split("|")]
+        if len(p) < 4 or l.lstrip().startswith("#"):
+            continue
+        iso, br = re.match(r"(\d{4})-(\d{2})-(\d{2})", p[3]), re.match(r"(\d{2})/(\d{2})/(\d{4})", p[3])
+        try:
+            out[p[0].upper()] = date(*map(int, iso.groups())) if iso else date(*map(int, br.groups()[::-1])) if br else None
+        except ValueError:
+            out[p[0].upper()] = None
+    return out
+
+
+def _sem(t):
+    import unicodedata
+    return unicodedata.normalize("NFKD", str(t)).encode("ascii", "ignore").decode().lower()
+
+
+def planos_disc(sigla, nome):
+    """Os planos de ensino da pasta planos/ com a sigla (palavra inteira) ou o nome da disciplina no nome do arquivo."""
+    n = re.sub(r"[^a-z0-9]", "", _sem(nome))
+    return [f for f in planos() if re.search(rf"(^|[^a-z0-9]){re.escape(_sem(sigla))}([^a-z0-9]|$)", _sem(f))
+            or (len(n) > 3 and n in re.sub(r"[^a-z0-9]", "", _sem(f)))][:3]
+
+
+def pedido_aula(sigla, data, nome, arqs, dur, palavras=0, planos_ia=(), foco=""):
     abertas = [l.strip() for l in ler() if re.search(rf"\+fac\.{re.escape(sigla)}(?=\s|$)", l, re.I) and not l.startswith("x ")]
     antes = [f"{a['data']}: {a['assunto']}" for a in aulas_idx() if a.get("sigla") == sigla][-8:]
+    atraso = (hoje() - date.fromisoformat(data)).days
+    alvo = max(500, palavras // 5) if palavras else 0
     return f"""Você vai resumir uma aula para um estudante e sugerir tarefas de estudo. Ninguém responde durante o pedido: não pergunte nada,
 não crie arquivos e não rode comandos; só leia os arquivos da pasta atual e responda no formato do fim.
 
 Disciplina: {sigla} ({nome}). Data da aula: {data}. Hoje: {hoje().isoformat()}.{f" Duração do áudio: {dur // 60} min." if dur else ""}
-Arquivos: {", ".join(arqs)}. A transcrição (se houver) foi feita pelo Whisper e tem marcas [HH:MM:SS] a cada 2 min; os slides
-(se houver) são o material da aula: use-os para corrigir termos que o Whisper errou e cite o slide ou a página quando ajudar.
+Arquivos: {", ".join(arqs)}. A transcrição (se houver) tem marcas [HH:MM:SS] a cada 2 min; os slides
+(se houver) são o material da aula: use-os para corrigir termos que a transcrição errou e cite o slide ou a página quando ajudar.
 Leia figuras.html antes de escrever: ele mostra a estrutura e as figuras que você pode usar.
+{f"Plano de ensino da disciplina: {', '.join(planos_ia)}. Leia a ementa e o conteúdo programático: é ele que diz o que é da disciplina e o que pesa." if planos_ia else "Não há plano de ensino guardado: use as avaliações abaixo, os slides e o nome da disciplina para saber o que é dela."}
+{f'O que pesa nesta disciplina, nas palavras do estudante (use como peso extra): "{foco}"' if foco else ""}
+{f"Esta aula foi há {atraso} dias: o que ela pedia para a época (revisar para a aula seguinte, trazer algo pronto) já passou." if atraso > 7 else ""}
 
 Avaliações da disciplina (chave | nome | peso | data | palavras-chave), para saber o que vem pela frente:
 {bloco_disc(sigla) or "(nenhuma cadastrada)"}
 
-Tarefas já abertas da disciplina (não sugira de novo; se uma sugestão for quase igual a uma delas, ponha o texto dela em "juntar"):
+Tarefas já abertas da disciplina:
 {chr(10).join(abertas) or "(nenhuma)"}
 
 Aulas anteriores já resumidas: {"; ".join(antes) or "nenhuma"}.
 
 RESUMO (HTML, só o miolo: sem <html>, <head>, <body>, <h1> nem CSS). Use estes <h2>, nesta ordem (sem numerar):
-1. <h2>Resumo</h2>: o conteúdo na ordem em que foi dado, em tópicos <h3> com o minuto ao lado (<span class="t">00:02–00:08</span>), <p> e <ul>.
+1. <h2>Resumo</h2>: o conteúdo da disciplina organizado por tema (do plano de ensino, se houver), não pela ordem da aula: um <h3>
+   por tema com os minutos em que ele apareceu ao lado (<span class="t">00:12, 00:40–00:52</span>), <p> e <ul>. O detalhe de cada
+   tema acompanha o peso dele no plano, nas avaliações e no que o estudante disse que pesa, não o tempo que a aula gastou nele.
+   Os <h3> são só temas do conteúdo programático do plano (ou das avaliações); assunto que não está lá não ganha <h3> nem entra
+   junto no título de outro tema, mesmo que seja técnico ou interessante: vai para "Fora do plano".
 2. <h2>Conceitos-chave</h2>: <table> de duas colunas (termo | definição curta).
-3. <h2>Conexão com o material</h2>: o que da aula está em qual slide ou página, e o que foi além deles.
+3. <h2>Conexão com o material</h2>: o que da aula está em qual slide, página ou tópico do plano, e o que foi além deles.
 4. <h2>Avisos do professor</h2>: prazos, provas, trabalhos, o que "vai cair", em <div class="nota"><ul>...</ul></div>, com o minuto.
-5. <h2>Perguntas em aula</h2>: perguntas feitas e a resposta do professor, com o minuto.
+5. <h2>Perguntas em aula</h2>: só as perguntas com conteúdo da disciplina, e a resposta do professor, com o minuto.
 6. <h2>Pontos em aberto</h2>: o que ficou confuso, incompleto ou contraditório, e perguntas sem resposta.
+7. <h2>Fora do plano</h2>: o que a aula teve fora da disciplina (casos pessoais, divagações, outros assuntos), num único <p class="fora">,
+   nunca mais que um parágrafo. O tamanho acompanha o quanto a aula saiu do plano: pouco, uma ou duas frases; bastante, o parágrafo
+   inteiro. Guarde o que pode servir (uma dica, um nome, uma recomendação).
+{f"Tamanho: o resumo inteiro, contando tabela, avisos e perguntas, em até {alvo} palavras (a transcrição tem {palavras}). É um limite, não uma meta: corte nas divagações e nas repetições, não nos temas da disciplina." if alvo else "Tamanho: direto ao ponto; o detalhe vai para o que a disciplina cobra."}
 Seção sem conteúdo: <p>Nada registrado.</p>. Não invente o que não está na transcrição nem nos slides; trecho inaudível ou
-ambíguo: diga isso com o minuto. Figuras: só quando o assunto for visual, de 0 a 4, cada uma um <figure> com <svg viewBox="0 0 640 ALTURA">
+ambíguo: diga isso com o minuto. O que você acrescentar do seu próprio conhecimento (um exemplo, um nome de ferramenta, uma
+definição que o professor não deu) vai dentro de <span class="ia">...</span>, para o estudante não estudar como fala do professor
+algo que ele não disse. Figuras: só quando o assunto for visual, de 0 a 4, cada uma um <figure> com <svg viewBox="0 0 640 ALTURA">
 e <figcaption>, usando só as classes de figuras.html (nunca cores fixas). Sem <script>, sem <img>, sem atributos on..., sem links
 para fora. Feche todas as tags e escape &, < e > do texto.
 
-SUGESTÕES de tarefas (no máximo 5; prefira poucas e úteis):
-- texto: verbo no infinitivo + objeto, até 60 caracteres, uma ação ("Refazer exemplo de fragmentação IPv4"). Una itens curtos do mesmo assunto.
+SUGESTÕES de tarefas (no máximo 5; prefira poucas e úteis). O jogo confere cada uma e calcula a prioridade com os fatos abaixo:
+- texto: verbo no infinitivo + objeto + o que fica pronto, até 60 caracteres, uma ação ("Resolver a lista 3 de sub-redes",
+  "Montar a topologia do trabalho no VirtualBox"). "Revisar", "mapear", "esquematizar" ou "estudar" sozinhos não dizem o que entregar.
+- resultado: o que existe no fim (exercícios resolvidos, um desenho, uma tabela, a VM instalada...). Sem resultado claro, não sugira.
 - detalhe: os passos, em uma ou duas frases.
 - est: tempo de trabalho focado: 15m, 30m, 45m, 1h, 1h30 ou 2h (acima de 2h, divida).
-- pri: some os pontos. Avaliação da disciplina em até 7 dias +3, 8 a 14 +2, 15 a 30 +1; o professor disse que cai +2; conteúdo
-  acumulativo ou base das próximas aulas +1; ficou confuso na aula +1; prazo dado pelo professor +3. 5 ou mais = "A", 3 a 4 = "B",
-  2 = "C", menos = "". Prazo em até 2 dias da aula é sempre "A". Com 5 ou mais tarefas abertas na disciplina, no máximo 2
-  sugestões e só com 3 pontos ou mais.
-- motivo: uma frase com o que pesou na prioridade.
-- due: AAAA-MM-DD só se o professor deu prazo; senão "".
-- av: a chave da avaliação que a tarefa prepara (das avaliações acima), ou "".
-- juntar: o texto exato de uma tarefa aberta acima que já cobre a sugestão, ou "".
-- Aviso de prova ou entrega citado na aula vira "Conferir: ..." (ex.: "Conferir: professor citou a P2 em 08/10").
+- min: onde a aula pediu ou levou a isso: o minuto da transcrição ("00:42:10") ou o slide ou a página ("slide 12"). Sempre.
+- fatos: "entrega": true só se o professor passou uma entrega ou atividade com data (revisar, "tirar dúvida" e estudar não são
+  entrega); "cai": true só se ele disse que cai na avaliação; "base": conteúdo acumulativo ou base das próximas aulas; "confuso":
+  ficou confuso na aula.
+- due: AAAA-MM-DD só com "entrega": true (a data que o professor deu); senão "". Data que já passou: deixe "" e diga no detalhe.
+- av: a chave da avaliação que a tarefa prepara, só se a aula ligou o assunto a ela (o professor disse, ou o assunto está nas
+  palavras-chave dela); assunto parecido não basta. Senão "".
+- juntar: compare cada sugestão com TODAS as tarefas abertas acima, não só as de assunto igual: se uma delas já cobre a sugestão,
+  mesmo em parte (instalar a VM cobre montar o laboratório nela), ponha o texto exato dela aqui; senão "".
+- Aviso de prova ou entrega citado na aula vira "Conferir: ..." (ex.: "Conferir: professor citou a P2 em 08/10"), com resultado "".
+- Com 5 ou mais tarefas abertas na disciplina, sugira só o essencial (o jogo deixa no máximo 2).
 
 Responda exatamente assim, nada antes nem depois:
 ===RESUMO===
 (o HTML)
 ===DADOS===
-{{"assunto": "assunto curto da aula, com acentos", "sugestoes": [{{"texto": "", "detalhe": "", "est": "", "pri": "", "motivo": "", "due": "", "av": "", "juntar": ""}}]}}
+{{"assunto": "assunto curto da aula, com acentos", "sugestoes": [{{"texto": "", "resultado": "", "detalhe": "", "est": "", "min": "", "fatos": {{"entrega": false, "cai": false, "base": false, "confuso": false}}, "due": "", "av": "", "juntar": ""}}]}}
 """
+
+
+def confere_sugestoes(brutas, sigla, n_abertas):
+    """O jogo confere o que a IA sugeriu em vez de confiar nela (#210): prazo só de entrega e ainda por vir, av só da disciplina,
+    com evidência e ainda por vir, e a prioridade sai dos fatos (a IA não manda a letra). Sem resultado, a sugestão fica de fora."""
+    hj, avs = hoje(), avals_disc(sigla)
+    sim = lambda f, k: f.get(k) is True or str(f.get(k)).strip().lower() in ("true", "sim", "1")
+    out = []
+    for s in brutas[:5] if isinstance(brutas, list) else []:
+        if not isinstance(s, dict) or not str(s.get("texto") or "").strip():
+            continue
+        c = {k: str(s.get(k) or "").strip()[:300] for k in ("texto", "resultado", "detalhe", "est", "min", "due", "av", "juntar")}
+        c["texto"] = c["texto"][:90]
+        conf = c["texto"].lower().startswith("conferir")
+        if not c["resultado"] and not conf:
+            continue
+        f = s.get("fatos") if isinstance(s.get("fatos"), dict) else {}
+        ev = bool(re.search(r"\d{1,2}:\d{2}|slide|p[aá]g", c["min"], re.I))
+        razoes, aviso, pts = [], "", 0
+        dav = avs.get(c["av"].upper())
+        c["av"] = c["av"].upper() if ev and c["av"].upper() in avs and not (dav and dav < hj) else ""
+        if c["av"] and dav:
+            dias = (dav - hj).days
+            pts += 3 if dias <= 7 else 2 if dias <= 14 else 1 if dias <= 30 else 0
+            razoes.append(f"{c['av']} em {dias} dia{'s' if dias != 1 else ''}")
+        try:
+            due = date.fromisoformat(c["due"]) if sim(f, "entrega") and ev else None
+        except ValueError:
+            due = None
+        if due and due < hj:
+            aviso, due = f"o professor falou em {due.strftime('%d/%m')}, já passou", None
+        c["due"] = due.isoformat() if due else ""
+        if due:
+            pts += 3
+            razoes.append(f"entrega em {due.strftime('%d/%m')}")
+        for k, p, r in (("cai", 2, "o professor disse que cai"), ("base", 1, "base das próximas aulas"), ("confuso", 1, "ficou confuso na aula")):
+            if sim(f, k) and (k != "cai" or ev):
+                pts += p
+                razoes.append(r)
+        c["pri"] = "A" if pts >= 5 or (due and (due - hj).days <= 2) else "B" if pts >= 3 else "C" if pts == 2 else ""
+        c.update(motivo=", ".join(razoes), aviso=aviso, estado="", pts=pts)
+        out.append(c)
+    if n_abertas >= 5:   # disciplina cheia: no máximo 2 tarefas novas, só com 3 pontos ou mais (juntar não cria tarefa)
+        novas = sorted((s for s in out if not s["juntar"] and s["pts"] >= 3), key=lambda s: -s["pts"])[:2]
+        out = [s for s in out if s["juntar"] or s in novas]
+    for s in out:
+        s.pop("pts")
+    return out
 
 
 def limpa_html(h):
@@ -2500,6 +2598,19 @@ def aula_executa(aid):
                     (ia / f"{f.stem}.txt").write_text(txt, encoding="utf-8")
                 else:
                     shutil.copy2(f, ia / f.name)
+            pls = []   # o plano de ensino da disciplina, para o resumo dar peso pelo que ela cobra (#211)
+            for f in planos_disc(sigla, nome):
+                src, txt = DADOS / "planos" / f, None
+                if Path(f).suffix.lower() == ".pdf":
+                    txt = texto_pdf(src)
+                elif Path(f).suffix.lower() in (".html", ".htm"):   # o texto, sem as tags e os &nbsp; (o plano do portal vem cheio deles)
+                    txt = " ".join(H.unescape(re.sub(r"(?is)<(script|style)\b.*?</\1\s*>|<[^>]+>", " ", src.read_text(encoding="utf-8", errors="replace"))).split())
+                pls.append(f"plano-{Path(f).stem}.txt" if txt else f"plano-{f}")
+                if txt:
+                    (ia / pls[-1]).write_text(txt, encoding="utf-8")
+                else:
+                    shutil.copy2(src, ia / pls[-1])
+            palavras = len(tr.read_text(encoding="utf-8").split()) if tr.exists() else 0
             copias = sorted(ia.iterdir()) + [WEB / "aulas" / "figuras.html"]
             j["etapa"] = "resumindo"
             ag = ia_conf()["agente"]
@@ -2513,7 +2624,7 @@ def aula_executa(aid):
             j["tid"] = tid
             if j.get("cancelado"):
                 ia_tarefas[tid]["cancelado"] = True
-            ia_executa(tid, ag, exe, pedido_aula(sigla, data, nome, [c.name for c in copias], dur), copias, False, AULA_TEMPO)
+            ia_executa(tid, ag, exe, pedido_aula(sigla, data, nome, [c.name for c in copias], dur, palavras, pls, meta.get("foco") or ""), copias, False, AULA_TEMPO)
             t = ia_tarefas[tid]
             if t["estado"] != "pronto":
                 raise Erro("cancelada" if t["estado"] == "cancelado" else t["erro"] or "a IA não respondeu")
@@ -2527,14 +2638,9 @@ def aula_executa(aid):
             except ValueError:
                 raise Erro("a IA mandou as sugestões num JSON inválido; tente de novo")
             assunto = str(dados.get("assunto") or "Aula")[:120]
-            sug = []
-            for s in (dados.get("sugestoes") or [])[:5]:
-                if isinstance(s, dict) and str(s.get("texto") or "").strip():
-                    sug.append({k: str(s.get(k) or "").strip()[:300] for k in ("texto", "detalhe", "est", "pri", "motivo", "due", "av", "juntar")} | {"estado": ""})
-            for s in sug:
-                s["pri"] = s["pri"].upper() if s["pri"].upper() in ("A", "B", "C") else ""
-                s["due"] = s["due"] if re.fullmatch(r"\d{4}-\d{2}-\d{2}", s["due"]) else ""
-                s["texto"] = s["texto"][:90]
+            abertas = sum(1 for l in ler() if re.search(rf"\+fac\.{re.escape(sigla)}(?=\s|$)", l, re.I) and not l.startswith("x "))
+            sug = confere_sugestoes(dados.get("sugestoes"), sigla, abertas)
+            fora = len(dados.get("sugestoes") or []) - len(sug) if isinstance(dados.get("sugestoes"), list) else 0
             base = f"{data}-{slug(assunto)}"
             dest = DADOS / "aulas" / sigla
             dest.mkdir(parents=True, exist_ok=True)
@@ -2550,11 +2656,11 @@ def aula_executa(aid):
             with lock:
                 idx = aulas_idx()
                 idx.append({"id": aid, "sigla": sigla, "data": data, "assunto": assunto, "html": f"{sigla}/{base}.html",
-                            "md": f"{sigla}/{base}.md" if tr.exists() else "", "criada": time.strftime("%Y-%m-%d %H:%M"), "sugestoes": sug})
+                            "md": f"{sigla}/{base}.md" if tr.exists() else "", "criada": time.strftime("%Y-%m-%d %H:%M"), "foco": meta.get("foco") or "", "sugestoes": sug})
                 gravar_json("aulas/aulas.json", idx)
             shutil.rmtree(pasta, ignore_errors=True)
             aulas_jobs.pop(aid, None)
-            log("aula:", sigla, data, assunto, f"{len(sug)} sugestões")
+            log("aula:", sigla, data, assunto, f"{len(sug)} sugestões" + (f" ({fora} descartadas na conferência)" if fora > 0 else ""))
         except Exception as e:   # a aula fica em .trabalho/ com o erro: dá para tentar de novo (a transcrição pronta é reaproveitada)
             if j.get("cancelado"):
                 shutil.rmtree(pasta, ignore_errors=True)
