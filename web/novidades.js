@@ -28,6 +28,14 @@
  * Carregado depois de conquistas.js: usa CTX, EST, UI, cur, tab, render, post, recarrega, esc, ic, toast, salvaUI, gnav, VERSAO_PAGINA.
  */
 window.GB_NOVIDADES = /*NOVIDADES*/[
+  {"versao": "0.9.2-beta11", "nome": "atualização da Torre Trick", "data": "2026-10-26",
+   "cap": "aulas mais certeiras",
+   "resumo": "Mandar aula ficou mais fácil com a transcrição pronta, e o resumo e as sugestões de tarefa passaram a seguir o plano de ensino e o que a aula disse de fato.",
+   "itens": [
+     {"ic": "spider", "t": "Transcrição pronta em um clique", "d": "Em Mandar aula, o campo da transcrição fica à vista, com os botões colar e escolher arquivo (.md, .txt, .srt ou .vtt; legenda vira texto com as marcas de tempo). Embaixo aparece o tamanho e quanto tempo de aula entrou, para conferir que veio inteira (#209)."},
+     {"ic": "card", "t": "Sugestões que o jogo confere", "d": "Prazo só entra quando o professor passou uma entrega e a data ainda não passou; se já passou, a sugestão avisa. A prioridade é o jogo que calcula, pelo que a aula disse (cai na prova, entrega, ficou confuso), e cada sugestão mostra o minuto da aula de onde saiu e o que fica pronto no fim. Tarefa sem resultado claro não é sugerida (#210)."},
+     {"ic": "scroll", "t": "Resumo pelo plano de ensino", "d": "Com o plano da disciplina na pasta planos, o resumo se organiza pelos temas dele e dá mais espaço ao que ela cobra. O que foi fora do plano vira um parágrafo no fim, e o que a IA acrescentou por conta própria aparece marcado como contexto da IA. Disciplina por projeto? Diga em \"o que pesa nesta disciplina\" o que o trabalho pede (#211)."}
+   ]},
   {"versao": "0.9.2-beta10", "nome": "atualização da Torre Trick", "data": "2026-10-24", "aviso": "0.9.2-beta10",
    "cap": "Torre Trick nova · feitiços em pausa · abas novas",
    "resumo": "A Torre Trick ganhou a semana com o Geral e a Superação, a Trick Coin, a tabela do dia do Codeforces, o duelo e o pacto de hábito. Os feitiços saíram de cena até o jogo passar de 10 jogadores ativos: a missão da semana e a preparação completa de uma prova dão 1.500 J cada. Lista, Progresso, Chefões e Calendário ficaram só com o desenho novo.",
