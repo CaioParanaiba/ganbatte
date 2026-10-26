@@ -1417,7 +1417,11 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .cn-h .nx{display:flex;flex-direction:column;gap:5px;align-items:flex-start;font:12px var(--f-mono);color:var(--soft);min-width:0}
 .cn-h .nx b{color:var(--ink)} .cn-h .nx small{color:var(--faint)} .cn-w{color:var(--amb)}
 .cn-h .cv{color:var(--faint);font-size:12px}
-.cn-c{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:10px 32px;padding:0 0 16px 62px}
+.cn-c{padding:0 0 18px 62px;display:grid;gap:12px;min-width:0}
+.cn-c > .nl-seg{justify-self:start;flex-wrap:wrap}
+.nl-seg button small.on{color:var(--volt);font-weight:700}
+.cn-p{display:grid;gap:10px;min-width:0}
+.cn-vz{font-size:13px;color:var(--soft);margin:0}
 .cn-s h4{font:600 10.5px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin:0 0 2px} .cn-s h4 small{font:inherit;color:var(--soft);margin-left:6px}
 .cn-av{display:grid;grid-template-columns:minmax(0,1fr) auto 118px;gap:4px 14px;align-items:center;padding:7px 0;border-top:1px solid var(--hair);font-size:13px}
 .cn-s h4 + .cn-av{border-top:0}
@@ -1429,11 +1433,12 @@ details.l-grp summary{cursor:pointer;list-style:none} details.l-grp summary::-we
 .cn-av .nf{grid-column:1/-1;display:flex;gap:6px;align-items:center}
 .cn-av .nf input{width:100px;font:600 13px var(--f-mono);padding:3px 6px;border-radius:6px;border:1px solid var(--hair);background:var(--panel2);color:var(--ink)}
 .cn-s .tk .t{font-size:13px}
-.cn-c .drop{font-size:12px;color:var(--aura);margin-top:10px;display:flex;gap:6px;align-items:center}
-.cn-op{grid-column:1/-1;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.cn-c .drop{font-size:12px;color:var(--aura);display:flex;gap:6px;align-items:center}
+.cn-op{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding-top:4px}
+.cn-op .drop{margin-left:auto}
 .cn-leg{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:0;cursor:pointer;font:600 12px var(--f-mono);color:var(--soft)} .cn-leg .c{color:var(--prompt)}
 .cn-leg + p{margin-top:10px!important}
-@media (max-width:1100px){ .cn-c{grid-template-columns:minmax(0,1fr);padding-left:0} }
+@media (max-width:1100px){ .cn-c{padding-left:0} }
 </style>
 </head>
 <body>
@@ -1668,7 +1673,7 @@ function devolve(){
   EST.devolve = {...dv, h:new Date().toTimeString().slice(0,8)}; salvaUI();
 }
 /* a página vem do disco a cada pedido, mas o servidor em segundo plano pode estar com o código antigo (atualizou sem reiniciar) */
-const VERSAO_PAGINA = '0.9.2-beta11';
+const VERSAO_PAGINA = '0.9.2-beta12';
 function avisoVersao(){
   const v = CTX && CTX.SRV && CTX.SRV.versao, el = document.getElementById('aviso-versao');
   if(!v || v === VERSAO_PAGINA){ if(el) el.remove(); return; }
@@ -1918,8 +1923,7 @@ function rB2(S){
   document.getElementById('b2-leg').innerHTML = (nova ? `<button type="button" class="cn-leg" data-cnleg aria-expanded="${!!UI.cnleg}"><span class="c">~/</span>como ler<span style="margin-left:auto">${UI.cnleg ? '▾' : '▸'}</span></button>${UI.cnleg ? leg : ''}` : `<h2><span class="c">~/</span>como ler</h2>${leg}`)
     + (SIM.size||Object.keys(NOTAS).length?'<button class="reset" data-reset style="margin-top:10px">desfazer simulação</button>':'');
 }
-/* ---------- Chefões novos (em teste): uma linha por chefão, que abre com as avaliações e as tarefas pendentes; as aulas entram
-   pelo aulas.js (a seção .cn-au e o botão "mandar aula") ---------- */
+/* ---------- Chefões: uma linha por chefão, que abre com as abas de dentro (avaliações, ementa, aulas, tarefas) ---------- */
 const proxAv = b => b.avs.filter(a => a.st !== 'ok' && a.st !== 'low').sort((p,q) => p.dt.localeCompare(q.dt))[0];
 const emDias = k => k === 0 ? 'hoje' : k === 1 ? 'amanhã' : `em ${k}d`;
 function proxTxt(a){
@@ -1939,13 +1943,33 @@ function avRowCN(b, a){
     <span class="pp" title="preparação: tarefas feitas / ligadas${a.prepOk ? ' · bônus ganho' : a.prepFull ? ' · completa, bônus no dia' : ''}">${prepBar(a)}${a.tot ? `${a.ok}/${a.tot}${a.prepOk ? ' ✓' : ''}` : 'sem tarefas'}</span>
     <span class="st ${st}">${stTxt(a)}${st === 'fut' ? ` <small>${emDias(dias(HOJE, a.dt))}</small>` : ''}</span>
     ${a.cont && a.parts.length ? `<span class="prt">${a.parts.map((p,i) => `${a.k}${i+1}: ${nf(p)}`).join(' · ')}</span>` : ''}
-    ${campo ? `<span class="nf"><input id="${id}" placeholder="${campo[1]}" aria-label="${campo[0]} de ${esc(a.n)}" title="de 0 a 10, ou em pontos: 4/5 = 4 de 5"><button class="btn" data-nota="${b.d}:${a.k}" data-in="${id}"${campo[2]}>${campo[3]}</button></span>` : ''}</div>`;
+    ${campo ? `<span class="nf"><input id="${id}" placeholder="${campo[1]}" aria-label="${campo[0]} de ${esc(a.n)}" title="de 0 a 10, ou em pontos: 4/5 = 4 de 5"><button class="btn" data-nota="${b.d}:${a.k}" data-in="${id}"${campo[2]}>${campo[3]}</button></span>` : ''}
+    ${window.GB_EMENTA ? GB_EMENTA.avLinha(b, a) : ''}</div>`;
 }
+/* dentro do chefão, uma aba por vez (#214): avaliações, ementa (ementa.js), aulas (aulas.js) e tarefas; a escolhida fica neste
+   navegador, por chefão. CN_ABAS[id] = {n: nome, c: b => o número ao lado do nome (HTML), h: b => o conteúdo}; os outros
+   arquivos acrescentam as suas, e CN_ORDEM diz a ordem */
+const CN_ORDEM = ['av', 'em', 'au', 'tk'];
+const CN_ABAS = {
+  av:{n:'avaliações', c:b => b.avs.length || '', h:b => avsCN(b)},
+  tk:{n:'tarefas', c:b => b.open.length || '', h:b => tarefasCN(b)},
+};
+try { UI.cnaba = JSON.parse(localStorage.getItem('gb-cnaba') || '{}') || {}; } catch(e){ UI.cnaba = {}; }
+const abaCN = b => CN_ABAS[UI.cnaba[b.d]] ? UI.cnaba[b.d] : 'av';
 function corpoCN(b){
-  return `<div class="cn-c"><div class="cn-s"><h4>avaliações</h4>${b.avs.length ? b.avs.map(a => avRowCN(b, a)).join('') : '<p class="sub">Nenhuma avaliação ainda: use "editar avaliações e notas".</p>'}</div>
-    <div class="cn-s"><h4>tarefas pendentes<small>${b.open.length}</small></h4>${b.open.length > 6 ? `<button class="go" data-go="l" style="float:right;margin-top:-18px">+ ${b.open.length - 6} na Lista →</button>` : ''}${b.open.length ? b.open.slice(0, 6).map(t => `<button class="tk" data-hit="${t.n}">${avTask(t,22)}<span class="t">${esc(t.txt)}${ligTxt(b,t)}</span><span class="v" style="color:var(--volt)">+${xpDe({...t,done:HOJE})}</span></button>`).join('') : '<p class="sub">nada pendente</p>'}
-      <div class="drop">${ic('card')} preparação completa antes da data: ${fmt(GBx.FEIT_J)} J</div></div>
-    <div class="cn-op"><button type="button" class="btn" data-cedit="${b.d}">editar avaliações e notas</button>${iconeHTML(b)}</div></div>`;
+  const v = abaCN(b);
+  return `<div class="cn-c"><div class="nl-seg" role="group" aria-label="O que ver de ${esc(b.n)}">${CN_ORDEM.filter(k => CN_ABAS[k]).map(k => { const c = CN_ABAS[k].c(b);
+      return `<button type="button" data-cnaba="${b.d}:${k}" aria-pressed="${k === v}">${CN_ABAS[k].n}${c !== '' && c != null ? (String(c).startsWith('<') ? c : `<small>${c}</small>`) : ''}</button>`; }).join('')}</div>
+    <div class="cn-p" data-cnp="${v}">${CN_ABAS[v].h(b)}</div></div>`;
+}
+function avsCN(b){
+  return `<div class="cn-s">${b.avs.length ? b.avs.map(a => avRowCN(b, a)).join('') : '<p class="cn-vz">Nenhuma avaliação ainda: use "editar avaliações e notas".</p>'}</div>
+    <div class="cn-op"><button type="button" class="btn" data-cedit="${b.d}">editar avaliações e notas</button>${iconeHTML(b)}<span class="drop">${ic('card')} preparação completa antes da data: ${fmt(GBx.FEIT_J)} J</span></div>`;
+}
+function tarefasCN(b){
+  if(!b.open.length) return '<p class="cn-vz">Nada pendente nesta disciplina.</p>';
+  return `<div class="cn-s">${b.open.map(t => `<button class="tk" data-hit="${t.n}">${avTask(t,22)}<span class="t">${esc(t.txt)}${ligTxt(b,t)}</span><span class="v" style="color:var(--volt)">+${xpDe({...t,done:HOJE})}</span></button>`).join('')}</div>
+    <div class="cn-op"><button type="button" class="go" data-go="l">ver na Lista →</button></div>`;
 }
 /* ---------- D2 ---------- */
 /* do mês do início da temporada até o da volta às aulas (as férias aparecem no fim), no máximo 12 meses (#2) */
@@ -2979,6 +3003,7 @@ document.addEventListener('click', async e => {
   const du = q('[data-ldue]'); if(du){ LA.due = du.dataset.ldue; document.getElementById('l-date').value = ''; document.querySelectorAll('[data-ldue]').forEach(b => b.setAttribute('aria-pressed', b === du)); prevL(); return; }
   const cna = q('[data-cnab]'); if(cna){ const d = cna.dataset.cnab; if(UI.cnab.has(d)) UI.cnab.delete(d); else UI.cnab.add(d); try { localStorage.setItem('gb-cnab', JSON.stringify([...UI.cnab])); } catch(e){} render(); return; }
   if(q('[data-cnleg]')){ UI.cnleg = !UI.cnleg; render(); return; }
+  const cnt = q('[data-cnaba]'); if(cnt){ const [d, k] = cnt.dataset.cnaba.split(':'); UI.cnaba[d] = k; try { localStorage.setItem('gb-cnaba', JSON.stringify(UI.cnaba)); } catch(e){} render(); return; }
   const lm = q('[data-lmodo]'); if(lm){ UI.lmodo = lm.dataset.lmodo; try { localStorage.setItem('gb-lmodo', UI.lmodo); } catch(e){} render(); return; }
   if(q('[data-nlconst]')){ document.getElementById('l-heatc').scrollIntoView({behavior:'smooth', block:'start'}); return; }
   const oa = q('[data-ontemabre]'); if(oa){ UI.ontem = oa.dataset.ontemabre === '1'; render(); return; }
@@ -3112,7 +3137,7 @@ function confete(forcado){
 }
 /* provando um item, o jogo vira vitrine: dá para trocar de aba e olhar, mas nada que conte (concluir, criar, editar,
    lançar nota) funciona até voltar. Os ouvintes são de captura, então barram também os de expedicoes.js, chefes.js... */
-const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-cnab],[data-cnleg],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
+const LIVRE_NA_PROVA = '#faixa-prova,[data-prova],[data-go],[data-cat],[data-cos],[data-fxver],[data-px],[data-bk],[data-bksel],[data-card],[data-page],[data-mapsel],[data-boss],[data-equip],[data-chefe],[data-icone],[data-cnab],[data-cnaba],[data-cnleg],[data-teste],[data-isel],[data-f7],[data-ten7],[data-q7],[data-dev7],[data-fam7],[data-sec7],summary';
 const MEXE = 'button,a,input,select,textarea,label,summary,[data-hit],[role="button"],[contenteditable]';
 let avisoProvaAtual = null;
 function avisoProva(){
@@ -3234,6 +3259,7 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 <script src="chefes.js"></script>
 <script src="ia.js"></script>
 <script src="aulas.js"></script>
+<script src="ementa.js"></script>
 <script src="conquistas.js"></script>
 <script src="expedicoes.js"></script>
 <script src="temporadas.js"></script>

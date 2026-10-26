@@ -879,39 +879,72 @@ class Aulas(Base):
 
     def test_prazo_vencido_cai_e_avisa(self):
         """O caso da aula de Redes: "revisar para sexta" com a sexta já passada não entra como prazo nem como A."""
-        r = s.confere_sugestoes([self.sug(due="2026-10-09", fatos={"entrega": True})], "REDES2", 0)[0]
+        r = s.confere_sugestoes([self.sug(due="2026-10-09", fatos={"entrega": True})], "REDES2")[0]
         self.assertEqual((r["due"], r["pri"]), ("", ""))
         self.assertIn("09/10, já passou", r["aviso"])
 
     def test_prazo_so_de_entrega(self):
-        self.assertEqual(s.confere_sugestoes([self.sug(due="2026-10-20")], "REDES2", 0)[0]["due"], "")
-        r = s.confere_sugestoes([self.sug(due="2026-10-13", fatos={"entrega": True})], "REDES2", 0)[0]
+        self.assertEqual(s.confere_sugestoes([self.sug(due="2026-10-20")], "REDES2")[0]["due"], "")
+        r = s.confere_sugestoes([self.sug(due="2026-10-13", fatos={"entrega": True})], "REDES2")[0]
         self.assertEqual((r["due"], r["pri"]), ("2026-10-13", "A"))   # entrega em até 2 dias é sempre A
 
     def test_prioridade_pelos_fatos(self):
-        r = s.confere_sugestoes([self.sug(av="a2", fatos={"cai": True}, pri="C")], "REDES2", 0)[0]
+        r = s.confere_sugestoes([self.sug(av="a2", fatos={"cai": True}, pri="C")], "REDES2")[0]
         self.assertEqual((r["av"], r["pri"]), ("A2", "A"))   # A2 em 4 dias (+3) e cai (+2); a letra da IA não vale
         self.assertIn("A2 em 4 dias", r["motivo"])
-        self.assertEqual(s.confere_sugestoes([self.sug(av="A3", fatos={"base": True})], "REDES2", 0)[0]["pri"], "")
-        self.assertEqual(s.confere_sugestoes([self.sug(fatos={"base": "sim", "confuso": True})], "REDES2", 0)[0]["pri"], "C")
+        self.assertEqual(s.confere_sugestoes([self.sug(av="A3", fatos={"base": True})], "REDES2")[0]["pri"], "")
+        self.assertEqual(s.confere_sugestoes([self.sug(fatos={"base": "sim", "confuso": True})], "REDES2")[0]["pri"], "C")
 
     def test_av_precisa_de_evidencia_e_de_estar_por_vir(self):
-        f = lambda **k: s.confere_sugestoes([self.sug(**k)], "REDES2", 0)[0]["av"]
+        f = lambda **k: s.confere_sugestoes([self.sug(**k)], "REDES2")[0]["av"]
         self.assertEqual(f(av="A2", min=""), "")
         self.assertEqual(f(av="A1"), "")   # já passou
         self.assertEqual(f(av="P9"), "")   # não é da disciplina
         self.assertEqual(f(av="TR", min="slide 12"), "TR")   # sem data: fica, mas não soma pontos
 
     def test_sem_resultado_fica_de_fora(self):
-        r = s.confere_sugestoes([self.sug(resultado=""), self.sug(texto="Conferir: professor citou a A3", resultado="")], "REDES2", 0)
+        r = s.confere_sugestoes([self.sug(resultado=""), self.sug(texto="Conferir: professor citou a A3", resultado="")], "REDES2")
         self.assertEqual([x["texto"] for x in r], ["Conferir: professor citou a A3"])
 
-    def test_muitas_abertas_deixa_duas(self):
-        ss = [self.sug(texto=f"T{i}", fatos={"entrega": True} if i else {}, due="2026-10-30") for i in range(4)]
-        r = s.confere_sugestoes(ss, "REDES2", 5)
-        self.assertEqual([x["texto"] for x in r], ["T1", "T2"])
-        ss.append(self.sug(texto="Junta", juntar="Instalar a VM"))
-        self.assertEqual([x["texto"] for x in s.confere_sugestoes(ss, "REDES2", 5)], ["T1", "T2", "Junta"])
+    def test_entregas_todas_marcadas_e_estudos_ordenados(self):
+        """#214: sem corte por atraso; as entregas vêm todas marcadas e os estudos, pelos pontos, com os 3 primeiros marcados."""
+        s.api_ementa({"sigla": "REDES2", "itens": [{"k": "1.1", "t": "DHCP"}, {"k": "1.2", "t": "DNS"}, {"k": "2.1", "t": "NAT", "alias": ["2.2"]}]})
+        ents = [self.sug(texto=f"T{i}", fatos={"entrega": True}, due="2026-10-30") for i in range(5)]
+        ests = [{"texto": "Estudar DHCP", "item": "1.1", "min": "00:10"}, {"texto": "Estudar NAT", "item": "2.2", "min": "00:20", "fatos": {"cai": True}},
+                {"texto": "Estudar DNS (resumo 01/10)", "item": "9.9", "min": "00:30", "fatos": {"base": True}},
+                {"texto": "Estudar cache", "item": "", "min": "00:40"}, {"texto": "Estudar portas", "min": "00:50", "fatos": {"confuso": True}}]
+        r = s.confere_sugestoes(ents, "REDES2", ests, "2026-10-06")
+        self.assertEqual([x["texto"] for x in r if x["tipo"] == "entrega"], [f"T{i}" for i in range(5)])
+        self.assertTrue(all(x["marcada"] for x in r if x["tipo"] == "entrega"))
+        es = [x for x in r if x["tipo"] == "estudo"]
+        self.assertEqual([x["texto"] for x in es], ["Estudar NAT (resumo 06/10)", "Estudar DNS (resumo 01/10)", "Estudar portas (resumo 06/10)",
+                                                     "Estudar DHCP (resumo 06/10)", "Estudar cache (resumo 06/10)"])
+        self.assertEqual([x["marcada"] for x in es], [True, True, True, False, False])
+        self.assertEqual([x["item"] for x in es], ["2.1", "", "", "1.1", ""])   # o alias vira a chave do item; chave fora da ementa cai
+        self.assertNotIn("resultado", es[0])
+
+    def test_formato_antigo_e_faixas(self):
+        s.api_ementa({"sigla": "REDES2", "itens": [{"k": "1", "t": "DHCP"}, {"k": "2", "t": "DNS"}]})
+        self.assertEqual(s.confere_faixas([{"av": "a2", "fim": "2", "min": "00:41:00"}, {"av": "A2", "fim": "1", "min": "00:50"},
+                                           {"av": "P9", "fim": "1", "min": "00:10"}, {"av": "A3", "fim": "1", "min": ""}, "x"], "REDES2"),
+                         [{"av": "A2", "fim": "2", "min": "00:41:00"}])
+        r = s.confere_sugestoes([self.sug()], "REDES2")
+        self.assertEqual((r[0]["tipo"], r[0]["marcada"]), ("entrega", True))
+
+    def test_ementa_grava_e_confere(self):
+        r = s.api_ementa({"sigla": "redes2", "itens": [{"k": "1.1", "t": "  DHCP   e DNS ", "u": "U1", "orig": "teoria", "av": "a2"}, {"k": "1.2", "t": "NAT"}],
+                          "faixas": {"A2": {"ini": "", "fim": "1.2"}}})
+        e = r["ementas"]["REDES2"]
+        self.assertEqual(e["itens"][0], {"k": "1.1", "u": "U1", "t": "DHCP e DNS", "orig": "teoria", "av": "A2", "alias": []})
+        self.assertEqual(e["faixas"], {"A2": {"ini": "", "fim": "1.2"}})
+        s.api_ementa({"sigla": "REDES2", "faixas": {"A2": {"ini": "1.1", "fim": "1.2"}, "A3": {"ini": "", "fim": ""}}})
+        e = s.ementas()["REDES2"]
+        self.assertEqual((len(e["itens"]), e["faixas"]), (2, {"A2": {"ini": "1.1", "fim": "1.2"}}))   # itens ficam; faixa vazia some
+        for ruim in ({"itens": [{"k": "1 1", "t": "x"}]}, {"itens": [{"k": "1", "t": ""}]}, {"itens": [{"k": "1", "t": "a"}, {"k": "2", "t": "b", "alias": ["1"]}]},
+                     {"faixas": {"A2": {"fim": "9"}}}):
+            with self.assertRaises(s.Erro):
+                s.api_ementa({"sigla": "REDES2", **ruim})
+        self.assertIn("ementas", s.api_aulas_get())
 
     def test_plano_da_disciplina_e_pedido(self):
         p = s.DADOS / "planos"
@@ -921,5 +954,10 @@ class Aulas(Base):
         self.assertEqual(s.planos_disc("REDES2", "Redes de Computadores 2"), ["REDES2-plano-de-ensino.html", "redes de computadores 2.pdf"])
         self.assertEqual(s.planos_disc("BD", "Banco"), [])
         t = s.pedido_aula("REDES2", "2026-09-20", "Redes", ["transcricao.md"], 0, 10000, ["plano-REDES2.html"], "o trabalho pede NAT")
-        for trecho in ("plano-REDES2.html", "o trabalho pede NAT", "até 2000 palavras", "foi há 22 dias", "Fora do plano"):
+        for trecho in ("plano-REDES2.html", "o trabalho pede NAT", "até 2000 palavras", "foi há 22 dias", "Fora do plano", "sem ementa cadastrada", "um por tema"):
             self.assertIn(trecho, t)
+        s.api_ementa({"sigla": "REDES2", "itens": [{"k": "3.2", "t": "Roteamento estático", "u": "Unidade 3"}]})
+        t = s.pedido_aula("REDES2", "2026-10-10", "Redes", ["transcricao.md"], 0)
+        for trecho in ("3.2 | Roteamento estático (Unidade 3)", "um por item da ementa", '"estudos"', '"faixas"', "sem limite"):
+            self.assertIn(trecho, t)
+        self.assertNotIn("no máximo 5", t)

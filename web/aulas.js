@@ -9,20 +9,32 @@
 'use strict';
 
 document.head.insertAdjacentHTML('beforeend', `<style>
-.cn-au{grid-column:1/-1;border-top:1px solid var(--hair);padding-top:12px}
-.cn-au h4{display:flex;align-items:center;gap:6px} .cn-au h4 .btn{margin-left:auto;text-transform:none;letter-spacing:0}
-.au{border-top:1px solid var(--hair);padding:8px 0} .cn-au h4 + .au,.cn-au h4 + .au-j{border-top:0}
+.cn-au{display:grid;gap:4px}
+.au-top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap} .au-top .btn{margin-left:auto}
+.au{border-top:1px solid var(--hair);padding:9px 0} .au-top + .au,.au-top + .au-j{border-top:0}
 .au-l{display:flex;gap:10px;align-items:baseline;font-size:13.5px;min-width:0}
 .au-l .dt{font:600 12px var(--f-mono);color:var(--soft);white-space:nowrap}
 .au-l a{color:var(--ink);font-weight:600;text-decoration:none} .au-l a:hover{text-decoration:underline}
 .au-l .au-tr{font:11.5px var(--f-mono);color:var(--soft)} .au-l .x{margin-left:auto}
-.au-s{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:3px 10px;align-items:center;margin:6px 0 0 52px}
-.au-s .pri{font:700 12px var(--f-mono);color:var(--soft)} .au-s .pri.A{color:var(--red)} .au-s .pri.B{color:var(--amb)}
-.au-s input{width:100%;font:13.5px var(--f-ui);color:var(--ink);background:none;border:1px solid transparent;border-radius:7px;padding:3px 6px;margin-left:-7px}
-.au-s input:hover,.au-s input:focus{border-color:var(--hair);background:var(--panel2)}
-.au-s small{grid-column:2/-1;font:11.5px var(--f-mono);color:var(--soft)} .au-s small .av{color:var(--amb)}
-.au-s .ac{display:flex;gap:6px;align-items:center}
-.au-s select{max-width:190px;font:12px var(--f-ui);background:var(--panel2);color:var(--ink);border:1px solid var(--hair);border-radius:6px;padding:2px 4px}
+.au-c{margin:8px 0 0 52px;border:1px solid var(--hair);border-radius:10px;padding:4px 12px 10px;background:var(--panel)}
+.au-ch{display:flex;gap:10px;align-items:baseline;padding:6px 0 2px;font:600 10.5px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.1em}
+.au-ch span{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--soft)} .au-ch span.cheia{color:var(--amb)}
+.au-g{font:600 10.5px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.1em;padding:10px 0 2px}
+.au-s{display:grid;grid-template-columns:20px minmax(0,1fr);gap:2px 8px;align-items:center;padding:6px 0;border-top:1px solid var(--hair)}
+.au-g + .au-s{border-top:0}
+.au-s > input[type=checkbox]{margin:0;accent-color:var(--volt)}
+.au-s input[type=text]{width:100%;font:13.5px var(--f-ui);color:var(--ink);background:none;border:1px solid transparent;border-radius:7px;padding:3px 6px;margin-left:-7px}
+.au-s input[type=text]:hover,.au-s input[type=text]:focus{border-color:var(--hair);background:var(--panel2)}
+.au-sm{grid-column:2;display:flex;gap:4px 12px;align-items:center;flex-wrap:wrap}
+.au-s small{flex:1 1 260px;font:11.5px var(--f-mono);color:var(--soft)} .au-s small .av{color:var(--amb)}
+.au-s small .pri{font-weight:700} .au-s small .pri.A{color:var(--red)} .au-s small .pri.B{color:var(--amb)}
+.au-s .ac{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.au-s select{max-width:180px;font:12px var(--f-ui);background:var(--panel2);color:var(--ink);border:1px solid var(--hair);border-radius:6px;padding:2px 4px}
+.au-s.off input[type=text],.au-s.off small{opacity:.5}
+.au-s.lig{opacity:.6} .au-s.lig .lt{font-size:13px;color:var(--soft)} .au-s.lig small{flex:none}
+.au-mais{padding:6px 0 0}
+.au-cf{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:10px;margin-top:6px}
+.au-cf small{font:11.5px var(--f-mono);color:var(--faint)}
 .au-ok{margin:6px 0 0 52px;font:11.5px var(--f-mono);color:var(--faint)} .au-ok .go{font-size:11.5px}
 .au-j{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font:12.5px var(--f-mono);color:var(--soft);padding:8px 0;border-top:1px solid var(--hair)}
 .au-j .bar{flex:0 0 140px;height:5px;border-radius:99px;background:var(--track);overflow:hidden} .au-j .bar b{display:block;height:100%;background:var(--volt)}
@@ -34,15 +46,16 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #au textarea{min-height:110px;background:var(--panel2);border:1px solid var(--hair);border-radius:9px;padding:8px 10px;font:13px var(--f-ui);color:var(--ink);width:100%}
 #au .au-av{border-left:3px solid var(--amb);background:var(--panel2);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--soft)}
 #au .au-pb{height:5px;border-radius:99px;background:var(--track);overflow:hidden;flex:1;min-width:80px} #au .au-pb b{display:block;height:100%;background:var(--volt)}
+@media (max-width:720px){ .au-c{margin-left:0} .au-s .ac{margin-left:0} }
 </style>`);
 
-let AU = {aulas:[], jobs:[], whisper:{ok:true, como:''}};
+let AU = {aulas:[], jobs:[], whisper:{ok:true, como:''}, ementas:{}};
 const ETAPA = {fila:'na fila', transcrevendo:'transcrevendo', lendo:'lendo os slides', resumindo:'a IA está resumindo'};
 const rodando = () => AU.jobs.some(j => j.etapa !== 'erro');
 const pendentes = d => AU.aulas.filter(a => a.sigla === d).reduce((n, a) => n + a.sugestoes.filter(s => !s.estado).length, 0);
 const TR_MAX = 400000;   // o mesmo AULA_TR_MAX do servidor
 const norm = t => GBx.norm(String(t || '')).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
-async function carrega(){ try { const r = await fetch('/api/aulas', {cache:'no-store'}); const j = await r.json(); if(j.ok) AU = j; } catch(e){} }
+async function carrega(){ try { const r = await fetch('/api/aulas', {cache:'no-store'}); const j = await r.json(); if(j.ok) AU = {ementas:{}, ...j}; } catch(e){} }
 const editando = () => document.activeElement && document.activeElement.closest && document.activeElement.closest('.cn-au,#au');
 /* com aula rodando, confere a cada 3 s; parou de rodar (terminou ou deu erro), recarrega o jogo e redesenha */
 let poll = null;
@@ -55,7 +68,20 @@ function vigia(){
   }, 3000);
 }
 
-/* a tarefa aberta que a sugestão pode juntar: a que a IA apontou (mesmo texto) ou a mais parecida (metade das palavras em comum) */
+/* ---------- o cartão de sugestões (#214) ----------
+   Entregas e estudos juntos, cada um com a caixa marcada ou não (as entregas vêm marcadas; dos estudos, os 3 de mais pontos) e,
+   no estudo, o item da ementa. "Juntar com" pode ser uma tarefa aberta (ela ganha a marca da aula) ou, num estudo, outro estudo
+   ainda sem decisão, desta aula ou de outra: os dois viram uma tarefa só, com o nome da união. O botão do fim grava tudo:
+   marcada entra, desmarcada fica como "não adicionada" (dá para rever). SEL guarda as escolhas até lá, por "aula:índice". */
+const SEL = {}, MAIS = new Set();
+const tipoDe = s => s.tipo === 'estudo' ? 'estudo' : 'entrega';   // sugestão de antes da #214 não tem tipo: é entrega
+const itensDe = d => ((AU.ementas || {})[d] || {}).itens || [];
+function sel(a, s, i, b){
+  const k = `${a.id}:${i}`;
+  if(!SEL[k]){ const t = s.juntar && alvo(s, b); SEL[k] = {on: s.marcada !== false, item: s.item || '', alvo: t ? 't:' + t.n : '', nome:''}; }
+  return SEL[k];
+}
+/* a tarefa aberta que a IA apontou para juntar (mesmo texto, ou a mais parecida, com metade das palavras em comum) */
 function alvo(s, b){
   const j = norm(s.juntar); if(j){ const t = b.open.find(t => norm(t.txt) === j || j.includes(norm(t.txt))); if(t) return t; }
   const ws = new Set(norm(s.texto).split(' ').filter(w => w.length > 3)); if(!ws.size) return null;
@@ -63,19 +89,47 @@ function alvo(s, b){
   for(const t of b.open){ const wt = norm(t.txt).split(' ').filter(w => w.length > 3), c = wt.filter(w => ws.has(w)).length / Math.max(ws.size, wt.length, 1); if(c >= nota){ nota = c; melhor = t; } }
   return melhor;
 }
-const EST = {nao:'não adicionada', add:'adicionada', juntar:'juntada'};
-function sugRow(a, s, i, b){
-  const t = alvo(s, b), k = `${a.id}:${i}`;
-  return `<div class="au-s"><span class="pri ${s.pri}">${s.pri ? `(${s.pri})` : ''}</span><input data-autxt="${k}" value="${esc(s.texto)}" aria-label="texto da tarefa" title="dá para editar antes de adicionar">
-    <span class="ac"><button type="button" class="go" data-audec="${k}:nao" title="não adicionar">✕</button><button type="button" class="btn" data-audec="${k}:add">+ adicionar</button>
-      ${b.open.length ? `<select data-aualvo="${k}" aria-label="juntar com qual tarefa"><option value="">juntar com…</option>${b.open.map(o => `<option value="${o.n}"${t === o ? ' selected' : ''}>${esc(o.txt.slice(0, 60))}</option>`).join('')}</select><button type="button" class="btn" data-audec="${k}:juntar">⇄ juntar</button>` : ''}</span>
-    <small title="${esc(s.detalhe)}">${[s.resultado ? '→ ' + s.resultado : '', s.est, s.due ? 'prazo ' + ddmm(s.due) : '', s.av ? 'prepara ' + s.av : '', s.motivo, s.min ? 'na aula: ' + s.min : ''].filter(Boolean).map(esc).join(' · ')}${s.aviso ? ` · <span class="av">${esc(s.aviso)}</span>` : ''}</small></div>`;
+/* os estudos ainda sem decisão da disciplina, de todas as aulas: com quem um estudo pode se juntar */
+const estudosAbertos = d => AU.aulas.filter(a => a.sigla === d).flatMap(a => a.sugestoes.map((s, i) => ({a, s, i, k:`${a.id}:${i}`}))).filter(x => !x.s.estado && tipoDe(x.s) === 'estudo');
+/* quem vai junto com quem: {alvo "aula:i": a sugestão que o puxou} */
+const ligadas = () => { const m = {}; for(const [k, v] of Object.entries(SEL)) if(v.on && v.alvo.startsWith('s:')) m[v.alvo.slice(2)] = k; return m; };
+const semResumo = t => t.replace(/\s*\(resumos? [^)]*\)\s*$/i, '').trim();
+function nomeUniao(x, y){
+  const ds = [...new Set([x.a.data, y.a.data])].sort().map(ddmm);
+  return `${semResumo(x.s.texto)} e ${semResumo(y.s.texto).replace(/^estudar\s+/i, '')} (${ds.length > 1 ? 'resumos ' + ds.join(' e ') : 'resumo ' + ds[0]})`;
 }
-function aulaRow(a, b){
-  const pend = a.sugestoes.map((s, i) => [s, i]).filter(([s]) => !s.estado), feitas = a.sugestoes.filter(s => s.estado);
+const EST = {nao:'não adicionada', add:'adicionada', juntar:'juntada'};
+function sugRow(a, s, i, b, lig){
+  const k = `${a.id}:${i}`, st = sel(a, s, i, b), est = tipoDe(s) === 'estudo', its = itensDe(a.sigla);
+  if(lig[k]){ const [aid, j] = lig[k].split(':'), o = AU.aulas.find(x => x.id === aid);
+    return `<div class="au-s lig"><span></span><span class="lt">↳ ${esc(s.texto)}</span><div class="au-sm"><small>vai junto com um estudo ${o && o.id !== a.id ? `da aula de ${ddmm(o.data)}` : 'de cima'}: grave por lá</small></div></div>`; }
+  const uniao = st.alvo.startsWith('s:'), outros = est ? estudosAbertos(a.sigla).filter(x => x.k !== k && !(SEL[x.k] && SEL[x.k].on && SEL[x.k].alvo.startsWith('s:')) && !(lig[x.k] && lig[x.k] !== k)) : [];
+  const meta = [s.resultado ? '→ ' + s.resultado : '', s.est, s.due ? 'prazo ' + ddmm(s.due) : '', s.av ? 'prepara ' + s.av : '', s.motivo, s.min ? 'na aula: ' + s.min : ''].filter(Boolean).map(esc).join(' · ');
+  return `<div class="au-s${st.on ? '' : ' off'}"><input type="checkbox" data-auon="${k}"${st.on ? ' checked' : ''} aria-label="adicionar esta sugestão">
+    <input type="text" data-autxt="${k}" value="${esc(uniao ? st.nome : st.texto != null ? st.texto : s.texto)}" aria-label="${uniao ? 'nome da tarefa unida' : 'texto da tarefa'}" title="dá para editar antes de adicionar">
+    <div class="au-sm"><small title="${esc(s.detalhe)}">${s.pri ? `<span class="pri ${s.pri}">(${s.pri})</span> ` : ''}${uniao ? 'os dois estudos viram uma tarefa só' + (meta ? ' · ' : '') : ''}${meta}${s.aviso ? ` · <span class="av">${esc(s.aviso)}</span>` : ''}</small>
+      <span class="ac">${est && its.length ? `<select data-auitem="${k}" aria-label="item da ementa"><option value="">sem item</option>${its.map(it => `<option value="${esc(it.k)}"${it.k === st.item ? ' selected' : ''}>${esc(it.k)} · ${esc(it.t.slice(0, 40))}</option>`).join('')}</select>` : ''}
+      ${b.open.length || outros.length ? `<select data-aualvo="${k}" aria-label="juntar com"><option value="">tarefa nova</option>
+        ${b.open.length ? `<optgroup label="juntar com uma tarefa aberta">${b.open.map(o => `<option value="t:${o.n}"${st.alvo === 't:' + o.n ? ' selected' : ''}>${esc(o.txt.slice(0, 60))}</option>`).join('')}</optgroup>` : ''}
+        ${outros.length ? `<optgroup label="juntar com outro estudo">${outros.map(x => `<option value="s:${x.k}"${st.alvo === 's:' + x.k ? ' selected' : ''}>${esc(x.s.texto.slice(0, 60))}</option>`).join('')}</optgroup>` : ''}</select>` : ''}
+      ${uniao && window.GB_IA && GB_IA.ligada() ? `<button type="button" class="go" data-aunome="${k}" title="a IA propõe um nome para a união">nome pela IA</button>` : ''}</span></div></div>`;
+}
+function cartao(a, b, lig){
+  const pend = a.sugestoes.map((s, i) => [s, i]).filter(([s]) => !s.estado);
+  const ents = pend.filter(([s]) => tipoDe(s) === 'entrega'), ests = pend.filter(([s]) => tipoDe(s) === 'estudo');
+  const vis = MAIS.has(a.id) ? ests : ests.filter(([s, i]) => s.marcada !== false || (SEL[`${a.id}:${i}`] || {}).on);
+  const n = pend.filter(([s, i]) => { const st = sel(a, s, i, b); return st.on && !lig[`${a.id}:${i}`]; }).length;
+  return `<div class="au-c"><div class="au-ch">sugestões<span class="${b.open.length >= 5 ? 'cheia' : ''}" title="só informação: quem decide é você">${b.d}: ${b.open.length} aberta${b.open.length === 1 ? '' : 's'}</span></div>
+    ${ents.length ? `<div class="au-g">entregas e avisos</div>${ents.map(([s, i]) => sugRow(a, s, i, b, lig)).join('')}` : ''}
+    ${ests.length ? `<div class="au-g">estudos</div>${vis.map(([s, i]) => sugRow(a, s, i, b, lig)).join('')}
+      ${vis.length < ests.length ? `<div class="au-mais"><button type="button" class="go" data-aumais="${a.id}">ver mais ${ests.length - vis.length} estudo${ests.length - vis.length > 1 ? 's' : ''}</button></div>` : ''}` : ''}
+    ${pend.every(([s, i]) => lig[`${a.id}:${i}`]) ? '' : `<div class="au-cf"><button type="button" class="btn v" data-auconf="${a.id}">${n ? `adicionar ${n} marcada${n > 1 ? 's' : ''}` : 'não adicionar nenhuma'}</button><small>as desmarcadas ficam como não adicionadas (dá para rever)</small></div>`}</div>`;
+}
+function aulaRow(a, b, lig){
+  const pend = a.sugestoes.some(s => !s.estado), feitas = a.sugestoes.filter(s => s.estado);
   return `<div class="au"><div class="au-l"><span class="dt">${ddmm(a.data)}</span><a href="/aulas/${a.html}" target="_blank" rel="noopener">${esc(a.assunto)}</a>${a.md ? `<a class="au-tr" href="/aulas/${a.md}" target="_blank" rel="noopener">transcrição</a>` : ''}
       <button type="button" class="go x" data-auapaga="${a.id}" title="apagar o resumo e a transcrição (as tarefas ficam)">apagar</button></div>
-    ${pend.map(([s, i]) => sugRow(a, s, i, b)).join('')}
+    ${pend ? cartao(a, b, lig) : ''}
     ${feitas.length ? `<div class="au-ok">${['add','juntar','nao'].map(e => { const n = feitas.filter(s => s.estado === e).length; return n ? `${n} ${EST[e]}${n > 1 ? 's' : ''}` : ''; }).filter(Boolean).join(' · ')}${a.sugestoes.some(s => s.estado === 'nao') ? ` · <button type="button" class="go" data-auvolta="${a.id}">rever as não adicionadas</button>` : ''}</div>` : ''}</div>`;
 }
 function jobRow(j){
@@ -85,43 +139,73 @@ function jobRow(j){
     <small>${min ? `${min} min` : 'agora'}</small><span class="ac"><button type="button" class="go" data-aucancela="${j.id}">cancelar</button></span></div>`;
 }
 function secao(b){
-  const as = AU.aulas.filter(a => a.sigla === b.d).sort((p, q) => q.data.localeCompare(p.data) || q.id.localeCompare(p.id)), js = AU.jobs.filter(j => j.sigla === b.d);
-  return `<div class="cn-s cn-au"><h4>aulas<small>${as.length}</small><button type="button" class="btn v" data-aunova="${b.d}">mandar aula</button></h4>
-    ${js.map(jobRow).join('')}${as.map(a => aulaRow(a, b)).join('')}
-    ${as.length || js.length ? '' : '<p class="sub">Mande o áudio e/ou os slides de uma aula: a IA escreve o resumo e sugere o que estudar, e você escolhe o que entra na Lista.</p>'}</div>`;
+  const as = AU.aulas.filter(a => a.sigla === b.d).sort((p, q) => q.data.localeCompare(p.data) || q.id.localeCompare(p.id)), js = AU.jobs.filter(j => j.sigla === b.d), lig = ligadas();
+  return `<div class="cn-au"><div class="au-top"><p class="cn-vz">${as.length || js.length ? `${as.length} aula${as.length === 1 ? '' : 's'} resumida${as.length === 1 ? '' : 's'}` : 'Mande o áudio, os slides ou a transcrição de uma aula: a IA escreve o resumo e sugere entregas e estudos, e você escolhe o que entra na Lista.'}</p>
+      <button type="button" class="btn v" data-aunova="${b.d}">mandar aula</button></div>
+    ${js.map(jobRow).join('')}${as.map(a => aulaRow(a, b, lig)).join('')}</div>`;
 }
+CN_ABAS.au = {n:'aulas', h:secao, c:b => { const n = pendentes(b.d), roda = AU.jobs.some(j => j.sigla === b.d && j.etapa !== 'erro');
+  return roda ? '<small class="on">…</small>' : n ? `<small class="on" title="${n} sugestão(ões) esperando">${n}</small>` : AU.aulas.filter(a => a.sigla === b.d).length || ''; }};
 const rB2a = RENDER.b2;
-RENDER.b2 = S => { rB2a(S); if(!UI.cnova) return;
+RENDER.b2 = S => { rB2a(S);
   for(const b of S.bs){
     const el = document.querySelector(`.cn-b[data-cnd="${b.d}"]`); if(!el) continue;
     const n = pendentes(b.d), roda = AU.jobs.some(j => j.sigla === b.d && j.etapa !== 'erro');
     if(n || roda) el.querySelector('.cn-h .nm').insertAdjacentHTML('beforeend', `<span class="au-bd" title="${roda ? 'aula sendo processada' : n + ' sugestão(ões) de estudo esperando'}">${roda ? 'aula…' : n}</span>`);
-    const op = el.querySelector('.cn-op'); if(op) op.insertAdjacentHTML('beforebegin', secao(b));
   }
 };
 
-/* ---------- decidir uma sugestão ---------- */
-async function decide(aid, i, estado){
-  const a = AU.aulas.find(x => x.id === aid), s = a && a.sugestoes[i]; if(!s) return;
+/* ---------- gravar as escolhas do cartão ---------- */
+const decidir = (id, i, estado) => post('/api/aulas/decidir', {id, i, estado}).then(() => { const a = AU.aulas.find(x => x.id === id); if(a) a.sugestoes[i].estado = estado; });
+function linha(a, s, txt, item){
+  const conf = /^conferir/i.test(txt);
+  return [s.pri ? `(${s.pri})` : '', txt.trim(), `+fac.${a.sigla}`, conf ? '' : '@estudo', s.av ? `av:${s.av}` : '', s.due ? `due:${s.due}` : '', item ? `top:${item}` : '', `aula:${a.data}`].filter(Boolean).join(' ');
+}
+/* juntar com uma tarefa aberta: ela só ganha a marca da aula, o prazo (se não tinha) e o item escolhido */
+async function juntaTarefa(t, a, s, item){
+  let corpo = t.raw.replace(/^\([A-Z]\) /, '').replace(/^\d{4}-\d{2}-\d{2} /, '');
+  if(!/(^|\s)aula:/.test(corpo)) corpo += ` aula:${a.data}`;
+  if(s.due && !/(^|\s)due:/.test(corpo)) corpo += ` due:${s.due}`;
+  if(item) corpo = /(^|\s)top:\S+/.test(corpo) ? corpo.replace(/(^|\s)top:\S+/, `$1top:${item}`) : corpo + ` top:${item}`;
+  await post('/api/act', {raw:t.raw, action:'edit', value:corpo});
+}
+let gravando = false;
+async function confirma(aid){
+  const a = AU.aulas.find(x => x.id === aid); if(!a || gravando) return;
+  const b = BOSSES.find(x => x.d === a.sigla) && estado().bs.find(x => x.d === a.sigla); if(!b) return;
+  const lig = ligadas(), feitos = {add:0, juntar:0, uniao:0, nao:0};
+  gravando = true;
   try {
-    if(estado === 'add'){
-      const txt = (document.querySelector(`[data-autxt="${aid}:${i}"]`) || {}).value || s.texto, conf = /^conferir/i.test(txt);
-      const linha = [s.pri ? `(${s.pri})` : '', txt.trim(), `+fac.${a.sigla}`, conf ? '' : '@estudo', s.av ? `av:${s.av}` : '', s.due ? `due:${s.due}` : '', `aula:${a.data}`].filter(Boolean).join(' ');
-      await post('/api/add', {text:linha});
+    for(const [i, s] of a.sugestoes.entries()){
+      const k = `${a.id}:${i}`; if(s.estado || lig[k]) continue;
+      const st = sel(a, s, i, b), txt = (((document.querySelector(`[data-autxt="${k}"]`) || {}).value) || (st.alvo.startsWith('s:') ? st.nome : st.texto) || '').trim();
+      if(!st.on){ await decidir(a.id, i, 'nao'); feitos.nao++; continue; }
+      if(st.alvo.startsWith('t:')){
+        const t = D.abertas.find(t => t.n === +st.alvo.slice(2)); if(!t) throw new Error('a tarefa escolhida para juntar não está mais aberta');
+        await juntaTarefa(t, a, s, st.item); await decidir(a.id, i, 'juntar'); feitos.juntar++; continue;
+      }
+      if(st.alvo.startsWith('s:')){
+        const [oid, j] = st.alvo.slice(2).split(':'), o = AU.aulas.find(x => x.id === oid), os = o && o.sugestoes[+j];
+        if(!os || os.estado) throw new Error('o estudo escolhido para juntar já foi decidido');
+        const velha = o.data < a.data ? o : a;   // a tarefa unida guarda a aula mais antiga; a outra fica citada no nome
+        await post('/api/add', {text: linha(velha, {...s, pri: [s.pri, os.pri].filter(Boolean).sort()[0] || '', av: s.av || os.av}, txt || nomeUniao({a, s}, {a:o, s:os}), st.item)});
+        await decidir(a.id, i, 'juntar'); await decidir(o.id, +j, 'juntar'); feitos.uniao++; delete SEL[st.alvo.slice(2)]; continue;
+      }
+      await post('/api/add', {text: linha(a, s, txt || s.texto, tipoDe(s) === 'estudo' ? st.item : '')}); await decidir(a.id, i, 'add'); feitos.add++;
     }
-    if(estado === 'juntar'){
-      const n = +(document.querySelector(`[data-aualvo="${aid}:${i}"]`) || {}).value, t = D.abertas.find(t => t.n === n);
-      if(!t){ toast('Escolha com qual tarefa juntar'); return; }
-      const corpo = t.raw.replace(/^\([A-Z]\) /, '').replace(/^\d{4}-\d{2}-\d{2} /, '');
-      await post('/api/act', {raw:t.raw, action:'edit', value: corpo + (/(^|\s)aula:/.test(corpo) ? '' : ` aula:${a.data}`) + (s.due && !/(^|\s)due:/.test(corpo) ? ` due:${s.due}` : '')});
-    }
-    await post('/api/aulas/decidir', {id:aid, i, estado});
-    s.estado = estado;
-    if(estado === 'add' || estado === 'juntar') await recarrega();
-    render();
-    if(estado === 'add') toast('Adicionada à Lista');
-    else if(estado === 'juntar') toast('Juntada <small>a tarefa ganhou a marca desta aula</small>');
-  } catch(err){ toast('Não deu: ' + esc(err.message)); }
+    toast(feitos.add + feitos.juntar + feitos.uniao ? `Sugestões gravadas <small>${[feitos.add ? `${feitos.add} na Lista` : '', feitos.juntar ? `${feitos.juntar} juntada${feitos.juntar > 1 ? 's' : ''} a tarefas abertas` : '', feitos.uniao ? `${feitos.uniao} ${feitos.uniao > 1 ? 'pares de estudos unidos' : 'par de estudos unido'}` : '', feitos.nao ? `${feitos.nao} não adicionada${feitos.nao > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ')}</small>` : 'Nenhuma sugestão adicionada <small>dá para rever as não adicionadas</small>');
+  } catch(err){ toast('Não gravou tudo: ' + esc(err.message)); }
+  finally { gravando = false; MAIS.delete(aid); await recarrega().catch(() => {}); render(); }
+}
+async function nomeIA(k){
+  const st = SEL[k]; if(!st || !st.alvo.startsWith('s:')) return;
+  const [aid, i] = k.split(':'), [oid, j] = st.alvo.slice(2).split(':'), a = AU.aulas.find(x => x.id === aid), o = AU.aulas.find(x => x.id === oid);
+  if(!a || !o) return;
+  const x = {a, s:a.sugestoes[+i]}, y = {a:o, s:o.sugestoes[+j]}, ds = [...new Set([a.data, o.data])].sort().map(ddmm);
+  const pedido = `Junte estas duas tarefas de estudo numa só e dê um nome curto para ela, de até 75 caracteres, começando com "Estudar" e dizendo o que as duas cobrem (ex.: "Estudar cache: mapeamento direto e associativo"). Termine com "(${ds.length > 1 ? 'resumos ' + ds.join(' e ') : 'resumo ' + ds[0]})".\n1) ${x.s.texto}: ${x.s.detalhe || ''}\n2) ${y.s.texto}: ${y.s.detalhe || ''}\nResponda só com o nome, numa linha, sem aspas.`;
+  try { const r = (await GB_IA.rodaIA(pedido, 'nome da união', '', true)).split('\n').map(l => l.trim().replace(/^["'“]|["'”]$/g, '')).filter(Boolean)[0];
+    if(r && SEL[k]){ SEL[k].nome = r.slice(0, 110); render(); } }
+  catch(err){ if(!GB_IA.cancelado(err)) toast('A IA não respondeu: ' + esc(err.message)); }
 }
 
 /* ---------- mandar aula ---------- */
@@ -208,12 +292,28 @@ async function envia(){
     const fs = [M.audio, ...M.slides].filter(Boolean);
     for(let i = 0; i < fs.length; i++) await sobe(id, fs[i], i + 1, fs.length);
     await post('/api/aulas/processar', {id, transcricao: M.tr.trim() || undefined, foco: M.fo.trim()});
-    const d = M.d; fecha(); UI.cnab.add(d);
+    const d = M.d; fecha(); UI.cnab.add(d); UI.cnaba[d] = 'au';
     await carrega(); render(); vigia();
     toast('Aula enviada <small>roda em segundo plano; o andamento aparece no chefão</small>');
   } catch(err){ if(M){ M.env = null; M.err = err.message; desenha(); } }
 }
 
+/* as escolhas do cartão de sugestões ficam em SEL até o botão do fim */
+document.addEventListener('change', e => {
+  const t = e.target, k = t.dataset && (t.dataset.auon || t.dataset.auitem || t.dataset.aualvo); if(!k || !SEL[k]) return;
+  const st = SEL[k], txt = document.querySelector(`[data-autxt="${k}"]`);
+  if(t.dataset.auon){ st.on = t.checked; if(!st.on && st.alvo.startsWith('s:')) st.alvo = ''; }
+  if(t.dataset.auitem !== undefined) st.item = t.value;
+  if(t.dataset.aualvo !== undefined){
+    if(txt && !st.alvo.startsWith('s:')) st.texto = txt.value;
+    st.alvo = t.value; st.on = st.on || !!t.value;
+    if(st.alvo.startsWith('s:')){ const [aid, i] = k.split(':'), [oid, j] = st.alvo.slice(2).split(':'), a = AU.aulas.find(x => x.id === aid), o = AU.aulas.find(x => x.id === oid);
+      st.nome = nomeUniao({a, s:{...a.sugestoes[+i], texto: st.texto || a.sugestoes[+i].texto}}, {a:o, s:o.sugestoes[+j]});
+      const os = SEL[`${oid}:${j}`]; if(!st.item && os && os.item) st.item = os.item; }
+  }
+  if(cur === 'b2') render();
+});
+document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.autxt; if(k && SEL[k]){ if(SEL[k].alvo.startsWith('s:')) SEL[k].nome = e.target.value; else SEL[k].texto = e.target.value; } });
 document.addEventListener('change', e => {
   if(!M) return;
   if(e.target.id === 'au-a'){ le(); M.audio = e.target.files[0] || null; desenha(); }
@@ -233,7 +333,9 @@ document.addEventListener('click', async e => {
   if(q('[data-auenvia]')){ envia(); return; }
   if(q('[data-aucola]')){ colar(); return; }
   if(q('[data-auarq]')){ document.getElementById('au-tf').click(); return; }
-  const dc = q('[data-audec]'); if(dc){ const [aid, i, est] = dc.dataset.audec.split(':'); dc.disabled = true; await decide(aid, +i, est); return; }
+  const cf = q('[data-auconf]'); if(cf){ cf.disabled = true; await confirma(cf.dataset.auconf); return; }
+  const ms = q('[data-aumais]'); if(ms){ MAIS.add(ms.dataset.aumais); render(); return; }
+  const nm = q('[data-aunome]'); if(nm){ nm.disabled = true; await nomeIA(nm.dataset.aunome); return; }
   const vt = q('[data-auvolta]'); if(vt){ const a = AU.aulas.find(x => x.id === vt.dataset.auvolta); if(!a) return;
     for(const [i, s] of a.sugestoes.entries()) if(s.estado === 'nao'){ await post('/api/aulas/decidir', {id:a.id, i, estado:''}).catch(() => {}); s.estado = ''; }
     render(); return; }
@@ -245,5 +347,6 @@ document.addEventListener('click', async e => {
 });
 document.addEventListener('keydown', e => { if(M && e.key === 'Escape' && !M.env) fecha(); });
 
+window.GB_AULAS = {dados: () => AU, carrega};
 carrega().then(() => { if(CTX && cur === 'b2') render(); vigia(); });
 })();
