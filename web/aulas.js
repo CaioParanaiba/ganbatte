@@ -15,7 +15,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .au-l{display:flex;gap:10px;align-items:baseline;font-size:13.5px;min-width:0}
 .au-l .dt{font:600 12px var(--f-mono);color:var(--soft);white-space:nowrap}
 .au-l a{color:var(--ink);font-weight:600;text-decoration:none} .au-l a:hover{text-decoration:underline}
-.au-l .au-tr{font:11.5px var(--f-mono);color:var(--soft)} .au-l .x{margin-left:auto}
+.au-l .au-tr{font:11.5px var(--f-mono);color:var(--soft)} .au-l .au-ia{font:11.5px var(--f-mono);color:var(--faint)} .au-l .x{margin-left:auto}
 .au-c{margin:8px 0 0 52px;border:1px solid var(--hair);border-radius:10px;padding:4px 12px 10px;background:var(--panel)}
 .au-ch{display:flex;gap:10px;align-items:baseline;padding:6px 0 2px;font:600 10.5px var(--f-mono);color:var(--faint);text-transform:uppercase;letter-spacing:.1em}
 .au-ch span{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--soft)} .au-ch span.cheia{color:var(--amb)}
@@ -127,7 +127,7 @@ function cartao(a, b, lig){
 }
 function aulaRow(a, b, lig){
   const pend = a.sugestoes.some(s => !s.estado), feitas = a.sugestoes.filter(s => s.estado);
-  return `<div class="au"><div class="au-l"><span class="dt">${ddmm(a.data)}</span><a href="/aulas/${a.html}" target="_blank" rel="noopener">${esc(a.assunto)}</a>${a.md ? `<a class="au-tr" href="/aulas/${a.md}" target="_blank" rel="noopener">transcrição</a>` : ''}
+  return `<div class="au"><div class="au-l"><span class="dt">${ddmm(a.data)}</span><a href="/aulas/${a.html}" target="_blank" rel="noopener">${esc(a.assunto)}</a>${a.md ? `<a class="au-tr" href="/aulas/${a.md}" target="_blank" rel="noopener">transcrição</a>` : ''}${a.ia ? `<small class="au-ia" title="quem escreveu o resumo">${esc(a.ia)}</small>` : ''}
       <button type="button" class="go x" data-auapaga="${a.id}" title="apagar o resumo e a transcrição (as tarefas ficam)">apagar</button></div>
     ${pend ? cartao(a, b, lig) : ''}
     ${feitas.length ? `<div class="au-ok">${['add','juntar','nao'].map(e => { const n = feitas.filter(s => s.estado === e).length; return n ? `${n} ${EST[e]}${n > 1 ? 's' : ''}` : ''; }).filter(Boolean).join(' · ')}${a.sugestoes.some(s => s.estado === 'nao') ? ` · <button type="button" class="go" data-auvolta="${a.id}">rever as não adicionadas</button>` : ''}</div>` : ''}</div>`;
