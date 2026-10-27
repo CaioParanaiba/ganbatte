@@ -36,6 +36,10 @@ Há três jeitos de usar:
   (4 fáceis, 3 médias, 2 difíceis e 1 lendária) com desafios pensados para o seu ritmo. O jogo confere cada um (e recusa o que não dá), calcula o rank e a recompensa, e você
   aceita os que quiser. Só por clique: nunca sozinho.
 
+- **Modelo do Claude:** com o Claude Code ligado, Configurações → IA escolhe o modelo (Sonnet de início, Opus, Haiku
+  ou o padrão da sua instalação) e o esforço (médio de início). O tipo da tarefa segue no Haiku. Cada aula mostra quem
+  escreveu o resumo.
+
 A IA só devolve texto e não tem permissão para gravar nada: quem confere e grava é o jogo. Os dados de cada pedido vão
 para a empresa da IA escolhida.
 

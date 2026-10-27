@@ -753,6 +753,38 @@ class Religa(Base):
                                        "x 2026-10-10 2026-10-10 Leitura +rotina rec:leit:2026-10-10"]), ["h-leitura"])
 
 
+class ModeloClaude(Base):
+    """#213: o Claude vai com o modelo e o esforço de Configurações → IA; o pedido leve segue no Haiku."""
+
+    def cmd(self, leve=False, esforco=True):
+        with mock.patch.object(s, "claude_esforco", lambda exe: esforco):
+            return s.comando_agente("claude", "claude", "/tmp", "/tmp/x", leve)
+
+    def test_padrao_sonnet_e_medio(self):
+        self.jogador({"ia": {"agente": "claude"}})
+        self.assertEqual(self.cmd()[-4:], ["--model", "sonnet", "--effort", "medium"])
+        self.assertEqual(self.cmd(leve=True)[-2:], ["--model", "haiku"])
+
+    def test_escolha_e_padrao_da_instalacao(self):
+        self.jogador({"ia": {"agente": "claude"}})
+        s.api_ia_config({"modelo": "opus", "esforco": "high"})
+        self.assertEqual(self.cmd()[-4:], ["--model", "opus", "--effort", "high"])
+        s.api_ia_config({"modelo": "", "esforco": ""})
+        self.assertNotIn("--model", self.cmd())
+        self.assertNotIn("--effort", self.cmd())
+        with self.assertRaises(s.Erro):
+            s.api_ia_config({"modelo": "claude-opus-9"})
+
+    def test_claude_antigo_sem_esforco(self):
+        self.jogador({"ia": {"agente": "claude", "esforco": "low"}})
+        self.assertEqual(self.cmd(esforco=False)[-2:], ["--model", "sonnet"])
+        with mock.patch.object(s, "claude_esforco", lambda exe: False):
+            self.assertEqual(s.ia_rotulo("claude", "claude"), "Claude Code · sonnet")
+        with mock.patch.object(s, "claude_esforco", lambda exe: True):
+            self.assertEqual(s.ia_rotulo("claude", "claude"), "Claude Code · sonnet · esforço baixo")
+        self.assertEqual(s.ia_rotulo("agy", "agy"), "Antigravity CLI")
+
+
 class Agentes(Base):
     """#60: o Gemini CLI roda na pasta temporária sem perguntar; o agy recebe o pedido num arquivo e roda só lendo."""
 

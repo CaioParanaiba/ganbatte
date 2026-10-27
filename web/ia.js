@@ -28,6 +28,8 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .ia-ags{display:flex;flex-direction:column;gap:6px}
 .ia-ags label{display:flex;flex-direction:row;align-items:center;gap:10px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink);padding:8px 10px;border:1px solid var(--hair);border-radius:9px}
 .ia-ags label.off{opacity:.55}
+.ia-claude label{display:flex;flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink)}
+.ia-claude select{background:var(--panel2);border:1px solid var(--hair);border-radius:8px;padding:4px 8px;font:13px var(--f-ui);color:var(--ink)}
 .ia-ags label small{display:block;font:12px var(--f-ui);color:var(--soft)}
 .ia-ags label .btn{margin-left:auto}
 #ia-st{position:fixed;left:16px;bottom:16px;z-index:60;display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:var(--panel);border:1px solid var(--hair);box-shadow:0 6px 20px rgba(0,0,0,.18);font:600 12.5px var(--f-mono);color:var(--ink);max-width:calc(100vw - 32px)}
@@ -180,7 +182,7 @@ async function addCarta(){
 
 /* ---------- IA ligada: o servidor chama o agente de terminal do jogador (aba Configurações → IA) ---------- */
 let IAS = null, IA_RODA = null;   // GET /api/ia (agentes achados, planos); o pedido rodando agora
-const conf = () => Object.assign({agente:'chat', desde:'', cartas:true}, CTX.JOG.ia || {});
+const conf = () => Object.assign({agente:'chat', desde:'', cartas:true, modelo:'sonnet', esforco:'medium'}, CTX.JOG.ia || {});
 const ligada = () => !!CTX.SRV && conf().agente !== 'chat';
 const nomeAg = () => ({claude:'Claude Code', codex:'Codex', gemini:'Gemini CLI', agy:'Antigravity CLI'})[conf().agente] || conf().agente;
 const espera = ms => new Promise(r => setTimeout(r, ms));
@@ -259,12 +261,21 @@ function iaHTML(){
         <label><input type="radio" name="ia-ag" data-iaag="chat"${c.agente === 'chat' ? ' checked' : ''}> <span><b>Copiar e colar</b> <small>sem IA instalada: o jogo monta o pedido e você cola numa IA de chat</small></span></label>
         ${ags.map(a => `<label${a.achado ? '' : ' class="off"'}><input type="radio" name="ia-ag" data-iaag="${a.id}"${c.agente === a.id ? ' checked' : ''}${a.achado ? '' : ' disabled'}> <span><b>${esc(a.nome)}</b> <small>${a.achado ? 'encontrado neste computador' : 'não encontrado'}</small></span>${a.achado && c.agente === a.id ? `<button type="button" class="btn" data-iatesta${IA_RODA ? ' disabled' : ''}>testar</button>` : ''}</label>`).join('')}
       </div>
+      ${c.agente === 'claude' ? claudeHTML(c) : ''}
       ${achados.length ? '' : '<p class="sub">Nenhuma IA de terminal encontrada. Instale uma (Claude Code, Codex ou Antigravity CLI), entre na conta pelo terminal e clique em <b>procurar de novo</b>.</p>'}
       ${teste ? `<p class="sub" role="status">${teste}</p>` : ''}
       <div class="linha"><label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:14px var(--f-ui);color:var(--ink)"><input type="checkbox" data-iacartas${c.cartas ? ' checked' : ''}${c.agente === 'chat' ? ' disabled' : ''}> escrever sozinho as cartas do Book que faltam, ao abrir o jogo</label>
         <span style="display:flex;gap:8px;margin-left:auto">${c.agente !== 'chat' ? '<button type="button" class="btn" data-iatour>tutorial da IA</button>' : ''}<button type="button" class="btn" data-iaprocura>procurar de novo</button></span></div>
       <p class="sub" style="margin:0">Planos de ensino: <span class="mono">${esc(IAS.pasta)}</span> · ${IAS.planos.length ? IAS.planos.length + ' arquivo(s)' : 'vazia'}. Ponha os PDFs lá ou envie pelo editor do chefão.</p>`}
     </div></div>`;
+}
+/* modelo e esforço do Claude (#213): os pedidos leves (tipo da tarefa) seguem no Haiku */
+const MODELOS = [['sonnet','Sonnet'], ['opus','Opus'], ['haiku','Haiku'], ['','o padrão da minha instalação']];
+const ESFORCOS = [['low','baixo'], ['medium','médio'], ['high','alto'], ['','o padrão da minha instalação']];
+function claudeHTML(c){
+  const sel = (k, ops, off) => `<select data-iaclaude="${k}"${off ? ' disabled' : ''}>${ops.map(([v, t]) => `<option value="${v}"${c[k] === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`;
+  return `<div class="linha ia-claude"><label>modelo ${sel('modelo', MODELOS)}</label><label>esforço ${sel('esforco', ESFORCOS, !IAS.esforco)}</label></div>
+    <p class="sub" style="margin:0">Resumir uma aula usa de 20 a 30 mil tokens; Opus gasta bem mais do plano que Sonnet.${IAS.esforco ? '' : ' O esforço precisa de um Claude Code mais novo (atualize para escolher).'}</p>`;
 }
 async function testa(){
   UI.iaTeste = ''; 
@@ -375,7 +386,8 @@ document.addEventListener('change', e => {
   const sl = e.target.closest('[data-iasel]'); if(sl){ LOTE.itens[+sl.dataset.iasel].sel = sl.checked; render(); return; }
   if(e.target.matches('[data-iaseltodos]')){ LOTE.itens.forEach(it => { if(it.estado === 'pronto') it.sel = e.target.checked; }); render(); return; }
   const ag = e.target.closest('[data-iaag]'); if(ag){ salvaConf({agente:ag.dataset.iaag}); return; }
-  if(e.target.matches('[data-iacartas]')) salvaConf({cartas:e.target.checked});
+  if(e.target.matches('[data-iacartas]')){ salvaConf({cartas:e.target.checked}); return; }
+  const cl = e.target.closest('[data-iaclaude]'); if(cl) salvaConf({[cl.dataset.iaclaude]: cl.value});
 });
 document.addEventListener('click', e => {
   const q = s => e.target.closest(s);

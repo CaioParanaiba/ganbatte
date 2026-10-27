@@ -41,7 +41,8 @@ Rotas (as mesmas que web/demo.js simula no modo demonstração):
   POST /api/cf/mao {menos?}               +1 problema do Codeforces hoje, marcado à mão (ITMO, grupo privado); menos = desfaz
   POST /api/contrib {}                    confere na hora as contribuições e as tarefas de dev no GitHub (senão, a cada 1 h)
   GET  /api/ia                            agentes de terminal achados, a escolha do jogador e os planos de ensino da pasta planos/
-  POST /api/ia/config {agente?, cartas?}  liga a IA (claude | codex | gemini | agy) ou volta ao copiar e colar (chat)
+  POST /api/ia/config {agente?, cartas?, modelo?, esforco?}  liga a IA (claude | codex | gemini | agy) ou volta ao copiar e colar
+                                          (chat); modelo (sonnet | opus | haiku | "") e esforco (low | medium | high | "") do Claude
   POST /api/ia/rodar {pedido, anexo?, leve?} roda o agente com o pedido da página → {id}; GET /api/ia/rodar?id= até ficar pronto
   POST /api/ia/cancela {id}              para o pedido rodando: encerra o agente e libera a vaga (#115)
   POST /api/ia/plano {nome, base64}       guarda um plano de ensino em planos/
@@ -1929,6 +1930,11 @@ AGENTES = {
     "gemini": {"nome": "Gemini CLI", "login": "gemini   (na primeira vez ele pede o login)"},
     "agy": {"nome": "Antigravity CLI", "login": "agy   (na primeira vez ele pede o login)"},
 }
+# modelo e esforço do Claude (#213): apelidos (sonnet, opus, haiku) para não quebrar quando o identificador muda de versão;
+# "" = o padrão da instalação do jogador (~/.claude/settings.json)
+CLAUDE_MODELOS = ("sonnet", "opus", "haiku", "")
+CLAUDE_ESFORCOS = ("low", "medium", "high", "")
+ESFORCO_PT = {"low": "baixo", "medium": "médio", "high": "alto"}
 PEDIDO_ARQ = ".pedido.txt"   # o agy não lê a entrada padrão: o pedido vai num arquivo da pasta temporária
 IA_TEMPO = 600   # segundos por pedido
 PLANO_EXT = {".pdf", ".html", ".htm", ".txt", ".md", ".docx"}
@@ -1985,7 +1991,40 @@ def ia_conf(j=None):
     c = (j or jogador()).get("ia")
     c = c if isinstance(c, dict) else {}
     ag = c.get("agente") if c.get("agente") in AGENTES else "chat"
-    return {"agente": ag, "desde": str(c.get("desde") or ""), "cartas": c.get("cartas", True) is not False}
+    return {"agente": ag, "desde": str(c.get("desde") or ""), "cartas": c.get("cartas", True) is not False,
+            "modelo": c["modelo"] if c.get("modelo") in CLAUDE_MODELOS else "sonnet",
+            "esforco": c["esforco"] if c.get("esforco") in CLAUDE_ESFORCOS else "medium"}
+
+
+_claude_esforco = {}   # exe → se o claude instalado aceita --effort (as versões antigas não têm)
+
+
+def claude_esforco(exe):
+    if exe not in _claude_esforco:
+        try:
+            r = subprocess.run([exe, "--help"], capture_output=True, text=True, timeout=15, stdin=subprocess.DEVNULL,
+                               env=dict(os.environ, PATH=path_agentes()))
+            _claude_esforco[exe] = "--effort" in (r.stdout or "")
+        except (OSError, subprocess.SubprocessError):
+            _claude_esforco[exe] = False
+    return _claude_esforco[exe]
+
+
+def opcoes_claude(exe, leve=False):
+    """--model e --effort do Claude (#213). O pedido leve segue no Haiku, sem esforço (é curto)."""
+    if leve:
+        return ["--model", "haiku"]
+    c = ia_conf()
+    return (["--model", c["modelo"]] if c["modelo"] else []) + (["--effort", c["esforco"]] if c["esforco"] and claude_esforco(exe) else [])
+
+
+def ia_rotulo(ag, exe):
+    """Quem escreveu o resumo da aula, para comparar depois: "Claude Code · sonnet · esforço médio"."""
+    if ag != "claude":
+        return AGENTES[ag]["nome"]
+    c, op = ia_conf(), opcoes_claude(exe)
+    return " · ".join([AGENTES[ag]["nome"], c["modelo"] or "modelo padrão"]
+                      + ([f"esforço {ESFORCO_PT[c['esforco']]}"] if "--effort" in op else []))
 
 
 def planos():
@@ -1994,7 +2033,9 @@ def planos():
 
 
 def api_ia_get():
+    exe = acha_agente("claude")
     return {"ok": True, "conf": ia_conf(), "planos": planos(), "pasta": str(DADOS / "planos"),
+            "esforco": bool(exe) and claude_esforco(exe),
             "agentes": [{"id": k, "nome": v["nome"], "login": v["login"], "achado": bool(acha_agente(k))} for k, v in AGENTES.items()]}
 
 
@@ -2013,6 +2054,11 @@ def api_ia_config(d):
             c["agente"] = ag
         if "cartas" in d:
             c["cartas"] = bool(d["cartas"])
+        for k, ok in (("modelo", CLAUDE_MODELOS), ("esforco", CLAUDE_ESFORCOS)):
+            if k in d:
+                if d[k] not in ok:
+                    raise Erro(f"{k} desconhecido")
+                c[k] = d[k]
         j["ia"] = c
         gravar_json("jogador.json", j)
     return {"ok": True, "conf": c}
@@ -2021,9 +2067,10 @@ def api_ia_config(d):
 def comando_agente(ag, exe, pasta, saida, leve=False):
     """Linha de comando de cada agente, sem permissão de escrita. O pedido vai pela entrada padrão (no agy, em PEDIDO_ARQ).
     leve: pedido pequeno (tipo de uma tarefa), com o modelo mais barato e rápido de cada um (no agy, o modelo de sempre:
-    os nomes dele mudam a cada versão e um nome velho faz o pedido falhar)."""
+    os nomes dele mudam a cada versão e um nome velho faz o pedido falhar). No Claude, os outros pedidos vão com o modelo e o
+    esforço escolhidos em Configurações → IA (#213)."""
     if ag == "claude":
-        return [exe, "-p", "--tools", "Read", "--permission-mode", "dontAsk", "--no-session-persistence", "--strict-mcp-config"] + (["--model", "haiku"] if leve else [])
+        return [exe, "-p", "--tools", "Read", "--permission-mode", "dontAsk", "--no-session-persistence", "--strict-mcp-config"] + opcoes_claude(exe, leve)
     if ag == "codex":
         return [exe, "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--color", "never", "--cd", pasta, "--output-last-message", saida]\
             + (["-c", 'model_reasoning_effort="low"'] if leve else []) + ["-"]
@@ -2733,6 +2780,7 @@ def aula_executa(aid):
             j["tid"] = tid
             if j.get("cancelado"):
                 ia_tarefas[tid]["cancelado"] = True
+            quem = ia_rotulo(ag, exe)
             ia_executa(tid, ag, exe, pedido_aula(sigla, data, nome, [c.name for c in copias], dur, palavras, pls, meta.get("foco") or ""), copias, False, AULA_TEMPO)
             t = ia_tarefas[tid]
             if t["estado"] != "pronto":
@@ -2756,7 +2804,7 @@ def aula_executa(aid):
             k = 2
             while (dest / f"{base}.html").exists():
                 base, k = f"{data}-{slug(assunto)}-{k}", k + 1
-            sub = f"{H.escape(sigla)} · {H.escape(nome)} · {data[8:]}/{data[5:7]}/{data[:4]}" + (f" · {dur // 60} min de áudio" if dur else "")
+            sub = f"{H.escape(sigla)} · {H.escape(nome)} · {data[8:]}/{data[5:7]}/{data[:4]}" + (f" · {dur // 60} min de áudio" if dur else "") + f" · resumo: {H.escape(quem)}"
             modelo = (WEB / "aulas" / "modelo.html").read_text(encoding="utf-8")
             pagina = modelo.replace("{{TITULO}}", H.escape(f"{sigla} · {assunto}")).replace("{{ASSUNTO}}", H.escape(assunto)).replace("{{SUB}}", sub).replace("{{CONTEUDO}}", corpo)
             (dest / f"{base}.html").write_text(pagina, encoding="utf-8")
@@ -2765,7 +2813,7 @@ def aula_executa(aid):
             with lock:
                 idx = aulas_idx()
                 idx.append({"id": aid, "sigla": sigla, "data": data, "assunto": assunto, "html": f"{sigla}/{base}.html",
-                            "md": f"{sigla}/{base}.md" if tr.exists() else "", "criada": time.strftime("%Y-%m-%d %H:%M"), "foco": meta.get("foco") or "", "sugestoes": sug,
+                            "md": f"{sigla}/{base}.md" if tr.exists() else "", "criada": time.strftime("%Y-%m-%d %H:%M"), "ia": quem, "foco": meta.get("foco") or "", "sugestoes": sug,
                             "faixas": confere_faixas(dados.get("faixas"), sigla)})
                 gravar_json("aulas/aulas.json", idx)
             shutil.rmtree(pasta, ignore_errors=True)
